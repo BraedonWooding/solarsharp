@@ -176,21 +176,22 @@
             parent.appendChild(canvas);
 
             for (const set of dataset) {
-              set.bench.unit = 'ms'
-              set.bench.value /= 1000;
+              for (const subset of set) {
+                set.bench.unit = 'ms'
+                set.bench.value /= 1000;
+              }
             }
 
-            const color = toolColors[dataset.length > 0 ? dataset[0].tool : '_'];
+            const color = toolColors[dataset.length > 0 ? dataset[0][0].tool : '_'];
             const data = {
-              labels: dataset.map(d => d.commit.id.slice(0, 7)),
-              datasets: [
-                {
-                  label: name,
-                  data: dataset.map(d => d.bench.value),
-                  borderColor: color,
-                  backgroundColor: color + '60', // Add alpha for #rrggbbaa
-                }
-              ],
+              labels: dataset[0].map(d => d.commit.id.slice(0, 7)),
+              datasets: dataset.map(d => 
+                ({
+                  label: d[0].bench.name,
+                  data: d.map(d => d.bench.value),
+                //  borderColor: color,
+                //  backgroundColor: color + '60', // Add alpha for #rrggbbaa
+                }),
             };
             const options = {
               scales: {
@@ -206,7 +207,7 @@
                   {
                     scaleLabel: {
                       display: true,
-                      labelString: dataset.length > 0 ? dataset[0].bench.unit : '',
+                      labelString: dataset.length > 0 ? dataset[0][0].bench.unit : '',
                     },
                     ticks: {
                       beginAtZero: true,
@@ -218,12 +219,12 @@
                 callbacks: {
                   afterTitle: items => {
                     const {index} = items[0];
-                    const data = dataset[index];
+                    const data = dataset[0][index];
                     return '\n' + data.commit.message + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
                   },
                   label: item => {
                     let label = item.value;
-                    const { range, unit } = dataset[item.index].bench;
+                    const { range, unit } = dataset[0][item.index].bench;
                     label += ' ' + unit;
                     if (range) {
                       label += ' (' + range + ')';
@@ -231,7 +232,7 @@
                     return label;
                   },
                   afterLabel: item => {
-                    const { extra } = dataset[item.index].bench;
+                    const { extra } = dataset[0][item.index].bench;
                     return extra ? '\n' + extra : '';
                   }
                 }
@@ -269,25 +270,25 @@
           }
 
           function renderBenchSet(name, benchSet, main) {
-            const setElem = document.createElement('div');
-            setElem.className = 'benchmark-set';
-            main.appendChild(setElem);
-
-            const nameElem = document.createElement('h1');
-            nameElem.className = 'benchmark-title';
-            nameElem.textContent = name;
-            setElem.appendChild(nameElem);
-
-            const graphsElem = document.createElement('div');
-            graphsElem.className = 'benchmark-graphs';
-            setElem.appendChild(graphsElem);
-
             for (const [benchName, benches] of groupBy(benchSet.entries(), function(k) {
               const match = k[0].match(/Benchmark.Benchmarks.Benchmark\(Implementation: (.*?), Test: (.*?)\)/)
               k[1][0].bench.name = match[1]
               return match[2]
             }).entries()) {
-              renderGraph(graphsElem, benchName, benches.map(function(b){ return b[1][0]; }))
+              const setElem = document.createElement('div');
+              setElem.className = 'benchmark-set';
+              main.appendChild(setElem);
+  
+              const nameElem = document.createElement('h1');
+              nameElem.className = 'benchmark-title';
+              nameElem.textContent = name;
+              setElem.appendChild(nameElem);
+  
+              const graphsElem = document.createElement('div');
+              graphsElem.className = 'benchmark-graphs';
+              setElem.appendChild(graphsElem);
+              
+              renderGraph(graphsElem, benchName, benches.map(function(b){ return b[1]; }))
             }
           }
 
