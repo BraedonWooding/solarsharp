@@ -56,5 +56,9 @@ jobs:
           output-file-path: Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
           # Where the previous data file is stored
           external-data-json-path: ./cache/benchmark-data.json
+          # Enable alert commit comment
+          comment-on-alert: true
+          # Enable Job Summary for PRs
+          summary-always: true
           # Workflow will fail when an alert happens
           fail-on-alert: true
