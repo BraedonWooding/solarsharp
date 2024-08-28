@@ -1,12 +1,16 @@
 # This workflow will build a .NET project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: .NET
+name: Benchmark Charts
 
 on:
   push:
     branches: [ "main" ]
 
+permissions:
+  contents: write
+  deployments: write
+  
 jobs:
   benchmark:
     name: Performance regression check
