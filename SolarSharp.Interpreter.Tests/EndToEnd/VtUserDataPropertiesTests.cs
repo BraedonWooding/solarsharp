@@ -188,8 +188,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
-
-
         private static void Test_InvalidPropertySetter(InteropAccessMode opt)
         {
             string script = @"    

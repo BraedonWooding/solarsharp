@@ -32,7 +32,7 @@ namespace SolarSharp.Interpreter.Tests
         {
             // System.Diagnostics.Debug.WriteLine(str);
 
-            Assert.That(str.Trim().StartsWith("not ok"), Is.False, string.Format("TAP fail ({0}) : {1}", m_File, str));
+            Assert.That(str.Trim(), Does.Not.StartWith("not ok"), string.Format("TAP fail ({0}) : {1}", m_File, str));
         }
 
         public TapRunner(string filename)
