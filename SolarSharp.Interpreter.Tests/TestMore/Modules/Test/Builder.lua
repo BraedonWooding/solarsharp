@@ -3,7 +3,7 @@
 -- lua-TestMore : <http://fperrad.github.com/lua-TestMore/>
 --
 
-local debug = nil; -- require 'debug'
+local debug = require 'debug'
 local io = nil; -- require 'io'
 local os = nil; -- require 'os'
 local error = error
@@ -267,9 +267,10 @@ function m:ok (test, name, level)
         self:diag("    You named your test '" .. name .."'.  You shouldn't use numbers for your test names."
         .. "\n    Very confusing.")
     end
-    local out = ''
+    local out = ""
+
     if not test then
-        out = "not "
+        out = out .. "not "
     end
     out = out .. "ok " .. self.curr_test
     if name ~= '' then
@@ -278,6 +279,10 @@ function m:ok (test, name, level)
     if self.todo_reason and in_todo(self) then
         out = out .. " # TODO " .. self.todo_reason
     end
+    if not test then
+        out = out .. "\nerror in:\n" .. debug.traceback()
+    end
+
     _print(self, out)
     if not test then
         local msg = in_todo(self) and "Failed (TODO)" or "Failed"

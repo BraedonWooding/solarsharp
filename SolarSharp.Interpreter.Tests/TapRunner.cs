@@ -2,6 +2,7 @@
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Loaders;
 using NUnit.Framework;
+using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Tests
 {
@@ -42,19 +43,11 @@ namespace SolarSharp.Interpreter.Tests
 
         public void Run()
         {
-            Script S = new();
+            Script S = new(CoreModules.Preset_Complete);
 
             S.Options.DebugPrint = Print;
 
             S.Options.UseLuaErrorLocations = true;
-
-#if PCL
-#if EMBEDTEST
-			S.Options.ScriptLoader = new EmbeddedResourcesScriptLoader(Assembly.GetExecutingAssembly());
-#else
-			S.Options.ScriptLoader = new TestsScriptLoader();
-#endif
-#endif
 
             S.Globals.Set("arg", DynValue.NewTable(S));
 
