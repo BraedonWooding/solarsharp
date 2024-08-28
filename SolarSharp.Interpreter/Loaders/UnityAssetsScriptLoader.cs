@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using MoonSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
 
-namespace MoonSharp.Interpreter.Loaders
+namespace SolarSharp.Interpreter.Loaders
 {
     /// <summary>
     /// A script loader which can load scripts from assets in Unity3D.
@@ -15,7 +16,7 @@ namespace MoonSharp.Interpreter.Loaders
     /// </summary>
     public class UnityAssetsScriptLoader : ScriptLoaderBase
     {
-        private readonly Dictionary<string, string> m_Resources = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> m_Resources = new();
 
         /// <summary>
         /// The default path where scripts are meant to be stored (if not changed)
@@ -30,7 +31,7 @@ namespace MoonSharp.Interpreter.Loaders
         /// pass the value "Scripts". If null, "MoonSharp/Scripts" is used. </param>
         public UnityAssetsScriptLoader(string assetsPath = null)
         {
-            assetsPath = assetsPath ?? DEFAULT_PATH;
+            assetsPath ??= DEFAULT_PATH;
 #if UNITY_5
             LoadResourcesUnityNative(assetsPath);
 #else
@@ -113,7 +114,7 @@ namespace MoonSharp.Interpreter.Loaders
             int b = Math.Max(filename.LastIndexOf('\\'), filename.LastIndexOf('/'));
 
             if (b > 0)
-                filename = filename.Substring(b + 1);
+                filename = filename[(b + 1)..];
 
             return filename;
         }
@@ -129,7 +130,7 @@ namespace MoonSharp.Interpreter.Loaders
         /// <returns>
         /// A string, a byte[] or a Stream.
         /// </returns>
-        /// <exception cref="System.Exception">UnityAssetsScriptLoader.LoadFile : Cannot load  + file</exception>
+        /// <exception cref="Exception">UnityAssetsScriptLoader.LoadFile : Cannot load  + file</exception>
         public override object LoadFile(string file, Table globalContext)
         {
             file = GetFileName(file);

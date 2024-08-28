@@ -1,13 +1,14 @@
 ﻿using System.CodeDom;
-using MoonSharp.Interpreter;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Hardwire;
 
-namespace MoonSharp.Hardwire.Generators
+namespace SolarSharp.Hardwire.Generators
 {
     internal class ValueTypeDefaultCtorMemberDescriptorGenerator : IHardwireGenerator
     {
         public string ManagedType
         {
-            get { return "MoonSharp.Interpreter.Interop.ValueTypeDefaultCtorMemberDescriptor"; }
+            get { return "SolarSharp.Interpreter.Interop.ValueTypeDefaultCtorMemberDescriptor"; }
         }
 
         public CodeExpression[] Generate(Table table, HardwireCodeGenerationContext generator, CodeTypeMemberCollection members)

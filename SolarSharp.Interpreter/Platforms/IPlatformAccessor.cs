@@ -1,7 +1,8 @@
-﻿using System.IO;
+﻿using SolarSharp.Interpreter.Modules;
+using System.IO;
 using System.Text;
 
-namespace MoonSharp.Interpreter.Platforms
+namespace SolarSharp.Interpreter.Platforms
 {
     /// <summary>
     /// Interface to abstract all accesses made to the underlying platform (OS, framework) by the scripting engine.

@@ -1,6 +1,7 @@
-﻿using MoonSharp.Interpreter.Debugging;
+﻿using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Errors;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     internal sealed partial class Processor
     {

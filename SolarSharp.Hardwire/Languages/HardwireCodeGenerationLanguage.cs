@@ -1,9 +1,10 @@
-﻿using System.CodeDom;
+﻿using SolarSharp.Hardwire.Languages;
+using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.IO;
 using System.Linq;
 
-namespace MoonSharp.Hardwire.Languages
+namespace SolarSharp.Hardwire.Languages
 {
     public abstract class HardwireCodeGenerationLanguage
     {

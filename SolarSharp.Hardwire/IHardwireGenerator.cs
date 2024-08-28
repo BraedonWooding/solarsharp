@@ -1,7 +1,7 @@
 ﻿using System.CodeDom;
-using MoonSharp.Interpreter;
+using SolarSharp.Interpreter.DataTypes;
 
-namespace MoonSharp.Hardwire
+namespace SolarSharp.Hardwire
 {
     /// <summary>
     /// Interface to be implemented by all hardwire code generators

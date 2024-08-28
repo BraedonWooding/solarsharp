@@ -1,6 +1,8 @@
-﻿using MoonSharp.Interpreter.Interop.BasicDescriptors;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
 {
     /// <summary>
     /// Class providing a simple descriptor for constant DynValues in userdata
@@ -16,7 +18,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="serializedTableValue">A string containing a table whose first member is the dynvalue to be deserialized (convoluted...).</param>
         protected DynValueMemberDescriptor(string name, string serializedTableValue)
         {
-            Script s = new Script();
+            Script s = new();
             var exp = s.CreateDynamicExpression(serializedTableValue);
             DynValue val = exp.Evaluate(null);
 
@@ -47,10 +49,9 @@ namespace MoonSharp.Interpreter.Interop
             m_Value = value;
             Name = name;
 
-            if (value.Type == DataType.ClrFunction)
-                MemberAccess = MemberDescriptorAccess.CanRead | MemberDescriptorAccess.CanExecute;
-            else
-                MemberAccess = MemberDescriptorAccess.CanRead;
+            MemberAccess = value.Type == DataType.ClrFunction
+                ? MemberDescriptorAccess.CanRead | MemberDescriptorAccess.CanExecute
+                : MemberDescriptorAccess.CanRead;
         }
 
         /// <summary>
@@ -100,7 +101,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <exception cref="ScriptRuntimeException">userdata '{0}' cannot be written to.</exception>
         public void SetValue(Script script, object obj, DynValue value)
         {
-            throw new ScriptRuntimeException("userdata '{0}' cannot be written to.", this.Name);
+            throw new ScriptRuntimeException("userdata '{0}' cannot be written to.", Name);
         }
 
         /// <summary>
@@ -110,8 +111,8 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="t">The table to be filled</param>
         public void PrepareForWiring(Table t)
         {
-            t.Set("class", DynValue.NewString(this.GetType().FullName));
-            t.Set("name", DynValue.NewString(this.Name));
+            t.Set("class", DynValue.NewString(GetType().FullName));
+            t.Set("name", DynValue.NewString(Name));
 
             switch (Value.Type)
             {

@@ -1,8 +1,9 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
+﻿using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
 
-
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing loading Lua functions like 'require', 'load', etc.
@@ -155,10 +156,7 @@ namespace MoonSharp.Interpreter.CoreLib
         {
             Table env = executionContext.CurrentGlobalEnv;
 
-            if (env == null)
-                throw new ScriptRuntimeException("current environment cannot be backtracked.");
-
-            return env;
+            return env ?? throw new ScriptRuntimeException("current environment cannot be backtracked.");
         }
 
         //dofile ([filename])

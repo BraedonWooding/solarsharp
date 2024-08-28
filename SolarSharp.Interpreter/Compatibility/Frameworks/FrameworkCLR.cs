@@ -1,8 +1,9 @@
 ﻿#if !(DOTNET_CORE || NETFX_CORE) && !PCL
 
+using SolarSharp.Interpreter.Compatibility.Frameworks.Base;
 using System;
 
-namespace MoonSharp.Interpreter.Compatibility.Frameworks
+namespace SolarSharp.Interpreter.Compatibility.Frameworks
 {
     internal class FrameworkCurrent : FrameworkClrBase
     {

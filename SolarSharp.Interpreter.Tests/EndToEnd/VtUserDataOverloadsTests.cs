@@ -1,6 +1,7 @@
-﻿using NUnit.Framework;
+﻿using SolarSharp.Interpreter.DataTypes;
+using NUnit.Framework;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     public static class VtOverloadsExtMethods
     {

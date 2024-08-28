@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.DataStructs
 {
     /// <summary>
     /// Extension methods used in the whole project.
@@ -18,12 +18,11 @@ namespace MoonSharp.Interpreter
         /// <returns></returns>
         public static TValue GetOrDefault<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key)
         {
-            TValue v;
 
-            if (dictionary.TryGetValue(key, out v))
+            if (dictionary.TryGetValue(key, out TValue v))
                 return v;
 
-            return default(TValue);
+            return default;
         }
 
 
@@ -38,9 +37,8 @@ namespace MoonSharp.Interpreter
         /// <returns></returns>
         public static TValue GetOrCreate<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<TValue> creator)
         {
-            TValue v;
 
-            if (!dictionary.TryGetValue(key, out v))
+            if (!dictionary.TryGetValue(key, out TValue v))
             {
                 v = creator();
                 dictionary.Add(key, v);

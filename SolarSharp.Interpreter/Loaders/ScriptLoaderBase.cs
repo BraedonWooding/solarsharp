@@ -1,7 +1,8 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System;
 using System.Linq;
 
-namespace MoonSharp.Interpreter.Loaders
+namespace SolarSharp.Interpreter.Loaders
 {
     /// <summary>
     /// A base implementation of IScriptLoader, offering resolution of module names.
@@ -64,7 +65,7 @@ namespace MoonSharp.Interpreter.Loaders
         /// <returns></returns>
         public virtual string ResolveModuleName(string modname, Table globalContext)
         {
-            if (!this.IgnoreLuaPathGlobal)
+            if (!IgnoreLuaPathGlobal)
             {
                 DynValue s = globalContext.RawGet("LUA_PATH");
 
@@ -72,7 +73,7 @@ namespace MoonSharp.Interpreter.Loaders
                     return ResolveModuleName(modname, UnpackStringPaths(s.String));
             }
 
-            return ResolveModuleName(modname, this.ModulePaths);
+            return ResolveModuleName(modname, ModulePaths);
         }
 
         /// <summary>
@@ -110,8 +111,7 @@ namespace MoonSharp.Interpreter.Loaders
                     if (!string.IsNullOrEmpty(env)) modulePaths = UnpackStringPaths(env);
                 }
 
-                if (modulePaths == null)
-                    modulePaths = UnpackStringPaths("?;?.lua");
+                modulePaths ??= UnpackStringPaths("?;?.lua");
             }
 
             return modulePaths;

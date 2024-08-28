@@ -1,12 +1,13 @@
-﻿using System.CodeDom;
+﻿using SolarSharp.Hardwire.Generators.Base;
+using System.CodeDom;
 
-namespace MoonSharp.Hardwire.Generators
+namespace SolarSharp.Hardwire.Generators
 {
     internal class FieldMemberDescriptorGenerator : AssignableMemberDescriptorGeneratorBase
     {
         public override string ManagedType
         {
-            get { return "MoonSharp.Interpreter.Interop.FieldMemberDescriptor"; }
+            get { return "SolarSharp.Interpreter.Interop.FieldMemberDescriptor"; }
         }
 
         protected override CodeExpression GetMemberAccessExpression(CodeExpression thisObj, string name)

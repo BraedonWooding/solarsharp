@@ -1,10 +1,11 @@
 ﻿using System;
 using System.CodeDom;
-using MoonSharp.Interpreter;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
-using MoonSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors;
+using SolarSharp.Interpreter;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors;
 
-namespace MoonSharp.Hardwire.Generators
+namespace SolarSharp.Hardwire.Generators.Base
 {
     internal abstract class AssignableMemberDescriptorGeneratorBase : IHardwireGenerator
     {
@@ -61,8 +62,8 @@ namespace MoonSharp.Hardwire.Generators
             classCode.Members.Add(ctor);
 
             var thisExp = isStatic
-                ? (CodeExpression)(new CodeTypeReferenceExpression(decltype))
-                : (CodeExpression)(new CodeCastExpression(decltype, new CodeVariableReferenceExpression("obj")));
+                ? new CodeTypeReferenceExpression(decltype)
+                : (CodeExpression)new CodeCastExpression(decltype, new CodeVariableReferenceExpression("obj"));
 
             if (canRead)
             {

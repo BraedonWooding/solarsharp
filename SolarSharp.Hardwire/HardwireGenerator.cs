@@ -1,9 +1,9 @@
 ﻿using System.CodeDom.Compiler;
 using System.IO;
-using MoonSharp.Hardwire.Languages;
-using MoonSharp.Interpreter;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Hardwire.Languages;
 
-namespace MoonSharp.Hardwire
+namespace SolarSharp.Hardwire
 {
     public class HardwireGenerator
     {

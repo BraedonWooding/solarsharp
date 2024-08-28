@@ -1,7 +1,11 @@
-﻿using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Execution.VM;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.Scopes;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace MoonSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class ChunkStatement : Statement, IClosureBuilder
     {
@@ -26,7 +30,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
         }
 
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
             Instruction meta = bc.Emit_Meta("<chunk-root>", OpCodeMetadataType.ChunkEntrypoint);
             int metaip = bc.GetJumpPointForLastInstruction();

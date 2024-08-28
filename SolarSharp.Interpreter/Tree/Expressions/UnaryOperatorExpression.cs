@@ -1,7 +1,10 @@
-﻿using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Execution.VM;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace MoonSharp.Interpreter.Tree.Expressions
+namespace SolarSharp.Interpreter.Tree.Expressions
 {
     internal class UnaryOperatorExpression : Expression
     {
@@ -14,7 +17,6 @@ namespace MoonSharp.Interpreter.Tree.Expressions
             m_OpText = unaryOpToken.Text;
             m_Exp = subExpression;
         }
-
 
 
         public override void Compile(ByteCode bc)

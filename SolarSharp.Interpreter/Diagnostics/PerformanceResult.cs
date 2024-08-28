@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter.Diagnostics
+namespace SolarSharp.Interpreter.Diagnostics
 {
     /// <summary>
     /// The result of a performance counter
@@ -31,7 +31,7 @@ namespace MoonSharp.Interpreter.Diagnostics
         public PerformanceCounterType Type { get; internal set; }
 
         /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
         public override string ToString()
         {

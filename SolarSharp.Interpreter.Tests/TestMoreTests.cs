@@ -1,6 +1,7 @@
-﻿using NUnit.Framework;
+﻿using SolarSharp.Interpreter.Modules;
+using NUnit.Framework;
 
-namespace MoonSharp.Interpreter.Tests
+namespace SolarSharp.Interpreter.Tests
 {
     [TestFixture]
     public class TestMoreTests

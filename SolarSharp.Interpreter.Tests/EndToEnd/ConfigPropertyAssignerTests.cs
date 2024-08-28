@@ -1,7 +1,10 @@
-﻿using MoonSharp.Interpreter.Interop;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
+using SolarSharp.Interpreter.Interop.Attributes;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class ConfigPropertyAssignerTests

@@ -1,9 +1,11 @@
 ﻿using System;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
-using MoonSharp.Interpreter.Interop.Converters;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.Converters;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors
 {
     /// <summary>
     /// Member descriptor for the default constructor of value types.
@@ -63,14 +65,14 @@ namespace MoonSharp.Interpreter.Interop
         /// representing the default empty ctor for a value type.
         /// </summary>
         /// <param name="valueType">Type of the value.</param>
-        /// <exception cref="System.ArgumentException">valueType is not a value type</exception>
+        /// <exception cref="ArgumentException">valueType is not a value type</exception>
         public ValueTypeDefaultCtorMemberDescriptor(Type valueType)
         {
             if (!Framework.Do.IsValueType(valueType))
                 throw new ArgumentException("valueType is not a value type");
 
-            this.Name = "__new";
-            this.Parameters = new ParameterDescriptor[0];
+            Name = "__new";
+            Parameters = new ParameterDescriptor[0];
 
             ValueTypeDefaultCtor = valueType;
         }
@@ -152,9 +154,9 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="t">The table to be filled</param>
         public void PrepareForWiring(Table t)
         {
-            t.Set("class", DynValue.NewString(this.GetType().FullName));
-            t.Set("type", DynValue.NewString(this.ValueTypeDefaultCtor.FullName));
-            t.Set("name", DynValue.NewString(this.Name));
+            t.Set("class", DynValue.NewString(GetType().FullName));
+            t.Set("type", DynValue.NewString(ValueTypeDefaultCtor.FullName));
+            t.Set("name", DynValue.NewString(Name));
         }
     }
 }

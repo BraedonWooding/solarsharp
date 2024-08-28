@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using MoonSharp.Interpreter.DataStructs;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.DataStructs;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop.PredefinedUserData;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     internal sealed partial class Processor
     {
@@ -329,7 +331,7 @@ namespace MoonSharp.Interpreter.Execution.VM
                 }
                 else if (messageHandler.Type == DataType.ClrFunction)
                 {
-                    ScriptExecutionContext ctx = new ScriptExecutionContext(this, messageHandler.Callback, sourceRef);
+                    ScriptExecutionContext ctx = new(this, messageHandler.Callback, sourceRef);
                     ret = messageHandler.Callback.Invoke(ctx, args);
                 }
                 else
@@ -413,7 +415,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         private void ExecClosure(Instruction i)
         {
-            Closure c = new Closure(this.m_Script, i.NumVal, i.SymbolList,
+            Closure c = new(this.m_Script, i.NumVal, i.SymbolList,
                 i.SymbolList.Select(s => this.GetUpvalueSymbol(s)).ToList());
 
             m_ValueStack.Push(DynValue.NewClosure(c));
@@ -431,7 +433,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         private void ExecMkTuple(Instruction i)
         {
-            Slice<DynValue> slice = new Slice<DynValue>(m_ValueStack, m_ValueStack.Count - i.NumVal, i.NumVal, false);
+            Slice<DynValue> slice = new(m_ValueStack, m_ValueStack.Count - i.NumVal, i.NumVal, false);
 
             var v = Internal_AdjustTuple(slice);
 
@@ -496,10 +498,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 
                 if (meta != null && !meta.IsNil())
                 {
-                    if (meta.Type != DataType.Tuple)
-                        v = this.GetScript().Call(meta, f, s, var);
-                    else
-                        v = meta;
+                    v = meta.Type != DataType.Tuple ? this.GetScript().Call(meta, f, s, var) : meta;
 
                     f = v.Tuple.Length >= 1 ? v.Tuple[0] : DynValue.Nil;
                     s = v.Tuple.Length >= 2 ? v.Tuple[1] : DynValue.Nil;
@@ -614,7 +613,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 
             if (lastParam.Type == DataType.Tuple && lastParam.Tuple.Length > 1)
             {
-                List<DynValue> values = new List<DynValue>();
+                List<DynValue> values = new();
 
                 for (int idx = 0; idx < numargs - 1; idx++)
                     values.Add(m_ValueStack.Peek(numargs - idx - 1 + offsFromTop));
@@ -654,7 +653,7 @@ namespace MoonSharp.Interpreter.Execution.VM
                         varargs[ii] = argsList[i].ToScalar().CloneAsWritable();
                     }
 
-                    this.AssignLocal(I.SymbolList[I.SymbolList.Length - 1], DynValue.NewTuple(Internal_AdjustTuple(varargs)));
+                    this.AssignLocal(I.SymbolList[^1], DynValue.NewTuple(Internal_AdjustTuple(varargs)));
                 }
                 else
                 {
@@ -795,8 +794,7 @@ namespace MoonSharp.Interpreter.Execution.VM
         private int ExecRet(Instruction i)
         {
             CallStackItem csi;
-            int retpoint = 0;
-
+            int retpoint;
             if (i.NumVal == 0)
             {
                 csi = PopToBasePointer();
@@ -1217,13 +1215,11 @@ namespace MoonSharp.Interpreter.Execution.VM
             DynValue idx = originalIdx.ToScalar();
             DynValue obj = m_ValueStack.Pop().ToScalar();
             var value = GetStoreValue(i);
-            DynValue h = null;
-
-
             while (nestedMetaOps > 0)
             {
                 --nestedMetaOps;
 
+                DynValue h;
                 if (obj.Type == DataType.Table)
                 {
                     if (!isMultiIndex)
@@ -1278,7 +1274,6 @@ namespace MoonSharp.Interpreter.Execution.VM
                 else
                 {
                     obj = h;
-                    h = null;
                 }
             }
             throw ScriptRuntimeException.LoopInNewIndex();
@@ -1296,14 +1291,12 @@ namespace MoonSharp.Interpreter.Execution.VM
             DynValue originalIdx = i.Value ?? m_ValueStack.Pop();
             DynValue idx = originalIdx.ToScalar();
             DynValue obj = m_ValueStack.Pop().ToScalar();
-
-            DynValue h = null;
-
-
             while (nestedMetaOps > 0)
             {
                 --nestedMetaOps;
 
+
+                DynValue h;
                 if (obj.Type == DataType.Table)
                 {
                     if (!isMultiIndex)
@@ -1331,13 +1324,7 @@ namespace MoonSharp.Interpreter.Execution.VM
                 {
                     UserData ud = obj.UserData;
 
-                    var v = ud.Descriptor.Index(this.GetScript(), ud.Object, originalIdx, isNameIndex);
-
-                    if (v == null)
-                    {
-                        throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
-                    }
-
+                    var v = ud.Descriptor.Index(this.GetScript(), ud.Object, originalIdx, isNameIndex) ?? throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
                     m_ValueStack.Push(v.AsReadOnly());
                     return instructionPtr;
                 }
@@ -1360,7 +1347,6 @@ namespace MoonSharp.Interpreter.Execution.VM
                 else
                 {
                     obj = h;
-                    h = null;
                 }
             }
 

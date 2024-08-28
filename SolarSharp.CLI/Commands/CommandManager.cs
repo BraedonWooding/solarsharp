@@ -1,9 +1,11 @@
-﻿using System;
+﻿using SolarSharp;
+using SolarSharp.Commands.Implementations;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace MoonSharp.Commands
+namespace SolarSharp.Commands
 {
     internal static class CommandManager
     {
@@ -13,7 +15,7 @@ namespace MoonSharp.Commands
         {
             foreach (Type t in Assembly.GetExecutingAssembly().GetTypes()
                 .Where(tt => typeof(ICommand).IsAssignableFrom(tt))
-                .Where(tt => tt.IsClass && (!tt.IsAbstract))
+                .Where(tt => tt.IsClass && !tt.IsAbstract)
             )
             {
                 object o = Activator.CreateInstance(t);

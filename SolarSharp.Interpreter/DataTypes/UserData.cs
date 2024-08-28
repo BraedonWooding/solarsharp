@@ -2,14 +2,16 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
-using MoonSharp.Interpreter.Interop;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
-using MoonSharp.Interpreter.Interop.RegistrationPolicies;
-using MoonSharp.Interpreter.Interop.StandardDescriptors;
-using MoonSharp.Interpreter.Interop.UserDataRegistries;
-using MoonSharp.Interpreter.Serialization.Json;
+using SolarSharp.Interpreter.Serialization.Json;
+using SolarSharp.Interpreter.Interop.StandardDescriptors;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Interop.RegistrationPolicies;
+using SolarSharp.Interpreter.Interop.PredefinedUserData;
+using SolarSharp.Interpreter.Interop.UserDataRegistries;
+using SolarSharp.Interpreter.Interop.ProxyObjects;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
     /// Class exposing C# objects as Lua userdata.
@@ -227,8 +229,8 @@ namespace MoonSharp.Interpreter
             var descr = GetDescriptorForObject(o);
             if (descr == null)
             {
-                if (o is Type)
-                    return CreateStatic((Type)o);
+                if (o is Type type)
+                    return CreateStatic(type);
 
                 return null;
             }
@@ -287,7 +289,7 @@ namespace MoonSharp.Interpreter
         /// <value>
         /// The default access mode.
         /// </value>
-        /// <exception cref="System.ArgumentException">InteropAccessMode is InteropAccessMode.Default</exception>
+        /// <exception cref="ArgumentException">InteropAccessMode is InteropAccessMode.Default</exception>
         public static InteropAccessMode DefaultAccessMode
         {
             get { return TypeDescriptorRegistry.DefaultAccessMode; }
@@ -371,9 +373,7 @@ namespace MoonSharp.Interpreter
 
             foreach (var descpair in registeredTypesPairs)
             {
-                IWireableDescriptor sd = descpair.Value as IWireableDescriptor;
-
-                if (sd != null)
+                if (descpair.Value is IWireableDescriptor sd)
                 {
                     DynValue t = DynValue.NewPrimeTable();
                     output.Table.Set(descpair.Key.FullName, t);

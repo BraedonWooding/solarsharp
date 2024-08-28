@@ -1,6 +1,7 @@
-﻿using System.IO;
+﻿using SolarSharp.Interpreter.Errors;
+using System.IO;
 
-namespace MoonSharp.Interpreter.CoreLib.IO
+namespace SolarSharp.Interpreter.CoreLib.IO
 {
     /// <summary>
     /// Abstract class implementing a file Lua userdata. Methods are meant to be called by Lua code.
@@ -74,11 +75,9 @@ namespace MoonSharp.Interpreter.CoreLib.IO
         {
             CheckFileIsNotClosed();
 
-            if (m_Writer != null)
-                m_Writer.Dispose();
+            m_Writer?.Dispose();
 
-            if (m_Reader != null)
-                m_Reader.Dispose();
+            m_Reader?.Dispose();
 
             m_Stream.Dispose();
 
@@ -91,8 +90,7 @@ namespace MoonSharp.Interpreter.CoreLib.IO
         {
             CheckFileIsNotClosed();
 
-            if (m_Writer != null)
-                m_Writer.Flush();
+            m_Writer?.Flush();
 
             return true;
         }
@@ -127,7 +125,7 @@ namespace MoonSharp.Interpreter.CoreLib.IO
         {
             CheckFileIsNotClosed();
             if (m_Writer != null)
-                m_Writer.AutoFlush = (mode == "no" || mode == "line");
+                m_Writer.AutoFlush = mode == "no" || mode == "line";
             return true;
         }
 

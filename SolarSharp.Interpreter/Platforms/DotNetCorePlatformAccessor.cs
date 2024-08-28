@@ -6,7 +6,7 @@ using System.Text;
 using System.IO;
 using System.Diagnostics;
 
-namespace MoonSharp.Interpreter.Platforms
+namespace SolarSharp.Interpreter.Platforms
 {
 	/// <summary>
 	/// Class providing the IPlatformAccessor interface for .NET Core builds

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter.Debugging
+namespace SolarSharp.Interpreter.Debugging
 {
     /// <summary>
     /// Class representing a reference to source code interval
@@ -73,10 +73,10 @@ namespace MoonSharp.Interpreter.Debugging
         }
 
         /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
         /// <returns>
-        /// A <see cref="System.String" /> that represents this instance.
+        /// A <see cref="string" /> that represents this instance.
         /// </returns>
         public override string ToString()
         {
@@ -177,29 +177,29 @@ namespace MoonSharp.Interpreter.Debugging
         /// <returns></returns>
         public string FormatLocation(Script script, bool forceClassicFormat = false)
         {
-            SourceCode sc = script.GetSourceCode(this.SourceIdx);
+            SourceCode sc = script.GetSourceCode(SourceIdx);
 
-            if (this.IsClrLocation)
+            if (IsClrLocation)
                 return "[clr]";
 
             if (script.Options.UseLuaErrorLocations || forceClassicFormat)
             {
-                return string.Format("{0}:{1}", sc.Name, this.FromLine);
+                return string.Format("{0}:{1}", sc.Name, FromLine);
             }
-            else if (this.FromLine == this.ToLine)
+            else if (FromLine == ToLine)
             {
-                if (this.FromChar == this.ToChar)
+                if (FromChar == ToChar)
                 {
-                    return string.Format("{0}:({1},{2})", sc.Name, this.FromLine, this.FromChar, this.ToLine, this.ToChar);
+                    return string.Format("{0}:({1},{2})", sc.Name, FromLine, FromChar, ToLine, ToChar);
                 }
                 else
                 {
-                    return string.Format("{0}:({1},{2}-{4})", sc.Name, this.FromLine, this.FromChar, this.ToLine, this.ToChar);
+                    return string.Format("{0}:({1},{2}-{4})", sc.Name, FromLine, FromChar, ToLine, ToChar);
                 }
             }
             else
             {
-                return string.Format("{0}:({1},{2}-{3},{4})", sc.Name, this.FromLine, this.FromChar, this.ToLine, this.ToChar);
+                return string.Format("{0}:({1},{2}-{3},{4})", sc.Name, FromLine, FromChar, ToLine, ToChar);
             }
         }
     }

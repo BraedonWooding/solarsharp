@@ -1,6 +1,7 @@
-﻿using System;
+﻿using SolarSharp;
+using System;
 
-namespace MoonSharp.Commands
+namespace SolarSharp.Commands.Implementations
 {
     internal class HelpCommand : ICommand
     {

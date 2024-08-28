@@ -1,6 +1,8 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using System;
 
-namespace MoonSharp.Interpreter.REPL
+namespace SolarSharp.Interpreter.REPL
 {
     /// <summary>
     /// This class provides a simple REPL intepreter ready to be reused in a simple way.
@@ -16,7 +18,7 @@ namespace MoonSharp.Interpreter.REPL
         /// <param name="script">The script.</param>
         public ReplInterpreter(Script script)
         {
-            this.m_Script = script;
+            m_Script = script;
         }
 
         /// <summary>
@@ -57,7 +59,7 @@ namespace MoonSharp.Interpreter.REPL
         {
             bool isFirstLine = !HasPendingCommand;
 
-            bool forced = (input == "");
+            bool forced = input == "";
 
             m_CurrentCommand += input;
 
@@ -72,12 +74,12 @@ namespace MoonSharp.Interpreter.REPL
 
                 if (isFirstLine && HandleClassicExprsSyntax && m_CurrentCommand.StartsWith("="))
                 {
-                    m_CurrentCommand = "return " + m_CurrentCommand.Substring(1);
+                    m_CurrentCommand = "return " + m_CurrentCommand[1..];
                 }
 
                 if (isFirstLine && HandleDynamicExprs && m_CurrentCommand.StartsWith("?"))
                 {
-                    var code = m_CurrentCommand.Substring(1);
+                    var code = m_CurrentCommand[1..];
                     var exp = m_Script.CreateDynamicExpression(code);
                     result = exp.Evaluate();
                 }

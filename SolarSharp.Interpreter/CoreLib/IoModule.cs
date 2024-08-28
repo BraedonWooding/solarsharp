@@ -1,16 +1,18 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.CoreLib.IO;
-using MoonSharp.Interpreter.Platforms;
+using SolarSharp.Interpreter.CoreLib.IO;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Platforms;
+using SolarSharp.Interpreter.Modules;
 
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing io Lua functions. Proper support requires a compatible IPlatformAccessor
@@ -22,7 +24,7 @@ namespace MoonSharp.Interpreter.CoreLib
         {
             UserData.RegisterType<FileUserDataBase>(InteropAccessMode.Default, "file");
 
-            Table meta = new Table(ioTable.OwnerScript);
+            Table meta = new(ioTable.OwnerScript);
             DynValue __index = DynValue.NewCallback(new CallbackFunction(__index_callback, "__index_callback"));
             meta.Set("__index", __index);
             ioTable.MetaTable = meta;
@@ -58,15 +60,11 @@ namespace MoonSharp.Interpreter.CoreLib
         {
             Table R = S.Registry;
 
-            optionsStream = optionsStream ?? Script.GlobalOptions.Platform.IO_GetStandardStream(file);
+            optionsStream ??= Script.GlobalOptions.Platform.IO_GetStandardStream(file);
 
-            FileUserDataBase udb = null;
-
-            if (file == StandardFileType.StdIn)
-                udb = StandardIOFileUserDataBase.CreateInputStream(optionsStream);
-            else
-                udb = StandardIOFileUserDataBase.CreateOutputStream(optionsStream);
-
+            FileUserDataBase udb = file == StandardFileType.StdIn
+                ? StandardIOFileUserDataBase.CreateInputStream(optionsStream)
+                : (FileUserDataBase)StandardIOFileUserDataBase.CreateOutputStream(optionsStream);
             R.Set("853BEAAF298648839E2C99D005E1DF94_STD_" + file.ToString(), UserData.Create(udb));
         }
 
@@ -140,8 +138,7 @@ namespace MoonSharp.Interpreter.CoreLib
                 return UserData.Create(file);
             }
 
-            FileUserDataBase inp = null;
-
+            FileUserDataBase inp;
             if (args[0].Type == DataType.String || args[0].Type == DataType.Number)
             {
                 string fileName = args[0].CastToString();
@@ -159,7 +156,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
         private static Encoding GetUTF8Encoding()
         {
-            return new System.Text.UTF8Encoding(false);
+            return new UTF8Encoding(false);
         }
 
         [MoonSharpModuleMethod]
@@ -169,11 +166,11 @@ namespace MoonSharp.Interpreter.CoreLib
 
             try
             {
-                List<DynValue> readLines = new List<DynValue>();
+                List<DynValue> readLines = new();
 
                 using (var stream = Script.GlobalOptions.Platform.IO_OpenFile(executionContext.GetScript(), filename, null, "r"))
                 {
-                    using var reader = new System.IO.StreamReader(stream);
+                    using var reader = new StreamReader(stream);
                     while (!reader.EndOfStream)
                     {
                         string line = reader.ReadLine();
@@ -227,8 +224,7 @@ namespace MoonSharp.Interpreter.CoreLib
                 }
                 else if (encoding == null)
                 {
-                    if (!isBinary) e = GetUTF8Encoding();
-                    else e = new BinaryEncoding();
+                    e = !isBinary ? GetUTF8Encoding() : new BinaryEncoding();
                 }
                 else
                 {
@@ -250,21 +246,19 @@ namespace MoonSharp.Interpreter.CoreLib
 
         public static string IoExceptionToLuaMessage(Exception ex, string filename)
         {
-            if (ex is System.IO.FileNotFoundException)
+            if (ex is FileNotFoundException)
                 return string.Format("{0}: No such file or directory", filename);
             else
                 return ex.Message;
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue type(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue type(ScriptExecutionContext _, CallbackArguments args)
         {
             if (args[0].Type != DataType.UserData)
                 return DynValue.Nil;
 
-            FileUserDataBase file = args[0].UserData.Object as FileUserDataBase;
-
-            if (file == null)
+            if (!(args[0].UserData.Object is FileUserDataBase file))
                 return DynValue.Nil;
             else if (file.isopen())
                 return DynValue.NewString("file");
@@ -287,7 +281,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue tmpfile(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue tmpfile(ScriptExecutionContext executionContext, CallbackArguments _)
         {
             string tmpfilename = Script.GlobalOptions.Platform.IO_OS_GetTempFilename();
             FileUserDataBase file = Open(executionContext, tmpfilename, GetUTF8Encoding(), "w");

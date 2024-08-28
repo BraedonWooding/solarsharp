@@ -1,4 +1,4 @@
-﻿namespace MoonSharp.Interpreter.Interop
+﻿namespace SolarSharp.Interpreter.Interop
 {
 
     /// <summary>
@@ -62,7 +62,7 @@
             if (name.Contains("."))
             {
                 string[] split = name.Split('.');
-                name = split[split.Length - 1];
+                name = split[^1];
             }
 
             switch (name)
@@ -170,22 +170,22 @@
             if (name.StartsWith("get_"))
             {
                 Type = ReflectionSpecialNameType.PropertyGetter;
-                Argument = name.Substring(4);
+                Argument = name[4..];
             }
             else if (name.StartsWith("set_"))
             {
                 Type = ReflectionSpecialNameType.PropertySetter;
-                Argument = name.Substring(4);
+                Argument = name[4..];
             }
             else if (name.StartsWith("add_"))
             {
                 Type = ReflectionSpecialNameType.AddEvent;
-                Argument = name.Substring(4);
+                Argument = name[4..];
             }
             else if (name.StartsWith("remove_"))
             {
                 Type = ReflectionSpecialNameType.RemoveEvent;
-                Argument = name.Substring(7);
+                Argument = name[7..];
             }
         }
     }

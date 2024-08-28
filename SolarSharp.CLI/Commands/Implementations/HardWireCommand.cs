@@ -1,10 +1,14 @@
 ﻿using System;
 using System.IO;
-using MoonSharp.Hardwire;
-using MoonSharp.Hardwire.Languages;
-using MoonSharp.Interpreter;
+using SolarSharp.Hardwire;
+using SolarSharp.Hardwire.Languages;
+using SolarSharp.Interpreter;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Modules;
+using SolarSharp;
+using SolarSharp.Commands;
 
-namespace MoonSharp.Commands.Implementations
+namespace SolarSharp.Commands.Implementations
 {
     internal class HardWireCommand : ICommand
     {

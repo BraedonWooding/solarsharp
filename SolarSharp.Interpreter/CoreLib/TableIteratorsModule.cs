@@ -1,8 +1,9 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
 
-
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing table Lua iterators (pairs, ipairs, next)
@@ -76,7 +77,7 @@ namespace MoonSharp.Interpreter.CoreLib
             DynValue table = args.AsType(0, "!!next_i!!", DataType.Table);
             DynValue index = args.AsType(1, "!!next_i!!", DataType.Number);
 
-            int idx = ((int)index.Number) + 1;
+            int idx = (int)index.Number + 1;
             DynValue val = table.Table.Get(idx);
 
             if (val.Type != DataType.Nil)

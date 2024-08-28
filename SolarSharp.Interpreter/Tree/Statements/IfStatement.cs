@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.Scopes;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
 
-namespace MoonSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class IfStatement : Statement
     {
@@ -16,7 +18,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
             public SourceRef Source;
         }
 
-        private readonly List<IfBlock> m_Ifs = new List<IfBlock>();
+        private readonly List<IfBlock> m_Ifs = new();
         private readonly IfBlock m_Else = null;
         private readonly SourceRef m_End;
 
@@ -73,9 +75,9 @@ namespace MoonSharp.Interpreter.Tree.Statements
         }
 
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
-            List<Instruction> endJumps = new List<Instruction>();
+            List<Instruction> endJumps = new();
 
             Instruction lastIfJmp = null;
 

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using MoonSharp.Hardwire.Generators;
+using SolarSharp.Hardwire.Generators;
 
-namespace MoonSharp.Hardwire
+namespace SolarSharp.Hardwire
 {
     public static class HardwireGeneratorRegistry
     {
@@ -35,7 +35,7 @@ namespace MoonSharp.Hardwire
 
             foreach (Type type in asm.GetTypes()
                 .Where(t => !(t.IsAbstract || t.IsGenericTypeDefinition || t.IsGenericType))
-                .Where(t => (typeof(IHardwireGenerator)).IsAssignableFrom(t)))
+                .Where(t => typeof(IHardwireGenerator).IsAssignableFrom(t)))
             {
                 IHardwireGenerator g = (IHardwireGenerator)Activator.CreateInstance(type);
                 Register(g);

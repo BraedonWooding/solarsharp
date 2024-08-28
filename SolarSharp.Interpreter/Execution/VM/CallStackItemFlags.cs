@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     [Flags]
     internal enum CallStackItemFlags

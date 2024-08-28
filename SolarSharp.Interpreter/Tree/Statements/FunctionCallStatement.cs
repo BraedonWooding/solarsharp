@@ -1,8 +1,8 @@
-﻿using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Execution.VM;
-using MoonSharp.Interpreter.Tree.Expressions;
+﻿using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Expressions;
 
-namespace MoonSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class FunctionCallStatement : Statement
     {

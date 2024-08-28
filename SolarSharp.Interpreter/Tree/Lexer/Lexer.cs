@@ -1,6 +1,7 @@
-﻿using System.Text;
+﻿using SolarSharp.Interpreter.Errors;
+using System.Text;
 
-namespace MoonSharp.Interpreter.Tree
+namespace SolarSharp.Interpreter.Tree.Lexer
 {
     internal class Lexer
     {
@@ -21,7 +22,7 @@ namespace MoonSharp.Interpreter.Tree
 
             // remove unicode BOM if any
             if (m_Code.Length > 0 && m_Code[0] == 0xFEFF)
-                m_Code = m_Code.Substring(1);
+                m_Code = m_Code[1..];
 
             m_AutoSkipComments = autoSkipComments;
         }
@@ -45,7 +46,7 @@ namespace MoonSharp.Interpreter.Tree
 
                 //System.Diagnostics.Debug.WriteLine("LEXER : " + T.ToString());
 
-                if ((T.Type != TokenType.Comment && T.Type != TokenType.HashBang) || (!m_AutoSkipComments))
+                if (T.Type != TokenType.Comment && T.Type != TokenType.HashBang || !m_AutoSkipComments)
                     return T;
             }
         }
@@ -262,7 +263,7 @@ namespace MoonSharp.Interpreter.Tree
         private string ReadLongString(int fromLine, int fromCol, string startpattern, string subtypeforerrors)
         {
             // here we are at the first '=' or second '['
-            StringBuilder text = new StringBuilder(1024);
+            StringBuilder text = new(1024);
             string end_pattern = "]";
 
             if (startpattern == null)
@@ -328,7 +329,7 @@ namespace MoonSharp.Interpreter.Tree
 
         private Token ReadNumberToken(int fromLine, int fromCol, bool leadingDot)
         {
-            StringBuilder text = new StringBuilder(32);
+            StringBuilder text = new(32);
 
             //INT : Digit+
             //HEX : '0' [xX] HexDigit+
@@ -384,7 +385,7 @@ namespace MoonSharp.Interpreter.Tree
                 {
                     text.Append(c);
                 }
-                else if (c == 'e' || c == 'E' || (isHex && (c == 'p' || c == 'P')))
+                else if (c == 'e' || c == 'E' || isHex && (c == 'p' || c == 'P'))
                 {
                     text.Append(c);
                     exponentPart = true;
@@ -417,7 +418,7 @@ namespace MoonSharp.Interpreter.Tree
 
         private Token ReadHashBang(int fromLine, int fromCol)
         {
-            StringBuilder text = new StringBuilder(32);
+            StringBuilder text = new(32);
 
             for (char c = CursorChar(); CursorNotEof(); c = CursorCharNext())
             {
@@ -438,7 +439,7 @@ namespace MoonSharp.Interpreter.Tree
 
         private Token ReadComment(int fromLine, int fromCol)
         {
-            StringBuilder text = new StringBuilder(32);
+            StringBuilder text = new(32);
 
             bool extraneousFound = false;
 
@@ -453,7 +454,6 @@ namespace MoonSharp.Interpreter.Tree
                 }
                 else if (c == '\n')
                 {
-                    extraneousFound = true;
                     CursorCharNext();
                     return CreateToken(TokenType.Comment, fromLine, fromCol, text.ToString());
                 }
@@ -471,7 +471,7 @@ namespace MoonSharp.Interpreter.Tree
 
         private Token ReadSimpleStringToken(int fromLine, int fromCol)
         {
-            StringBuilder text = new StringBuilder(32);
+            StringBuilder text = new(32);
             char separator = CursorChar();
 
             for (char c = CursorCharNext(); CursorNotEof(); c = CursorCharNext())
@@ -564,7 +564,7 @@ namespace MoonSharp.Interpreter.Tree
 
         private Token CreateToken(TokenType tokenType, int fromLine, int fromCol, string text = null)
         {
-            Token t = new Token(tokenType, m_SourceId, fromLine, fromCol, m_Line, m_Col, m_PrevLineTo, m_PrevColTo)
+            Token t = new(tokenType, m_SourceId, fromLine, fromCol, m_Line, m_Col, m_PrevLineTo, m_PrevColTo)
             {
                 Text = text
             };
@@ -575,7 +575,7 @@ namespace MoonSharp.Interpreter.Tree
 
         private string ReadNameToken()
         {
-            StringBuilder name = new StringBuilder(32);
+            StringBuilder name = new(32);
 
             for (char c = CursorChar(); CursorNotEof(); c = CursorCharNext())
             {

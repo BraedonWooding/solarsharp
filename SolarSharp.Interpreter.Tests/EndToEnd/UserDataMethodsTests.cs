@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop;
 using NUnit.Framework;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class UserDataMethodsTests

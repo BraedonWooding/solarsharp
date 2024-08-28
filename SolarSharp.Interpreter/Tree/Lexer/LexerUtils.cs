@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Globalization;
 using System.Text;
-using MoonSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.Errors;
 
-namespace MoonSharp.Interpreter.Tree
+namespace SolarSharp.Interpreter.Tree.Lexer
 {
     internal static class LexerUtils
     {
         public static double ParseNumber(Token T)
         {
             string txt = T.Text;
-            double res;
-            if (!double.TryParse(txt, NumberStyles.Float, CultureInfo.InvariantCulture, out res))
+            if (!double.TryParse(txt, NumberStyles.Float, CultureInfo.InvariantCulture, out double res))
                 throw new SyntaxErrorException(T, "malformed number near '{0}'", txt);
 
             return res;
@@ -20,15 +20,13 @@ namespace MoonSharp.Interpreter.Tree
         public static double ParseHexInteger(Token T)
         {
             string txt = T.Text;
-            if ((txt.Length < 2) || (txt[0] != '0' && (char.ToUpper(txt[1]) != 'X')))
+            if (txt.Length < 2 || txt[0] != '0' && char.ToUpper(txt[1]) != 'X')
                 throw new InternalErrorException("hex numbers must start with '0x' near '{0}'.", txt);
 
-            ulong res;
-
-            if (!ulong.TryParse(txt.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out res))
+            if (!ulong.TryParse(txt[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong res))
                 throw new SyntaxErrorException(T, "malformed number near '{0}'", txt);
 
-            return (double)res;
+            return res;
         }
 
         public static string ReadHexProgressive(string s, ref double d, out int digits)
@@ -39,16 +37,16 @@ namespace MoonSharp.Interpreter.Tree
             {
                 char c = s[i];
 
-                if (LexerUtils.CharIsHexDigit(c))
+                if (CharIsHexDigit(c))
                 {
-                    int v = LexerUtils.HexDigit2Value(c);
+                    int v = HexDigit2Value(c);
                     d *= 16.0;
                     d += v;
                     ++digits;
                 }
                 else
                 {
-                    return s.Substring(i);
+                    return s[i..];
                 }
             }
 
@@ -61,19 +59,19 @@ namespace MoonSharp.Interpreter.Tree
 
             try
             {
-                if ((s.Length < 2) || (s[0] != '0' && (char.ToUpper(s[1]) != 'X')))
+                if (s.Length < 2 || s[0] != '0' && char.ToUpper(s[1]) != 'X')
                     throw new InternalErrorException("hex float must start with '0x' near '{0}'", s);
 
-                s = s.Substring(2);
+                s = s[2..];
 
                 double value = 0.0;
-                int dummy, exp = 0;
+                int exp = 0;
 
-                s = ReadHexProgressive(s, ref value, out dummy);
+                s = ReadHexProgressive(s, ref value, out int dummy);
 
                 if (s.Length > 0 && s[0] == '.')
                 {
-                    s = s.Substring(1);
+                    s = s[1..];
                     s = ReadHexProgressive(s, ref value, out exp);
                 }
 
@@ -84,7 +82,7 @@ namespace MoonSharp.Interpreter.Tree
                     if (s.Length == 1)
                         throw new SyntaxErrorException(T, "invalid hex float format near '{0}'", s);
 
-                    s = s.Substring(s[1] == '+' ? 2 : 1);
+                    s = s[(s[1] == '+' ? 2 : 1)..];
 
                     int exp1 = int.Parse(s, CultureInfo.InvariantCulture);
 
@@ -128,9 +126,9 @@ namespace MoonSharp.Interpreter.Tree
         public static string AdjustLuaLongString(string str)
         {
             if (str.StartsWith("\r\n"))
-                str = str.Substring(2);
+                str = str[2..];
             else if (str.StartsWith("\n"))
-                str = str.Substring(1);
+                str = str[1..];
 
             return str;
         }
@@ -140,7 +138,7 @@ namespace MoonSharp.Interpreter.Tree
             if (!Framework.Do.StringContainsChar(str, '\\'))
                 return str;
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             bool escape = false;
             bool hex = false;
@@ -174,7 +172,7 @@ namespace MoonSharp.Interpreter.Tree
                         else if (c == 'x') { hex = true; }
                         else if (c == 'u') { unicode_state = 1; }
                         else if (c == 'z') { zmode = true; escape = false; }
-                        else if (CharIsDigit(c)) { val = val + c; }
+                        else if (CharIsDigit(c)) { val += c; }
                         else throw new SyntaxErrorException(token, "invalid escape sequence near '\\{0}'", c);
                     }
                     else
@@ -227,7 +225,7 @@ namespace MoonSharp.Interpreter.Tree
                         {
                             if (CharIsDigit(c))
                             {
-                                val = val + c;
+                                val += c;
                             }
 
                             if (val.Length == 3 || !CharIsDigit(c))

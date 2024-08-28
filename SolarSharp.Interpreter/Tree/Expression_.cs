@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Tree.Lexer;
+using SolarSharp.Interpreter.Errors;
 
-namespace MoonSharp.Interpreter.Tree
+namespace SolarSharp.Interpreter.Tree
 {
     internal abstract class Expression : NodeBase
     {
@@ -24,11 +27,12 @@ namespace MoonSharp.Interpreter.Tree
 
         internal static List<Expression> ExprListAfterFirstExpr(ScriptLoadingContext lcontext, Expression expr1)
         {
-            List<Expression> exps = new List<Expression>();
+            List<Expression> exps = new()
+            {
+                expr1
+            };
 
-            exps.Add(expr1);
-
-            while ((lcontext.Lexer.Current.Type == TokenType.Comma))
+            while (lcontext.Lexer.Current.Type == TokenType.Comma)
             {
                 lcontext.Lexer.Next();
                 exps.Add(Expr(lcontext));
@@ -40,7 +44,7 @@ namespace MoonSharp.Interpreter.Tree
 
         internal static List<Expression> ExprList(ScriptLoadingContext lcontext)
         {
-            List<Expression> exps = new List<Expression>();
+            List<Expression> exps = new();
 
             while (true)
             {
@@ -62,10 +66,9 @@ namespace MoonSharp.Interpreter.Tree
 
         internal static Expression SubExpr(ScriptLoadingContext lcontext, bool isPrimary)
         {
-            Expression e = null;
-
             Token T = lcontext.Lexer.Current;
 
+            Expression e;
             if (T.IsUnaryOperator())
             {
                 lcontext.Lexer.Next();
@@ -77,8 +80,10 @@ namespace MoonSharp.Interpreter.Tree
 
                 if (isPrimary && T.Type == TokenType.Op_Pwr)
                 {
-                    List<Expression> powerChain = new List<Expression>();
-                    powerChain.Add(e);
+                    List<Expression> powerChain = new()
+                    {
+                        e
+                    };
 
                     while (isPrimary && T.Type == TokenType.Op_Pwr)
                     {
@@ -87,7 +92,7 @@ namespace MoonSharp.Interpreter.Tree
                         T = lcontext.Lexer.Current;
                     }
 
-                    e = powerChain[powerChain.Count - 1];
+                    e = powerChain[^1];
 
                     for (int i = powerChain.Count - 2; i >= 0; i--)
                     {
@@ -213,8 +218,6 @@ namespace MoonSharp.Interpreter.Tree
             }
         }
 
-
-
         private static Expression PrefixExp(ScriptLoadingContext lcontext)
         {
             Token T = lcontext.Lexer.Current;
@@ -231,15 +234,9 @@ namespace MoonSharp.Interpreter.Tree
                 default:
                     throw new SyntaxErrorException(T, "unexpected symbol near '{0}'", T.Text)
                     {
-                        IsPrematureStreamTermination = (T.Type == TokenType.Eof)
+                        IsPrematureStreamTermination = T.Type == TokenType.Eof
                     };
-
             }
         }
-
-
-
-
-
     }
 }

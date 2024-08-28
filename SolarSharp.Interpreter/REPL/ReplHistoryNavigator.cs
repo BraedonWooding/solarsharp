@@ -1,5 +1,6 @@
-﻿
-namespace MoonSharp.Interpreter.REPL
+﻿using SolarSharp.Interpreter.DataTypes;
+
+namespace SolarSharp.Interpreter.REPL
 {
     /// <summary>
     /// An implementation of <see cref="ReplInterpreter"/> which supports a very basic history of recent input lines.
@@ -44,10 +45,7 @@ namespace MoonSharp.Interpreter.REPL
         /// </summary>
         public string HistoryPrev()
         {
-            if (m_Navi == -1)
-                m_Navi = m_Last;
-            else
-                m_Navi = ((m_Navi - 1) + m_History.Length) % m_History.Length;
+            m_Navi = m_Navi == -1 ? m_Last : (m_Navi - 1 + m_History.Length) % m_History.Length;
 
             if (m_Navi >= 0) return m_History[m_Navi];
             return null;

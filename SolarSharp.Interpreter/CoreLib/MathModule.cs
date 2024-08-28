@@ -1,10 +1,13 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
+﻿#pragma warning disable IDE0060 // Remove unused parameter
 
 using System;
-using MoonSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.PredefinedUserData;
+using SolarSharp.Interpreter.Modules;
 
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing math Lua functions 
@@ -69,10 +72,7 @@ namespace MoonSharp.Interpreter.CoreLib
             {
                 DynValue arg = args.AsType(i, funcName, DataType.Number, false);
 
-                if (i == 0)
-                    accum = arg.Number;
-                else
-                    accum = func(accum, arg.Number);
+                accum = i == 0 ? arg.Number : func(accum, arg.Number);
             }
 
             return DynValue.NewNumber(accum);
@@ -163,8 +163,8 @@ namespace MoonSharp.Interpreter.CoreLib
             // Translate the double into sign, exponent and mantissa.
             long bits = BitConverter.DoubleToInt64Bits(d);
             // Note that the shift is sign-extended, hence the test against -1 not 1
-            bool negative = (bits < 0);
-            int exponent = (int)((bits >> 52) & 0x7ffL);
+            bool negative = bits < 0;
+            int exponent = (int)(bits >> 52 & 0x7ffL);
             long mantissa = bits & 0xfffffffffffffL;
 
             // Subnormal numbers; exponent is effectively one higher,
@@ -177,7 +177,7 @@ namespace MoonSharp.Interpreter.CoreLib
             // bit to the front of the mantissa
             else
             {
-                mantissa = mantissa | (1L << 52);
+                mantissa |= 1L << 52;
             }
 
             // Bias the exponent. It's actually biased by 1023, but we're
@@ -197,8 +197,8 @@ namespace MoonSharp.Interpreter.CoreLib
                 exponent++;
             }
 
-            double m = (double)mantissa;
-            double e = (double)exponent;
+            double m = mantissa;
+            double e = exponent;
             while (m >= 1)
             {
                 m /= 2.0;
@@ -271,10 +271,7 @@ namespace MoonSharp.Interpreter.CoreLib
                 int a = n.IsNil() ? 1 : (int)n.Number;
                 int b = (int)m.Number;
 
-                if (a < b)
-                    d = R.Next(a, b + 1);
-                else
-                    d = R.Next(b, a + 1);
+                d = a < b ? R.Next(a, b + 1) : R.Next(b, a + 1);
             }
 
             return DynValue.NewNumber(d);
@@ -318,7 +315,6 @@ namespace MoonSharp.Interpreter.CoreLib
         {
             return exec1(args, "tanh", d => Math.Tanh(d));
         }
-
-
     }
 }
+#pragma warning restore IDE0060 // Remove unused parameter

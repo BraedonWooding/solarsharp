@@ -1,8 +1,9 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
 
-
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing metatable related Lua functions (xxxmetatable and rawxxx).
@@ -66,7 +67,7 @@ namespace MoonSharp.Interpreter.CoreLib
         // -------------------------------------------------------------------------------------------------------------------
         // Gets the real value of table[index], without invoking any metamethod. table must be a table; index may be any value.
         [MoonSharpModuleMethod]
-        public static DynValue rawget(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue rawget(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue table = args.AsType(0, "rawget", DataType.Table);
             DynValue index = args[1];
@@ -80,7 +81,7 @@ namespace MoonSharp.Interpreter.CoreLib
         // index any value different from nil and NaN, and value any Lua value.
         // This function returns table. 
         [MoonSharpModuleMethod]
-        public static DynValue rawset(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue rawset(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue table = args.AsType(0, "rawset", DataType.Table);
             DynValue index = args[1];
@@ -94,7 +95,7 @@ namespace MoonSharp.Interpreter.CoreLib
         // -------------------------------------------------------------------------------------------------------------------
         // Checks whether v1 is equal to v2, without invoking any metamethod. Returns a boolean. 
         [MoonSharpModuleMethod]
-        public static DynValue rawequal(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue rawequal(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v1 = args[0];
             DynValue v2 = args[1];
@@ -106,7 +107,7 @@ namespace MoonSharp.Interpreter.CoreLib
         // -------------------------------------------------------------------------------------------------------------------
         //Returns the length of the object v, which must be a table or a string, without invoking any metamethod. Returns an integer number.	
         [MoonSharpModuleMethod]
-        public static DynValue rawlen(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue rawlen(ScriptExecutionContext _, CallbackArguments args)
         {
             if (args[0].Type != DataType.String && args[0].Type != DataType.Table)
             {
@@ -115,8 +116,5 @@ namespace MoonSharp.Interpreter.CoreLib
 
             return args[0].GetLength();
         }
-
-
-
     }
 }

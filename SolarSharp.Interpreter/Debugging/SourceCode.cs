@@ -1,8 +1,9 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MoonSharp.Interpreter.Debugging
+namespace SolarSharp.Interpreter.Debugging
 {
     /// <summary>
     /// Class representing the source code of a given script
@@ -36,7 +37,7 @@ namespace MoonSharp.Interpreter.Debugging
         {
             Refs = new List<SourceRef>();
 
-            List<string> lines = new List<string>();
+            List<string> lines = new();
 
             Name = name;
             Code = code;
@@ -62,22 +63,22 @@ namespace MoonSharp.Interpreter.Debugging
             {
                 int from = AdjustStrIndex(Lines[sourceCodeRef.FromLine], sourceCodeRef.FromChar);
                 int to = AdjustStrIndex(Lines[sourceCodeRef.FromLine], sourceCodeRef.ToChar);
-                return Lines[sourceCodeRef.FromLine].Substring(from, to - from);
+                return Lines[sourceCodeRef.FromLine][from..to];
             }
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             for (int i = sourceCodeRef.FromLine; i <= sourceCodeRef.ToLine; i++)
             {
                 if (i == sourceCodeRef.FromLine)
                 {
                     int from = AdjustStrIndex(Lines[i], sourceCodeRef.FromChar);
-                    sb.Append(Lines[i].Substring(from));
+                    sb.Append(Lines[i][from..]);
                 }
                 else if (i == sourceCodeRef.ToLine)
                 {
                     int to = AdjustStrIndex(Lines[i], sourceCodeRef.ToChar);
-                    sb.Append(Lines[i].Substring(0, to + 1));
+                    sb.Append(Lines[i][..(to + 1)]);
                 }
                 else
                 {

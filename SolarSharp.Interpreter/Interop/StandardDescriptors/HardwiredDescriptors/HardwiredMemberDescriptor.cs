@@ -1,8 +1,9 @@
 ﻿using System;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
-using MoonSharp.Interpreter.Interop.Converters;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.Converters;
 
-namespace MoonSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors
 {
     public abstract class HardwiredMemberDescriptor : IMemberDescriptor
     {

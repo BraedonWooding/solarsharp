@@ -1,4 +1,4 @@
-﻿namespace MoonSharp.Commands
+﻿namespace SolarSharp.Commands
 {
     internal interface ICommand
     {

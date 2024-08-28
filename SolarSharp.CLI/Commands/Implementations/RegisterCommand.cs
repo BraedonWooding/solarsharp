@@ -1,7 +1,9 @@
 ﻿using System;
-using MoonSharp.Interpreter;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp;
+using SolarSharp.Commands;
 
-namespace MoonSharp.Commands.Implementations
+namespace SolarSharp.Commands.Implementations
 {
     internal class RegisterCommand : ICommand
     {

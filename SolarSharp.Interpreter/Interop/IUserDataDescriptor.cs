@@ -1,6 +1,7 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop
 {
     /// <summary>
     /// Interface used by MoonSharp to access objects of a given type from scripts.

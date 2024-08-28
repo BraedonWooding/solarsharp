@@ -1,7 +1,4 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
-
-//
+﻿//
 // This part taken from KopiLua - https://github.com/NLua/KopiLua
 //
 // =========================================================================================================
@@ -48,13 +45,15 @@
 // THE SOFTWARE.
 
 
-using MoonSharp.Interpreter.Interop.LuaStateInterop;
+using SolarSharp.Interpreter.Interop.LuaStateInterop;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
 using lua_Integer = System.Int32;
 using LUA_INTFRM_T = System.Int64;
 using ptrdiff_t = System.Int32;
 using UNSIGNED_LUA_INTFRM_T = System.UInt64;
 
-namespace MoonSharp.Interpreter.CoreLib.StringLib
+namespace SolarSharp.Interpreter.CoreLib.StringLib
 {
     internal class KopiLua_StringLib : LuaBase
     {
@@ -64,7 +63,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
         {
             /* relative string position: negative means back from end */
             if (pos < 0) pos += (ptrdiff_t)len + 1;
-            return (pos >= 0) ? pos : 0;
+            return pos >= 0 ? pos : 0;
         }
 
         /*
@@ -74,8 +73,8 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
 		*/
 
 
-        public const int CAP_UNFINISHED = (-1);
-        public const int CAP_POSITION = (-2);
+        public const int CAP_UNFINISHED = -1;
+        public const int CAP_POSITION = -2;
 
         public class MatchState
         {
@@ -175,11 +174,11 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                 case 'g': res = isgraph(c); break;
                 case 'u': res = isupper(c); break;
                 case 'w': res = isalnum(c); break;
-                case 'x': res = isxdigit((char)c); break;
-                case 'z': res = (c == 0); break;
-                default: return (cl == c) ? 1 : 0;
+                case 'x': res = isxdigit(c); break;
+                case 'z': res = c == 0; break;
+                default: return cl == c ? 1 : 0;
             }
-            return (islower(cl) ? (res ? 1 : 0) : ((!res) ? 1 : 0));
+            return islower(cl) ? res ? 1 : 0 : !res ? 1 : 0;
         }
 
 
@@ -197,37 +196,37 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                 if (p == L_ESC)
                 {
                     p = p.next();
-                    if (match_class((char)c, (char)(p[0])) != 0)
+                    if (match_class((char)c, p[0]) != 0)
                         return sig;
                 }
-                else if ((p[1] == '-') && (p + 2 < ec))
+                else if (p[1] == '-' && p + 2 < ec)
                 {
                     p += 2;
-                    if ((byte)((p[-2])) <= c && (c <= (byte)p[0]))
+                    if ((byte)p[-2] <= c && c <= (byte)p[0])
                         return sig;
                 }
-                else if ((byte)(p[0]) == c) return sig;
+                else if ((byte)p[0] == c) return sig;
             }
-            return (sig == 0) ? 1 : 0;
+            return sig == 0 ? 1 : 0;
         }
 
 
         private static int singlematch(int c, CharPtr p, CharPtr ep)
         {
-            switch (p[0])
+            return p[0] switch
             {
-                case '.': return 1;  /* matches any char */
-                case L_ESC: return match_class((char)c, (char)(p[1]));
-                case '[': return matchbracketclass(c, p, ep - 1);
-                default: return ((byte)(p[0]) == c) ? 1 : 0;
-            }
+                '.' => 1,/* matches any char */
+                L_ESC => match_class((char)c, p[1]),
+                '[' => matchbracketclass(c, p, ep - 1),
+                _ => (byte)p[0] == c ? 1 : 0,
+            };
         }
 
 
         private static CharPtr matchbalance(MatchState ms, CharPtr s,
                                            CharPtr p)
         {
-            if ((p[0] == 0) || (p[1] == 0))
+            if (p[0] == 0 || p[1] == 0)
                 LuaLError(ms.L, "unbalanced pattern");
             if (s[0] != p[0]) return null;
             else
@@ -252,12 +251,12 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                                          CharPtr p, CharPtr ep)
         {
             ptrdiff_t i = 0;  /* counts maximum expand for item */
-            while ((s + i < ms.src_end) && (singlematch((byte)(s[i]), p, ep) != 0))
+            while (s + i < ms.src_end && singlematch((byte)s[i], p, ep) != 0)
                 i++;
             /* keeps trying to match with the maximum repetitions */
             while (i >= 0)
             {
-                CharPtr res = match(ms, (s + i), ep + 1);
+                CharPtr res = match(ms, s + i, ep + 1);
                 if (res != null) return res;
                 i--;  /* else didn't match; reduce 1 repetition to try again */
             }
@@ -273,7 +272,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                 CharPtr res = match(ms, s, ep + 1);
                 if (res != null)
                     return res;
-                else if ((s < ms.src_end) && (singlematch((byte)(s[0]), p, ep) != 0))
+                else if (s < ms.src_end && singlematch((byte)s[0], p, ep) != 0)
                     s = s.next();  /* try with one more repetition */
                 else return null;
             }
@@ -358,29 +357,29 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                                         LuaLError(ms.L, "missing " + LUA_QL("[") + " after " +
                                                            LUA_QL("%f") + " in pattern");
                                     ep = classend(ms, p);  /* points to what is next */
-                                    previous = (s == ms.src_init) ? '\0' : s[-1];
-                                    if ((matchbracketclass((byte)(previous), p, ep - 1) != 0) ||
-                                       (matchbracketclass((byte)(s[0]), p, ep - 1) == 0)) return null;
+                                    previous = s == ms.src_init ? '\0' : s[-1];
+                                    if (matchbracketclass((byte)previous, p, ep - 1) != 0 ||
+                                       matchbracketclass((byte)s[0], p, ep - 1) == 0) return null;
                                     p = ep; goto init;  /* else return match(ms, s, ep); */
                                 }
                             default:
                                 {
-                                    if (isdigit((char)(p[1])))
+                                    if (isdigit(p[1]))
                                     {  /* capture results (%0-%9)? */
-                                        s = match_capture(ms, s, (byte)(p[1]));
+                                        s = match_capture(ms, s, (byte)p[1]);
                                         if (s == null) return null;
                                         p += 2; goto init;  /* else return match(ms, s, p+2) */
                                     }
                                     //ismeretlen hiba miatt lett ide átmásolva
                                     {  /* it is a pattern item */
                                         CharPtr ep = classend(ms, p);  /* points to what is next */
-                                        int m = (s < ms.src_end) && (singlematch((byte)(s[0]), p, ep) != 0) ? 1 : 0;
+                                        int m = s < ms.src_end && singlematch((byte)s[0], p, ep) != 0 ? 1 : 0;
                                         switch (ep[0])
                                         {
                                             case '?':
                                                 {  /* optional */
                                                     CharPtr res;
-                                                    if ((m != 0) && ((res = match(ms, s + 1, ep + 1)) != null))
+                                                    if (m != 0 && (res = match(ms, s + 1, ep + 1)) != null)
                                                         return res;
                                                     p = ep + 1; goto init;  /* else return match(ms, s, ep+1); */
                                                 }
@@ -390,7 +389,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                                                 }
                                             case '+':
                                                 {  /* 1 or more repetitions */
-                                                    return ((m != 0) ? max_expand(ms, s + 1, p, ep) : null);
+                                                    return m != 0 ? max_expand(ms, s + 1, p, ep) : null;
                                                 }
                                             case '-':
                                                 {  /* 0 or more repetitions (minimum) */
@@ -414,20 +413,20 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                 case '$':
                     {
                         if (p[1] == '\0')  /* is the `$' the last char in pattern? */
-                            return (s == ms.src_end) ? s : null;  /* check end of string */
+                            return s == ms.src_end ? s : null;  /* check end of string */
                         else goto dflt;
                     }
                 default:
                 dflt:
                     {  /* it is a pattern item */
                         CharPtr ep = classend(ms, p);  /* points to what is next */
-                        int m = (s < ms.src_end) && (singlematch((byte)(s[0]), p, ep) != 0) ? 1 : 0;
+                        int m = s < ms.src_end && singlematch((byte)s[0], p, ep) != 0 ? 1 : 0;
                         switch (ep[0])
                         {
                             case '?':
                                 {  /* optional */
                                     CharPtr res;
-                                    if ((m != 0) && ((res = match(ms, s + 1, ep + 1)) != null))
+                                    if (m != 0 && (res = match(ms, s + 1, ep + 1)) != null)
                                         return res;
                                     p = ep + 1; goto init;  /* else return match(ms, s, ep+1); */
                                 }
@@ -437,7 +436,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                                 }
                             case '+':
                                 {  /* 1 or more repetitions */
-                                    return ((m != 0) ? max_expand(ms, s + 1, p, ep) : null);
+                                    return m != 0 ? max_expand(ms, s + 1, p, ep) : null;
                                 }
                             case '-':
                                 {  /* 0 or more repetitions (minimum) */
@@ -464,7 +463,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
             {
                 CharPtr init;  /* to search for a `*s2' inside `s1' */
                 l2--;  /* 1st char will be checked by `memchr' */
-                l1 = l1 - l2;  /* `s2' cannot be found after that */
+                l1 -= l2;  /* `s2' cannot be found after that */
                 while (l1 > 0 && (init = memchr(s1, s2[0], l1)) != null)
                 {
                     init = init.next();   /* 1st char is already checked */
@@ -506,7 +505,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
         private static int push_captures(MatchState ms, CharPtr s, CharPtr e)
         {
             int i;
-            int nlevels = ((ms.level == 0) && (s != null)) ? 1 : ms.level;
+            int nlevels = ms.level == 0 && s != null ? 1 : ms.level;
             LuaLCheckStack(ms.L, nlevels, "too many captures");
             for (i = 0; i < nlevels; i++)
                 push_onecapture(ms, i, s, e);
@@ -516,18 +515,17 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
 
         private static int str_find_aux(LuaState L, int find)
         {
-            uint l1, l2;
-            CharPtr s = LuaLCheckLString(L, 1, out l1);
-            CharPtr p = PatchPattern(LuaLCheckLString(L, 2, out l2));
+            CharPtr s = LuaLCheckLString(L, 1, out uint l1);
+            CharPtr p = PatchPattern(LuaLCheckLString(L, 2, out uint l2));
 
             ptrdiff_t init = posrelat(LuaLOptInteger(L, 3, 1), l1) - 1;
             if (init < 0) init = 0;
-            else if ((uint)(init) > l1) init = (ptrdiff_t)l1;
-            if ((find != 0) && ((LuaToBoolean(L, 4) != 0) ||  /* explicit request? */
+            else if ((uint)init > l1) init = (ptrdiff_t)l1;
+            if (find != 0 && (LuaToBoolean(L, 4) != 0 ||  /* explicit request? */
                 strpbrk(p, SPECIALS) == null))
             {  /* or no special characters? */
                 /* do a plain search */
-                CharPtr s2 = lmemfind(s + init, (uint)(l1 - init), p, (uint)(l2));
+                CharPtr s2 = lmemfind(s + init, (uint)(l1 - init), p, l2);
                 if (s2 != null)
                 {
                     LuaPushInteger(L, s2 - s + 1);
@@ -537,7 +535,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
             }
             else
             {
-                MatchState ms = new MatchState();
+                MatchState ms = new();
                 int anchor = 0;
                 if (p[0] == '^')
                 {
@@ -566,7 +564,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                         else
                             return push_captures(ms, s1, res);
                     }
-                } while (((s1 = s1.next()) <= ms.src_end) && (anchor == 0));
+                } while ((s1 = s1.next()) <= ms.src_end && anchor == 0);
             }
             LuaPushNil(L);  /* not found */
             return 1;
@@ -595,7 +593,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
 
         private static int gmatch_aux(LuaState L, GMatchAuxData auxdata)
         {
-            MatchState ms = new MatchState();
+            MatchState ms = new();
             uint ls = auxdata.LS;
             CharPtr s = auxdata.S;
             CharPtr p = auxdata.P;
@@ -634,7 +632,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
 
         public static int str_gmatch(LuaState L)
         {
-            CallbackFunction C = new CallbackFunction(gmatch_aux_2, "gmatch");
+            CallbackFunction C = new(gmatch_aux_2, "gmatch");
             string s = ArgAsType(L, 1, DataType.String, false).String;
             string p = PatchPattern(ArgAsType(L, 2, DataType.String, false).String);
 
@@ -652,18 +650,18 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
             return 1;
         }
 
-
+#pragma warning disable IDE0051 // Remove unused private members
         private static int gfind_nodef(LuaState L)
+#pragma warning restore IDE0051 // Remove unused private members
         {
             return LuaLError(L, LUA_QL("string.gfind") + " was renamed to " +
                                  LUA_QL("string.gmatch"));
         }
 
-
         private static void add_s(MatchState ms, LuaLBuffer b, CharPtr s, CharPtr e)
         {
-            uint l, i;
-            CharPtr news = LuaToLString(ms.L, 3, out l);
+            uint i;
+            CharPtr news = LuaToLString(ms.L, 3, out uint l);
             for (i = 0; i < l; i++)
             {
                 if (news[i] != L_ESC)
@@ -671,7 +669,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                 else
                 {
                     i++;  /* skip ESC */
-                    if (!isdigit((char)(news[i])))
+                    if (!isdigit(news[i]))
                     {
                         if (news[i] != L_ESC)
                         {
@@ -735,8 +733,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
 
         public static int str_gsub(LuaState L)
         {
-            uint srcl;
-            CharPtr src = LuaLCheckLString(L, 1, out srcl);
+            CharPtr src = LuaLCheckLString(L, 1, out uint srcl);
             CharPtr p = PatchPattern(LuaLCheckStringStr(L, 2));
             int tr = LuaType(L, 3);
             int max_s = LuaLOptInt(L, 4, (int)(srcl + 1));
@@ -747,8 +744,8 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                 anchor = 1;
             }
             int n = 0;
-            MatchState ms = new MatchState();
-            LuaLBuffer b = new LuaLBuffer(L);
+            MatchState ms = new();
+            LuaLBuffer b = new(L);
             LuaLArgCheck(L, tr == LUA_TNUMBER || tr == LUA_TSTRING ||
                              tr == LUA_TFUNCTION || tr == LUA_TTABLE ||
                              tr == LUA_TUSERDATA, 3,
@@ -770,7 +767,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                     n++;
                     add_value(ms, b, src, e);
                 }
-                if ((e != null) && e > src) /* non empty match? */
+                if (e != null && e > src) /* non empty match? */
                     src = e;  /* skip it */
                 else if (src < ms.src_end)
                 {
@@ -799,15 +796,14 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
 		** maximum size of each format specification (such as '%-099.99d')
 		** (+10 accounts for %99.99x plus margin of error)
 		*/
-        public static readonly int MAX_FORMAT = (FLAGS.Length + 1) + (LUA_INTFRMLEN.Length + 1) + 10;
+        public static readonly int MAX_FORMAT = FLAGS.Length + 1 + LUA_INTFRMLEN.Length + 1 + 10;
 
 
         private static void addquoted(LuaState L, LuaLBuffer b, int arg)
         {
-            uint l;
-            CharPtr s = LuaLCheckLString(L, arg, out l);
+            CharPtr s = LuaLCheckLString(L, arg, out uint l);
             LuaLAddChar(b, '"');
-            while ((l--) != 0)
+            while (l-- != 0)
             {
                 switch (s[0])
                 {
@@ -857,17 +853,17 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
         {
             CharPtr p = strfrmt;
             while (p[0] != '\0' && strchr(FLAGS, p[0]) != null) p = p.next();  /* skip flags */
-            if ((uint)(p - strfrmt) >= (FLAGS.Length + 1))
+            if ((uint)(p - strfrmt) >= FLAGS.Length + 1)
                 LuaLError(L, "invalid format (repeated flags)");
-            if (isdigit((byte)(p[0]))) p = p.next();  /* skip width */
-            if (isdigit((byte)(p[0]))) p = p.next();  /* (2 digits at most) */
+            if (isdigit((byte)p[0])) p = p.next();  /* skip width */
+            if (isdigit((byte)p[0])) p = p.next();  /* (2 digits at most) */
             if (p[0] == '.')
             {
                 p = p.next();
-                if (isdigit((byte)(p[0]))) p = p.next();  /* skip precision */
-                if (isdigit((byte)(p[0]))) p = p.next();  /* (2 digits at most) */
+                if (isdigit((byte)p[0])) p = p.next();  /* skip precision */
+                if (isdigit((byte)p[0])) p = p.next();  /* (2 digits at most) */
             }
-            if (isdigit((byte)(p[0])))
+            if (isdigit((byte)p[0]))
                 LuaLError(L, "invalid format (width or precision too long)");
             form[0] = '%';
             form = form.next();
@@ -892,10 +888,9 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
         {
             int top = LuaGetTop(L);
             int arg = 1;
-            uint sfl;
-            CharPtr strfrmt = LuaLCheckLString(L, arg, out sfl);
+            CharPtr strfrmt = LuaLCheckLString(L, arg, out uint sfl);
             CharPtr strfrmt_end = strfrmt + sfl;
-            LuaLBuffer b = new LuaLBuffer(L);
+            LuaLBuffer b = new(L);
             LuaLBuffInit(L, b);
             while (strfrmt < strfrmt_end)
             {
@@ -907,7 +902,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                 else if (strfrmt[1] == L_ESC)
                 {
                     LuaLAddChar(b, strfrmt[0]);  /* %% */
-                    strfrmt = strfrmt + 2;
+                    strfrmt += 2;
                 }
                 else
                 { /* format item */
@@ -948,7 +943,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                         case 'g':
                         case 'G':
                             {
-                                sprintf(buff, form, (double)LuaLCheckNumber(L, arg));
+                                sprintf(buff, form, LuaLCheckNumber(L, arg));
                                 break;
                             }
                         case 'q':
@@ -958,9 +953,8 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
                             }
                         case 's':
                             {
-                                uint l;
-                                CharPtr s = LuaLCheckLString(L, arg, out l);
-                                if ((strchr(form, '.') == null) && l >= 100)
+                                CharPtr s = LuaLCheckLString(L, arg, out uint l);
+                                if (strchr(form, '.') == null && l >= 100)
                                 {
                                     /* no precision and string is too long to be formatted;
 									   keep original string */

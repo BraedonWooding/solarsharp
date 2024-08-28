@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using MoonSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.Interop.Attributes;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop
 {
     /// <summary>
     /// Helper extension methods used to simplify some parts of userdata descriptor implementations
@@ -23,7 +24,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <c>false</c> if visibility is forced hidden or the specified MemberInfo is null,
         /// <c>if no attribute was found</c>
         /// </returns>
-        /// <exception cref="System.InvalidOperationException">If both MoonSharpHiddenAttribute and MoonSharpVisibleAttribute are specified and they convey different messages.</exception>
+        /// <exception cref="InvalidOperationException">If both MoonSharpHiddenAttribute and MoonSharpVisibleAttribute are specified and they convey different messages.</exception>
         public static bool? GetVisibilityFromAttributes(this MemberInfo mi)
         {
             if (mi == null)
@@ -59,7 +60,7 @@ namespace MoonSharp.Interpreter.Interop
 #endif
             if (t.IsPublic || t.IsNestedPublic)
                 return "public";
-            if ((t.IsNotPublic && (!t.IsNested)) || (t.IsNestedAssembly))
+            if (t.IsNotPublic && !t.IsNested || t.IsNestedAssembly)
                 return "internal";
             if (t.IsNestedFamORAssem)
                 return "protected-internal";
@@ -97,8 +98,8 @@ namespace MoonSharp.Interpreter.Interop
             MethodInfo gm = Framework.Do.GetGetMethod(info);
             MethodInfo sm = Framework.Do.GetSetMethod(info);
 
-            string gv = (gm != null) ? GetClrVisibility(gm) : "private";
-            string sv = (sm != null) ? GetClrVisibility(sm) : "private";
+            string gv = gm != null ? gm.GetClrVisibility() : "private";
+            string sv = sm != null ? sm.GetClrVisibility() : "private";
 
             if (gv == "public" || sv == "public")
                 return "public";
@@ -140,7 +141,7 @@ namespace MoonSharp.Interpreter.Interop
             MethodInfo getter = Framework.Do.GetGetMethod(pi);
             MethodInfo setter = Framework.Do.GetSetMethod(pi);
 
-            return (getter != null && getter.IsPublic) || (setter != null && setter.IsPublic);
+            return getter != null && getter.IsPublic || setter != null && setter.IsPublic;
         }
 
         /// <summary>
@@ -184,7 +185,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <returns></returns>
         public static string GetConversionMethodName(this Type type)
         {
-            StringBuilder sb = new StringBuilder(type.Name);
+            StringBuilder sb = new(type.Name);
 
             for (int i = 0; i < sb.Length; i++)
                 if (!char.IsLetterOrDigit(sb[i])) sb[i] = '_';
@@ -239,7 +240,7 @@ namespace MoonSharp.Interpreter.Interop
             if (str[0] != '_' && !char.IsLetter(str[0]))
                 str = "_" + str;
 
-            StringBuilder sb = new StringBuilder(str);
+            StringBuilder sb = new(str);
 
             for (int i = 0; i < sb.Length; i++)
                 if (sb[i] != '_' && !char.IsLetterOrDigit(sb[i]))
@@ -255,7 +256,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <returns></returns>
         public static string Camelify(string name)
         {
-            StringBuilder sb = new StringBuilder(name.Length);
+            StringBuilder sb = new(name.Length);
 
             bool lastWasUnderscore = false;
             for (int i = 0; i < name.Length; i++)
@@ -286,7 +287,7 @@ namespace MoonSharp.Interpreter.Interop
         public static string UpperFirstLetter(string name)
         {
             if (!string.IsNullOrEmpty(name))
-                return char.ToUpperInvariant(name[0]) + name.Substring(1);
+                return char.ToUpperInvariant(name[0]) + name[1..];
 
             return name;
         }

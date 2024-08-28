@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <LangVersion>9.0</LangVersion>
     <TargetFramework>netstandard2.1</TargetFramework>
     <OutputType>Library</OutputType>
-    <RootNamespace>MoonSharp.Interpreter</RootNamespace>
-    <AssemblyName>MoonSharp.Interpreter</AssemblyName>
+    <RootNamespace>SolarSharp.Interpreter</RootNamespace>
+    <AssemblyName>SolarSharp.Interpreter</AssemblyName>
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
@@ -14,10 +15,10 @@
     </SccProvider>
     <AssemblyOriginatorKeyFile>..\keypair.snk</AssemblyOriginatorKeyFile>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <AssemblyTitle>MoonSharp.Interpreter</AssemblyTitle>
+    <AssemblyTitle>SolarSharp.Interpreter</AssemblyTitle>
     <Description>An interpreter for the Lua language</Description>
-    <Company>http://www.moonsharp.org</Company>
-    <Product>MoonSharp.Interpreter</Product>
+    <Company>http://www.SolarSharp.org</Company>
+    <Product>SolarSharp.Interpreter</Product>
     <Copyright>Copyright © 2014-2015, Marco Mastropaolo</Copyright>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -30,7 +31,7 @@
     </NoWarn>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>ExtendedDesignGuidelineRules.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>bin\Release\MoonSharp.Interpreter.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\SolarSharp.Interpreter.xml</DocumentationFile>
     <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
@@ -70,5 +71,8 @@
   <ItemGroup>
     <Compile Remove="Interop\IUserDataMemberDescriptor.cs" />
     <Compile Remove="Interop\UserDataMemberType.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
   </ItemGroup>
 </Project>

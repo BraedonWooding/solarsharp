@@ -1,6 +1,10 @@
-﻿using MoonSharp.Interpreter.Execution;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace MoonSharp.Interpreter.Tree.Expressions
+namespace SolarSharp.Interpreter.Tree.Expressions
 {
     internal class LiteralExpression : Expression
     {
@@ -22,37 +26,22 @@ namespace MoonSharp.Interpreter.Tree.Expressions
         public LiteralExpression(ScriptLoadingContext lcontext, Token t)
             : base(lcontext)
         {
-            switch (t.Type)
+            m_Value = t.Type switch
             {
-                case TokenType.Number:
-                case TokenType.Number_Hex:
-                case TokenType.Number_HexFloat:
-                    m_Value = DynValue.NewNumber(t.GetNumberValue()).AsReadOnly();
-                    break;
-                case TokenType.String:
-                case TokenType.String_Long:
-                    m_Value = DynValue.NewString(t.Text).AsReadOnly();
-                    break;
-                case TokenType.True:
-                    m_Value = DynValue.True;
-                    break;
-                case TokenType.False:
-                    m_Value = DynValue.False;
-                    break;
-                case TokenType.Nil:
-                    m_Value = DynValue.Nil;
-                    break;
-                default:
-                    throw new InternalErrorException("type mismatch");
-            }
-
+                TokenType.Number or TokenType.Number_Hex or TokenType.Number_HexFloat => DynValue.NewNumber(t.GetNumberValue()).AsReadOnly(),
+                TokenType.String or TokenType.String_Long => DynValue.NewString(t.Text).AsReadOnly(),
+                TokenType.True => DynValue.True,
+                TokenType.False => DynValue.False,
+                TokenType.Nil => DynValue.Nil,
+                _ => throw new InternalErrorException("type mismatch"),
+            };
             if (m_Value == null)
                 throw new SyntaxErrorException(t, "unknown literal format near '{0}'", t.Text);
 
             lcontext.Lexer.Next();
         }
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
             bc.Emit_Literal(m_Value);
         }

@@ -2,7 +2,14 @@
 #pragma warning disable 1591
 
 
-namespace MoonSharp.Interpreter.CoreLib.StringLib
+
+// Disable warnings about XML documentation
+#pragma warning disable 1591
+
+
+using SolarSharp.Interpreter.DataTypes;
+
+namespace SolarSharp.Interpreter.CoreLib.StringLib
 {
     internal class StringRange
     {
@@ -24,7 +31,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
         public static StringRange FromLuaRange(DynValue start, DynValue end, int? defaultEnd = null)
         {
             int i = start.IsNil() ? 1 : (int)start.Number;
-            int j = end.IsNil() ? (defaultEnd ?? i) : (int)end.Number;
+            int j = end.IsNil() ? defaultEnd ?? i : (int)end.Number;
 
             return new StringRange(i, j);
         }
@@ -50,7 +57,7 @@ namespace MoonSharp.Interpreter.CoreLib.StringLib
 
         public int Length()
         {
-            return (End - Start) + 1;
+            return End - Start + 1;
         }
     }
 }

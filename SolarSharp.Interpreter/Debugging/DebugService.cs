@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.DataTypes;
 
-namespace MoonSharp.Interpreter.Debugging
+namespace SolarSharp.Interpreter.Debugging
 {
     /// <summary>
     /// Class providing services specific to debugger implementations.
     /// </summary>
-    /// <seealso cref="MoonSharp.Interpreter.IScriptPrivateResource" />
+    /// <seealso cref="IScriptPrivateResource" />
     public sealed class DebugService : IScriptPrivateResource
     {
         private readonly Processor m_Processor;

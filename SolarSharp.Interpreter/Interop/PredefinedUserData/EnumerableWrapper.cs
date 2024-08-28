@@ -1,7 +1,9 @@
 ﻿using System.Collections;
-using MoonSharp.Interpreter.Interop.Converters;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.Converters;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.PredefinedUserData
 {
     /// <summary>
     /// Wrappers for enumerables as return types
@@ -45,13 +47,13 @@ namespace MoonSharp.Interpreter.Interop
 
         private DynValue LuaIteratorCallback(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            m_Prev = this.GetNext(m_Prev);
+            m_Prev = GetNext(m_Prev);
             return m_Prev;
         }
 
         internal static DynValue ConvertIterator(Script script, IEnumerator enumerator)
         {
-            EnumerableWrapper ei = new EnumerableWrapper(script, enumerator);
+            EnumerableWrapper ei = new(script, enumerator);
             return DynValue.NewTuple(UserData.Create(ei), DynValue.Nil, DynValue.Nil);
         }
 

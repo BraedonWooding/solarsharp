@@ -2,18 +2,19 @@
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
-using MoonSharp.Hardwire.Utils;
-using MoonSharp.Interpreter;
-using MoonSharp.Interpreter.Interop;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
+using SolarSharp.Hardwire;
+using SolarSharp.Hardwire.Utils;
 
-namespace MoonSharp.Hardwire.Generators
+namespace SolarSharp.Hardwire.Generators
 {
     public class ArrayMemberDescriptorGenerator : IHardwireGenerator
     {
         public string ManagedType
         {
-            get { return "MoonSharp.Interpreter.Interop.ArrayMemberDescriptor"; }
+            get { return "SolarSharp.Interpreter.Interop.ArrayMemberDescriptor"; }
         }
 
         public CodeExpression[] Generate(Table table, HardwireCodeGenerationContext generatorContext, CodeTypeMemberCollection members)

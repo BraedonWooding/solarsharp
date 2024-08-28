@@ -1,5 +1,4 @@
-﻿
-namespace MoonSharp.Interpreter.Tree
+﻿namespace SolarSharp.Interpreter.Tree.Lexer
 {
     internal enum TokenType
     {

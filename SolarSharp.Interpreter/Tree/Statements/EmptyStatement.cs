@@ -1,6 +1,7 @@
-﻿using MoonSharp.Interpreter.Execution;
+﻿using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
 
-namespace MoonSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class EmptyStatement : Statement
     {
@@ -10,7 +11,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
         }
 
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
         }
     }

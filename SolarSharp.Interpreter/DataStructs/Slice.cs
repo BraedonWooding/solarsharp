@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace MoonSharp.Interpreter.DataStructs
+namespace SolarSharp.Interpreter.DataStructs
 {
     /// <summary>
     /// Provides facility to create a "sliced" view over an existing IList<typeparamref name="T"/>
@@ -133,7 +133,7 @@ namespace MoonSharp.Interpreter.DataStructs
         /// </summary>
         public List<T> ToList()
         {
-            List<T> list = new List<T>(m_Length);
+            List<T> list = new(m_Length);
 
             for (int i = 0; i < m_Length; i++)
                 list.Add(m_SourceList[CalcRealIndex(i)]);
@@ -151,7 +151,7 @@ namespace MoonSharp.Interpreter.DataStructs
         /// </returns>
         public int IndexOf(T item)
         {
-            for (int i = 0; i < this.Count; i++)
+            for (int i = 0; i < Count; i++)
             {
                 if (this[i].Equals(item))
                     return i;
@@ -164,7 +164,7 @@ namespace MoonSharp.Interpreter.DataStructs
         /// </summary>
         /// <param name="index">The zero-based index at which <paramref name="item" /> should be inserted.</param>
         /// <param name="item">The object to insert into the <see cref="T:System.Collections.Generic.IList`1" />.</param>
-        /// <exception cref="System.InvalidOperationException">Slices are readonly</exception>
+        /// <exception cref="InvalidOperationException">Slices are readonly</exception>
         public void Insert(int index, T item)
         {
             throw new InvalidOperationException("Slices are readonly");
@@ -174,7 +174,7 @@ namespace MoonSharp.Interpreter.DataStructs
         /// Removes the <see cref="T:System.Collections.Generic.IList`1" /> item at the specified index.
         /// </summary>
         /// <param name="index">The zero-based index of the item to remove.</param>
-        /// <exception cref="System.InvalidOperationException">Slices are readonly</exception>
+        /// <exception cref="InvalidOperationException">Slices are readonly</exception>
         public void RemoveAt(int index)
         {
             throw new InvalidOperationException("Slices are readonly");
@@ -184,7 +184,7 @@ namespace MoonSharp.Interpreter.DataStructs
         /// Adds an item to the <see cref="T:System.Collections.Generic.ICollection`1" />.
         /// </summary>
         /// <param name="item">The object to add to the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
-        /// <exception cref="System.InvalidOperationException">Slices are readonly</exception>
+        /// <exception cref="InvalidOperationException">Slices are readonly</exception>
         public void Add(T item)
         {
             throw new InvalidOperationException("Slices are readonly");
@@ -193,7 +193,7 @@ namespace MoonSharp.Interpreter.DataStructs
         /// <summary>
         /// Removes all items from the <see cref="T:System.Collections.Generic.ICollection`1" />.
         /// </summary>
-        /// <exception cref="System.InvalidOperationException">Slices are readonly</exception>
+        /// <exception cref="InvalidOperationException">Slices are readonly</exception>
         public void Clear()
         {
             throw new InvalidOperationException("Slices are readonly");
@@ -238,7 +238,7 @@ namespace MoonSharp.Interpreter.DataStructs
         /// <returns>
         /// true if <paramref name="item" /> was successfully removed from the <see cref="T:System.Collections.Generic.ICollection`1" />; otherwise, false. This method also returns false if <paramref name="item" /> is not found in the original <see cref="T:System.Collections.Generic.ICollection`1" />.
         /// </returns>
-        /// <exception cref="System.InvalidOperationException">Slices are readonly</exception>
+        /// <exception cref="InvalidOperationException">Slices are readonly</exception>
         public bool Remove(T item)
         {
             throw new InvalidOperationException("Slices are readonly");

@@ -1,9 +1,11 @@
 ﻿// Disable warnings about XML documentation
 #pragma warning disable 1591
 
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
 using System.Collections.Generic;
 
-namespace MoonSharp.Interpreter.Interop.LuaStateInterop
+namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 {
     /// <summary>
     /// 

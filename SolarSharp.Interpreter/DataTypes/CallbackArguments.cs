@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.DataStructs;
+using SolarSharp.Interpreter.DataStructs;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
     /// This class is a container for arguments received by a CallbackFunction
@@ -30,13 +32,9 @@ namespace MoonSharp.Interpreter
                     m_Count = last.Tuple.Length - 1 + m_Args.Count;
                     m_LastIsTuple = true;
                 }
-                else if (last.Type == DataType.Void)
-                {
-                    m_Count = m_Args.Count - 1;
-                }
                 else
                 {
-                    m_Count = m_Args.Count;
+                    m_Count = last.Type == DataType.Void ? m_Args.Count - 1 : m_Args.Count;
                 }
             }
             else
@@ -85,17 +83,11 @@ namespace MoonSharp.Interpreter
             if (index >= m_Count)
                 return null;
 
-            if (!m_LastIsTuple || index < m_Args.Count - 1)
-                v = m_Args[index];
-            else
-                v = m_Args[m_Args.Count - 1].Tuple[index - (m_Args.Count - 1)];
+            v = !m_LastIsTuple || index < m_Args.Count - 1 ? m_Args[index] : m_Args[m_Args.Count - 1].Tuple[index - (m_Args.Count - 1)];
 
             if (v.Type == DataType.Tuple)
             {
-                if (v.Tuple.Length > 0)
-                    v = v.Tuple[0];
-                else
-                    v = DynValue.Nil;
+                v = v.Tuple.Length > 0 ? v.Tuple[0] : DynValue.Nil;
             }
 
             if (translateVoids && v.Type == DataType.Void)
@@ -191,8 +183,8 @@ namespace MoonSharp.Interpreter
         /// <exception cref="ScriptRuntimeException">'tostring' must return a string to '{0}'</exception>
         public string AsStringUsingMeta(ScriptExecutionContext executionContext, int argNum, string funcName)
         {
-            if ((this[argNum].Type == DataType.Table) && (this[argNum].Table.MetaTable != null) &&
-                (this[argNum].Table.MetaTable.RawGet("__tostring") != null))
+            if (this[argNum].Type == DataType.Table && this[argNum].Table.MetaTable != null &&
+                this[argNum].Table.MetaTable.RawGet("__tostring") != null)
             {
                 var v = executionContext.GetScript().Call(this[argNum].Table.MetaTable.RawGet("__tostring"), this[argNum]);
 
@@ -203,7 +195,7 @@ namespace MoonSharp.Interpreter
             }
             else
             {
-                return (this[argNum].ToPrintString());
+                return this[argNum].ToPrintString();
             }
         }
 
@@ -215,9 +207,9 @@ namespace MoonSharp.Interpreter
         /// <returns></returns>
         public CallbackArguments SkipMethodCall()
         {
-            if (this.IsMethodCall)
+            if (IsMethodCall)
             {
-                Slice<DynValue> slice = new Slice<DynValue>(m_Args, 1, m_Args.Count - 1, false);
+                Slice<DynValue> slice = new(m_Args, 1, m_Args.Count - 1, false);
                 return new CallbackArguments(slice, false);
             }
             else return this;

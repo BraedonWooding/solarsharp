@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
     /// Flags to alter the way the DynValue.CheckType and other related functions operate on data types for

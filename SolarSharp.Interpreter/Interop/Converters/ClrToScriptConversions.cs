@@ -1,8 +1,12 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.PredefinedUserData;
+using System;
 using System.Reflection;
 using System.Text;
 
-namespace MoonSharp.Interpreter.Interop.Converters
+namespace SolarSharp.Interpreter.Interop.Converters
 {
     internal static class ClrToScriptConversions
     {

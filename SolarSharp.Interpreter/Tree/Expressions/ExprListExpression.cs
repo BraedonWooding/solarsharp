@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
 
-namespace MoonSharp.Interpreter.Tree.Expressions
+namespace SolarSharp.Interpreter.Tree.Expressions
 {
     internal class ExprListExpression : Expression
     {
@@ -19,7 +21,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
             return expressions.ToArray();
         }
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
             foreach (var exp in expressions)
                 exp.Compile(bc);

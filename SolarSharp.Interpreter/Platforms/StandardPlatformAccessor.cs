@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace MoonSharp.Interpreter.Platforms
+namespace SolarSharp.Interpreter.Platforms
 {
 	/// <summary>
 	/// Class providing the IPlatformAccessor interface for standard full-feaured implementations.
@@ -73,12 +73,13 @@ namespace MoonSharp.Interpreter.Platforms
 	}
 }
 #else
+using SolarSharp.Interpreter.Modules;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace MoonSharp.Interpreter.Platforms
+namespace SolarSharp.Interpreter.Platforms
 {
     /// <summary>
     /// Class providing the IPlatformAccessor interface for standard full-feaured implementations.
@@ -162,7 +163,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// </summary>
         /// <param name="type">The type.</param>
         /// <returns></returns>
-        /// <exception cref="System.ArgumentException">type</exception>
+        /// <exception cref="ArgumentException">type</exception>
         public override Stream IO_GetStandardStream(StandardFileType type)
         {
             switch (type)
@@ -253,7 +254,7 @@ namespace MoonSharp.Interpreter.Platforms
         public override int OS_Execute(string cmdline)
         {
             // This is windows only!
-            ProcessStartInfo psi = new ProcessStartInfo("cmd.exe", string.Format("/C {0}", cmdline))
+            ProcessStartInfo psi = new("cmd.exe", string.Format("/C {0}", cmdline))
             {
                 ErrorDialog = false
             };
@@ -279,7 +280,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// Gets the platform name prefix
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="System.NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
         public override string GetPlatformNamePrefix()
         {
             return "std";

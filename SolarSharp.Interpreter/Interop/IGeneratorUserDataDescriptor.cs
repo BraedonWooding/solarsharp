@@ -1,6 +1,7 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop
 {
     /// <summary>
     /// An interface for type descriptors having the ability to generate other descriptors on the fly.

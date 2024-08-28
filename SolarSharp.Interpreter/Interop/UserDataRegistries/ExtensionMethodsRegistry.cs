@@ -3,27 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.DataStructs;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataStructs;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
 
-namespace MoonSharp.Interpreter.Interop.UserDataRegistries
+namespace SolarSharp.Interpreter.Interop.UserDataRegistries
 {
     /// <summary>
     /// Registry of all extension methods. Use UserData statics to access these.
     /// </summary>
     internal class ExtensionMethodsRegistry
     {
-        private static readonly object s_Lock = new object();
-        private static readonly MultiDictionary<string, IOverloadableMemberDescriptor> s_Registry = new MultiDictionary<string, IOverloadableMemberDescriptor>();
-        private static readonly MultiDictionary<string, UnresolvedGenericMethod> s_UnresolvedGenericsRegistry = new MultiDictionary<string, UnresolvedGenericMethod>();
+        private static readonly object s_Lock = new();
+        private static readonly MultiDictionary<string, IOverloadableMemberDescriptor> s_Registry = new();
+        private static readonly MultiDictionary<string, UnresolvedGenericMethod> s_UnresolvedGenericsRegistry = new();
         private static int s_ExtensionMethodChangeVersion = 0;
 
         private class UnresolvedGenericMethod
         {
             public readonly MethodInfo Method;
             public readonly InteropAccessMode AccessMode;
-            public readonly HashSet<Type> AlreadyAddedTypes = new HashSet<Type>();
+            public readonly HashSet<Type> AlreadyAddedTypes = new();
 
             public UnresolvedGenericMethod(MethodInfo mi, InteropAccessMode mode)
             {

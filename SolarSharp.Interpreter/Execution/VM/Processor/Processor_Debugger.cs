@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using MoonSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.DataTypes;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     // This part is practically written procedural style - it looks more like C than C#.
     // This is intentional so to avoid this-calls and virtual-calls as much as possible.
@@ -48,15 +49,10 @@ namespace MoonSharp.Interpreter.Execution.VM
 
             if (instr.SourceCodeRef != null && m_Debug.LastHlRef != null)
             {
-                if (m_Debug.LineBasedBreakPoints)
-                {
-                    isOnDifferentRef = instr.SourceCodeRef.SourceIdx != m_Debug.LastHlRef.SourceIdx ||
-                        instr.SourceCodeRef.FromLine != m_Debug.LastHlRef.FromLine;
-                }
-                else
-                {
-                    isOnDifferentRef = instr.SourceCodeRef != m_Debug.LastHlRef;
-                }
+                isOnDifferentRef = m_Debug.LineBasedBreakPoints
+                    ? instr.SourceCodeRef.SourceIdx != m_Debug.LastHlRef.SourceIdx ||
+                        instr.SourceCodeRef.FromLine != m_Debug.LastHlRef.FromLine
+                    : instr.SourceCodeRef != m_Debug.LastHlRef;
             }
             else if (m_Debug.LastHlRef == null)
             {
@@ -159,7 +155,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         internal HashSet<int> ResetBreakPoints(SourceCode src, HashSet<int> lines)
         {
-            HashSet<int> result = new HashSet<int>();
+            HashSet<int> result = new();
 
             foreach (SourceRef srf in src.Refs)
             {
@@ -191,10 +187,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 
                     //System.Diagnostics.Debug.WriteLine(string.Format("BRK: found {0} for {1} on contains", srf, srf.Type));
 
-                    if (state == null)
-                        srf.Breakpoint = !srf.Breakpoint;
-                    else
-                        srf.Breakpoint = state.Value;
+                    srf.Breakpoint = state == null ? !srf.Breakpoint : state.Value;
 
                     if (srf.Breakpoint)
                     {
@@ -230,10 +223,7 @@ namespace MoonSharp.Interpreter.Execution.VM
                 {
                     //System.Diagnostics.Debug.WriteLine(string.Format("BRK: found {0} for {1} on distance {2}", nearest, nearest.Type, minDistance));
 
-                    if (state == null)
-                        nearest.Breakpoint = !nearest.Breakpoint;
-                    else
-                        nearest.Breakpoint = state.Value;
+                    nearest.Breakpoint = state == null ? !nearest.Breakpoint : state.Value;
 
                     if (nearest.Breakpoint)
                     {
@@ -256,7 +246,7 @@ namespace MoonSharp.Interpreter.Execution.VM
         private void RefreshDebugger(bool hard, int instructionPtr)
         {
             SourceRef sref = GetCurrentSourceRef(instructionPtr);
-            ScriptExecutionContext context = new ScriptExecutionContext(this, null, sref);
+            ScriptExecutionContext context = new(this, null, sref);
 
             List<DynamicExpression> watchList = m_Debug.DebuggerAttached.GetWatchItems();
             List<WatchItem> callStack = Debugger_GetCallStack(sref);
@@ -288,7 +278,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         private List<WatchItem> Debugger_RefreshVStack()
         {
-            List<WatchItem> lwi = new List<WatchItem>();
+            List<WatchItem> lwi = new();
             for (int i = 0; i < Math.Min(32, m_ValueStack.Count); i++)
             {
                 lwi.Add(new WatchItem()
@@ -308,7 +298,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         private List<WatchItem> Debugger_RefreshLocals(ScriptExecutionContext context)
         {
-            List<WatchItem> locals = new List<WatchItem>();
+            List<WatchItem> locals = new();
             var top = this.m_ExecutionStack.Peek();
 
             if (top != null && top.Debug_Symbols != null && top.LocalScope != null)
@@ -358,7 +348,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         internal List<WatchItem> Debugger_GetCallStack(SourceRef startingRef)
         {
-            List<WatchItem> wis = new List<WatchItem>();
+            List<WatchItem> wis = new();
 
             for (int i = 0; i < m_ExecutionStack.Count; i++)
             {

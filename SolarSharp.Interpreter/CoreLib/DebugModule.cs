@@ -1,12 +1,13 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
-
-using System;
+﻿using System;
 using System.Text;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.REPL;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.REPL;
 
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing debug Lua functions. Support for the debug module is partial. 
@@ -15,14 +16,14 @@ namespace MoonSharp.Interpreter.CoreLib
     public class DebugModule
     {
         [MoonSharpModuleMethod]
-        public static DynValue debug(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue debug(ScriptExecutionContext executionContext, CallbackArguments _)
         {
             Script script = executionContext.GetScript();
 
             if (script.Options.DebugInput == null)
                 throw new ScriptRuntimeException("debug.debug not supported on this platform/configuration");
 
-            ReplInterpreter interpreter = new ReplInterpreter(script)
+            ReplInterpreter interpreter = new(script)
             {
                 HandleDynamicExprs = false,
                 HandleClassicExprsSyntax = true
@@ -51,7 +52,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue getuservalue(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue getuservalue(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v = args[0];
 
@@ -62,7 +63,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue setuservalue(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue setuservalue(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v = args.AsType(0, "setuservalue", DataType.UserData, false);
             DynValue t = args.AsType(0, "setuservalue", DataType.Table, true);
@@ -71,7 +72,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue getregistry(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue getregistry(ScriptExecutionContext executionContext, CallbackArguments _)
         {
             return DynValue.NewTable(executionContext.GetScript().Registry);
         }
@@ -95,21 +96,20 @@ namespace MoonSharp.Interpreter.CoreLib
         {
             DynValue v = args[0];
             DynValue t = args.AsType(1, "setmetatable", DataType.Table, true);
-            Table m = (t.IsNil()) ? null : t.Table;
+            Table m = t.IsNil() ? null : t.Table;
             Script S = executionContext.GetScript();
 
             if (v.Type.CanHaveTypeMetatables())
                 S.SetTypeMetatable(v.Type, m);
-            else if (v.Type == DataType.Table)
-                v.Table.MetaTable = m;
-            else
-                throw new ScriptRuntimeException("cannot debug.setmetatable on type {0}", v.Type.ToErrorTypeString());
+            else v.Table.MetaTable = v.Type == DataType.Table
+                ? m
+                : throw new ScriptRuntimeException("cannot debug.setmetatable on type {0}", v.Type.ToErrorTypeString());
 
             return v;
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue getupvalue(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue getupvalue(ScriptExecutionContext _, CallbackArguments args)
         {
             var index = (int)args.AsType(1, "getupvalue", DataType.Number, false).Number - 1;
 
@@ -130,7 +130,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
 
         [MoonSharpModuleMethod]
-        public static DynValue upvalueid(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue upvalueid(ScriptExecutionContext _, CallbackArguments args)
         {
             var index = (int)args.AsType(1, "getupvalue", DataType.Number, false).Number - 1;
 
@@ -149,7 +149,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
 
         [MoonSharpModuleMethod]
-        public static DynValue setupvalue(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue setupvalue(ScriptExecutionContext _, CallbackArguments args)
         {
             var index = (int)args.AsType(1, "setupvalue", DataType.Number, false).Number - 1;
 
@@ -170,7 +170,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
 
         [MoonSharpModuleMethod]
-        public static DynValue upvaluejoin(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue upvaluejoin(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue f1 = args.AsType(0, "upvaluejoin", DataType.Function, false);
             DynValue f2 = args.AsType(2, "upvaluejoin", DataType.Function, false);
@@ -195,7 +195,7 @@ namespace MoonSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue traceback(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             DynValue vmessage = args[0];
             DynValue vlevel = args[1];
@@ -219,7 +219,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
             string message = vmessage.CastToString();
 
-            int skip = (int)((vlevel.CastToNumber()) ?? defaultSkip);
+            int skip = (int)(vlevel.CastToNumber() ?? defaultSkip);
 
             WatchItem[] stacktrace = cor.GetStackTrace(Math.Max(0, skip));
 
@@ -233,10 +233,7 @@ namespace MoonSharp.Interpreter.CoreLib
                 string name;
 
                 if (wi.Name == null)
-                    if (wi.RetAddress < 0)
-                        name = "main chunk";
-                    else
-                        name = "?";
+                    name = wi.RetAddress < 0 ? "main chunk" : "?";
                 else
                     name = "function '" + wi.Name + "'";
 

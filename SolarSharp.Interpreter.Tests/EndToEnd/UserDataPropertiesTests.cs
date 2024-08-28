@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop;
 using NUnit.Framework;
+using SolarSharp.Interpreter.Interop.Attributes;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class UserDataPropertiesTests
@@ -147,7 +150,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(obj.IntProp, Is.EqualTo(321));
 
-            DynValue res = S.DoString(script);
+            _ = S.DoString(script);
 
             Assert.That(obj.IntProp, Is.EqualTo(19));
         }
@@ -232,7 +235,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(obj.IntProp, Is.EqualTo(321));
 
-            DynValue res = S.DoString(script);
+            _ = S.DoString(script);
 
             Assert.That(obj.IntProp, Is.EqualTo(19));
         }
@@ -253,7 +256,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(SomeClass.StaticProp, Is.EqualTo("qweqwe"));
 
-            DynValue res = S.DoString(script);
+            _ = S.DoString(script);
 
             Assert.That(SomeClass.StaticProp, Is.EqualTo("asdasdqweqwe"));
         }
@@ -406,7 +409,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("myobj", UserData.Create(obj));
 
-            DynValue res = S.DoString(script);
+            _ = S.DoString(script);
 
             Assert.That(obj.IntProp, Is.EqualTo(19));
         }
@@ -426,7 +429,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("myobj", UserData.Create(obj));
 
-            DynValue res = S.DoString(script);
+            _ = S.DoString(script);
 
             Assert.That(obj.WoIntProp2, Is.EqualTo(19));
         }

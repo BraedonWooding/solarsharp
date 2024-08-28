@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class SimpleTests
@@ -1227,7 +1230,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 					do return x(); end
 								";
 
-            DynValue res = (new Script(CoreModules.None)).DoString(script);
+            DynValue res = new Script(CoreModules.None).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1620,7 +1623,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
         {
             string script = "return 0x0.1E";
             DynValue result = Script.RunString(script);
-            Assert.That(result.Number, Is.EqualTo((double)0x1E / (double)0x100));
+            Assert.That(result.Number, Is.EqualTo(0x1E / (double)0x100));
         }
 
         [Test]
@@ -1628,7 +1631,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
         {
             string script = "return 0xA23p-4";
             DynValue result = Script.RunString(script);
-            Assert.That(result.Number, Is.EqualTo((double)0xA23 / 16.0));
+            Assert.That(result.Number, Is.EqualTo(0xA23 / 16.0));
         }
 
         [Test]
@@ -1636,7 +1639,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
         {
             string script = "return 0X1.921FB54442D18P+1";
             DynValue result = Script.RunString(script);
-            Assert.That(result.Number, Is.EqualTo((1 + (double)0x921FB54442D18 / (double)0x10000000000000) * 2));
+            Assert.That(result.Number, Is.EqualTo((1 + 0x921FB54442D18 / (double)0x10000000000000) * 2));
         }
 
         [Test]

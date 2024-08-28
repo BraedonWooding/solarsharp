@@ -1,7 +1,7 @@
-﻿using MoonSharp.Interpreter.DataStructs;
-using MoonSharp.Interpreter.Execution.VM;
+﻿using SolarSharp.Interpreter.DataStructs;
+using SolarSharp.Interpreter.Execution.VM;
 
-namespace MoonSharp.Interpreter.Execution
+namespace SolarSharp.Interpreter.Execution.Scopes
 {
     internal interface ILoop
     {
@@ -12,6 +12,6 @@ namespace MoonSharp.Interpreter.Execution
 
     internal class LoopTracker
     {
-        public FastStack<ILoop> Loops = new FastStack<ILoop>(16384);
+        public FastStack<ILoop> Loops = new(16384);
     }
 }

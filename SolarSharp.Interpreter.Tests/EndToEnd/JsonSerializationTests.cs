@@ -1,8 +1,9 @@
-﻿using MoonSharp.Interpreter.Serialization.Json;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Serialization.Json;
 using NUnit.Framework;
 
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class JsonSerializationTests
@@ -109,7 +110,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 
             Table t1 = JsonTableConverter.JsonToTable(json);
 
-            string json2 = JsonTableConverter.TableToJson(t1);
+            string json2 = t1.TableToJson();
 
             Table t = JsonTableConverter.JsonToTable(json2);
 

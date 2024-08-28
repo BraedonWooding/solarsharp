@@ -2,12 +2,14 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Diagnostics;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
-using MoonSharp.Interpreter.Interop.Converters;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Diagnostics;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.Converters;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors
 {
     /// <summary>
     /// Class providing easier marshalling of CLR fields
@@ -69,24 +71,24 @@ namespace MoonSharp.Interpreter.Interop
             if (Script.GlobalOptions.Platform.IsRunningOnAOT())
                 accessMode = InteropAccessMode.Reflection;
 
-            this.FieldInfo = fi;
-            this.AccessMode = accessMode;
-            this.Name = fi.Name;
-            this.IsStatic = this.FieldInfo.IsStatic;
+            FieldInfo = fi;
+            AccessMode = accessMode;
+            Name = fi.Name;
+            IsStatic = FieldInfo.IsStatic;
 
-            if (this.FieldInfo.IsLiteral)
+            if (FieldInfo.IsLiteral)
             {
                 IsConst = true;
                 m_ConstValue = FieldInfo.GetValue(null);
             }
             else
             {
-                IsReadonly = this.FieldInfo.IsInitOnly;
+                IsReadonly = FieldInfo.IsInitOnly;
             }
 
             if (AccessMode == InteropAccessMode.Preoptimized)
             {
-                this.OptimizeGetter();
+                OptimizeGetter();
             }
         }
 
@@ -108,19 +110,13 @@ namespace MoonSharp.Interpreter.Interop
             if (AccessMode == InteropAccessMode.LazyOptimized && m_OptimizedGetter == null)
                 OptimizeGetter();
 
-            object result = null;
-
-            if (m_OptimizedGetter != null)
-                result = m_OptimizedGetter(obj);
-            else
-                result = FieldInfo.GetValue(obj);
-
+            object result = m_OptimizedGetter != null ? m_OptimizedGetter(obj) : FieldInfo.GetValue(obj);
             return ClrToScriptConversions.ObjectToDynValue(script, result);
         }
 
         internal void OptimizeGetter()
         {
-            if (this.IsConst)
+            if (IsConst)
                 return;
 
             using (PerformanceStatistics.StartGlobalStopwatch(PerformanceCounter.AdaptersCompilation))
@@ -136,7 +132,7 @@ namespace MoonSharp.Interpreter.Interop
                 else
                 {
                     var paramExp = Expression.Parameter(typeof(object), "obj");
-                    var castParamExp = Expression.Convert(paramExp, this.FieldInfo.DeclaringType);
+                    var castParamExp = Expression.Convert(paramExp, FieldInfo.DeclaringType);
                     var propAccess = Expression.Field(castParamExp, FieldInfo);
                     var castPropAccess = Expression.Convert(propAccess, typeof(object));
                     var lambda = Expression.Lambda<Func<object, object>>(castPropAccess, paramExp);
@@ -156,9 +152,9 @@ namespace MoonSharp.Interpreter.Interop
             this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
 
             if (IsReadonly || IsConst)
-                throw new ScriptRuntimeException("userdata field '{0}.{1}' cannot be written to.", this.FieldInfo.DeclaringType.Name, this.Name);
+                throw new ScriptRuntimeException("userdata field '{0}.{1}' cannot be written to.", FieldInfo.DeclaringType.Name, Name);
 
-            object value = ScriptToClrConversions.DynValueToObjectOfType(v, this.FieldInfo.FieldType, null, false);
+            object value = ScriptToClrConversions.DynValueToObjectOfType(v, FieldInfo.FieldType, null, false);
 
             try
             {
@@ -203,7 +199,7 @@ namespace MoonSharp.Interpreter.Interop
         void IOptimizableDescriptor.Optimize()
         {
             if (m_OptimizedGetter == null)
-                this.OptimizeGetter();
+                OptimizeGetter();
         }
 
         /// <summary>
@@ -213,18 +209,18 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="t">The table to be filled</param>
         public void PrepareForWiring(Table t)
         {
-            t.Set("class", DynValue.NewString(this.GetType().FullName));
-            t.Set("visibility", DynValue.NewString(this.FieldInfo.GetClrVisibility()));
+            t.Set("class", DynValue.NewString(GetType().FullName));
+            t.Set("visibility", DynValue.NewString(FieldInfo.GetClrVisibility()));
 
-            t.Set("name", DynValue.NewString(this.Name));
-            t.Set("static", DynValue.NewBoolean(this.IsStatic));
-            t.Set("const", DynValue.NewBoolean(this.IsConst));
-            t.Set("readonly", DynValue.NewBoolean(this.IsReadonly));
-            t.Set("decltype", DynValue.NewString(this.FieldInfo.DeclaringType.FullName));
-            t.Set("declvtype", DynValue.NewBoolean(Framework.Do.IsValueType(this.FieldInfo.DeclaringType)));
-            t.Set("type", DynValue.NewString(this.FieldInfo.FieldType.FullName));
+            t.Set("name", DynValue.NewString(Name));
+            t.Set("static", DynValue.NewBoolean(IsStatic));
+            t.Set("const", DynValue.NewBoolean(IsConst));
+            t.Set("readonly", DynValue.NewBoolean(IsReadonly));
+            t.Set("decltype", DynValue.NewString(FieldInfo.DeclaringType.FullName));
+            t.Set("declvtype", DynValue.NewBoolean(Framework.Do.IsValueType(FieldInfo.DeclaringType)));
+            t.Set("type", DynValue.NewString(FieldInfo.FieldType.FullName));
             t.Set("read", DynValue.NewBoolean(true));
-            t.Set("write", DynValue.NewBoolean(!(this.IsConst || this.IsReadonly)));
+            t.Set("write", DynValue.NewBoolean(!(IsConst || IsReadonly)));
         }
     }
 }

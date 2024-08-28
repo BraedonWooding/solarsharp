@@ -1,19 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Statements;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.Scopes;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
+using SolarSharp.Interpreter.Errors;
 
-using MoonSharp.Interpreter.Tree.Statements;
-
-namespace MoonSharp.Interpreter.Tree.Expressions
+namespace SolarSharp.Interpreter.Tree.Expressions
 {
     internal class FunctionDefinitionExpression : Expression, IClosureBuilder
     {
         private readonly SymbolRef[] m_ParamNames = null;
         private readonly Statement m_Statement;
         private readonly RuntimeScopeFrame m_StackFrame;
-        private readonly List<SymbolRef> m_Closure = new List<SymbolRef>();
+        private readonly List<SymbolRef> m_Closure = new();
         private bool m_HasVarArgs = false;
         private Instruction m_ClosureInstruction = null;
         private readonly bool m_UsesGlobalEnv;
@@ -58,10 +61,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 
             m_ParamNames = DefineArguments(paramnames, lcontext);
 
-            if (isLambda)
-                m_Statement = CreateLambdaBody(lcontext);
-            else
-                m_Statement = CreateBody(lcontext);
+            m_Statement = isLambda ? CreateLambdaBody(lcontext) : CreateBody(lcontext);
 
             m_StackFrame = lcontext.Scope.PopFunction();
 
@@ -74,7 +74,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
         private Statement CreateLambdaBody(ScriptLoadingContext lcontext)
         {
             Token start = lcontext.Lexer.Current;
-            Expression e = Expression.Expr(lcontext);
+            Expression e = Expr(lcontext);
             Token end = lcontext.Lexer.Current;
             SourceRef sref = start.GetSourceRefUpTo(end);
             Statement s = new ReturnStatement(lcontext, e, sref);
@@ -89,7 +89,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
             if (lcontext.Lexer.Current.Type != TokenType.End)
                 throw new SyntaxErrorException(lcontext.Lexer.Current, "'end' expected near '{0}'", lcontext.Lexer.Current.Text)
                 {
-                    IsPrematureStreamTermination = (lcontext.Lexer.Current.Type == TokenType.Eof)
+                    IsPrematureStreamTermination = lcontext.Lexer.Current.Type == TokenType.Eof
                 };
 
             m_End = lcontext.Lexer.Current.GetSourceRef();
@@ -102,7 +102,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
         {
             TokenType closeToken = isLambda ? TokenType.Lambda : TokenType.Brk_Close_Round;
 
-            List<string> paramnames = new List<string>();
+            List<string> paramnames = new();
 
             // method decls with ':' must push an implicit 'self' param
             if (pushSelfParam)
@@ -147,7 +147,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 
         private SymbolRef[] DefineArguments(List<string> paramnames, ScriptLoadingContext lcontext)
         {
-            HashSet<string> names = new HashSet<string>();
+            HashSet<string> names = new();
 
             SymbolRef[] ret = new SymbolRef[paramnames.Count];
 
@@ -189,7 +189,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 
         public int CompileBody(ByteCode bc, string friendlyName)
         {
-            string funcName = friendlyName ?? ("<" + this.m_Begin.FormatLocation(bc.Script, true) + ">");
+            string funcName = friendlyName ?? "<" + m_Begin.FormatLocation(bc.Script, true) + ">";
 
             bc.PushSourceRef(m_Begin);
 

@@ -1,7 +1,6 @@
-﻿
-using System;
+﻿using System;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.Errors
 {
     /// <summary>
     /// Exception thrown when a dynamic expression is invalid

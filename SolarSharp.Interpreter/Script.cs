@@ -3,16 +3,20 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using MoonSharp.Interpreter.CoreLib;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Diagnostics;
-using MoonSharp.Interpreter.Execution.VM;
-using MoonSharp.Interpreter.IO;
-using MoonSharp.Interpreter.Platforms;
-using MoonSharp.Interpreter.Tree.Expressions;
-using MoonSharp.Interpreter.Tree.Fast_Interface;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.CoreLib;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Diagnostics;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.IO;
+using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Platforms;
+using SolarSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.Tree.Fast_Interface;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter
 {
     /// <summary>
     /// This class implements a MoonSharp scripting session. Multiple Script objects can coexist in the same program but cannot share
@@ -31,7 +35,7 @@ namespace MoonSharp.Interpreter
         public const string LUA_VERSION = "5.2";
         private readonly Processor m_MainProcessor = null;
         private readonly ByteCode m_ByteCode;
-        private readonly List<SourceCode> m_Sources = new List<SourceCode>();
+        private readonly List<SourceCode> m_Sources = new();
         private readonly Table m_GlobalTable;
         private IDebugger m_Debugger;
         private readonly Table[] m_TypeMetatables = new Table[(int)LuaTypeExtensions.MaxMetaTypes];
@@ -45,8 +49,8 @@ namespace MoonSharp.Interpreter
 
             DefaultOptions = new ScriptOptions()
             {
-                DebugPrint = s => { Script.GlobalOptions.Platform.DefaultPrint(s); },
-                DebugInput = s => { return Script.GlobalOptions.Platform.DefaultInput(s); },
+                DebugPrint = s => { GlobalOptions.Platform.DefaultPrint(s); },
+                DebugInput = s => { return GlobalOptions.Platform.DefaultInput(s); },
                 CheckThreadAccess = true,
                 ScriptLoader = PlatformAutoDetector.GetDefaultScriptLoader(),
                 TailCallOptimizationThreshold = 65536
@@ -122,7 +126,7 @@ namespace MoonSharp.Interpreter
 
             string chunkName = string.Format("libfunc_{0}", funcFriendlyName ?? m_Sources.Count.ToString());
 
-            SourceCode source = new SourceCode(chunkName, code, m_Sources.Count, this);
+            SourceCode source = new(chunkName, code, m_Sources.Count, this);
 
             m_Sources.Add(source);
 
@@ -136,18 +140,12 @@ namespace MoonSharp.Interpreter
 
         private void SignalByteCodeChange()
         {
-            if (m_Debugger != null)
-            {
-                m_Debugger.SetByteCode(m_ByteCode.Code.Select(s => s.ToString()).ToArray());
-            }
+            m_Debugger?.SetByteCode(m_ByteCode.Code.Select(s => s.ToString()).ToArray());
         }
 
         private void SignalSourceCodeChange(SourceCode source)
         {
-            if (m_Debugger != null)
-            {
-                m_Debugger.SetSourceCode(source);
-            }
+            m_Debugger?.SetSourceCode(source);
         }
 
 
@@ -166,15 +164,15 @@ namespace MoonSharp.Interpreter
 
             if (code.StartsWith(StringModule.BASE64_DUMP_HEADER))
             {
-                code = code.Substring(StringModule.BASE64_DUMP_HEADER.Length);
+                code = code[StringModule.BASE64_DUMP_HEADER.Length..];
                 byte[] data = Convert.FromBase64String(code);
-                using MemoryStream ms = new MemoryStream(data);
+                using MemoryStream ms = new(data);
                 return LoadStream(ms, globalTable, codeFriendlyName);
             }
 
             string chunkName = string.Format("{0}", codeFriendlyName ?? "chunk_" + m_Sources.Count.ToString());
 
-            SourceCode source = new SourceCode(codeFriendlyName ?? chunkName, code, m_Sources.Count, this);
+            SourceCode source = new(codeFriendlyName ?? chunkName, code, m_Sources.Count, this);
 
             m_Sources.Add(source);
 
@@ -205,7 +203,7 @@ namespace MoonSharp.Interpreter
 
             if (!Processor.IsDumpStream(codeStream))
             {
-                using StreamReader sr = new StreamReader(codeStream);
+                using StreamReader sr = new(codeStream);
                 string scriptCode = sr.ReadToEnd();
                 return LoadString(scriptCode, globalTable, codeFriendlyName);
             }
@@ -213,14 +211,13 @@ namespace MoonSharp.Interpreter
             {
                 string chunkName = string.Format("{0}", codeFriendlyName ?? "dump_" + m_Sources.Count.ToString());
 
-                SourceCode source = new SourceCode(codeFriendlyName ?? chunkName,
+                SourceCode source = new(codeFriendlyName ?? chunkName,
                     string.Format("-- This script was decoded from a binary dump - dump_{0}", m_Sources.Count),
                     m_Sources.Count, this);
 
                 m_Sources.Add(source);
 
-                bool hasUpvalues;
-                int address = m_MainProcessor.Undump(codeStream, m_Sources.Count - 1, globalTable ?? m_GlobalTable, out hasUpvalues);
+                int address = m_MainProcessor.Undump(codeStream, m_Sources.Count - 1, globalTable ?? m_GlobalTable, out bool hasUpvalues);
 
                 SignalSourceCodeChange(source);
                 SignalByteCodeChange();
@@ -237,7 +234,7 @@ namespace MoonSharp.Interpreter
         /// </summary>
         /// <param name="function">The function.</param>
         /// <param name="stream">The stream.</param>
-        /// <exception cref="System.ArgumentException">
+        /// <exception cref="ArgumentException">
         /// function arg is not a function!
         /// or
         /// stream is readonly!
@@ -259,7 +256,7 @@ namespace MoonSharp.Interpreter
             if (upvaluesType == Closure.UpvaluesType.Closure)
                 throw new ArgumentException("function arg has upvalues other than _ENV");
 
-            UndisposableStream outStream = new UndisposableStream(stream);
+            UndisposableStream outStream = new(stream);
             m_MainProcessor.Dump(outStream, function.Function.EntryPointByteCodeLocation, upvaluesType == Closure.UpvaluesType.Environment);
         }
 
@@ -282,33 +279,13 @@ namespace MoonSharp.Interpreter
 #pragma warning restore 618
 
             object code = Options.ScriptLoader.LoadFile(filename, globalContext ?? m_GlobalTable);
-
-            if (code is string)
+            switch (code)
             {
-                return LoadString((string)code, globalContext, friendlyFilename ?? filename);
-            }
-            else if (code is byte[])
-            {
-                using MemoryStream ms = new MemoryStream((byte[])code);
-                return LoadStream(ms, globalContext, friendlyFilename ?? filename);
-            }
-            else if (code is Stream)
-            {
-                try
-                {
-                    return LoadStream((Stream)code, globalContext, friendlyFilename ?? filename);
-                }
-                finally
-                {
-                    ((Stream)code).Dispose();
-                }
-            }
-            else
-            {
-                if (code == null)
-                    throw new InvalidCastException("Unexpected null from IScriptLoader.LoadFile");
-                else
-                    throw new InvalidCastException(string.Format("Unsupported return type from IScriptLoader.LoadFile : {0}", code.GetType()));
+                case string v: return LoadString(v, globalContext, friendlyFilename ?? filename);
+                case byte[] bytes: using (MemoryStream ms = new(bytes)) return LoadStream(ms, globalContext, friendlyFilename ?? filename);
+                case Stream stream: using (stream) return LoadStream(stream, globalContext, friendlyFilename ?? filename);
+                case null: throw new InvalidCastException("Unexpected null from IScriptLoader.LoadFile");
+                default: throw new InvalidCastException(string.Format("Unsupported return type from IScriptLoader.LoadFile : {0}", code.GetType()));
             }
         }
 
@@ -368,7 +345,7 @@ namespace MoonSharp.Interpreter
         /// A DynValue containing the result of the processing of the executed script.
         public static DynValue RunFile(string filename)
         {
-            Script S = new Script();
+            Script S = new();
             return S.DoFile(filename);
         }
 
@@ -379,7 +356,7 @@ namespace MoonSharp.Interpreter
         /// A DynValue containing the result of the processing of the executed script.
         public static DynValue RunString(string code)
         {
-            Script S = new Script();
+            Script S = new();
             return S.DoString(code);
         }
 
@@ -399,21 +376,16 @@ namespace MoonSharp.Interpreter
                 Instruction meta = m_MainProcessor.FindMeta(ref address);
 
                 // if we find the meta for a new chunk, we use the value in the meta for the _ENV upvalue
-                if ((meta != null) && (meta.NumVal2 == (int)OpCodeMetadataType.ChunkEntrypoint))
-                {
-                    c = new Closure(this, address,
+                c = meta != null && meta.NumVal2 == (int)OpCodeMetadataType.ChunkEntrypoint
+                    ? new Closure(this, address,
                         new SymbolRef[] { SymbolRef.Upvalue(WellKnownSymbols.ENV, 0) },
-                        new DynValue[] { meta.Value });
-                }
-                else
-                {
-                    c = new Closure(this, address, new SymbolRef[0], new DynValue[0]);
-                }
+                        new DynValue[] { meta.Value })
+                    : new Closure(this, address, new SymbolRef[0], new DynValue[0]);
             }
             else
             {
                 var syms = new SymbolRef[] {
-                    new SymbolRef() { i_Env = null, i_Index= 0, i_Name = WellKnownSymbols.ENV, i_Type =  SymbolRefType.DefaultEnv },
+                    new() { i_Env = null, i_Index= 0, i_Name = WellKnownSymbols.ENV, i_Type =  SymbolRefType.DefaultEnv },
                 };
 
                 var vals = new DynValue[] {
@@ -433,7 +405,7 @@ namespace MoonSharp.Interpreter
         /// <returns>
         /// The return value(s) of the function call.
         /// </returns>
-        /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
+        /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
         public DynValue Call(DynValue function)
         {
             return Call(function, new DynValue[0]);
@@ -447,7 +419,7 @@ namespace MoonSharp.Interpreter
         /// <returns>
         /// The return value(s) of the function call.
         /// </returns>
-        /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
+        /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
         public DynValue Call(DynValue function, params DynValue[] args)
         {
             this.CheckScriptOwnership(function);
@@ -474,7 +446,7 @@ namespace MoonSharp.Interpreter
             }
             else if (function.Type == DataType.ClrFunction)
             {
-                return function.Callback.ClrCallback(this.CreateDynamicExecutionContext(function.Callback), new CallbackArguments(args, false));
+                return function.Callback.ClrCallback(CreateDynamicExecutionContext(function.Callback), new CallbackArguments(args, false));
             }
 
             return m_MainProcessor.Call(function, args);
@@ -488,7 +460,7 @@ namespace MoonSharp.Interpreter
         /// <returns>
         /// The return value(s) of the function call.
         /// </returns>
-        /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
+        /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
         public DynValue Call(DynValue function, params object[] args)
         {
             DynValue[] dargs = new DynValue[args.Length];
@@ -504,7 +476,7 @@ namespace MoonSharp.Interpreter
         /// </summary>
         /// <param name="function">The Lua/MoonSharp function to be called</param>
         /// <returns></returns>
-        /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
+        /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
         public DynValue Call(object function)
         {
             return Call(DynValue.FromObject(this, function));
@@ -516,7 +488,7 @@ namespace MoonSharp.Interpreter
         /// <param name="function">The Lua/MoonSharp function to be called </param>
         /// <param name="args">The arguments to pass to the function.</param>
         /// <returns></returns>
-        /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
+        /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
         public DynValue Call(object function, params object[] args)
         {
             return Call(DynValue.FromObject(this, function), args);
@@ -529,7 +501,7 @@ namespace MoonSharp.Interpreter
         /// <returns>
         /// The coroutine handle.
         /// </returns>
-        /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function or DataType.ClrFunction</exception>
+        /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function or DataType.ClrFunction</exception>
         public DynValue CreateCoroutine(DynValue function)
         {
             this.CheckScriptOwnership(function);
@@ -572,7 +544,7 @@ namespace MoonSharp.Interpreter
         /// <returns>
         /// The coroutine handle.
         /// </returns>
-        /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function or DataType.ClrFunction</exception>
+        /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function or DataType.ClrFunction</exception>
         public DynValue CreateCoroutine(object function)
         {
             return CreateCoroutine(DynValue.FromObject(this, function));
@@ -644,16 +616,10 @@ namespace MoonSharp.Interpreter
             this.CheckScriptOwnership(globalContext);
 
             Table globals = globalContext ?? m_GlobalTable;
-            string filename = Options.ScriptLoader.ResolveModuleName(modname, globals);
-
-            if (filename == null)
-                throw new ScriptRuntimeException("module '{0}' not found", modname);
-
+            string filename = Options.ScriptLoader.ResolveModuleName(modname, globals) ?? throw new ScriptRuntimeException("module '{0}' not found", modname);
             DynValue func = LoadFile(filename, globalContext, filename);
             return func;
         }
-
-
 
         /// <summary>
         /// Gets a type metatable.
@@ -675,17 +641,16 @@ namespace MoonSharp.Interpreter
         /// </summary>
         /// <param name="type">The type. Must be Nil, Boolean, Number, String or Function</param>
         /// <param name="metatable">The metatable.</param>
-        /// <exception cref="System.ArgumentException">Specified type not supported :  + type.ToString()</exception>
+        /// <exception cref="ArgumentException">Specified type not supported :  + type.ToString()</exception>
         public void SetTypeMetatable(DataType type, Table metatable)
         {
             this.CheckScriptOwnership(metatable);
 
             int t = (int)type;
 
-            if (t >= 0 && t < m_TypeMetatables.Length)
-                m_TypeMetatables[t] = metatable;
-            else
-                throw new ArgumentException("Specified type not supported : " + type.ToString());
+            m_TypeMetatables[t] = t >= 0 && t < m_TypeMetatables.Length
+                ? metatable
+                : throw new ArgumentException("Specified type not supported : " + type.ToString());
         }
 
 
@@ -694,7 +659,7 @@ namespace MoonSharp.Interpreter
         /// </summary>
         public static void WarmUp()
         {
-            Script s = new Script(CoreModules.Basic);
+            Script s = new(CoreModules.Basic);
             s.LoadString("return 1;");
         }
 
@@ -752,12 +717,12 @@ namespace MoonSharp.Interpreter
         /// </summary>
         public static string GetBanner(string subproduct = null)
         {
-            subproduct = (subproduct != null) ? (subproduct + " ") : "";
+            subproduct = subproduct != null ? subproduct + " " : "";
 
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine(string.Format("MoonSharp {0}{1} [{2}]", subproduct, Script.VERSION, Script.GlobalOptions.Platform.GetPlatformName()));
+            StringBuilder sb = new();
+            sb.AppendLine(string.Format("MoonSharp {0}{1} [{2}]", subproduct, VERSION, GlobalOptions.Platform.GetPlatformName()));
             sb.AppendLine("Copyright (C) 2014-2016 Marco Mastropaolo");
-            sb.AppendLine("http://www.moonsharp.org");
+            sb.AppendLine("http://www.SolarSharp.org");
             return sb.ToString();
         }
 

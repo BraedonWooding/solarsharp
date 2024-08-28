@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using MoonSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors
 {
     /// <summary>
     /// A user data descriptor which aggregates multiple descriptors and tries dispatching members
@@ -98,7 +99,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <returns></returns>
         public string AsString(object obj)
         {
-            return (obj != null) ? obj.ToString() : null;
+            return obj?.ToString();
         }
 
 

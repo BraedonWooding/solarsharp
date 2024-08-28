@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Debugging;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     internal sealed partial class Processor
     {
@@ -13,7 +13,7 @@ namespace MoonSharp.Interpreter.Execution.VM
             public int DebuggerCurrentActionTarget = -1;
             public SourceRef LastHlRef = null;
             public int ExStackDepthAtStep = -1;
-            public List<SourceRef> BreakPoints = new List<SourceRef>();
+            public List<SourceRef> BreakPoints = new();
             public bool LineBasedBreakPoints = false;
         }
     }

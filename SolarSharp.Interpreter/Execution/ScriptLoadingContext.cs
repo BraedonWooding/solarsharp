@@ -1,7 +1,8 @@
-﻿using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Tree;
+﻿using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Execution.Scopes;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace MoonSharp.Interpreter.Execution
+namespace SolarSharp.Interpreter.Execution
 {
     internal class ScriptLoadingContext
     {

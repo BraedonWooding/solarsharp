@@ -1,8 +1,9 @@
 ﻿using System;
-using MoonSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
+using SolarSharp.Interpreter.Interop.Attributes;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class ProxyObjectsTests
@@ -29,7 +30,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
             Script S = new();
 
             S.Globals["R"] = new Random();
-            S.Globals["func"] = (Action<Random>)(r => { Assert.That(r, Is.Not.Null); Assert.That(r is Random, Is.True); });
+            S.Globals["func"] = (Action<Random>)(r => { Assert.That(r, Is.Not.Null); Assert.That(r, Is.Not.EqualTo(null)); });
 
             S.DoString(@"
 				x = R.GetValue();

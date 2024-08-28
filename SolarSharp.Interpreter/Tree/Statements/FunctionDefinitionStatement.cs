@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-using MoonSharp.Interpreter.Tree.Expressions;
-
-namespace MoonSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class FunctionDefinitionStatement : Statement
     {
@@ -75,7 +77,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
 
                     if (m_MethodName == null && m_TableAccessors.Count > 0)
                     {
-                        m_MethodName = m_TableAccessors[m_TableAccessors.Count - 1];
+                        m_MethodName = m_TableAccessors[^1];
                         m_TableAccessors.RemoveAt(m_TableAccessors.Count - 1);
                     }
                 }
@@ -85,7 +87,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
             lcontext.Source.Refs.Add(m_SourceRef);
         }
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
             using (bc.EnterSource(m_SourceRef))
             {
@@ -106,7 +108,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
             }
         }
 
-        private int SetMethod(Execution.VM.ByteCode bc)
+        private int SetMethod(ByteCode bc)
         {
             int cnt = 0;
 
@@ -123,7 +125,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
             return 1 + cnt;
         }
 
-        private int SetFunction(Execution.VM.ByteCode bc, int numPop)
+        private int SetFunction(ByteCode bc, int numPop)
         {
             int num = bc.Emit_Store(m_FuncSymbol, 0, 0);
             bc.Emit_Pop(numPop);

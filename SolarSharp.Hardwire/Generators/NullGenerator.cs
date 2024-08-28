@@ -1,7 +1,7 @@
 ﻿using System.CodeDom;
-using MoonSharp.Interpreter;
+using SolarSharp.Interpreter.DataTypes;
 
-namespace MoonSharp.Hardwire.Generators
+namespace SolarSharp.Hardwire.Generators
 {
     internal class NullGenerator : IHardwireGenerator
     {

@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System.Collections.Generic;
 using System.Linq;
 
-namespace MoonSharp.Interpreter.Execution
+namespace SolarSharp.Interpreter.Execution.Scopes
 {
     /// <summary>
     /// The scope of a closure (container of upvalues)
@@ -16,7 +17,7 @@ namespace MoonSharp.Interpreter.Execution
         internal ClosureContext(SymbolRef[] symbols, IEnumerable<DynValue> values)
         {
             Symbols = symbols.Select(s => s.i_Name).ToArray();
-            this.AddRange(values);
+            AddRange(values);
         }
 
         internal ClosureContext()

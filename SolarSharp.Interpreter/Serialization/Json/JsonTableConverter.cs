@@ -1,7 +1,9 @@
 ﻿using System.Text;
-using MoonSharp.Interpreter.Tree;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace MoonSharp.Interpreter.Serialization.Json
+namespace SolarSharp.Interpreter.Serialization.Json
 {
     /// <summary>
     /// Class performing conversions between Tables and Json.
@@ -19,7 +21,7 @@ namespace MoonSharp.Interpreter.Serialization.Json
         /// <returns></returns>
         public static string TableToJson(this Table table)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             TableToJson(sb, table);
             return sb.ToString();
         }
@@ -78,7 +80,7 @@ namespace MoonSharp.Interpreter.Serialization.Json
         public static string ObjectToJson(object obj)
         {
             DynValue v = ObjectValueConverter.SerializeObjectToDynValue(null, obj, JsonNull.Create());
-            return JsonTableConverter.TableToJson(v.Table);
+            return v.Table.TableToJson();
         }
 
 
@@ -126,7 +128,7 @@ namespace MoonSharp.Interpreter.Serialization.Json
             return value.Type == DataType.Boolean || value.IsNil() ||
                 value.Type == DataType.Number || value.Type == DataType.String ||
                 value.Type == DataType.Table ||
-                (JsonNull.IsJsonNull(value));
+                JsonNull.IsJsonNull(value);
         }
 
         /// <summary>
@@ -137,7 +139,7 @@ namespace MoonSharp.Interpreter.Serialization.Json
         /// <returns>A table containing the representation of the given json.</returns>
         public static Table JsonToTable(string json, Script script = null)
         {
-            Lexer L = new Lexer(0, json, false);
+            Lexer L = new(0, json, false);
 
             if (L.Current.Type == TokenType.Brk_Open_Curly)
                 return ParseJsonObject(L, script);
@@ -154,7 +156,7 @@ namespace MoonSharp.Interpreter.Serialization.Json
         }
         private static Table ParseJsonArray(Lexer L, Script script)
         {
-            Table t = new Table(script);
+            Table t = new(script);
 
             L.Next();
 
@@ -173,7 +175,7 @@ namespace MoonSharp.Interpreter.Serialization.Json
 
         private static Table ParseJsonObject(Lexer L, Script script)
         {
-            Table t = new Table(script);
+            Table t = new(script);
 
             L.Next();
 
@@ -233,7 +235,7 @@ namespace MoonSharp.Interpreter.Serialization.Json
             }
         }
 
-        private static DynValue ParseJsonNumberValue(Lexer L, Script script)
+        private static DynValue ParseJsonNumberValue(Lexer L, Script _)
         {
             bool negative;
             if (L.Current.Type == TokenType.Op_MinusOrSub)

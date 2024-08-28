@@ -1,4 +1,4 @@
-﻿namespace MoonSharp.Hardwire
+﻿namespace SolarSharp.Hardwire
 {
     public interface ICodeGenerationLogger
     {

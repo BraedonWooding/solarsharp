@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Tree.Lexer;
+using SolarSharp.Interpreter.Errors;
 
-using MoonSharp.Interpreter.Tree.Expressions;
-
-namespace MoonSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class AssignmentStatement : Statement
     {
-        private readonly List<IVariable> m_LValues = new List<IVariable>();
+        private readonly List<IVariable> m_LValues = new();
         private readonly List<Expression> m_RValues;
         private readonly SourceRef m_Ref;
 
@@ -17,7 +18,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
         public AssignmentStatement(ScriptLoadingContext lcontext, Token startToken)
             : base(lcontext)
         {
-            List<string> names = new List<string>();
+            List<string> names = new();
 
             Token first = startToken;
 
@@ -80,14 +81,11 @@ namespace MoonSharp.Interpreter.Tree.Statements
 
         private IVariable CheckVar(ScriptLoadingContext lcontext, Expression firstExpression)
         {
-            IVariable v = firstExpression as IVariable;
-
-            if (v == null)
+            if (firstExpression is not IVariable v)
                 throw new SyntaxErrorException(lcontext.Lexer.Current, "unexpected symbol near '{0}' - not a l-value", lcontext.Lexer.Current);
 
             return v;
         }
-
 
         public override void Compile(Execution.VM.ByteCode bc)
         {

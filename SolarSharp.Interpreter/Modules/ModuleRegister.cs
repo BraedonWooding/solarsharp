@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.CoreLib;
-using MoonSharp.Interpreter.Platforms;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.CoreLib;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Platforms;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.Modules
 {
     /// <summary>
     /// Class managing modules (mostly as extension methods)
@@ -22,24 +24,24 @@ namespace MoonSharp.Interpreter
         {
             modules = Script.GlobalOptions.Platform.FilterSupportedCoreModules(modules);
 
-            if (modules.Has(CoreModules.GlobalConsts)) RegisterConstants(table);
-            if (modules.Has(CoreModules.TableIterators)) RegisterModuleType<TableIteratorsModule>(table);
-            if (modules.Has(CoreModules.Basic)) RegisterModuleType<BasicModule>(table);
-            if (modules.Has(CoreModules.Metatables)) RegisterModuleType<MetaTableModule>(table);
-            if (modules.Has(CoreModules.String)) RegisterModuleType<StringModule>(table);
-            if (modules.Has(CoreModules.LoadMethods)) RegisterModuleType<LoadModule>(table);
-            if (modules.Has(CoreModules.Table)) RegisterModuleType<TableModule>(table);
-            if (modules.Has(CoreModules.Table)) RegisterModuleType<TableModule_Globals>(table);
-            if (modules.Has(CoreModules.ErrorHandling)) RegisterModuleType<ErrorHandlingModule>(table);
-            if (modules.Has(CoreModules.Math)) RegisterModuleType<MathModule>(table);
-            if (modules.Has(CoreModules.Coroutine)) RegisterModuleType<CoroutineModule>(table);
-            if (modules.Has(CoreModules.Bit32)) RegisterModuleType<Bit32Module>(table);
-            if (modules.Has(CoreModules.Dynamic)) RegisterModuleType<DynamicModule>(table);
-            if (modules.Has(CoreModules.OS_System)) RegisterModuleType<OsSystemModule>(table);
-            if (modules.Has(CoreModules.OS_Time)) RegisterModuleType<OsTimeModule>(table);
-            if (modules.Has(CoreModules.IO)) RegisterModuleType<IoModule>(table);
-            if (modules.Has(CoreModules.Debug)) RegisterModuleType<DebugModule>(table);
-            if (modules.Has(CoreModules.Json)) RegisterModuleType<JsonModule>(table);
+            if (modules.Has(CoreModules.GlobalConsts)) table.RegisterConstants();
+            if (modules.Has(CoreModules.TableIterators)) table.RegisterModuleType<TableIteratorsModule>();
+            if (modules.Has(CoreModules.Basic)) table.RegisterModuleType<BasicModule>();
+            if (modules.Has(CoreModules.Metatables)) table.RegisterModuleType<MetaTableModule>();
+            if (modules.Has(CoreModules.String)) table.RegisterModuleType<StringModule>();
+            if (modules.Has(CoreModules.LoadMethods)) table.RegisterModuleType<LoadModule>();
+            if (modules.Has(CoreModules.Table)) table.RegisterModuleType<TableModule>();
+            if (modules.Has(CoreModules.Table)) table.RegisterModuleType<TableModule_Globals>();
+            if (modules.Has(CoreModules.ErrorHandling)) table.RegisterModuleType<ErrorHandlingModule>();
+            if (modules.Has(CoreModules.Math)) table.RegisterModuleType<MathModule>();
+            if (modules.Has(CoreModules.Coroutine)) table.RegisterModuleType<CoroutineModule>();
+            if (modules.Has(CoreModules.Bit32)) table.RegisterModuleType<Bit32Module>();
+            if (modules.Has(CoreModules.Dynamic)) table.RegisterModuleType<DynamicModule>();
+            if (modules.Has(CoreModules.OS_System)) table.RegisterModuleType<OsSystemModule>();
+            if (modules.Has(CoreModules.OS_Time)) table.RegisterModuleType<OsTimeModule>();
+            if (modules.Has(CoreModules.IO)) table.RegisterModuleType<IoModule>();
+            if (modules.Has(CoreModules.Debug)) table.RegisterModuleType<DebugModule>();
+            if (modules.Has(CoreModules.Json)) table.RegisterModuleType<JsonModule>();
 
             return table;
         }
@@ -81,7 +83,7 @@ namespace MoonSharp.Interpreter
         /// <param name="gtable">The table.</param>
         /// <param name="t">The type</param>
         /// <returns></returns>
-        /// <exception cref="System.ArgumentException">If the module contains some incompatibility</exception>
+        /// <exception cref="ArgumentException">If the module contains some incompatibility</exception>
         public static Table RegisterModuleType(this Table gtable, Type t)
         {
             Table table = CreateModuleNamespace(gtable, t);
@@ -105,7 +107,7 @@ namespace MoonSharp.Interpreter
                         (Func<ScriptExecutionContext, CallbackArguments, DynValue>)deleg;
 
 
-                    string name = (!string.IsNullOrEmpty(attr.Name)) ? attr.Name : mi.Name;
+                    string name = !string.IsNullOrEmpty(attr.Name) ? attr.Name : mi.Name;
 
                     table.Set(name, DynValue.NewCallback(func, name));
                 }
@@ -119,7 +121,7 @@ namespace MoonSharp.Interpreter
             foreach (FieldInfo fi in Framework.Do.GetFields(t).Where(_mi => _mi.IsStatic && _mi.GetCustomAttributes(typeof(MoonSharpModuleMethodAttribute), false).ToArray().Length > 0))
             {
                 MoonSharpModuleMethodAttribute attr = (MoonSharpModuleMethodAttribute)fi.GetCustomAttributes(typeof(MoonSharpModuleMethodAttribute), false).First();
-                string name = (!string.IsNullOrEmpty(attr.Name)) ? attr.Name : fi.Name;
+                string name = !string.IsNullOrEmpty(attr.Name) ? attr.Name : fi.Name;
 
                 RegisterScriptField(fi, null, table, t, name);
             }
@@ -127,7 +129,7 @@ namespace MoonSharp.Interpreter
             foreach (FieldInfo fi in Framework.Do.GetFields(t).Where(_mi => _mi.IsStatic && _mi.GetCustomAttributes(typeof(MoonSharpModuleConstantAttribute), false).ToArray().Length > 0))
             {
                 MoonSharpModuleConstantAttribute attr = (MoonSharpModuleConstantAttribute)fi.GetCustomAttributes(typeof(MoonSharpModuleConstantAttribute), false).First();
-                string name = (!string.IsNullOrEmpty(attr.Name)) ? attr.Name : fi.Name;
+                string name = !string.IsNullOrEmpty(attr.Name) ? attr.Name : fi.Name;
 
                 RegisterScriptFieldAsConst(fi, null, table, t, name);
             }
@@ -170,7 +172,7 @@ namespace MoonSharp.Interpreter
 
         private static Table CreateModuleNamespace(Table gtable, Type t)
         {
-            MoonSharpModuleAttribute attr = (MoonSharpModuleAttribute)(Framework.Do.GetCustomAttributes(t, typeof(MoonSharpModuleAttribute), false).First());
+            MoonSharpModuleAttribute attr = (MoonSharpModuleAttribute)Framework.Do.GetCustomAttributes(t, typeof(MoonSharpModuleAttribute), false).First();
 
             if (string.IsNullOrEmpty(attr.Namespace))
             {
@@ -178,10 +180,9 @@ namespace MoonSharp.Interpreter
             }
             else
             {
-                Table table = null;
-
                 DynValue found = gtable.Get(attr.Namespace);
 
+                Table table;
                 if (found.Type == DataType.Table)
                 {
                     table = found.Table;
@@ -220,10 +221,10 @@ namespace MoonSharp.Interpreter
         /// <typeparam name="T">The module type</typeparam>
         /// <param name="table">The table.</param>
         /// <returns></returns>
-        /// <exception cref="System.ArgumentException">If the module contains some incompatibility</exception>
+        /// <exception cref="ArgumentException">If the module contains some incompatibility</exception>
         public static Table RegisterModuleType<T>(this Table table)
         {
-            return RegisterModuleType(table, typeof(T));
+            return table.RegisterModuleType(typeof(T));
         }
 
 

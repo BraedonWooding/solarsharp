@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter.Debugging
+namespace SolarSharp.Interpreter.Debugging
 {
     /// <summary>
     /// Wrapper for a debugger initiated action 
@@ -112,10 +112,10 @@ namespace MoonSharp.Interpreter.Debugging
 
 
         /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
         /// <returns>
-        /// A <see cref="System.String" /> that represents this instance.
+        /// A <see cref="string" /> that represents this instance.
         /// </returns>
         public override string ToString()
         {

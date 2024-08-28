@@ -1,9 +1,10 @@
-﻿using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Execution;
+﻿using SolarSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-using MoonSharp.Interpreter.Tree.Expressions;
-
-namespace MoonSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class ReturnStatement : Statement
     {
@@ -45,7 +46,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
 
 
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
             using (bc.EnterSource(m_Ref))
             {

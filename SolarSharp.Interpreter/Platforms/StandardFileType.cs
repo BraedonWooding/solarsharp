@@ -1,5 +1,4 @@
-﻿
-namespace MoonSharp.Interpreter.Platforms
+﻿namespace SolarSharp.Interpreter.Platforms
 {
     /// <summary>
     /// Enumeration of standard file handles

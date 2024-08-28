@@ -1,8 +1,11 @@
 ﻿using System;
-using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace MoonSharp.Interpreter.Tree.Expressions
+namespace SolarSharp.Interpreter.Tree.Expressions
 {
     /// <summary>
     /// 
@@ -64,7 +67,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
         public static void AddExpressionToChain(object chain, Expression exp)
         {
             LinkedList list = (LinkedList)chain;
-            Node node = new Node() { Expr = exp };
+            Node node = new() { Expr = exp };
             AddNode(list, node);
         }
 
@@ -72,7 +75,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
         public static void AddOperatorToChain(object chain, Token op)
         {
             LinkedList list = (LinkedList)chain;
-            Node node = new Node() { Op = ParseBinaryOperator(op) };
+            Node node = new() { Op = ParseBinaryOperator(op) };
             AddNode(list, node);
         }
 
@@ -203,41 +206,25 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 
         private static Operator ParseBinaryOperator(Token token)
         {
-            switch (token.Type)
+            return token.Type switch
             {
-                case TokenType.Or:
-                    return Operator.Or;
-                case TokenType.And:
-                    return Operator.And;
-                case TokenType.Op_LessThan:
-                    return Operator.Less;
-                case TokenType.Op_GreaterThan:
-                    return Operator.Greater;
-                case TokenType.Op_LessThanEqual:
-                    return Operator.LessOrEqual;
-                case TokenType.Op_GreaterThanEqual:
-                    return Operator.GreaterOrEqual;
-                case TokenType.Op_NotEqual:
-                    return Operator.NotEqual;
-                case TokenType.Op_Equal:
-                    return Operator.Equal;
-                case TokenType.Op_Concat:
-                    return Operator.StrConcat;
-                case TokenType.Op_Add:
-                    return Operator.Add;
-                case TokenType.Op_MinusOrSub:
-                    return Operator.Sub;
-                case TokenType.Op_Mul:
-                    return Operator.Mul;
-                case TokenType.Op_Div:
-                    return Operator.Div;
-                case TokenType.Op_Mod:
-                    return Operator.Mod;
-                case TokenType.Op_Pwr:
-                    return Operator.Power;
-                default:
-                    throw new InternalErrorException("Unexpected binary operator '{0}'", token.Text);
-            }
+                TokenType.Or => Operator.Or,
+                TokenType.And => Operator.And,
+                TokenType.Op_LessThan => Operator.Less,
+                TokenType.Op_GreaterThan => Operator.Greater,
+                TokenType.Op_LessThanEqual => Operator.LessOrEqual,
+                TokenType.Op_GreaterThanEqual => Operator.GreaterOrEqual,
+                TokenType.Op_NotEqual => Operator.NotEqual,
+                TokenType.Op_Equal => Operator.Equal,
+                TokenType.Op_Concat => Operator.StrConcat,
+                TokenType.Op_Add => Operator.Add,
+                TokenType.Op_MinusOrSub => Operator.Sub,
+                TokenType.Op_Mul => Operator.Mul,
+                TokenType.Op_Div => Operator.Div,
+                TokenType.Op_Mod => Operator.Mod,
+                TokenType.Op_Pwr => Operator.Power,
+                _ => throw new InternalErrorException("Unexpected binary operator '{0}'", token.Text),
+            };
         }
 
         private readonly Expression m_Exp1, m_Exp2;
@@ -255,45 +242,31 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 
         private static bool ShouldInvertBoolean(Operator op)
         {
-            return (op == Operator.NotEqual)
-                || (op == Operator.GreaterOrEqual)
-                || (op == Operator.Greater);
+            return op == Operator.NotEqual
+                || op == Operator.GreaterOrEqual
+                || op == Operator.Greater;
         }
 
         private static OpCode OperatorToOpCode(Operator op)
         {
-            switch (op)
+            return op switch
             {
-                case Operator.Less:
-                case Operator.GreaterOrEqual:
-                    return OpCode.Less;
-                case Operator.LessOrEqual:
-                case Operator.Greater:
-                    return OpCode.LessEq;
-                case Operator.Equal:
-                case Operator.NotEqual:
-                    return OpCode.Eq;
-                case Operator.StrConcat:
-                    return OpCode.Concat;
-                case Operator.Add:
-                    return OpCode.Add;
-                case Operator.Sub:
-                    return OpCode.Sub;
-                case Operator.Mul:
-                    return OpCode.Mul;
-                case Operator.Div:
-                    return OpCode.Div;
-                case Operator.Mod:
-                    return OpCode.Mod;
-                case Operator.Power:
-                    return OpCode.Power;
-                default:
-                    throw new InternalErrorException("Unsupported operator {0}", op);
-            }
+                Operator.Less or Operator.GreaterOrEqual => OpCode.Less,
+                Operator.LessOrEqual or Operator.Greater => OpCode.LessEq,
+                Operator.Equal or Operator.NotEqual => OpCode.Eq,
+                Operator.StrConcat => OpCode.Concat,
+                Operator.Add => OpCode.Add,
+                Operator.Sub => OpCode.Sub,
+                Operator.Mul => OpCode.Mul,
+                Operator.Div => OpCode.Div,
+                Operator.Mod => OpCode.Mod,
+                Operator.Power => OpCode.Power,
+                _ => throw new InternalErrorException("Unsupported operator {0}", op),
+            };
         }
 
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
             m_Exp1.Compile(bc);
 
@@ -314,10 +287,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
             }
 
 
-            if (m_Exp2 != null)
-            {
-                m_Exp2.Compile(bc);
-            }
+            m_Exp2?.Compile(bc);
 
             bc.Emit_Operator(OperatorToOpCode(m_Operator));
 
@@ -406,11 +376,11 @@ namespace MoonSharp.Interpreter.Tree.Expressions
                 case Operator.Less:
                     if (l.Type == DataType.Number && r.Type == DataType.Number)
                     {
-                        return (l.Number < r.Number);
+                        return l.Number < r.Number;
                     }
                     else if (l.Type == DataType.String && r.Type == DataType.String)
                     {
-                        return (l.String.CompareTo(r.String) < 0);
+                        return l.String.CompareTo(r.String) < 0;
                     }
                     else
                     {
@@ -419,25 +389,25 @@ namespace MoonSharp.Interpreter.Tree.Expressions
                 case Operator.LessOrEqual:
                     if (l.Type == DataType.Number && r.Type == DataType.Number)
                     {
-                        return (l.Number <= r.Number);
+                        return l.Number <= r.Number;
                     }
                     else if (l.Type == DataType.String && r.Type == DataType.String)
                     {
-                        return (l.String.CompareTo(r.String) <= 0);
+                        return l.String.CompareTo(r.String) <= 0;
                     }
                     else
                     {
                         throw new DynamicExpressionException("Attempt to compare non-numbers, non-strings.");
                     }
                 case Operator.Equal:
-                    if (object.ReferenceEquals(r, l))
+                    if (ReferenceEquals(r, l))
                     {
                         return true;
                     }
                     else if (r.Type != l.Type)
                     {
-                        if ((l.Type == DataType.Nil && r.Type == DataType.Void)
-                            || (l.Type == DataType.Void && r.Type == DataType.Nil))
+                        if (l.Type == DataType.Nil && r.Type == DataType.Void
+                            || l.Type == DataType.Void && r.Type == DataType.Nil)
                             return true;
                         else
                             return false;

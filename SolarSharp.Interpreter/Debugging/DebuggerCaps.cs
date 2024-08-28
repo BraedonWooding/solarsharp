@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter.Debugging
+namespace SolarSharp.Interpreter.Debugging
 {
     /// <summary>
     /// Enumeration of capabilities for a debugger

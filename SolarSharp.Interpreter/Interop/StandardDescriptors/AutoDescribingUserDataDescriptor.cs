@@ -1,8 +1,8 @@
 ﻿using System;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors
 {
     /// <summary>
     /// Descriptor which acts as a non-containing adapter from IUserDataType to IUserDataDescriptor
@@ -49,9 +49,7 @@ namespace MoonSharp.Interpreter
         /// <returns></returns>
         public DynValue Index(Script script, object obj, DynValue index, bool isDirectIndexing)
         {
-            IUserDataType u = obj as IUserDataType;
-
-            if (u != null)
+            if (obj is IUserDataType u)
                 return u.Index(script, index, isDirectIndexing);
 
             return null;
@@ -68,9 +66,7 @@ namespace MoonSharp.Interpreter
         /// <returns></returns>
         public bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
         {
-            IUserDataType u = obj as IUserDataType;
-
-            if (u != null)
+            if (obj is IUserDataType u)
                 return u.SetIndex(script, index, value, isDirectIndexing);
 
             return false;
@@ -105,9 +101,7 @@ namespace MoonSharp.Interpreter
         /// <returns></returns>
         public DynValue MetaIndex(Script script, object obj, string metaname)
         {
-            IUserDataType u = obj as IUserDataType;
-
-            if (u != null)
+            if (obj is IUserDataType u)
                 return u.MetaIndex(script, metaname);
 
             return null;

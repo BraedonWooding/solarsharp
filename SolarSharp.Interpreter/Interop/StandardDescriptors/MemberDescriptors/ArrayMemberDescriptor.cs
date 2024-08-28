@@ -1,8 +1,10 @@
 ﻿using System;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
-using MoonSharp.Interpreter.Interop.Converters;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.Converters;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
 {
     /// <summary>
     /// Member descriptor for indexer of array types
@@ -20,7 +22,7 @@ namespace MoonSharp.Interpreter.Interop
         public ArrayMemberDescriptor(string name, bool isSetter, ParameterDescriptor[] indexerParams)
             : base(
             name,
-            isSetter ? (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerSet : (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerGet,
+            isSetter ? ArrayIndexerSet : (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerGet,
             indexerParams)
         {
             m_IsSetter = isSetter;
@@ -34,7 +36,7 @@ namespace MoonSharp.Interpreter.Interop
         public ArrayMemberDescriptor(string name, bool isSetter)
             : base(
             name,
-            isSetter ? (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerSet : (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerGet)
+            isSetter ? ArrayIndexerSet : (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerGet)
         {
             m_IsSetter = isSetter;
         }
@@ -46,11 +48,11 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="t">The table to be filled</param>
         public void PrepareForWiring(Table t)
         {
-            t.Set("class", DynValue.NewString(this.GetType().FullName));
+            t.Set("class", DynValue.NewString(GetType().FullName));
             t.Set("name", DynValue.NewString(Name));
             t.Set("setter", DynValue.NewBoolean(m_IsSetter));
 
-            if (this.Parameters != null)
+            if (Parameters != null)
             {
                 var pars = DynValue.NewPrimeTable();
 
@@ -81,7 +83,7 @@ namespace MoonSharp.Interpreter.Interop
         {
             Array array = (Array)arrayObj;
             int[] indices = BuildArrayIndices(args, args.Count - 1);
-            DynValue value = args[args.Count - 1];
+            DynValue value = args[^1];
 
             Type elemType = array.GetType().GetElementType();
 

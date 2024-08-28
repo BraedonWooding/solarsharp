@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
 using NUnit.Framework;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class CollectionsBaseGenRegisteredTests

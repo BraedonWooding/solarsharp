@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.Scopes;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
     /// A class representing a script function
@@ -43,7 +43,7 @@ namespace MoonSharp.Interpreter
         /// <summary>
         /// Shortcut for an empty closure
         /// </summary>
-        private static readonly ClosureContext emptyClosure = new ClosureContext();
+        private static readonly ClosureContext emptyClosure = new();
 
         /// <summary>
         /// The current closure context
@@ -64,10 +64,7 @@ namespace MoonSharp.Interpreter
 
             EntryPointByteCodeLocation = idx;
 
-            if (symbols.Length > 0)
-                ClosureContext = new ClosureContext(symbols, resolvedLocals);
-            else
-                ClosureContext = emptyClosure;
+            ClosureContext = symbols.Length > 0 ? new ClosureContext(symbols, resolvedLocals) : emptyClosure;
         }
 
         /// <summary>
@@ -109,7 +106,7 @@ namespace MoonSharp.Interpreter
         /// <returns></returns>
         public ScriptFunctionDelegate GetDelegate()
         {
-            return args => this.Call(args).ToObject();
+            return args => Call(args).ToObject();
         }
 
         /// <summary>
@@ -119,7 +116,7 @@ namespace MoonSharp.Interpreter
         /// <returns></returns>
         public ScriptFunctionDelegate<T> GetDelegate<T>()
         {
-            return args => this.Call(args).ToObject<T>();
+            return args => Call(args).ToObject<T>();
         }
 
         /// <summary>

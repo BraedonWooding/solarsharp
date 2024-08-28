@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System.Collections.Generic;
 using System.Linq;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter
 {
     /// <summary>
     /// LINQ helper methods

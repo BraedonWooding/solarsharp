@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
     /// This class stores a possible l-value (that is a potential target of an assignment)
     /// </summary>
     public class SymbolRef
     {
-        private static readonly SymbolRef s_DefaultEnv = new SymbolRef() { i_Type = SymbolRefType.DefaultEnv };
+        private static readonly SymbolRef s_DefaultEnv = new() { i_Type = SymbolRefType.DefaultEnv };
 
         // Fields are internal - direct access by the executor was a 10% improvement at profiling here!
         internal SymbolRefType i_Type;
@@ -75,10 +75,10 @@ namespace MoonSharp.Interpreter
         }
 
         /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
         /// <returns>
-        /// A <see cref="System.String" /> that represents this instance.
+        /// A <see cref="string" /> that represents this instance.
         /// </returns>
         public override string ToString()
         {
@@ -96,7 +96,7 @@ namespace MoonSharp.Interpreter
         /// </summary>
         internal void WriteBinary(BinaryWriter bw)
         {
-            bw.Write((byte)this.i_Type);
+            bw.Write((byte)i_Type);
             bw.Write(i_Index);
             bw.Write(i_Name);
         }
@@ -106,7 +106,7 @@ namespace MoonSharp.Interpreter
         /// </summary>
         internal static SymbolRef ReadBinary(BinaryReader br)
         {
-            SymbolRef that = new SymbolRef
+            SymbolRef that = new()
             {
                 i_Type = (SymbolRefType)br.ReadByte(),
                 i_Index = br.ReadInt32(),
@@ -117,7 +117,7 @@ namespace MoonSharp.Interpreter
 
         internal void WriteBinaryEnv(BinaryWriter bw, Dictionary<SymbolRef, int> symbolMap)
         {
-            if (this.i_Env != null)
+            if (i_Env != null)
                 bw.Write(symbolMap[i_Env]);
             else
                 bw.Write(-1);

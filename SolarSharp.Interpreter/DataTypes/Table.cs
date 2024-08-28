@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using MoonSharp.Interpreter.DataStructs;
+using SolarSharp.Interpreter.DataStructs;
+using SolarSharp.Interpreter.Errors;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
     /// A class representing a Lua table.
@@ -41,7 +42,7 @@ namespace MoonSharp.Interpreter
         {
             for (int i = 0; i < arrayValues.Length; i++)
             {
-                this.Set(DynValue.NewNumber(i + 1), arrayValues[i]);
+                Set(DynValue.NewNumber(i + 1), arrayValues[i]);
             }
         }
 
@@ -70,7 +71,7 @@ namespace MoonSharp.Interpreter
         /// </summary>
         private int GetIntegralKey(double d)
         {
-            int v = ((int)d);
+            int v = (int)d;
 
             if (d >= 1.0 && d == v)
                 return v;
@@ -80,12 +81,12 @@ namespace MoonSharp.Interpreter
 
         /// <summary>
         /// Gets or sets the 
-        /// <see cref="System.Object" /> with the specified key(s).
+        /// <see cref="object" /> with the specified key(s).
         /// This will marshall CLR and MoonSharp objects in the best possible way.
         /// Multiple keys can be used to access subtables.
         /// </summary>
         /// <value>
-        /// The <see cref="System.Object" />.
+        /// The <see cref="object" />.
         /// </value>
         /// <param name="keys">The keys to access the table and subtables</param>
         public object this[params object[] keys]
@@ -101,11 +102,11 @@ namespace MoonSharp.Interpreter
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="System.Object"/> with the specified key(s).
+        /// Gets or sets the <see cref="object"/> with the specified key(s).
         /// This will marshall CLR and MoonSharp objects in the best possible way.
         /// </summary>
         /// <value>
-        /// The <see cref="System.Object"/>.
+        /// The <see cref="object"/>.
         /// </value>
         /// <param name="key">The key.</param>
         /// <returns></returns>
@@ -127,15 +128,11 @@ namespace MoonSharp.Interpreter
             //Contract.Requires(keys != null);
 
             Table t = this;
-            key = (keys.Length > 0) ? keys[0] : null;
+            key = keys.Length > 0 ? keys[0] : null;
 
             for (int i = 1; i < keys.Length; ++i)
             {
-                DynValue vt = t.RawGet(key);
-
-                if (vt == null)
-                    throw new ScriptRuntimeException("Key '{0}' did not point to anything");
-
+                DynValue vt = t.RawGet(key) ?? throw new ScriptRuntimeException("Key '{0}' did not point to anything");
                 if (vt.Type != DataType.Table)
                     throw new ScriptRuntimeException("Key '{0}' did not point to a table");
 
@@ -293,8 +290,7 @@ namespace MoonSharp.Interpreter
             if (keys == null || keys.Length <= 0)
                 throw ScriptRuntimeException.TableIndexIsNil();
 
-            object key;
-            ResolveMultipleKeys(keys, out key).Set(key, value);
+            ResolveMultipleKeys(keys, out object key).Set(key, value);
         }
 
         #endregion
@@ -333,7 +329,7 @@ namespace MoonSharp.Interpreter
 
         /// <summary>
         /// Gets the value associated with the specified key.
-        /// (expressed as a <see cref="System.Object"/>).
+        /// (expressed as a <see cref="object"/>).
         /// </summary>
         /// <param name="key">The key.</param>
         public DynValue Get(object key)
@@ -344,7 +340,7 @@ namespace MoonSharp.Interpreter
 
         /// <summary>
         /// Gets the value associated with the specified keys (expressed as an 
-        /// array of <see cref="System.Object"/>).
+        /// array of <see cref="object"/>).
         /// This will marshall CLR and MoonSharp objects in the best possible way.
         /// Multiple keys can be used to access subtables.
         /// </summary>
@@ -361,7 +357,7 @@ namespace MoonSharp.Interpreter
 
         private static DynValue RawGetValue(LinkedListNode<TablePair> linkedListNode)
         {
-            return (linkedListNode != null) ? linkedListNode.Value.Value : null;
+            return linkedListNode?.Value.Value;
         }
 
         /// <summary>
@@ -425,7 +421,7 @@ namespace MoonSharp.Interpreter
 
         /// <summary>
         /// Gets the value associated with the specified keys (expressed as an
-        /// array of <see cref="System.Object"/>).
+        /// array of <see cref="object"/>).
         /// This will marshall CLR and MoonSharp objects in the best possible way.
         /// Multiple keys can be used to access subtables.
         /// </summary>
@@ -435,8 +431,7 @@ namespace MoonSharp.Interpreter
             if (keys == null || keys.Length <= 0)
                 return null;
 
-            object key;
-            return ResolveMultipleKeys(keys, out key).RawGet(key);
+            return ResolveMultipleKeys(keys, out object key).RawGet(key);
         }
 
         #endregion
@@ -522,8 +517,7 @@ namespace MoonSharp.Interpreter
             if (keys == null || keys.Length <= 0)
                 return false;
 
-            object key;
-            return ResolveMultipleKeys(keys, out key).Remove(key);
+            return ResolveMultipleKeys(keys, out object key).Remove(key);
         }
 
         #endregion

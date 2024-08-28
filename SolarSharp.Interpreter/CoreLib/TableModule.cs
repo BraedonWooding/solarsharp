@@ -1,11 +1,12 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
-
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing table Lua functions 
@@ -37,7 +38,7 @@ namespace MoonSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue pack(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            Table t = new Table(executionContext.GetScript());
+            Table t = new(executionContext.GetScript());
             DynValue v = DynValue.NewTable(t);
 
             for (int i = 0; i < args.Count; i++)
@@ -59,7 +60,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
             int end = GetTableLength(executionContext, vlist);
 
-            List<DynValue> values = new List<DynValue>();
+            List<DynValue> values = new();
 
             for (int i = 1; i <= end; i++)
                 values.Add(vlist.Table.Get(i));
@@ -181,7 +182,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
             int pos = vpos.IsNil() ? len : (int)vpos.Number;
 
-            if (pos >= len + 1 || (pos < 1 && len > 0))
+            if (pos >= len + 1 || pos < 1 && len > 0)
                 throw new ScriptRuntimeException("bad argument #1 to 'remove' (position out of bounds)");
 
             for (int i = pos; i <= len; i++)
@@ -211,21 +212,11 @@ namespace MoonSharp.Interpreter.CoreLib
             Table list = vlist.Table;
             string sep = vsep.IsNil() ? "" : vsep.String;
             int start = vstart.IsNilOrNan() ? 1 : (int)vstart.Number;
-            int end;
-
-            if (vend.IsNilOrNan())
-            {
-                end = GetTableLength(executionContext, vlist);
-            }
-            else
-            {
-                end = (int)vend.Number;
-            }
-
+            int end = vend.IsNilOrNan() ? GetTableLength(executionContext, vlist) : (int)vend.Number;
             if (end < start)
                 return DynValue.NewString(string.Empty);
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             for (int i = start; i <= end; i++)
             {
@@ -253,17 +244,12 @@ namespace MoonSharp.Interpreter.CoreLib
             if (__len != null)
             {
                 DynValue lenv = executionContext.GetScript().Call(__len, vlist);
-
                 double? len = lenv.CastToNumber();
-
-                if (len == null)
-                    throw new ScriptRuntimeException("object length is not a number");
-
-                return (int)len;
+                return len == null ? throw new ScriptRuntimeException("object length is not a number") : (int)len;
             }
             else
             {
-                return (int)vlist.Table.Length;
+                return vlist.Table.Length;
             }
         }
     }

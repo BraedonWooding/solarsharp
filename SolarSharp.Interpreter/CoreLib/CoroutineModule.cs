@@ -1,9 +1,10 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
-
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
 using System.Collections.Generic;
 
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing coroutine Lua functions 
@@ -39,7 +40,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue resume(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue resume(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue handle = args.AsType(0, "resume", DataType.Thread);
 
@@ -47,8 +48,10 @@ namespace MoonSharp.Interpreter.CoreLib
             {
                 DynValue ret = handle.Coroutine.Resume(args.GetArray(1));
 
-                List<DynValue> retval = new List<DynValue>();
-                retval.Add(DynValue.True);
+                List<DynValue> retval = new()
+                {
+                    DynValue.True
+                };
 
                 if (ret.Type == DataType.Tuple)
                 {
@@ -56,7 +59,7 @@ namespace MoonSharp.Interpreter.CoreLib
                     {
                         var v = ret.Tuple[i];
 
-                        if ((i == ret.Tuple.Length - 1) && (v.Type == DataType.Tuple))
+                        if (i == ret.Tuple.Length - 1 && v.Type == DataType.Tuple)
                         {
                             retval.AddRange(v.Tuple);
                         }
@@ -82,15 +85,13 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue yield(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue yield(ScriptExecutionContext _, CallbackArguments args)
         {
             return DynValue.NewYieldReq(args.GetArray());
         }
 
-
-
         [MoonSharpModuleMethod]
-        public static DynValue running(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue running(ScriptExecutionContext executionContext, CallbackArguments _)
         {
             Coroutine C = executionContext.GetCallingCoroutine();
             return DynValue.NewTuple(DynValue.NewCoroutine(C), DynValue.NewBoolean(C.State == CoroutineState.Main));
@@ -107,7 +108,7 @@ namespace MoonSharp.Interpreter.CoreLib
             {
                 case CoroutineState.Main:
                 case CoroutineState.Running:
-                    return (handle.Coroutine == running) ?
+                    return handle.Coroutine == running ?
                         DynValue.NewString("running") :
                         DynValue.NewString("normal");
                 case CoroutineState.NotStarted:

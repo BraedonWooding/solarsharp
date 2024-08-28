@@ -1,5 +1,6 @@
-﻿
-namespace MoonSharp.Interpreter.Execution.VM
+﻿using SolarSharp.Interpreter.DataTypes;
+
+namespace SolarSharp.Interpreter.Execution.VM
 {
     internal sealed partial class Processor
     {

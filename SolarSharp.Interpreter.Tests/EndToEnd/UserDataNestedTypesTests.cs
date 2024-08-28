@@ -1,6 +1,8 @@
-﻿using NUnit.Framework;
+﻿using SolarSharp.Interpreter.DataTypes;
+using NUnit.Framework;
+using SolarSharp.Interpreter.Interop.Attributes;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class UserDataNestedTypesTests

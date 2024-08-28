@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System.Collections.Generic;
 
-namespace MoonSharp.Interpreter.Execution
+namespace SolarSharp.Interpreter.Execution.Scopes
 {
     internal class RuntimeScopeFrame
     {

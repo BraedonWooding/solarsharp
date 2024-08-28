@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace MoonSharp.Interpreter.CoreLib.IO
+namespace SolarSharp.Interpreter.CoreLib.IO
 {
     internal class BinaryEncoding : Encoding
     {
@@ -19,7 +19,7 @@ namespace MoonSharp.Interpreter.CoreLib.IO
         {
             for (int i = 0; i < charCount; i++)
             {
-                bytes[byteIndex + i] = (byte)((int)chars[charIndex + i]);
+                bytes[byteIndex + i] = (byte)(int)chars[charIndex + i];
             }
 
             return charCount;
@@ -34,7 +34,7 @@ namespace MoonSharp.Interpreter.CoreLib.IO
         {
             for (int i = 0; i < byteCount; i++)
             {
-                chars[charIndex + i] = (char)((int)bytes[byteIndex + i]);
+                chars[charIndex + i] = (char)(int)bytes[byteIndex + i];
             }
 
             return byteCount;

@@ -1,13 +1,17 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace MoonSharp.Interpreter.Tree.Expressions
+namespace SolarSharp.Interpreter.Tree.Expressions
 {
     internal class TableConstructor : Expression
     {
         private readonly bool m_Shared = false;
-        private readonly List<Expression> m_PositionalValues = new List<Expression>();
-        private readonly List<KeyValuePair<Expression, Expression>> m_CtorArgs = new List<KeyValuePair<Expression, Expression>>();
+        private readonly List<Expression> m_PositionalValues = new();
+        private readonly List<KeyValuePair<Expression, Expression>> m_CtorArgs = new();
 
         public TableConstructor(ScriptLoadingContext lcontext, bool shared)
             : base(lcontext)
@@ -89,7 +93,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
         }
 
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
             bc.Emit_NewTable(m_Shared);
 
@@ -110,7 +114,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 
         public override DynValue Eval(ScriptExecutionContext context)
         {
-            if (!this.m_Shared)
+            if (!m_Shared)
             {
                 throw new DynamicExpressionException("Dynamic Expressions cannot define new non-prime tables.");
             }
@@ -124,7 +128,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
                 t.Set(++idx, e.Eval(context));
             }
 
-            foreach (KeyValuePair<Expression, Expression> kvp in this.m_CtorArgs)
+            foreach (KeyValuePair<Expression, Expression> kvp in m_CtorArgs)
             {
                 t.Set(kvp.Key.Eval(context), kvp.Value.Eval(context));
             }

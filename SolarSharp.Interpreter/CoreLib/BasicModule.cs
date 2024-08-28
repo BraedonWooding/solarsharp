@@ -1,13 +1,14 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using MoonSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
 
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing basic Lua functions (print, type, tostring, etc) as a MoonSharp module.
@@ -20,7 +21,7 @@ namespace MoonSharp.Interpreter.CoreLib
         //Returns the type of its only argument, coded as a string. The possible results of this function are "nil" 
         //(a string, not the value nil), "number", "string", "boolean", "table", "function", "thread", and "userdata". 
         [MoonSharpModuleMethod]
-        public static DynValue type(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue type(ScriptExecutionContext _, CallbackArguments args)
         {
             if (args.Count < 1) throw ScriptRuntimeException.BadArgumentValueExpected(0, "type");
 
@@ -28,14 +29,12 @@ namespace MoonSharp.Interpreter.CoreLib
             return DynValue.NewString(v.Type.ToLuaTypeString());
         }
 
-
-
         //assert (v [, message])
         //----------------------------------------------------------------------------------------------------------------
         //Issues an error when the value of its argument v is false (i.e., nil or false); 
         //otherwise, returns all its arguments. message is an error message; when absent, it defaults to "assertion failed!" 
         [MoonSharpModuleMethod]
-        public static DynValue assert(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue assert(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v = args[0];
             DynValue message = args[1];
@@ -55,7 +54,7 @@ namespace MoonSharp.Interpreter.CoreLib
         // ----------------------------------------------------------------------------------------------------------------
         // This function is mostly a stub towards the CLR GC. If mode is nil, "collect" or "restart", a GC is forced.
         [MoonSharpModuleMethod]
-        public static DynValue collectgarbage(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue collectgarbage(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue opt = args[0];
 
@@ -158,13 +157,13 @@ namespace MoonSharp.Interpreter.CoreLib
         // the end (-1 is the last argument). Otherwise, index must be the string "#", and select returns the total
         // number of extra arguments it received. 
         [MoonSharpModuleMethod]
-        public static DynValue select(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue select(ScriptExecutionContext _, CallbackArguments args)
         {
             if (args[0].Type == DataType.String && args[0].String == "#")
             {
-                if (args[args.Count - 1].Type == DataType.Tuple)
+                if (args[^1].Type == DataType.Tuple)
                 {
-                    return DynValue.NewNumber(args.Count - 1 + args[args.Count - 1].Tuple.Length);
+                    return DynValue.NewNumber(args.Count - 1 + args[^1].Tuple.Length);
                 }
                 else
                 {
@@ -175,7 +174,7 @@ namespace MoonSharp.Interpreter.CoreLib
             DynValue v_num = args.AsType(0, "select", DataType.Number, false);
             int num = (int)v_num.Number;
 
-            List<DynValue> values = new List<DynValue>();
+            List<DynValue> values = new();
 
             if (num > 0)
             {
@@ -214,7 +213,7 @@ namespace MoonSharp.Interpreter.CoreLib
         // upper or lower case) represents 10, 'B' represents 11, and so forth, with 'Z' representing 35. If the 
         // string e is not a valid numeral in the given base, the function returns nil. 
         [MoonSharpModuleMethod]
-        public static DynValue tonumber(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue tonumber(ScriptExecutionContext _, CallbackArguments args)
         {
             if (args.Count < 1) throw ScriptRuntimeException.BadArgumentValueExpected(0, "tonumber");
 
@@ -229,8 +228,7 @@ namespace MoonSharp.Interpreter.CoreLib
                 if (e.Type != DataType.String)
                     return DynValue.Nil;
 
-                double d;
-                if (double.TryParse(e.String, NumberStyles.Any, CultureInfo.InvariantCulture, out d))
+                if (double.TryParse(e.String, NumberStyles.Any, CultureInfo.InvariantCulture, out double d))
                 {
                     return DynValue.NewNumber(d);
                 }
@@ -240,12 +238,10 @@ namespace MoonSharp.Interpreter.CoreLib
             {
                 //!COMPAT: tonumber supports only 2,8,10 or 16 as base
                 //UPDATE: added support for 3-9 base numbers
-                DynValue ee;
-
-                if (args[0].Type != DataType.Number)
-                    ee = args.AsType(0, "tonumber", DataType.String, false);
-                else
-                    ee = DynValue.NewString(args[0].Number.ToString(CultureInfo.InvariantCulture)); ;
+                DynValue ee = args[0].Type != DataType.Number
+                    ? args.AsType(0, "tonumber", DataType.String, false)
+                    : DynValue.NewString(args[0].Number.ToString(CultureInfo.InvariantCulture));
+                ;
 
                 int bb = (int)b.Number;
 
@@ -279,7 +275,7 @@ namespace MoonSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue print(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             for (int i = 0; i < args.Count; i++)
             {

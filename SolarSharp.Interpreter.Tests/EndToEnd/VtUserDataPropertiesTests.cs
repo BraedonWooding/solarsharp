@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop;
 using NUnit.Framework;
+using SolarSharp.Interpreter.Interop.Attributes;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class VtUserDataPropertiesTests
@@ -28,9 +31,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
             {
                 get;
                 [MoonSharpVisible(true)]
-#pragma warning disable IDE0251 // Make member 'readonly', this is a bad message since it gives an error when done
                 set;
-#pragma warning restore IDE0251 // Make member 'readonly'
             }
 
 
@@ -205,7 +206,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(obj.IntProp, Is.EqualTo(321));
 
-            DynValue res = S.DoString(script);
+            _ = S.DoString(script);
 
             Assert.That(obj.IntProp, Is.EqualTo(19));
         }
@@ -226,7 +227,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(SomeClass.StaticProp, Is.EqualTo("qweqwe"));
 
-            DynValue res = S.DoString(script);
+            _ = S.DoString(script);
 
             Assert.That(SomeClass.StaticProp, Is.EqualTo("asdasdqweqwe"));
         }

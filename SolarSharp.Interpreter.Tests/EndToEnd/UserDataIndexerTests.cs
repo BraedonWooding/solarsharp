@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
+using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class UserDataIndexerTests

@@ -1,6 +1,7 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System;
 
-namespace MoonSharp.Interpreter.Loaders
+namespace SolarSharp.Interpreter.Loaders
 {
     /// <summary>
     /// Class dictating how requests to read scripts from files are handled.

@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System.Collections.Generic;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     internal sealed partial class Processor
     {
@@ -24,7 +25,7 @@ namespace MoonSharp.Interpreter.Execution.VM
                     result[values.Count + i - 1] = values[values.Count - 1].Tuple[i];
                 }
 
-                if (result[result.Length - 1].Type == DataType.Tuple)
+                if (result[^1].Type == DataType.Tuple)
                     return Internal_AdjustTuple(result);
                 else
                     return result;

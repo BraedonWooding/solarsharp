@@ -48,7 +48,7 @@
 using System;
 using System.Diagnostics;
 
-namespace MoonSharp.Interpreter.Interop.LuaStateInterop
+namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 {
     public class CharPtr
     {
@@ -78,32 +78,32 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
 
         public CharPtr()
         {
-            this.chars = null;
-            this.index = 0;
+            chars = null;
+            index = 0;
         }
 
         public CharPtr(string str)
         {
-            this.chars = (str + '\0').ToCharArray();
-            this.index = 0;
+            chars = (str + '\0').ToCharArray();
+            index = 0;
         }
 
         public CharPtr(CharPtr ptr)
         {
-            this.chars = ptr.chars;
-            this.index = ptr.index;
+            chars = ptr.chars;
+            index = ptr.index;
         }
 
         public CharPtr(CharPtr ptr, int index)
         {
-            this.chars = ptr.chars;
+            chars = ptr.chars;
             this.index = index;
         }
 
         public CharPtr(char[] chars)
         {
             this.chars = chars;
-            this.index = 0;
+            index = 0;
         }
 
         public CharPtr(char[] chars, int index)
@@ -114,19 +114,19 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
 
         public CharPtr(byte[] bytes)
         {
-            this.chars = new char[bytes.Length];
+            chars = new char[bytes.Length];
             for (int i = 0; i < bytes.Length; i++)
             {
-                this.chars[i] = (char)bytes[i];
+                chars[i] = (char)bytes[i];
             }
 
-            this.index = 0;
+            index = 0;
         }
 
         public CharPtr(IntPtr ptr)
         {
-            this.chars = new char[0];
-            this.index = 0;
+            chars = new char[0];
+            index = 0;
         }
 
         public static CharPtr operator +(CharPtr ptr, int offset) { return new CharPtr(ptr.chars, ptr.index + offset); }
@@ -134,12 +134,12 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
         public static CharPtr operator +(CharPtr ptr, uint offset) { return new CharPtr(ptr.chars, ptr.index + (int)offset); }
         public static CharPtr operator -(CharPtr ptr, uint offset) { return new CharPtr(ptr.chars, ptr.index - (int)offset); }
 
-        public void inc() { this.index++; }
-        public void dec() { this.index--; }
-        public CharPtr next() { return new CharPtr(this.chars, this.index + 1); }
-        public CharPtr prev() { return new CharPtr(this.chars, this.index - 1); }
-        public CharPtr add(int ofs) { return new CharPtr(this.chars, this.index + ofs); }
-        public CharPtr sub(int ofs) { return new CharPtr(this.chars, this.index - ofs); }
+        public void inc() { index++; }
+        public void dec() { index--; }
+        public CharPtr next() { return new CharPtr(chars, index + 1); }
+        public CharPtr prev() { return new CharPtr(chars, index - 1); }
+        public CharPtr add(int ofs) { return new CharPtr(chars, index + ofs); }
+        public CharPtr sub(int ofs) { return new CharPtr(chars, index - ofs); }
 
         public static bool operator ==(CharPtr ptr, char ch) { return ptr[0] == ch; }
         public static bool operator ==(char ch, CharPtr ptr) { return ptr[0] == ch; }
@@ -179,16 +179,16 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
         {
             object o1 = ptr1 as CharPtr;
             object o2 = ptr2 as CharPtr;
-            if ((o1 == null) && (o2 == null)) return true;
+            if (o1 == null && o2 == null) return true;
             if (o1 == null) return false;
             if (o2 == null) return false;
-            return (ptr1.chars == ptr2.chars) && (ptr1.index == ptr2.index);
+            return ptr1.chars == ptr2.chars && ptr1.index == ptr2.index;
         }
         public static bool operator !=(CharPtr ptr1, CharPtr ptr2) { return !(ptr1 == ptr2); }
 
         public override bool Equals(object o)
         {
-            return this == (o as CharPtr);
+            return this == o as CharPtr;
         }
 
         public override int GetHashCode()
@@ -197,8 +197,8 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
         }
         public override string ToString()
         {
-            System.Text.StringBuilder result = new System.Text.StringBuilder();
-            for (int i = index; (i < chars.Length) && (chars[i] != '\0'); i++)
+            System.Text.StringBuilder result = new();
+            for (int i = index; i < chars.Length && chars[i] != '\0'; i++)
                 result.Append(chars[i]);
 
             return result.ToString();
@@ -206,8 +206,8 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
 
         public string ToString(int length)
         {
-            System.Text.StringBuilder result = new System.Text.StringBuilder();
-            for (int i = index; (i < chars.Length) && i < (length + index); i++)
+            System.Text.StringBuilder result = new();
+            for (int i = index; i < chars.Length && i < length + index; i++)
                 result.Append(chars[i]);
             return result.ToString();
         }

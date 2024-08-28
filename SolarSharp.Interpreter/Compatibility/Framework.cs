@@ -1,10 +1,11 @@
-﻿using MoonSharp.Interpreter.Compatibility.Frameworks;
+﻿using SolarSharp.Interpreter.Compatibility.Frameworks;
+using SolarSharp.Interpreter.Compatibility.Frameworks.Base;
 
-namespace MoonSharp.Interpreter.Compatibility
+namespace SolarSharp.Interpreter.Compatibility
 {
     public static class Framework
     {
-        private static readonly FrameworkCurrent s_FrameworkCurrent = new FrameworkCurrent();
+        private static readonly FrameworkCurrent s_FrameworkCurrent = new();
 
         public static FrameworkBase Do { get { return s_FrameworkCurrent; } }
     }

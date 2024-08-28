@@ -5,18 +5,21 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using MoonSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution.Scopes;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     internal class ByteCode : RefIdObject
     {
-        public List<Instruction> Code = new List<Instruction>();
+        public List<Instruction> Code = new();
         public Script Script { get; private set; }
-        private readonly List<SourceRef> m_SourceRefStack = new List<SourceRef>();
+        private readonly List<SourceRef> m_SourceRefStack = new();
         private SourceRef m_CurrentSourceRef = null;
 
-        internal LoopTracker LoopTracker = new LoopTracker();
+        internal LoopTracker LoopTracker = new();
 
         public ByteCode(Script script)
         {
@@ -56,13 +59,13 @@ namespace MoonSharp.Interpreter.Execution.VM
         public void PopSourceRef()
         {
             m_SourceRefStack.RemoveAt(m_SourceRefStack.Count - 1);
-            m_CurrentSourceRef = (m_SourceRefStack.Count > 0) ? m_SourceRefStack[m_SourceRefStack.Count - 1] : null;
+            m_CurrentSourceRef = m_SourceRefStack.Count > 0 ? m_SourceRefStack[^1] : null;
         }
 
 #if (!PCL) && ((!UNITY_5) || UNITY_STANDALONE) && (!(NETFX_CORE))
         public void Dump(string file)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             for (int i = 0; i < Code.Count; i++)
             {
@@ -87,7 +90,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         public Instruction GetLastInstruction()
         {
-            return Code[Code.Count - 1];
+            return Code[^1];
         }
 
         private Instruction AppendInstruction(Instruction c)
@@ -153,7 +156,7 @@ namespace MoonSharp.Interpreter.Execution.VM
         [Conditional("EMIT_DEBUG_OPS")]
         public void Emit_Debug(string str)
         {
-            AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.Debug, Name = str.Substring(0, Math.Min(32, str.Length)) });
+            AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.Debug, Name = str[..Math.Min(32, str.Length)] });
         }
 
         public Instruction Emit_Enter(RuntimeScopeBlock runtimeScopeBlock)
@@ -301,8 +304,7 @@ namespace MoonSharp.Interpreter.Execution.VM
         {
             OpCode o;
             if (isNameIndex) o = OpCode.IndexN;
-            else if (isExpList) o = OpCode.IndexL;
-            else o = OpCode.Index;
+            else o = isExpList ? OpCode.IndexL : OpCode.Index;
 
             return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = o, Value = index });
         }
@@ -311,8 +313,7 @@ namespace MoonSharp.Interpreter.Execution.VM
         {
             OpCode o;
             if (isNameIndex) o = OpCode.IndexSetN;
-            else if (isExpList) o = OpCode.IndexSetL;
-            else o = OpCode.IndexSet;
+            else o = isExpList ? OpCode.IndexSetL : OpCode.IndexSet;
 
             return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = o, NumVal = stackofs, NumVal2 = tupleidx, Value = index });
         }

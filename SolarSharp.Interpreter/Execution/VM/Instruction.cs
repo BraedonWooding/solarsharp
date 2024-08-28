@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using MoonSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     internal class Instruction
     {
@@ -24,31 +25,31 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         public override string ToString()
         {
-            string append = this.OpCode.ToString().ToUpperInvariant();
+            string append = OpCode.ToString().ToUpperInvariant();
 
             int usage = (int)OpCode.GetFieldUsage();
 
             if (usage != 0)
                 append += GenSpaces();
 
-            if ((this.OpCode == VM.OpCode.Meta) || ((usage & ((int)InstructionFieldUsage.NumValAsCodeAddress)) == (int)InstructionFieldUsage.NumValAsCodeAddress))
+            if (OpCode == OpCode.Meta || (usage & (int)InstructionFieldUsage.NumValAsCodeAddress) == (int)InstructionFieldUsage.NumValAsCodeAddress)
                 append += " " + NumVal.ToString("X8");
-            else if ((usage & ((int)InstructionFieldUsage.NumVal)) != 0)
+            else if ((usage & (int)InstructionFieldUsage.NumVal) != 0)
                 append += " " + NumVal.ToString();
 
-            if ((usage & ((int)InstructionFieldUsage.NumVal2)) != 0)
+            if ((usage & (int)InstructionFieldUsage.NumVal2) != 0)
                 append += " " + NumVal2.ToString();
 
-            if ((usage & ((int)InstructionFieldUsage.Name)) != 0)
+            if ((usage & (int)InstructionFieldUsage.Name) != 0)
                 append += " " + Name;
 
-            if ((usage & ((int)InstructionFieldUsage.Value)) != 0)
+            if ((usage & (int)InstructionFieldUsage.Value) != 0)
                 append += " " + PurifyFromNewLines(Value);
 
-            if ((usage & ((int)InstructionFieldUsage.Symbol)) != 0)
+            if ((usage & (int)InstructionFieldUsage.Symbol) != 0)
                 append += " " + Symbol;
 
-            if (((usage & ((int)InstructionFieldUsage.SymbolList)) != 0) && (SymbolList != null))
+            if ((usage & (int)InstructionFieldUsage.SymbolList) != 0 && SymbolList != null)
                 append += " " + string.Join(",", SymbolList.Select(s => s.ToString()).ToArray());
 
             return append;
@@ -64,43 +65,43 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         private string GenSpaces()
         {
-            return new string(' ', 10 - this.OpCode.ToString().Length);
+            return new string(' ', 10 - OpCode.ToString().Length);
         }
 
         internal void WriteBinary(BinaryWriter wr, int baseAddress, Dictionary<SymbolRef, int> symbolMap)
         {
-            wr.Write((byte)this.OpCode);
+            wr.Write((byte)OpCode);
 
             int usage = (int)OpCode.GetFieldUsage();
 
-            if ((usage & ((int)InstructionFieldUsage.NumValAsCodeAddress)) == (int)InstructionFieldUsage.NumValAsCodeAddress)
-                wr.Write(this.NumVal - baseAddress);
-            else if ((usage & ((int)InstructionFieldUsage.NumVal)) != 0)
-                wr.Write(this.NumVal);
+            if ((usage & (int)InstructionFieldUsage.NumValAsCodeAddress) == (int)InstructionFieldUsage.NumValAsCodeAddress)
+                wr.Write(NumVal - baseAddress);
+            else if ((usage & (int)InstructionFieldUsage.NumVal) != 0)
+                wr.Write(NumVal);
 
-            if ((usage & ((int)InstructionFieldUsage.NumVal2)) != 0)
-                wr.Write(this.NumVal2);
+            if ((usage & (int)InstructionFieldUsage.NumVal2) != 0)
+                wr.Write(NumVal2);
 
-            if ((usage & ((int)InstructionFieldUsage.Name)) != 0)
+            if ((usage & (int)InstructionFieldUsage.Name) != 0)
                 wr.Write(Name ?? "");
 
-            if ((usage & ((int)InstructionFieldUsage.Value)) != 0)
+            if ((usage & (int)InstructionFieldUsage.Value) != 0)
                 DumpValue(wr, Value);
 
-            if ((usage & ((int)InstructionFieldUsage.Symbol)) != 0)
+            if ((usage & (int)InstructionFieldUsage.Symbol) != 0)
                 WriteSymbol(wr, Symbol, symbolMap);
 
-            if ((usage & ((int)InstructionFieldUsage.SymbolList)) != 0)
+            if ((usage & (int)InstructionFieldUsage.SymbolList) != 0)
             {
-                wr.Write(this.SymbolList.Length);
-                for (int i = 0; i < this.SymbolList.Length; i++)
+                wr.Write(SymbolList.Length);
+                for (int i = 0; i < SymbolList.Length; i++)
                     WriteSymbol(wr, SymbolList[i], symbolMap);
             }
         }
 
         private static void WriteSymbol(BinaryWriter wr, SymbolRef symbolRef, Dictionary<SymbolRef, int> symbolMap)
         {
-            int id = (symbolRef == null) ? -1 : symbolMap[symbolRef];
+            int id = symbolRef == null ? -1 : symbolMap[symbolRef];
             wr.Write(id);
         }
 
@@ -114,31 +115,31 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         internal static Instruction ReadBinary(SourceRef chunkRef, BinaryReader rd, int baseAddress, Table envTable, SymbolRef[] deserializedSymbols)
         {
-            Instruction that = new Instruction(chunkRef)
+            Instruction that = new(chunkRef)
             {
                 OpCode = (OpCode)rd.ReadByte()
             };
 
             int usage = (int)that.OpCode.GetFieldUsage();
 
-            if ((usage & ((int)InstructionFieldUsage.NumValAsCodeAddress)) == (int)InstructionFieldUsage.NumValAsCodeAddress)
+            if ((usage & (int)InstructionFieldUsage.NumValAsCodeAddress) == (int)InstructionFieldUsage.NumValAsCodeAddress)
                 that.NumVal = rd.ReadInt32() + baseAddress;
-            else if ((usage & ((int)InstructionFieldUsage.NumVal)) != 0)
+            else if ((usage & (int)InstructionFieldUsage.NumVal) != 0)
                 that.NumVal = rd.ReadInt32();
 
-            if ((usage & ((int)InstructionFieldUsage.NumVal2)) != 0)
+            if ((usage & (int)InstructionFieldUsage.NumVal2) != 0)
                 that.NumVal2 = rd.ReadInt32();
 
-            if ((usage & ((int)InstructionFieldUsage.Name)) != 0)
+            if ((usage & (int)InstructionFieldUsage.Name) != 0)
                 that.Name = rd.ReadString();
 
-            if ((usage & ((int)InstructionFieldUsage.Value)) != 0)
+            if ((usage & (int)InstructionFieldUsage.Value) != 0)
                 that.Value = ReadValue(rd, envTable);
 
-            if ((usage & ((int)InstructionFieldUsage.Symbol)) != 0)
+            if ((usage & (int)InstructionFieldUsage.Symbol) != 0)
                 that.Symbol = ReadSymbol(rd, deserializedSymbols);
 
-            if ((usage & ((int)InstructionFieldUsage.SymbolList)) != 0)
+            if ((usage & (int)InstructionFieldUsage.SymbolList) != 0)
             {
                 int len = rd.ReadInt32();
                 that.SymbolList = new SymbolRef[len];
@@ -216,11 +217,11 @@ namespace MoonSharp.Interpreter.Execution.VM
             symbol = null;
             symbolList = null;
 
-            if ((usage & ((int)InstructionFieldUsage.Symbol)) != 0)
-                symbol = this.Symbol;
+            if ((usage & (int)InstructionFieldUsage.Symbol) != 0)
+                symbol = Symbol;
 
-            if ((usage & ((int)InstructionFieldUsage.SymbolList)) != 0)
-                symbolList = this.SymbolList;
+            if ((usage & (int)InstructionFieldUsage.SymbolList) != 0)
+                symbolList = SymbolList;
 
         }
     }

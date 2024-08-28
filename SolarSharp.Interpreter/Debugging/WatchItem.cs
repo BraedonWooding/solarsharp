@@ -1,5 +1,6 @@
-﻿
-namespace MoonSharp.Interpreter.Debugging
+﻿using SolarSharp.Interpreter.DataTypes;
+
+namespace SolarSharp.Interpreter.Debugging
 {
     /// <summary>
     /// A watch item for the debugger to consume.
@@ -43,10 +44,10 @@ namespace MoonSharp.Interpreter.Debugging
         public SourceRef Location { get; set; }
 
         /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
         /// <returns>
-        /// A <see cref="System.String" /> that represents this instance.
+        /// A <see cref="string" /> that represents this instance.
         /// </returns>
         public override string ToString()
         {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.Errors
 {
     /// <summary>
     /// Exception thrown when an inconsistent state is reached in the interpreter

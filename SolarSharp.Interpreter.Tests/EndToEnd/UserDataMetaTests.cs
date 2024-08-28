@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
 using NUnit.Framework;
+using SolarSharp.Interpreter.Interop.Attributes;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class UserDataMetaTests
@@ -120,11 +123,10 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 
             public override bool Equals(object obj)
             {
-                if (obj is double)
-                    return ((double)obj) == Value;
+                if (obj is double v)
+                    return v == Value;
 
-                ArithmOperatorsTestClass other = obj as ArithmOperatorsTestClass;
-                if (other == null) return false;
+                if (obj is not ArithmOperatorsTestClass other) return false;
                 return Value == other.Value;
             }
 
@@ -135,17 +137,16 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 
             public int CompareTo(object obj)
             {
-                if (obj is double)
-                    return Value.CompareTo((int)(double)obj);
+                if (obj is double v)
+                    return Value.CompareTo((int)v);
 
-                ArithmOperatorsTestClass other = obj as ArithmOperatorsTestClass;
-                if (other == null) return 1;
+                if (obj is not ArithmOperatorsTestClass other) return 1;
                 return Value.CompareTo(other.Value);
             }
 
             public System.Collections.IEnumerator GetEnumerator()
             {
-                return (new List<int>() { 1, 2, 3 }).GetEnumerator();
+                return new List<int>() { 1, 2, 3 }.GetEnumerator();
             }
 
             [MoonSharpUserDataMetamethod("__call")]
@@ -158,10 +159,10 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
             [MoonSharpUserDataMetamethod("__ipairs")]
             public System.Collections.IEnumerator Pairs()
             {
-                return (new List<DynValue>() {
+                return new List<DynValue>() {
                     DynValue.NewTuple(DynValue.NewString("a"), DynValue.NewString("A")),
                     DynValue.NewTuple(DynValue.NewString("b"), DynValue.NewString("B")),
-                    DynValue.NewTuple(DynValue.NewString("c"), DynValue.NewString("C")) }).GetEnumerator();
+                    DynValue.NewTuple(DynValue.NewString("c"), DynValue.NewString("C")) }.GetEnumerator();
             }
 
 

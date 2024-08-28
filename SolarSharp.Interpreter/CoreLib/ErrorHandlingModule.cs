@@ -1,9 +1,10 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
-
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
 using System.Collections.Generic;
 
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing error handling Lua functions (pcall and xpcall)
@@ -107,7 +108,7 @@ namespace MoonSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue xpcall(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            List<DynValue> a = new List<DynValue>();
+            List<DynValue> a = new();
 
             for (int i = 0; i < args.Count; i++)
             {

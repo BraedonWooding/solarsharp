@@ -2,14 +2,14 @@
 using System.IO;
 using System.Text;
 
-namespace MoonSharp.Interpreter.IO
+namespace SolarSharp.Interpreter.IO
 {
     /// <summary>
     /// "Optimized" BinaryWriter which shares strings and use a dumb compression for integers
     /// </summary>
     public class BinDumpBinaryWriter : BinaryWriter
     {
-        private readonly Dictionary<string, int> m_StringMap = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> m_StringMap = new();
 
         public BinDumpBinaryWriter(Stream s) : base(s) { }
         public BinDumpBinaryWriter(Stream s, Encoding e) : base(s, e) { }
@@ -18,7 +18,7 @@ namespace MoonSharp.Interpreter.IO
         {
             byte v8 = (byte)value;
 
-            if ((uint)v8 == value && (v8 != 0x7F) && (v8 != 0x7E))
+            if (v8 == value && v8 != 0x7F && v8 != 0x7E)
             {
                 base.Write(v8);
             }
@@ -26,7 +26,7 @@ namespace MoonSharp.Interpreter.IO
             {
                 ushort v16 = (ushort)value;
 
-                if ((uint)v16 == value)
+                if (v16 == value)
                 {
                     base.Write((byte)0x7F);
                     base.Write(v16);
@@ -43,7 +43,7 @@ namespace MoonSharp.Interpreter.IO
         {
             sbyte vsbyte = (sbyte)value;
 
-            if ((int)vsbyte == value && (vsbyte != 0x7F) && (vsbyte != 0x7E))
+            if (vsbyte == value && vsbyte != 0x7F && vsbyte != 0x7E)
             {
                 base.Write(vsbyte);
             }
@@ -51,7 +51,7 @@ namespace MoonSharp.Interpreter.IO
             {
                 short vshort = (short)value;
 
-                if ((int)vshort == value)
+                if (vshort == value)
                 {
                     base.Write((sbyte)0x7F);
                     base.Write(vshort);
@@ -66,18 +66,17 @@ namespace MoonSharp.Interpreter.IO
 
         public override void Write(string value)
         {
-            int pos;
 
-            if (m_StringMap.TryGetValue(value, out pos))
+            if (m_StringMap.TryGetValue(value, out int pos))
             {
-                this.Write(m_StringMap[value]);
+                Write(m_StringMap[value]);
             }
             else
             {
                 pos = m_StringMap.Count;
                 m_StringMap[value] = pos;
 
-                this.Write(pos);
+                Write(pos);
                 base.Write(value);
             }
         }

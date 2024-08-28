@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Text;
-using MoonSharp.Commands;
-using MoonSharp.Commands.Implementations;
-using MoonSharp.Interpreter;
-using MoonSharp.Interpreter.REPL;
+using SolarSharp.Interpreter;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.REPL;
+using SolarSharp.Commands;
+using SolarSharp.Commands.Implementations;
 
-namespace MoonSharp
+namespace SolarSharp
 {
     internal class Program
     {
@@ -18,7 +21,7 @@ namespace MoonSharp
 
             Script script = new(CoreModules.Preset_Complete);
 
-            script.Globals["makestatic"] = (Func<string, DynValue>)(MakeStatic);
+            script.Globals["makestatic"] = (Func<string, DynValue>)MakeStatic;
 
             if (CheckArgs(args, new ShellContext(script)))
                 return;

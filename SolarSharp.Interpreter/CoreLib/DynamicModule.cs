@@ -1,8 +1,10 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Modules;
 
-
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing dynamic expression evaluations at runtime (a MoonSharp addition).
@@ -15,7 +17,9 @@ namespace MoonSharp.Interpreter.CoreLib
             public DynamicExpression Expr;
         }
 
+#pragma warning disable IDE0060 // Remove unused parameter
         public static void MoonSharpInit(Table globalTable, Table stringTable)
+#pragma warning restore IDE0060 // Remove unused parameter
         {
             UserData.RegisterType<DynamicExprWrapper>(InteropAccessMode.HideMembers);
         }
@@ -28,9 +32,9 @@ namespace MoonSharp.Interpreter.CoreLib
                 if (args[0].Type == DataType.UserData)
                 {
                     UserData ud = args[0].UserData;
-                    if (ud.Object is DynamicExprWrapper)
+                    if (ud.Object is DynamicExprWrapper wrapper)
                     {
-                        return ((DynamicExprWrapper)ud.Object).Expr.Evaluate(executionContext);
+                        return wrapper.Expr.Evaluate(executionContext);
                     }
                     else
                     {

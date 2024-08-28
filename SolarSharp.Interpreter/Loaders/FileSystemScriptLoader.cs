@@ -1,7 +1,8 @@
 ﻿#if DOTNET_CORE || (!(PCL || ENABLE_DOTNET || NETFX_CORE))
+using SolarSharp.Interpreter.DataTypes;
 using System.IO;
 
-namespace MoonSharp.Interpreter.Loaders
+namespace SolarSharp.Interpreter.Loaders
 {
     /// <summary>
     /// A script loader loading scripts directly from the file system (does not go through platform object)

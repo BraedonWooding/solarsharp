@@ -3,11 +3,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
-using MoonSharp.Interpreter.Interop.Converters;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.Converters;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors
 {
     /// <summary>
     /// Class providing easier marshalling of overloaded CLR functions
@@ -36,8 +39,8 @@ namespace MoonSharp.Interpreter.Interop
             public int HitIndexAtLastHit;
         }
 
-        private readonly List<IOverloadableMemberDescriptor> m_Overloads = new List<IOverloadableMemberDescriptor>();
-        private List<IOverloadableMemberDescriptor> m_ExtOverloads = new List<IOverloadableMemberDescriptor>();
+        private readonly List<IOverloadableMemberDescriptor> m_Overloads = new();
+        private List<IOverloadableMemberDescriptor> m_ExtOverloads = new();
         private bool m_Unsorted = true;
         private OverloadCacheItem[] m_Cache = new OverloadCacheItem[CACHE_SIZE];
         private int m_CacheHits = 0;
@@ -145,7 +148,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <exception cref="ScriptRuntimeException">function call doesn't match any overload</exception>
         private DynValue PerformOverloadedCall(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
         {
-            bool extMethodCacheNotExpired = IgnoreExtensionMethods || (obj == null) || m_ExtensionMethodVersion == UserData.GetExtensionMethodsChangeVersion();
+            bool extMethodCacheNotExpired = IgnoreExtensionMethods || obj == null || m_ExtensionMethodVersion == UserData.GetExtensionMethodsChangeVersion();
 
             // common case, let's optimize for it
             if (m_Overloads.Count == 1 && m_ExtOverloads.Count == 0 && extMethodCacheNotExpired)
@@ -189,12 +192,12 @@ namespace MoonSharp.Interpreter.Interop
                 }
             }
 
-            if (!IgnoreExtensionMethods && (obj != null))
+            if (!IgnoreExtensionMethods && obj != null)
             {
                 if (!extMethodCacheNotExpired)
                 {
                     m_ExtensionMethodVersion = UserData.GetExtensionMethodsChangeVersion();
-                    m_ExtOverloads = UserData.GetExtensionMethodsByNameAndType(this.Name, this.DeclaringType);
+                    m_ExtOverloads = UserData.GetExtensionMethodsByNameAndType(Name, DeclaringType);
                 }
 
                 for (int i = 0; i < m_ExtOverloads.Count; i++)
@@ -318,7 +321,7 @@ namespace MoonSharp.Interpreter.Interop
 
                 Type parameterType = method.Parameters[i].Type;
 
-                if ((parameterType == typeof(Script)) || (parameterType == typeof(ScriptExecutionContext)) || (parameterType == typeof(CallbackArguments)))
+                if (parameterType == typeof(Script) || parameterType == typeof(ScriptExecutionContext) || parameterType == typeof(CallbackArguments))
                     continue;
 
                 if (i == method.Parameters.Length - 1 && method.VarArgsArrayType != null)
@@ -333,7 +336,7 @@ namespace MoonSharp.Interpreter.Interop
                         var arg = args.RawGet(argsCnt, false);
                         if (arg == null) break;
 
-                        if (firstArg == null) firstArg = arg;
+                        firstArg ??= arg;
 
                         argsCnt += 1;
 
@@ -376,7 +379,7 @@ namespace MoonSharp.Interpreter.Interop
 
             if (totalScore > 0)
             {
-                if ((args.Count - argsBase) <= method.Parameters.Length)
+                if (args.Count - argsBase <= method.Parameters.Length)
                 {
                     totalScore += ScriptToClrConversions.WEIGHT_NO_EXTRA_PARAMS_BONUS;
                     totalScore *= 1000;
@@ -389,7 +392,7 @@ namespace MoonSharp.Interpreter.Interop
                 else
                 {
                     totalScore *= 1000;
-                    totalScore -= ScriptToClrConversions.WEIGHT_EXTRA_PARAMS_MALUS * ((args.Count - argsBase) - method.Parameters.Length);
+                    totalScore -= ScriptToClrConversions.WEIGHT_EXTRA_PARAMS_MALUS * (args.Count - argsBase - method.Parameters.Length);
                     totalScore = Math.Max(1, totalScore);
                 }
             }
@@ -439,13 +442,13 @@ namespace MoonSharp.Interpreter.Interop
         /// <returns></returns>
         public CallbackFunction GetCallbackFunction(Script script, object obj = null)
         {
-            return new CallbackFunction(GetCallback(script, obj), this.Name);
+            return new CallbackFunction(GetCallback(script, obj), Name);
         }
 
         /// <summary>
         /// Gets a value indicating whether there is at least one static method in the resolution list
         /// </summary>
-        /// <exception cref="System.NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
         public bool IsStatic
         {
             get { return m_Overloads.Any(o => o.IsStatic); }
@@ -469,7 +472,7 @@ namespace MoonSharp.Interpreter.Interop
         /// </returns>
         public DynValue GetValue(Script script, object obj)
         {
-            return DynValue.NewCallback(this.GetCallbackFunction(script, obj));
+            return DynValue.NewCallback(GetCallbackFunction(script, obj));
         }
 
         /// <summary>
@@ -478,7 +481,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="script">The script.</param>
         /// <param name="obj">The object owning this member, or null if static.</param>
         /// <param name="value">The value to be set.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
         public void SetValue(Script script, object obj, DynValue value)
         {
             this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
@@ -491,19 +494,17 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="t">The table to be filled</param>
         public void PrepareForWiring(Table t)
         {
-            t.Set("class", DynValue.NewString(this.GetType().FullName));
-            t.Set("name", DynValue.NewString(this.Name));
-            t.Set("decltype", DynValue.NewString(this.DeclaringType.FullName));
+            t.Set("class", DynValue.NewString(GetType().FullName));
+            t.Set("name", DynValue.NewString(Name));
+            t.Set("decltype", DynValue.NewString(DeclaringType.FullName));
             DynValue mst = DynValue.NewPrimeTable();
             t.Set("overloads", mst);
 
             int i = 0;
 
-            foreach (var m in this.m_Overloads)
+            foreach (var m in m_Overloads)
             {
-                IWireableDescriptor sd = m as IWireableDescriptor;
-
-                if (sd != null)
+                if (m is IWireableDescriptor sd)
                 {
                     DynValue mt = DynValue.NewPrimeTable();
                     mst.Table.Set(++i, mt);

@@ -1,6 +1,8 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using System;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     internal sealed partial class Processor
     {
@@ -20,19 +22,14 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         public DynValue GetGenericSymbol(SymbolRef symref)
         {
-            switch (symref.i_Type)
+            return symref.i_Type switch
             {
-                case SymbolRefType.DefaultEnv:
-                    return DynValue.NewTable(this.GetScript().Globals);
-                case SymbolRefType.Global:
-                    return GetGlobalSymbol(GetGenericSymbol(symref.i_Env), symref.i_Name);
-                case SymbolRefType.Local:
-                    return GetTopNonClrFunction().LocalScope[symref.i_Index];
-                case SymbolRefType.Upvalue:
-                    return GetTopNonClrFunction().ClosureScope[symref.i_Index];
-                default:
-                    throw new InternalErrorException("Unexpected {0} LRef at resolution: {1}", symref.i_Type, symref.i_Name);
-            }
+                SymbolRefType.DefaultEnv => DynValue.NewTable(this.GetScript().Globals),
+                SymbolRefType.Global => GetGlobalSymbol(GetGenericSymbol(symref.i_Env), symref.i_Name),
+                SymbolRefType.Local => GetTopNonClrFunction().LocalScope[symref.i_Index],
+                SymbolRefType.Upvalue => GetTopNonClrFunction().ClosureScope[symref.i_Index],
+                _ => throw new InternalErrorException("Unexpected {0} LRef at resolution: {1}", symref.i_Type, symref.i_Name),
+            };
         }
 
         private DynValue GetGlobalSymbol(DynValue dynValue, string name)

@@ -1,6 +1,8 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using System;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     // This part is practically written procedural style - it looks more like C than C#.
     // This is intentional so to avoid this-calls and virtual-calls as much as possible.
@@ -10,7 +12,7 @@ namespace MoonSharp.Interpreter.Execution.VM
         public DynValue Coroutine_Create(Closure closure)
         {
             // create a processor instance
-            Processor P = new Processor(this);
+            Processor P = new(this);
 
             // Put the closure as first value on the stack, for future reference
             P.m_ValueStack.Push(DynValue.NewClosure(closure));
@@ -26,7 +28,7 @@ namespace MoonSharp.Interpreter.Execution.VM
             this.m_ExecutionStack.ClearUsed();
 
             // Create a new processor instance, recycling this one
-            Processor P = new Processor(mainProcessor, this);
+            Processor P = new(mainProcessor, this);
 
             // Put the closure as first value on the stack, for future reference
             P.m_ValueStack.Push(DynValue.NewClosure(closure));

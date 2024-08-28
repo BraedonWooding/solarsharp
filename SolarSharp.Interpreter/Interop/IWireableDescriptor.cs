@@ -1,5 +1,6 @@
-﻿
-namespace MoonSharp.Interpreter.Interop.BasicDescriptors
+﻿using SolarSharp.Interpreter.DataTypes;
+
+namespace SolarSharp.Interpreter.Interop
 {
     /// <summary>
     /// Interface for descriptors with the capability of being serialized

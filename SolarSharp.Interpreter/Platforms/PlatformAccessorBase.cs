@@ -1,8 +1,9 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.Modules;
+using System;
 using System.IO;
 using System.Text;
 
-namespace MoonSharp.Interpreter.Platforms
+namespace SolarSharp.Interpreter.Platforms
 {
     /// <summary>
     /// An abstract class which offers basic services on top of IPlatformAccessor to provide easier implementation of platforms.
@@ -33,31 +34,25 @@ namespace MoonSharp.Interpreter.Platforms
                 }
                 else
                 {
-                    if (PlatformAutoDetector.IsRunningOnMono)
-                        suffix = "unity.dll.mono";
-                    else
-                        suffix = "unity.dll.unknown";
+                    suffix = PlatformAutoDetector.IsRunningOnMono ? "unity.dll.mono" : "unity.dll.unknown";
                 }
             }
-            else if (PlatformAutoDetector.IsRunningOnMono)
-                suffix = "mono";
-            else
-                suffix = "dotnet";
+            else suffix = PlatformAutoDetector.IsRunningOnMono ? "mono" : "dotnet";
 
             if (PlatformAutoDetector.IsPortableFramework)
-                suffix = suffix + ".portable";
+                suffix += ".portable";
 
             if (PlatformAutoDetector.IsRunningOnClr4)
-                suffix = suffix + ".clr4";
+                suffix += ".clr4";
             else
-                suffix = suffix + ".clr2";
+                suffix += ".clr2";
 
 #if DOTNET_CORE
 			suffix += ".netcore";
 #endif
 
             if (PlatformAutoDetector.IsRunningOnAOT)
-                suffix = suffix + ".aot";
+                suffix += ".aot";
 
             return GetPlatformNamePrefix() + "." + suffix;
         }

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.CodeDom;
 using System.Collections.Generic;
-using MoonSharp.Interpreter;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
-using MoonSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors;
 
-namespace MoonSharp.Hardwire.Utils
+namespace SolarSharp.Hardwire.Utils
 {
     public class HardwireParameterDescriptor
     {
@@ -21,13 +21,13 @@ namespace MoonSharp.Hardwire.Utils
             CodeExpression ename = new CodePrimitiveExpression(tpar.Get("name").String);
             CodeExpression etype = new CodeTypeOfExpression(tpar.Get("origtype").String);
             CodeExpression hasDefaultValue = new CodePrimitiveExpression(tpar.Get("default").Boolean);
-            CodeExpression defaultValue = tpar.Get("default").Boolean ? (CodeExpression)(new CodeObjectCreateExpression(typeof(DefaultValue))) :
-                (CodeExpression)(new CodePrimitiveExpression(null));
+            CodeExpression defaultValue = tpar.Get("default").Boolean ? new CodeObjectCreateExpression(typeof(DefaultValue)) :
+                (CodeExpression)new CodePrimitiveExpression(null);
             CodeExpression isOut = new CodePrimitiveExpression(tpar.Get("out").Boolean);
             CodeExpression isRef = new CodePrimitiveExpression(tpar.Get("ref").Boolean);
             CodeExpression isVarArg = new CodePrimitiveExpression(tpar.Get("varargs").Boolean);
-            CodeExpression restrictType = tpar.Get("restricted").Boolean ? (CodeExpression)(new CodeTypeOfExpression(tpar.Get("type").String)) :
-                (CodeExpression)(new CodePrimitiveExpression(null));
+            CodeExpression restrictType = tpar.Get("restricted").Boolean ? new CodeTypeOfExpression(tpar.Get("type").String) :
+                (CodeExpression)new CodePrimitiveExpression(null);
 
             Expression = new CodeObjectCreateExpression(typeof(ParameterDescriptor), new CodeExpression[] {
                     ename, etype, hasDefaultValue, defaultValue, isOut, isRef,

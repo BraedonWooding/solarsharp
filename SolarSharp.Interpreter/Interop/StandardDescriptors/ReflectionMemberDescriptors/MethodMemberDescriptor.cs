@@ -5,11 +5,15 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Diagnostics;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Diagnostics;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors
 {
     /// <summary>
     /// Class providing easier marshalling of CLR functions
@@ -40,29 +44,26 @@ namespace MoonSharp.Interpreter.Interop
         /// </summary>
         /// <param name="methodBase">The MethodBase (MethodInfo or ConstructorInfo) got through reflection.</param>
         /// <param name="accessMode">The interop access mode.</param>
-        /// <exception cref="System.ArgumentException">Invalid accessMode</exception>
+        /// <exception cref="ArgumentException">Invalid accessMode</exception>
         public MethodMemberDescriptor(MethodBase methodBase, InteropAccessMode accessMode = InteropAccessMode.Default)
         {
             CheckMethodIsCompatible(methodBase, true);
 
-            IsConstructor = (methodBase is ConstructorInfo);
-            this.MethodInfo = methodBase;
+            IsConstructor = methodBase is ConstructorInfo;
+            MethodInfo = methodBase;
 
             bool isStatic = methodBase.IsStatic || IsConstructor;
 
-            if (IsConstructor)
-                m_IsAction = false;
-            else
-                m_IsAction = ((MethodInfo)methodBase).ReturnType == typeof(void);
+            m_IsAction = IsConstructor ? false : ((MethodInfo)methodBase).ReturnType == typeof(void);
 
             ParameterInfo[] reflectionParams = methodBase.GetParameters();
             ParameterDescriptor[] parameters;
 
-            if (this.MethodInfo.DeclaringType.IsArray)
+            if (MethodInfo.DeclaringType.IsArray)
             {
                 m_IsArrayCtor = true;
 
-                int rank = this.MethodInfo.DeclaringType.GetArrayRank();
+                int rank = MethodInfo.DeclaringType.GetArrayRank();
 
                 parameters = new ParameterDescriptor[rank];
 
@@ -75,9 +76,9 @@ namespace MoonSharp.Interpreter.Interop
             }
 
 
-            bool isExtensionMethod = (methodBase.IsStatic && parameters.Length > 0 && methodBase.GetCustomAttributes(typeof(ExtensionAttribute), false).Any());
+            bool isExtensionMethod = methodBase.IsStatic && parameters.Length > 0 && methodBase.GetCustomAttributes(typeof(ExtensionAttribute), false).Any();
 
-            base.Initialize(methodBase.Name, isStatic, parameters, isExtensionMethod);
+            Initialize(methodBase.Name, isStatic, parameters, isExtensionMethod);
 
             // adjust access mode
             if (Script.GlobalOptions.Platform.IsRunningOnAOT())
@@ -92,7 +93,7 @@ namespace MoonSharp.Interpreter.Interop
             if (parameters.Any(p => p.Type.IsByRef))
                 accessMode = InteropAccessMode.Reflection;
 
-            this.AccessMode = accessMode;
+            AccessMode = accessMode;
 
             if (AccessMode == InteropAccessMode.Preoptimized)
                 ((IOptimizableDescriptor)this).Optimize();
@@ -126,7 +127,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="methodBase">The MethodBase.</param>
         /// <param name="throwException">if set to <c>true</c> an exception with the proper error message is thrown if not compatible.</param>
         /// <returns></returns>
-        /// <exception cref="System.ArgumentException">
+        /// <exception cref="ArgumentException">
         /// Thrown if throwException is <c>true</c> and one of this applies:
         /// The method contains unresolved generic parameters, or has an unresolved generic return type
         /// or
@@ -182,8 +183,7 @@ namespace MoonSharp.Interpreter.Interop
                 m_OptimizedFunc == null && m_OptimizedAction == null)
                 ((IOptimizableDescriptor)this).Optimize();
 
-            List<int> outParams = null;
-            object[] pars = base.BuildArgumentList(script, obj, context, args, out outParams);
+            object[] pars = base.BuildArgumentList(script, obj, context, args, out List<int> outParams);
             object retv = null;
 
             if (m_OptimizedFunc != null)
@@ -202,10 +202,7 @@ namespace MoonSharp.Interpreter.Interop
             }
             else
             {
-                if (IsConstructor)
-                    retv = ((ConstructorInfo)MethodInfo).Invoke(pars);
-                else
-                    retv = MethodInfo.Invoke(obj, pars);
+                retv = IsConstructor ? ((ConstructorInfo)MethodInfo).Invoke(pars) : MethodInfo.Invoke(obj, pars);
             }
 
             return BuildReturnValue(script, outParams, pars, retv);
@@ -222,7 +219,7 @@ namespace MoonSharp.Interpreter.Interop
             if (AccessMode == InteropAccessMode.Reflection)
                 return;
 
-            MethodInfo methodInfo = this.MethodInfo as MethodInfo;
+            MethodInfo methodInfo = MethodInfo as MethodInfo;
 
             if (methodInfo == null)
                 return;
@@ -248,19 +245,8 @@ namespace MoonSharp.Interpreter.Interop
                     }
                 }
 
-                Expression fn;
-
-                if (IsStatic)
-                {
-                    fn = Expression.Call(methodInfo, args);
-                }
-                else
-                {
-                    fn = Expression.Call(inst, methodInfo, args);
-                }
-
-
-                if (this.m_IsAction)
+                Expression fn = IsStatic ? Expression.Call(methodInfo, args) : (Expression)Expression.Call(inst, methodInfo, args);
+                if (m_IsAction)
                 {
                     var lambda = Expression.Lambda<Action<object, object[]>>(fn, objinst, ep);
                     Interlocked.Exchange(ref m_OptimizedAction, lambda.Compile());
@@ -282,25 +268,25 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="t">The table to be filled</param>
         public void PrepareForWiring(Table t)
         {
-            t.Set("class", DynValue.NewString(this.GetType().FullName));
-            t.Set("name", DynValue.NewString(this.Name));
-            t.Set("ctor", DynValue.NewBoolean(this.IsConstructor));
-            t.Set("special", DynValue.NewBoolean(this.MethodInfo.IsSpecialName));
-            t.Set("visibility", DynValue.NewString(this.MethodInfo.GetClrVisibility()));
+            t.Set("class", DynValue.NewString(GetType().FullName));
+            t.Set("name", DynValue.NewString(Name));
+            t.Set("ctor", DynValue.NewBoolean(IsConstructor));
+            t.Set("special", DynValue.NewBoolean(MethodInfo.IsSpecialName));
+            t.Set("visibility", DynValue.NewString(MethodInfo.GetClrVisibility()));
 
-            if (this.IsConstructor)
-                t.Set("ret", DynValue.NewString(((ConstructorInfo)this.MethodInfo).DeclaringType.FullName));
+            if (IsConstructor)
+                t.Set("ret", DynValue.NewString(((ConstructorInfo)MethodInfo).DeclaringType.FullName));
             else
-                t.Set("ret", DynValue.NewString(((MethodInfo)this.MethodInfo).ReturnType.FullName));
+                t.Set("ret", DynValue.NewString(((MethodInfo)MethodInfo).ReturnType.FullName));
 
             if (m_IsArrayCtor)
             {
-                t.Set("arraytype", DynValue.NewString(this.MethodInfo.DeclaringType.GetElementType().FullName));
+                t.Set("arraytype", DynValue.NewString(MethodInfo.DeclaringType.GetElementType().FullName));
             }
 
-            t.Set("decltype", DynValue.NewString(this.MethodInfo.DeclaringType.FullName));
-            t.Set("static", DynValue.NewBoolean(this.IsStatic));
-            t.Set("extension", DynValue.NewBoolean(this.ExtensionMethodType != null));
+            t.Set("decltype", DynValue.NewString(MethodInfo.DeclaringType.FullName));
+            t.Set("static", DynValue.NewBoolean(IsStatic));
+            t.Set("extension", DynValue.NewBoolean(ExtensionMethodType != null));
 
             var pars = DynValue.NewPrimeTable();
 

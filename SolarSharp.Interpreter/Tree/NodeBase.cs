@@ -1,7 +1,9 @@
-﻿using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Execution.VM;
+﻿using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace MoonSharp.Interpreter.Tree
+namespace SolarSharp.Interpreter.Tree
 {
     internal abstract class NodeBase
     {
@@ -21,7 +23,7 @@ namespace MoonSharp.Interpreter.Tree
         {
             throw new SyntaxErrorException(t, "unexpected symbol near '{0}'", t.Text)
             {
-                IsPrematureStreamTermination = (t.Type == TokenType.Eof)
+                IsPrematureStreamTermination = t.Type == TokenType.Eof
             };
         }
 
@@ -75,7 +77,7 @@ namespace MoonSharp.Interpreter.Tree
                     "'{0}' expected (to close '{1}' at line {2}) near '{3}'",
                     expectedTokenText, originalToken.Text, originalToken.FromLine, t.Text)
                 {
-                    IsPrematureStreamTermination = (t.Type == TokenType.Eof)
+                    IsPrematureStreamTermination = t.Type == TokenType.Eof
                 };
             }
 

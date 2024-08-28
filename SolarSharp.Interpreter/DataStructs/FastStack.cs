@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace MoonSharp.Interpreter.DataStructs
+namespace SolarSharp.Interpreter.DataStructs
 {
     /// <summary>
     /// A preallocated, non-resizable, stack
@@ -43,7 +43,7 @@ namespace MoonSharp.Interpreter.DataStructs
 
         private void Zero(int index)
         {
-            m_Storage[index] = default(T);
+            m_Storage[index] = default;
         }
 
         public T Peek(int idxofs = 0)
@@ -67,7 +67,7 @@ namespace MoonSharp.Interpreter.DataStructs
             if (cnt == 1)
             {
                 --m_HeadIdx;
-                m_Storage[m_HeadIdx] = default(T);
+                m_Storage[m_HeadIdx] = default;
             }
             else
             {
@@ -81,7 +81,7 @@ namespace MoonSharp.Interpreter.DataStructs
         {
             --m_HeadIdx;
             T retval = m_Storage[m_HeadIdx];
-            m_Storage[m_HeadIdx] = default(T);
+            m_Storage[m_HeadIdx] = default;
             return retval;
         }
 
@@ -154,7 +154,7 @@ namespace MoonSharp.Interpreter.DataStructs
 
         int ICollection<T>.Count
         {
-            get { return this.Count; }
+            get { return Count; }
         }
 
         bool ICollection<T>.IsReadOnly

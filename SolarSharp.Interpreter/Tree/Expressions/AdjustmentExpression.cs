@@ -1,7 +1,7 @@
-﻿using MoonSharp.Interpreter.Execution;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
 
-
-namespace MoonSharp.Interpreter.Tree.Expressions
+namespace SolarSharp.Interpreter.Tree.Expressions
 {
     internal class AdjustmentExpression : Expression
     {

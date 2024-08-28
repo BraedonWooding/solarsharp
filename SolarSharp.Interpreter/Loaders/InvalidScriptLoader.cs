@@ -1,6 +1,7 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System;
 
-namespace MoonSharp.Interpreter.Loaders
+namespace SolarSharp.Interpreter.Loaders
 {
     /// <summary>
     /// A script loader used for platforms we cannot initialize in any better way..

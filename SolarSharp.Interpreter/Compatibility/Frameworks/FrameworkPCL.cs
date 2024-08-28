@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace MoonSharp.Interpreter.Compatibility.Frameworks
+namespace SolarSharp.Interpreter.Compatibility.Frameworks
 {
 	class FrameworkCurrent : FrameworkClrBase
 	{

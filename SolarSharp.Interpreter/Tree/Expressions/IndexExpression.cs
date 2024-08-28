@@ -1,7 +1,9 @@
-﻿using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Execution.VM;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
 
-namespace MoonSharp.Interpreter.Tree.Expressions
+namespace SolarSharp.Interpreter.Tree.Expressions
 {
     internal class IndexExpression : Expression, IVariable
     {
@@ -33,15 +35,14 @@ namespace MoonSharp.Interpreter.Tree.Expressions
             {
                 bc.Emit_Index(DynValue.NewString(m_Name), true);
             }
-            else if (m_IndexExp is LiteralExpression)
+            else if (m_IndexExp is LiteralExpression lit)
             {
-                LiteralExpression lit = (LiteralExpression)m_IndexExp;
                 bc.Emit_Index(lit.Value);
             }
             else
             {
                 m_IndexExp.Compile(bc);
-                bc.Emit_Index(isExpList: (m_IndexExp is ExprListExpression));
+                bc.Emit_Index(isExpList: m_IndexExp is ExprListExpression);
             }
         }
 
@@ -53,15 +54,14 @@ namespace MoonSharp.Interpreter.Tree.Expressions
             {
                 bc.Emit_IndexSet(stackofs, tupleidx, DynValue.NewString(m_Name), isNameIndex: true);
             }
-            else if (m_IndexExp is LiteralExpression)
+            else if (m_IndexExp is LiteralExpression lit)
             {
-                LiteralExpression lit = (LiteralExpression)m_IndexExp;
                 bc.Emit_IndexSet(stackofs, tupleidx, lit.Value);
             }
             else
             {
                 m_IndexExp.Compile(bc);
-                bc.Emit_IndexSet(stackofs, tupleidx, isExpList: (m_IndexExp is ExprListExpression));
+                bc.Emit_IndexSet(stackofs, tupleidx, isExpList: m_IndexExp is ExprListExpression);
             }
         }
 

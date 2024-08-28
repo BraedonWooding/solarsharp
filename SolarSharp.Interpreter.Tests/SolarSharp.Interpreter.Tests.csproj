@@ -3,11 +3,11 @@
     <LangVersion>9.0</LangVersion>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <RootNamespace>MoonSharp.Interpreter.Tests</RootNamespace>
-    <AssemblyName>MoonSharp.Interpreter.Tests</AssemblyName>
+    <RootNamespace>SolarSharp.Interpreter.Tests</RootNamespace>
+    <AssemblyName>SolarSharp.Interpreter.Tests</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <AssemblyTitle>MoonSharp.Interpreter.Tests</AssemblyTitle>
-    <Product>MoonSharp.Interpreter.Tests</Product>
+    <AssemblyTitle>SolarSharp.Interpreter.Tests</AssemblyTitle>
+    <Product>SolarSharp.Interpreter.Tests</Product>
     <Copyright>Copyright © 2024</Copyright>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>

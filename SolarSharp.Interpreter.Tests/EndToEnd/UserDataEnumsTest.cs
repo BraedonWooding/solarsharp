@@ -1,7 +1,9 @@
 ﻿using System;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop;
 using NUnit.Framework;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     public enum MyEnum : short
     {

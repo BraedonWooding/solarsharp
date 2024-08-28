@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
-using MoonSharp.Interpreter.Interop.Converters;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.Converters;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
 {
     /// <summary>
     /// Class providing easier marshalling of CLR functions
@@ -54,17 +57,17 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="isExtensionMethod">if set to <c>true</c> [is extension method].</param>
         protected void Initialize(string funcName, bool isStatic, ParameterDescriptor[] parameters, bool isExtensionMethod)
         {
-            this.Name = funcName;
-            this.IsStatic = isStatic;
-            this.Parameters = parameters;
+            Name = funcName;
+            IsStatic = isStatic;
+            Parameters = parameters;
 
             if (isExtensionMethod)
-                this.ExtensionMethodType = Parameters[0].Type;
+                ExtensionMethodType = Parameters[0].Type;
 
-            if (Parameters.Length > 0 && Parameters[Parameters.Length - 1].IsVarArgs)
+            if (Parameters.Length > 0 && Parameters[^1].IsVarArgs)
             {
-                VarArgsArrayType = Parameters[Parameters.Length - 1].Type;
-                VarArgsElementType = Parameters[Parameters.Length - 1].Type.GetElementType();
+                VarArgsArrayType = Parameters[^1].Type;
+                VarArgsElementType = Parameters[^1].Type.GetElementType();
             }
 
             SortDiscriminant = string.Join(":", Parameters.Select(pi => pi.Type.FullName).ToArray());
@@ -91,7 +94,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <returns></returns>
         public CallbackFunction GetCallbackFunction(Script script, object obj = null)
         {
-            return new CallbackFunction(GetCallback(script, obj), this.Name);
+            return new CallbackFunction(GetCallback(script, obj), Name);
         }
 
         /// <summary>
@@ -102,7 +105,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <returns></returns>
         public DynValue GetCallbackAsDynValue(Script script, object obj = null)
         {
-            return DynValue.NewCallback(this.GetCallbackFunction(script, obj));
+            return DynValue.NewCallback(GetCallbackFunction(script, obj));
         }
 
         /// <summary>
@@ -144,7 +147,7 @@ namespace MoonSharp.Interpreter.Interop
                 // keep track of out and ref params
                 if (parameters[i].Type.IsByRef)
                 {
-                    if (outParams == null) outParams = new List<int>();
+                    outParams ??= new List<int>();
                     outParams.Add(i);
                 }
 
@@ -174,7 +177,7 @@ namespace MoonSharp.Interpreter.Interop
                 }
                 else if (i == parameters.Length - 1 && VarArgsArrayType != null)
                 {
-                    List<DynValue> extraArgs = new List<DynValue>();
+                    List<DynValue> extraArgs = new();
 
                     while (true)
                     {
@@ -246,10 +249,7 @@ namespace MoonSharp.Interpreter.Interop
             {
                 DynValue[] rets = new DynValue[outParams.Count + 1];
 
-                if (retv is DynValue && ((DynValue)retv).IsVoid())
-                    rets[0] = DynValue.Nil;
-                else
-                    rets[0] = ClrToScriptConversions.ObjectToDynValue(script, retv);
+                rets[0] = retv is DynValue value && value.IsVoid() ? DynValue.Nil : ClrToScriptConversions.ObjectToDynValue(script, retv);
 
                 for (int i = 0; i < outParams.Count; i++)
                     rets[i + 1] = ClrToScriptConversions.ObjectToDynValue(script, pars[outParams[i]]);
@@ -288,7 +288,7 @@ namespace MoonSharp.Interpreter.Interop
         public virtual DynValue GetValue(Script script, object obj)
         {
             this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
-            return this.GetCallbackAsDynValue(script, obj);
+            return GetCallbackAsDynValue(script, obj);
         }
 
         /// <summary>
@@ -297,7 +297,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="script">The script.</param>
         /// <param name="obj">The object.</param>
         /// <param name="v">The v.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
         public virtual void SetValue(Script script, object obj, DynValue v)
         {
             this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);

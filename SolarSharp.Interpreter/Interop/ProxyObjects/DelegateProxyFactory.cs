@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.ProxyObjects
 {
     /// <summary>
     /// Implementation of IProxyFactory taking two delegates for simple instancing of proxies.

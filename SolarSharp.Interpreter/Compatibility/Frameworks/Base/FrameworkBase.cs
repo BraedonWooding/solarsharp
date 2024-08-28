@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace MoonSharp.Interpreter.Compatibility.Frameworks
+namespace SolarSharp.Interpreter.Compatibility.Frameworks.Base
 {
     public abstract class FrameworkBase
     {

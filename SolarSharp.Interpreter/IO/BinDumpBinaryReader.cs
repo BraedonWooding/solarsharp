@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace MoonSharp.Interpreter.IO
+namespace SolarSharp.Interpreter.IO
 {
     /// <summary>
     /// "Optimized" BinaryReader which shares strings and use a dumb compression for integers
@@ -12,18 +12,18 @@ namespace MoonSharp.Interpreter.IO
         public BinDumpBinaryReader(Stream s) : base(s) { }
         public BinDumpBinaryReader(Stream s, Encoding e) : base(s, e) { }
 
-        private readonly List<string> m_Strings = new List<string>();
+        private readonly List<string> m_Strings = new();
 
         public override int ReadInt32()
         {
             sbyte b = base.ReadSByte();
 
             if (b == 0x7F)
-                return (int)base.ReadInt16();
+                return base.ReadInt16();
             else if (b == 0x7E)
-                return (int)base.ReadInt32();
+                return base.ReadInt32();
             else
-                return (int)b;
+                return b;
         }
 
         public override uint ReadUInt32()
@@ -31,11 +31,11 @@ namespace MoonSharp.Interpreter.IO
             byte b = base.ReadByte();
 
             if (b == 0x7F)
-                return (uint)base.ReadUInt16();
+                return base.ReadUInt16();
             else if (b == 0x7E)
-                return (uint)base.ReadUInt32();
+                return base.ReadUInt32();
             else
-                return (uint)b;
+                return b;
         }
 
         public override string ReadString()

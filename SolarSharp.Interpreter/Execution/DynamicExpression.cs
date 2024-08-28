@@ -1,6 +1,7 @@
-﻿using MoonSharp.Interpreter.Tree.Expressions;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Tree.Expressions;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.Execution
 {
     /// <summary>
     /// Represents a dynamic expression in the script
@@ -36,7 +37,7 @@ namespace MoonSharp.Interpreter
         /// <returns></returns>
         public DynValue Evaluate(ScriptExecutionContext context = null)
         {
-            context = context ?? OwnerScript.CreateDynamicExecutionContext();
+            context ??= OwnerScript.CreateDynamicExecutionContext();
 
             this.CheckScriptOwnership(context.GetScript());
 
@@ -94,20 +95,18 @@ namespace MoonSharp.Interpreter
         }
 
         /// <summary>
-        /// Determines whether the specified <see cref="System.Object" />, is equal to this instance.
+        /// Determines whether the specified <see cref="object" />, is equal to this instance.
         /// </summary>
-        /// <param name="obj">The <see cref="System.Object" /> to compare with this instance.</param>
+        /// <param name="obj">The <see cref="object" /> to compare with this instance.</param>
         /// <returns>
-        ///   <c>true</c> if the specified <see cref="System.Object" /> is equal to this instance; otherwise, <c>false</c>.
+        ///   <c>true</c> if the specified <see cref="object" /> is equal to this instance; otherwise, <c>false</c>.
         /// </returns>
         public override bool Equals(object obj)
         {
-            DynamicExpression o = obj as DynamicExpression;
-
-            if (o == null)
+            if (!(obj is DynamicExpression o))
                 return false;
 
-            return o.ExpressionCode == this.ExpressionCode;
+            return o.ExpressionCode == ExpressionCode;
         }
 
     }

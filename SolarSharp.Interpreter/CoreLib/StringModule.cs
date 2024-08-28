@@ -1,12 +1,13 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
-
-using System;
+﻿using System;
 using System.IO;
 using System.Text;
-using MoonSharp.Interpreter.CoreLib.StringLib;
+using SolarSharp.Interpreter.CoreLib.StringLib;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
 
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing string Lua functions 
@@ -18,7 +19,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
         public static void MoonSharpInit(Table globalTable, Table stringTable)
         {
-            Table stringMetatable = new Table(globalTable.OwnerScript);
+            Table stringMetatable = new(globalTable.OwnerScript);
             stringMetatable.Set("__index", DynValue.NewTable(stringTable));
             globalTable.OwnerScript.SetTypeMetatable(DataType.String, stringMetatable);
         }
@@ -32,7 +33,7 @@ namespace MoonSharp.Interpreter.CoreLib
             try
             {
                 byte[] bytes;
-                using (MemoryStream ms = new MemoryStream())
+                using (MemoryStream ms = new())
                 {
                     executionContext.GetScript().Dump(fn, ms);
                     ms.Seek(0, SeekOrigin.Begin);
@@ -49,9 +50,9 @@ namespace MoonSharp.Interpreter.CoreLib
 
 
         [MoonSharpModuleMethod]
-        public static DynValue @char(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue @char(ScriptExecutionContext _, CallbackArguments args)
         {
-            StringBuilder sb = new StringBuilder(args.Count);
+            StringBuilder sb = new(args.Count);
 
             for (int i = 0; i < args.Count; i++)
             {
@@ -72,7 +73,7 @@ namespace MoonSharp.Interpreter.CoreLib
                     d = v.Number;
                 }
 
-                sb.Append((char)(d));
+                sb.Append((char)d);
             }
 
             return DynValue.NewString(sb.ToString());
@@ -80,7 +81,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
 
         [MoonSharpModuleMethod]
-        public static DynValue @byte(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue @byte(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue vs = args.AsType(0, "byte", DataType.String, false);
             DynValue vi = args.AsType(1, "byte", DataType.Number, true);
@@ -91,7 +92,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue unicode(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue unicode(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue vs = args.AsType(0, "unicode", DataType.String, false);
             DynValue vi = args.AsType(1, "unicode", DataType.Number, true);
@@ -105,7 +106,7 @@ namespace MoonSharp.Interpreter.CoreLib
             if (i >= 0 && i <= 255)
                 return i;
 
-            return (int)'?';
+            return '?';
         }
 
         private static DynValue PerformByteLike(DynValue vs, DynValue vi, DynValue vj, Func<int, int> filter)
@@ -118,14 +119,15 @@ namespace MoonSharp.Interpreter.CoreLib
 
             for (int i = 0; i < length; ++i)
             {
-                rets[i] = DynValue.NewNumber(filter((int)s[i]));
+                rets[i] = DynValue.NewNumber(filter(s[i]));
             }
 
             return DynValue.NewTuple(rets);
         }
 
-
+#pragma warning disable IDE0051 // Remove unused private members
         private static int? AdjustIndex(string s, DynValue vi, int defval)
+#pragma warning restore IDE0051 // Remove unused private members
         {
             if (vi.IsNil())
                 return defval;
@@ -142,7 +144,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue len(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue len(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue vs = args.AsType(0, "len", DataType.String, false);
             return DynValue.NewNumber(vs.String.Length);
@@ -178,35 +180,35 @@ namespace MoonSharp.Interpreter.CoreLib
 
 
         [MoonSharpModuleMethod]
-        public static DynValue lower(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue lower(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s = args.AsType(0, "lower", DataType.String, false);
             return DynValue.NewString(arg_s.String.ToLower());
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue upper(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue upper(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s = args.AsType(0, "upper", DataType.String, false);
             return DynValue.NewString(arg_s.String.ToUpper());
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue rep(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue rep(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s = args.AsType(0, "rep", DataType.String, false);
             DynValue arg_n = args.AsType(1, "rep", DataType.Number, false);
             DynValue arg_sep = args.AsType(2, "rep", DataType.String, true);
 
-            if (String.IsNullOrEmpty(arg_s.String) || (arg_n.Number < 1))
+            if (string.IsNullOrEmpty(arg_s.String) || arg_n.Number < 1)
             {
                 return DynValue.NewString("");
             }
 
-            string sep = (arg_sep.IsNotNil()) ? arg_sep.String : null;
+            string sep = arg_sep.IsNotNil() ? arg_sep.String : null;
 
             int count = (int)arg_n.Number;
-            StringBuilder result = new StringBuilder(arg_s.String.Length * count);
+            StringBuilder result = new(arg_s.String.Length * count);
 
             for (int i = 0; i < count; ++i)
             {
@@ -228,11 +230,11 @@ namespace MoonSharp.Interpreter.CoreLib
 
 
         [MoonSharpModuleMethod]
-        public static DynValue reverse(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue reverse(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s = args.AsType(0, "reverse", DataType.String, false);
 
-            if (String.IsNullOrEmpty(arg_s.String))
+            if (string.IsNullOrEmpty(arg_s.String))
             {
                 return DynValue.NewString("");
             }
@@ -240,11 +242,11 @@ namespace MoonSharp.Interpreter.CoreLib
             char[] elements = arg_s.String.ToCharArray();
             Array.Reverse(elements);
 
-            return DynValue.NewString(new String(elements));
+            return DynValue.NewString(new string(elements));
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue sub(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue sub(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s = args.AsType(0, "sub", DataType.String, false);
             DynValue arg_i = args.AsType(1, "sub", DataType.Number, true);
@@ -257,7 +259,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue startsWith(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue startsWith(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s1 = args.AsType(0, "startsWith", DataType.String, true);
             DynValue arg_s2 = args.AsType(1, "startsWith", DataType.String, true);
@@ -269,7 +271,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue endsWith(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue endsWith(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s1 = args.AsType(0, "endsWith", DataType.String, true);
             DynValue arg_s2 = args.AsType(1, "endsWith", DataType.String, true);
@@ -281,7 +283,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue contains(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue contains(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s1 = args.AsType(0, "contains", DataType.String, true);
             DynValue arg_s2 = args.AsType(1, "contains", DataType.String, true);
@@ -293,6 +295,4 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
     }
-
-
 }

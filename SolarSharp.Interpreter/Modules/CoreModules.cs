@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.Modules
 {
     /// <summary>
     /// Enumeration (combinable as flags) of all the standard library modules

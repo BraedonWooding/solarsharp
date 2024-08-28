@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Reflection;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Interop.Converters;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.Converters;
 
-namespace MoonSharp.Interpreter.Serialization
+namespace SolarSharp.Interpreter.Serialization
 {
     public static class ObjectValueConverter
     {
@@ -20,11 +21,10 @@ namespace MoonSharp.Interpreter.Serialization
             if (o is Enum)
                 return DynValue.NewNumber(NumericConversions.TypeToDouble(Enum.GetUnderlyingType(o.GetType()), o));
 
-            Table t = new Table(script);
+            Table t = new(script);
 
-            System.Collections.IEnumerable ienum = o as System.Collections.IEnumerable;
 
-            if (ienum != null)
+            if (o is System.Collections.IEnumerable ienum)
             {
                 foreach (object obj in ienum)
                 {

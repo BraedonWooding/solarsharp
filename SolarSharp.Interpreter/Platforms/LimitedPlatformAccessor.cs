@@ -1,7 +1,8 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.Modules;
+using System;
 using System.Text;
 
-namespace MoonSharp.Interpreter.Platforms
+namespace SolarSharp.Interpreter.Platforms
 {
     /// <summary>
     /// A class implementing all the bits needed to have a minimal support of a platform.
@@ -32,7 +33,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// </returns>
         public override CoreModules FilterSupportedCoreModules(CoreModules module)
         {
-            return module & (~(CoreModules.IO | CoreModules.OS_System));
+            return module & ~(CoreModules.IO | CoreModules.OS_System);
         }
 
         /// <summary>
@@ -45,7 +46,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// <param name="encoding">The encoding.</param>
         /// <param name="mode">The mode (as per Lua usage - e.g. 'w+', 'rb', etc.).</param>
         /// <returns></returns>
-        /// <exception cref="System.NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
+        /// <exception cref="NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
         public override System.IO.Stream IO_OpenFile(Script script, string filename, Encoding encoding, string mode)
         {
             throw new NotImplementedException("The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.");
@@ -58,7 +59,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// </summary>
         /// <param name="type">The type.</param>
         /// <returns></returns>
-        /// <exception cref="System.NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
+        /// <exception cref="NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
         public override System.IO.Stream IO_GetStandardStream(StandardFileType type)
         {
             throw new NotImplementedException("The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.");
@@ -70,7 +71,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// thus does not support 'io' and 'os' modules.
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="System.NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
+        /// <exception cref="NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
         public override string IO_OS_GetTempFilename()
         {
             throw new NotImplementedException("The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.");
@@ -82,7 +83,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// thus does not support 'io' and 'os' modules.
         /// </summary>
         /// <param name="exitCode">The exit code.</param>
-        /// <exception cref="System.NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
+        /// <exception cref="NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
         public override void OS_ExitFast(int exitCode)
         {
             throw new NotImplementedException("The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.");
@@ -97,7 +98,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// <returns>
         /// True if the file exists, false otherwise.
         /// </returns>
-        /// <exception cref="System.NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
+        /// <exception cref="NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
         public override bool OS_FileExists(string file)
         {
             throw new NotImplementedException("The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.");
@@ -109,7 +110,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// thus does not support 'io' and 'os' modules.
         /// </summary>
         /// <param name="file">The file.</param>
-        /// <exception cref="System.NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
+        /// <exception cref="NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
         public override void OS_FileDelete(string file)
         {
             throw new NotImplementedException("The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.");
@@ -122,7 +123,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// </summary>
         /// <param name="src">The source.</param>
         /// <param name="dst">The DST.</param>
-        /// <exception cref="System.NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
+        /// <exception cref="NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
         public override void OS_FileMove(string src, string dst)
         {
             throw new NotImplementedException("The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.");
@@ -135,7 +136,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// </summary>
         /// <param name="cmdline">The cmdline.</param>
         /// <returns></returns>
-        /// <exception cref="System.NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
+        /// <exception cref="NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
         public override int OS_Execute(string cmdline)
         {
             throw new NotImplementedException("The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.");
@@ -145,7 +146,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// Gets the platform name prefix
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="System.NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
         public override string GetPlatformNamePrefix()
         {
             return "limited";
@@ -155,7 +156,7 @@ namespace MoonSharp.Interpreter.Platforms
         /// Default handler for 'print' calls. Can be customized in ScriptOptions
         /// </summary>
         /// <param name="content">The content.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
         public override void DefaultPrint(string content)
         {
             System.Diagnostics.Debug.WriteLine(content);

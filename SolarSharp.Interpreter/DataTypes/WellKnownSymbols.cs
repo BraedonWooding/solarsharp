@@ -1,5 +1,4 @@
-﻿
-namespace MoonSharp.Interpreter
+﻿namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
     /// Constants of well known "symbols" in the MoonSharp grammar

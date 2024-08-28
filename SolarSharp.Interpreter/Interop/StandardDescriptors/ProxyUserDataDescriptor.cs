@@ -1,7 +1,9 @@
 ﻿using System;
-using MoonSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.ProxyObjects;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors
 {
     /// <summary>
     /// Data descriptor used for proxy objects
@@ -14,7 +16,7 @@ namespace MoonSharp.Interpreter.Interop
         internal ProxyUserDataDescriptor(IProxyFactory proxyFactory, IUserDataDescriptor proxyDescriptor, string friendlyName = null)
         {
             m_ProxyFactory = proxyFactory;
-            Name = friendlyName ?? (proxyFactory.TargetType.Name + "::proxy");
+            Name = friendlyName ?? proxyFactory.TargetType.Name + "::proxy";
             m_ProxyDescriptor = proxyDescriptor;
         }
 

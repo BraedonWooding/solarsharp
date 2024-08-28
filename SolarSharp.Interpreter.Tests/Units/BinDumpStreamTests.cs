@@ -1,9 +1,9 @@
 ﻿using System.IO;
 using System.Text;
-using MoonSharp.Interpreter.IO;
+using SolarSharp.Interpreter.IO;
 using NUnit.Framework;
 
-namespace MoonSharp.Interpreter.Tests.Units
+namespace SolarSharp.Interpreter.Tests.Units
 {
     [TestFixture]
     public class BinDumpStreamTests

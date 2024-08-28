@@ -1,8 +1,9 @@
 ﻿using System;
 using System.IO;
-using MoonSharp.Interpreter.Loaders;
+using SolarSharp.Interpreter.Loaders;
+using SolarSharp.Interpreter.Options;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter
 {
     /// <summary>
     /// This class contains options to customize behaviour of Script objects.
@@ -15,18 +16,18 @@ namespace MoonSharp.Interpreter
 
         internal ScriptOptions(ScriptOptions defaults)
         {
-            this.DebugInput = defaults.DebugInput;
-            this.DebugPrint = defaults.DebugPrint;
+            DebugInput = defaults.DebugInput;
+            DebugPrint = defaults.DebugPrint;
 
-            this.UseLuaErrorLocations = defaults.UseLuaErrorLocations;
-            this.Stdin = defaults.Stdin;
-            this.Stdout = defaults.Stdout;
-            this.Stderr = defaults.Stderr;
-            this.TailCallOptimizationThreshold = defaults.TailCallOptimizationThreshold;
+            UseLuaErrorLocations = defaults.UseLuaErrorLocations;
+            Stdin = defaults.Stdin;
+            Stdout = defaults.Stdout;
+            Stderr = defaults.Stderr;
+            TailCallOptimizationThreshold = defaults.TailCallOptimizationThreshold;
 
-            this.ScriptLoader = defaults.ScriptLoader;
+            ScriptLoader = defaults.ScriptLoader;
 
-            this.CheckThreadAccess = defaults.CheckThreadAccess;
+            CheckThreadAccess = defaults.CheckThreadAccess;
         }
 
         /// <summary>

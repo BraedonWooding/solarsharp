@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace MoonSharp.Interpreter.DataStructs
+namespace SolarSharp.Interpreter.DataStructs
 {
     /// <summary>
     /// An index to accelerate operations on a LinkedList<typeparamref name="TValue"/> using a single key of type <typeparamref name="TKey"/>
@@ -29,12 +29,11 @@ namespace MoonSharp.Interpreter.DataStructs
         /// <param name="key">The key.</param>
         public LinkedListNode<TValue> Find(TKey key)
         {
-            LinkedListNode<TValue> node;
 
             if (m_Map == null)
                 return null;
 
-            if (m_Map.TryGetValue(key, out node))
+            if (m_Map.TryGetValue(key, out LinkedListNode<TValue> node))
                 return node;
 
             return null;
@@ -53,7 +52,7 @@ namespace MoonSharp.Interpreter.DataStructs
             if (node == null)
             {
                 Add(key, value);
-                return default(TValue);
+                return default;
             }
             else
             {
@@ -72,8 +71,7 @@ namespace MoonSharp.Interpreter.DataStructs
         {
             var node = m_LinkedList.AddLast(value);
 
-            if (m_Map == null)
-                m_Map = new Dictionary<TKey, LinkedListNode<TValue>>();
+            m_Map ??= new Dictionary<TKey, LinkedListNode<TValue>>();
 
             m_Map.Add(key, node);
         }
@@ -113,8 +111,7 @@ namespace MoonSharp.Interpreter.DataStructs
         /// </summary>
         public void Clear()
         {
-            if (m_Map != null)
-                m_Map.Clear();
+            m_Map?.Clear();
         }
     }
 }

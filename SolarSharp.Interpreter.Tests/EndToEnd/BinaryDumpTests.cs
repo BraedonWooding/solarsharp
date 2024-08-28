@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class BinaryDumpTests
@@ -25,7 +27,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
         private static DynValue Script_LoadFunc(string script, string funcname)
         {
             Script s1 = new();
-            DynValue v1 = s1.DoString(script);
+            _ = s1.DoString(script);
             DynValue func = s1.Globals.Get(funcname);
 
             using MemoryStream ms = new();
@@ -35,7 +37,6 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
             Script s2 = new();
             return s2.LoadStream(ms);
         }
-
 
         [Test]
         public void BinDump_ChunkDump()
@@ -322,7 +323,7 @@ return y;
 
             S.DoString(script);
 
-            Assert.That(list.Count, Is.EqualTo(6));
+            Assert.That(list, Has.Count.EqualTo(6));
 
             int[] eqs = new int[] { 0, 1, 1, 0, 1, 1 };
 

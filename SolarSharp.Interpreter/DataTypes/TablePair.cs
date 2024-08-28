@@ -1,12 +1,11 @@
-﻿
-namespace MoonSharp.Interpreter
+﻿namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
     /// A class representing a key/value pair for Table use
     /// </summary>
     public struct TablePair
     {
-        private static TablePair s_NilNode = new TablePair(DynValue.Nil, DynValue.Nil);
+        private static TablePair s_NilNode = new(DynValue.Nil, DynValue.Nil);
         private readonly DynValue key, value;
 
         /// <summary>
@@ -36,7 +35,7 @@ namespace MoonSharp.Interpreter
         public TablePair(DynValue key, DynValue val)
         {
             this.key = key;
-            this.value = val;
+            value = val;
         }
 
         /// <summary>

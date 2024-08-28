@@ -1,8 +1,8 @@
 ﻿using System;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Tree;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.Errors
 {
     /// <summary>
     /// Exception for all parsing/lexing errors. 
@@ -47,8 +47,8 @@ namespace MoonSharp.Interpreter
         private SyntaxErrorException(SyntaxErrorException syntaxErrorException)
             : base(syntaxErrorException, syntaxErrorException.DecoratedMessage)
         {
-            this.Token = syntaxErrorException.Token;
-            this.DecoratedMessage = Message;
+            Token = syntaxErrorException.Token;
+            DecoratedMessage = Message;
         }
 
         internal void DecorateMessage(Script script)

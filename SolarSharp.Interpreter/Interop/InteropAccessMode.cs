@@ -1,5 +1,6 @@
-﻿
-namespace MoonSharp.Interpreter
+﻿using SolarSharp.Interpreter.DataTypes;
+
+namespace SolarSharp.Interpreter.Interop
 {
     /// <summary>
     /// Enumerations of the possible strategies to marshal CLR objects to MoonSharp userdata and functions
@@ -40,7 +41,7 @@ namespace MoonSharp.Interpreter
         HideMembers,
         /// <summary>
         /// No reflection is allowed, nor code generation. This is used as a safeguard when registering types which should not
-        /// use a standard reflection based descriptor - for example for types implementing <see cref="MoonSharp.Interpreter.Interop.IUserDataType" />
+        /// use a standard reflection based descriptor - for example for types implementing <see cref="IUserDataType" />
         /// </summary>
         NoReflectionAllowed,
         /// <summary>

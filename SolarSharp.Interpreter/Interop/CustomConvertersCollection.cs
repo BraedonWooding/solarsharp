@@ -1,7 +1,9 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataStructs;
+using SolarSharp.Interpreter.DataTypes;
+using System;
 using System.Collections.Generic;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop
 {
     /// <summary>
     /// A collection of custom converters between MoonSharp types and CLR types.
@@ -10,7 +12,7 @@ namespace MoonSharp.Interpreter.Interop
     public class CustomConvertersCollection
     {
         private readonly Dictionary<Type, Func<DynValue, object>>[] m_Script2Clr = new Dictionary<Type, Func<DynValue, object>>[(int)LuaTypeExtensions.MaxConvertibleTypes + 1];
-        private readonly Dictionary<Type, Func<Script, object, DynValue>> m_Clr2Script = new Dictionary<Type, Func<Script, object, DynValue>>();
+        private readonly Dictionary<Type, Func<Script, object, DynValue>> m_Clr2Script = new();
 
 
 

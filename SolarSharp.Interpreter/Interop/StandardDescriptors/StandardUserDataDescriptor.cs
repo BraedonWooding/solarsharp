@@ -2,10 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.Attributes;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors
 {
     /// <summary>
     /// Standard descriptor for userdata types.
@@ -45,13 +49,13 @@ namespace MoonSharp.Interpreter.Interop
         /// </summary>
         private void FillMemberList()
         {
-            HashSet<string> membersToIgnore = new HashSet<string>(
-                Framework.Do.GetCustomAttributes(this.Type, typeof(MoonSharpHideMemberAttribute), true)
+            HashSet<string> membersToIgnore = new(
+                Framework.Do.GetCustomAttributes(Type, typeof(MoonSharpHideMemberAttribute), true)
                     .OfType<MoonSharpHideMemberAttribute>()
                     .Select(a => a.MemberName)
                 );
 
-            Type type = this.Type;
+            Type type = Type;
 
             if (AccessMode == InteropAccessMode.HideMembers)
                 return;
@@ -64,7 +68,7 @@ namespace MoonSharp.Interpreter.Interop
                     if (membersToIgnore.Contains("__new"))
                         continue;
 
-                    AddMember("__new", MethodMemberDescriptor.TryCreateIfVisible(ci, this.AccessMode));
+                    AddMember("__new", MethodMemberDescriptor.TryCreateIfVisible(ci, AccessMode));
                 }
 
                 // valuetypes don't reflect their empty ctor.. actually empty ctors are a perversion, we don't care and implement ours
@@ -78,7 +82,7 @@ namespace MoonSharp.Interpreter.Interop
             {
                 if (membersToIgnore.Contains(mi.Name)) continue;
 
-                MethodMemberDescriptor md = MethodMemberDescriptor.TryCreateIfVisible(mi, this.AccessMode);
+                MethodMemberDescriptor md = MethodMemberDescriptor.TryCreateIfVisible(mi, AccessMode);
 
                 if (md != null)
                 {
@@ -107,7 +111,7 @@ namespace MoonSharp.Interpreter.Interop
                 if (pi.IsSpecialName || pi.GetIndexParameters().Any() || membersToIgnore.Contains(pi.Name))
                     continue;
 
-                AddMember(pi.Name, PropertyMemberDescriptor.TryCreateIfVisible(pi, this.AccessMode));
+                AddMember(pi.Name, PropertyMemberDescriptor.TryCreateIfVisible(pi, AccessMode));
             }
 
             // get fields
@@ -116,7 +120,7 @@ namespace MoonSharp.Interpreter.Interop
                 if (fi.IsSpecialName || membersToIgnore.Contains(fi.Name))
                     continue;
 
-                AddMember(fi.Name, FieldMemberDescriptor.TryCreateIfVisible(fi, this.AccessMode));
+                AddMember(fi.Name, FieldMemberDescriptor.TryCreateIfVisible(fi, AccessMode));
             }
 
             // get events
@@ -125,7 +129,7 @@ namespace MoonSharp.Interpreter.Interop
                 if (ei.IsSpecialName || membersToIgnore.Contains(ei.Name))
                     continue;
 
-                AddMember(ei.Name, EventMemberDescriptor.TryCreateIfVisible(ei, this.AccessMode));
+                AddMember(ei.Name, EventMemberDescriptor.TryCreateIfVisible(ei, AccessMode));
             }
 
             // get nested types and create statics
@@ -138,7 +142,7 @@ namespace MoonSharp.Interpreter.Interop
                 {
                     if (Framework.Do.IsNestedPublic(nestedType) || Framework.Do.GetCustomAttributes(nestedType, typeof(MoonSharpUserDataAttribute), true).Length > 0)
                     {
-                        var descr = UserData.RegisterType(nestedType, this.AccessMode);
+                        var descr = UserData.RegisterType(nestedType, AccessMode);
 
                         if (descr != null)
                             AddDynValue(nestedType.Name, UserData.CreateStatic(nestedType));
@@ -176,15 +180,15 @@ namespace MoonSharp.Interpreter.Interop
 
         public void PrepareForWiring(Table t)
         {
-            if (AccessMode == InteropAccessMode.HideMembers || Framework.Do.GetAssembly(Type) == Framework.Do.GetAssembly(this.GetType()))
+            if (AccessMode == InteropAccessMode.HideMembers || Framework.Do.GetAssembly(Type) == Framework.Do.GetAssembly(GetType()))
             {
                 t.Set("skip", DynValue.NewBoolean(true));
             }
             else
             {
-                t.Set("visibility", DynValue.NewString(this.Type.GetClrVisibility()));
+                t.Set("visibility", DynValue.NewString(Type.GetClrVisibility()));
 
-                t.Set("class", DynValue.NewString(this.GetType().FullName));
+                t.Set("class", DynValue.NewString(GetType().FullName));
                 DynValue tm = DynValue.NewPrimeTable();
                 t.Set("members", tm);
                 DynValue tmm = DynValue.NewPrimeTable();
@@ -199,9 +203,7 @@ namespace MoonSharp.Interpreter.Interop
         {
             foreach (var pair in members)
             {
-                IWireableDescriptor sd = pair.Value as IWireableDescriptor;
-
-                if (sd != null)
+                if (pair.Value is IWireableDescriptor sd)
                 {
                     DynValue mt = DynValue.NewPrimeTable();
                     t.Set(pair.Key, mt);

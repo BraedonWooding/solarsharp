@@ -2,7 +2,7 @@
 using System.CodeDom.Compiler;
 using System.Linq;
 
-namespace MoonSharp.Hardwire.Languages
+namespace SolarSharp.Hardwire.Languages
 {
     public class CSharpHardwireCodeGenerationLanguage : HardwireCodeGenerationLanguage
     {

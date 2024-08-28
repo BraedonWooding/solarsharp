@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter.Interop.RegistrationPolicies
+namespace SolarSharp.Interpreter.Interop.RegistrationPolicies
 {
     /// <summary>
     /// A registration policy which makes registration permanent and not deletable.
@@ -29,7 +29,7 @@ namespace MoonSharp.Interpreter.Interop.RegistrationPolicies
         /// <returns>
         /// True to register the type automatically, false otherwise.
         /// </returns>
-        /// <exception cref="System.NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
         public bool AllowTypeAutoRegistration(Type type)
         {
             return false;

@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using MoonSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
+using SolarSharp.Interpreter.Options;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
     /// This class wraps a CLR function 
@@ -51,7 +54,7 @@ namespace MoonSharp.Interpreter
                 if (colon == ColonOperatorBehaviour.TreatAsColon)
                     isMethodCall = false;
                 else if (colon == ColonOperatorBehaviour.TreatAsDotOnUserData)
-                    isMethodCall = (args.Count > 0 && args[0].Type == DataType.UserData);
+                    isMethodCall = args.Count > 0 && args[0].Type == DataType.UserData;
             }
 
             return ClrCallback(executionContext, new CallbackArguments(args, isMethodCall));
@@ -63,7 +66,7 @@ namespace MoonSharp.Interpreter
         /// <value>
         /// The default access mode. Default, HideMembers and BackgroundOptimized are NOT supported.
         /// </value>
-        /// <exception cref="System.ArgumentException">Default, HideMembers and BackgroundOptimized are NOT supported.</exception>
+        /// <exception cref="ArgumentException">Default, HideMembers and BackgroundOptimized are NOT supported.</exception>
         public static InteropAccessMode DefaultAccessMode
         {
             get { return m_DefaultAccessMode; }
@@ -91,7 +94,7 @@ namespace MoonSharp.Interpreter
 #if NETFX_CORE
 			MethodMemberDescriptor descr = new MethodMemberDescriptor(del.GetMethodInfo(), accessMode);
 #else
-            MethodMemberDescriptor descr = new MethodMemberDescriptor(del.Method, accessMode);
+            MethodMemberDescriptor descr = new(del.Method, accessMode);
 #endif
             return descr.GetCallbackFunction(script, del.Target);
         }
@@ -105,13 +108,13 @@ namespace MoonSharp.Interpreter
         /// <param name="obj">The object to which the function applies, or null for static methods.</param>
         /// <param name="accessMode">The access mode.</param>
         /// <returns></returns>
-        /// <exception cref="System.ArgumentException">The method is not static.</exception>
+        /// <exception cref="ArgumentException">The method is not static.</exception>
         public static CallbackFunction FromMethodInfo(Script script, System.Reflection.MethodInfo mi, object obj = null, InteropAccessMode accessMode = InteropAccessMode.Default)
         {
             if (accessMode == InteropAccessMode.Default)
                 accessMode = m_DefaultAccessMode;
 
-            MethodMemberDescriptor descr = new MethodMemberDescriptor(mi, accessMode);
+            MethodMemberDescriptor descr = new(mi, accessMode);
             return descr.GetCallbackFunction(script, obj);
         }
 
@@ -130,8 +133,8 @@ namespace MoonSharp.Interpreter
         {
             System.Reflection.ParameterInfo[] pi = mi.GetParameters();
 
-            return (pi.Length == 2 && pi[0].ParameterType == typeof(ScriptExecutionContext)
-                && pi[1].ParameterType == typeof(CallbackArguments) && mi.ReturnType == typeof(DynValue) && (requirePublicVisibility || mi.IsPublic));
+            return pi.Length == 2 && pi[0].ParameterType == typeof(ScriptExecutionContext)
+                && pi[1].ParameterType == typeof(CallbackArguments) && mi.ReturnType == typeof(DynValue) && (requirePublicVisibility || mi.IsPublic);
         }
 
 

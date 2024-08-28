@@ -1,12 +1,14 @@
-﻿using MoonSharp.Interpreter.Tree.Statements;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Tree.Statements;
 
-namespace MoonSharp.Interpreter.Execution.Scopes
+namespace SolarSharp.Interpreter.Execution.Scopes
 {
     internal class BuildTimeScopeFrame
     {
         private readonly BuildTimeScopeBlock m_ScopeTreeRoot;
         private BuildTimeScopeBlock m_ScopeTreeHead;
-        private readonly RuntimeScopeFrame m_ScopeFrame = new RuntimeScopeFrame();
+        private readonly RuntimeScopeFrame m_ScopeFrame = new();
 
         public bool HasVarArgs { get; private set; }
 

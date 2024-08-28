@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
 
-namespace MoonSharp.Interpreter.Tests.Units
+namespace SolarSharp.Interpreter.Tests.Units
 {
     [TestFixture]
     public class InteropTests

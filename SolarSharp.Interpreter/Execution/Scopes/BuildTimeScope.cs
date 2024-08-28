@@ -1,14 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using MoonSharp.Interpreter.Execution.Scopes;
-using MoonSharp.Interpreter.Tree.Statements;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Tree.Statements;
 
-namespace MoonSharp.Interpreter.Execution
+namespace SolarSharp.Interpreter.Execution.Scopes
 {
     internal class BuildTimeScope
     {
-        private readonly List<BuildTimeScopeFrame> m_Frames = new List<BuildTimeScopeFrame>();
-        private readonly List<IClosureBuilder> m_ClosureBuilders = new List<IClosureBuilder>();
+        private readonly List<BuildTimeScopeFrame> m_Frames = new();
+        private readonly List<IClosureBuilder> m_ClosureBuilders = new();
 
 
         public void PushFunction(IClosureBuilder closureBuilder, bool hasVarArgs)

@@ -1,6 +1,7 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.Modules
 {
     /// <summary>
     /// Marks a CLR type to be a MoonSharp module.

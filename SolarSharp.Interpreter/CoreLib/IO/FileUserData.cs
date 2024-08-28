@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 
-namespace MoonSharp.Interpreter.CoreLib.IO
+namespace SolarSharp.Interpreter.CoreLib.IO
 {
     /// <summary>
     /// Abstract class implementing a file Lua userdata. Methods are meant to be called by Lua code.
@@ -12,10 +12,10 @@ namespace MoonSharp.Interpreter.CoreLib.IO
         {
             Stream stream = Script.GlobalOptions.Platform.IO_OpenFile(script, filename, encoding, mode);
 
-            StreamReader reader = (stream.CanRead) ? new StreamReader(stream, encoding) : null;
-            StreamWriter writer = (stream.CanWrite) ? new StreamWriter(stream, encoding) : null;
+            StreamReader reader = stream.CanRead ? new StreamReader(stream, encoding) : null;
+            StreamWriter writer = stream.CanWrite ? new StreamWriter(stream, encoding) : null;
 
-            base.Initialize(stream, reader, writer);
+            Initialize(stream, reader, writer);
         }
     }
 }

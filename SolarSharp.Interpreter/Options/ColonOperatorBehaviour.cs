@@ -1,4 +1,4 @@
-﻿namespace MoonSharp.Interpreter
+﻿namespace SolarSharp.Interpreter.Options
 {
     /// <summary>
     /// Defines behaviour of the colon ':' operator in CLR callbacks.

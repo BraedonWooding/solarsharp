@@ -1,9 +1,11 @@
 ﻿using System;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Execution.VM;
-using MoonSharp.Interpreter.Interop.LuaStateInterop;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop.LuaStateInterop;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.Execution
 {
     /// <summary>
     /// Class giving access to details of the environment where the script is executing
@@ -46,7 +48,7 @@ namespace MoonSharp.Interpreter
         /// </summary>
         public object AdditionalData
         {
-            get { return (m_Callback != null) ? m_Callback.AdditionalData : null; }
+            get { return m_Callback?.AdditionalData; }
             set
             {
                 if (m_Callback == null) throw new InvalidOperationException("Cannot set additional data on a context which has no callback");
@@ -82,7 +84,7 @@ namespace MoonSharp.Interpreter
         /// </summary>
         public DynValue GetMetamethodTailCall(DynValue value, string metamethod, params DynValue[] args)
         {
-            DynValue meta = this.GetMetamethod(value, metamethod);
+            DynValue meta = GetMetamethod(value, metamethod);
             if (meta == null) return null;
             return DynValue.NewTailCallReq(meta, args);
         }
@@ -125,7 +127,7 @@ namespace MoonSharp.Interpreter
         /// <returns></returns>
         public DynValue EmulateClassicCall(CallbackArguments args, string functionName, Func<LuaState, int> callback)
         {
-            LuaState L = new LuaState(this, args, functionName);
+            LuaState L = new(this, args, functionName);
             int retvals = callback(L);
             return L.GetReturnValue(retvals);
         }
@@ -141,7 +143,7 @@ namespace MoonSharp.Interpreter
         {
             if (func.Type == DataType.Function)
             {
-                return this.GetScript().Call(func, args);
+                return GetScript().Call(func, args);
             }
             else if (func.Type == DataType.ClrFunction)
             {
@@ -179,7 +181,7 @@ namespace MoonSharp.Interpreter
 
                 while (maxloops > 0)
                 {
-                    DynValue v = this.GetMetamethod(func, "__call");
+                    DynValue v = GetMetamethod(func, "__call");
 
                     if (v == null && v.IsNil())
                     {
@@ -214,7 +216,7 @@ namespace MoonSharp.Interpreter
         /// </summary>
         public DynValue EvaluateSymbolByName(string symbol)
         {
-            return this.EvaluateSymbol(this.FindSymbolByName(symbol));
+            return EvaluateSymbol(FindSymbolByName(symbol));
         }
 
         /// <summary>
@@ -247,10 +249,9 @@ namespace MoonSharp.Interpreter
         /// <param name="exception">The exception.</param>
         public void PerformMessageDecorationBeforeUnwind(DynValue messageHandler, ScriptRuntimeException exception)
         {
-            if (messageHandler != null)
-                exception.DecoratedMessage = m_Processor.PerformMessageDecorationBeforeUnwind(messageHandler, exception.Message, CallingLocation);
-            else
-                exception.DecoratedMessage = exception.Message;
+            exception.DecoratedMessage = messageHandler != null
+                ? m_Processor.PerformMessageDecorationBeforeUnwind(messageHandler, exception.Message, CallingLocation)
+                : exception.Message;
         }
 
 
@@ -262,7 +263,7 @@ namespace MoonSharp.Interpreter
         /// </value>
         public Script OwnerScript
         {
-            get { return this.GetScript(); }
+            get { return GetScript(); }
         }
 
     }

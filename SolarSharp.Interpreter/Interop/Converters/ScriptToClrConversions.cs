@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Globalization;
-using MoonSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
 
-namespace MoonSharp.Interpreter.Interop.Converters
+namespace SolarSharp.Interpreter.Interop.Converters
 {
     internal static class ScriptToClrConversions
     {
@@ -34,7 +37,7 @@ namespace MoonSharp.Interpreter.Interop.Converters
         /// </summary>
         internal static object DynValueToObject(DynValue value)
         {
-            var converter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, typeof(System.Object));
+            var converter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, typeof(object));
             if (converter != null)
             {
                 var v = converter(value);
@@ -112,7 +115,7 @@ namespace MoonSharp.Interpreter.Interop.Converters
                 case DataType.Void:
                     if (isOptional)
                         return defaultValue;
-                    else if ((!Framework.Do.IsValueType(desiredType)) || (nullableType != null))
+                    else if (!Framework.Do.IsValueType(desiredType) || nullableType != null)
                         return null;
                     break;
                 case DataType.Nil:
@@ -232,7 +235,7 @@ namespace MoonSharp.Interpreter.Interop.Converters
                 case DataType.Void:
                     if (isOptional)
                         return WEIGHT_VOID_WITH_DEFAULT;
-                    else if ((!Framework.Do.IsValueType(desiredType)) || (nullableType != null))
+                    else if (!Framework.Do.IsValueType(desiredType) || nullableType != null)
                         return WEIGHT_VOID_WITHOUT_DEFAULT;
                     break;
                 case DataType.Nil:

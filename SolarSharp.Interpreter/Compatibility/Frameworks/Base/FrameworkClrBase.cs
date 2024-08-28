@@ -3,7 +3,7 @@
 using System;
 using System.Reflection;
 
-namespace MoonSharp.Interpreter.Compatibility.Frameworks
+namespace SolarSharp.Interpreter.Compatibility.Frameworks.Base
 {
     internal abstract class FrameworkClrBase : FrameworkReflectionBase
     {

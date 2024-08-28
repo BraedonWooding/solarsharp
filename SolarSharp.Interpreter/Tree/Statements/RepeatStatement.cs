@@ -1,9 +1,10 @@
-﻿using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Execution.VM;
+﻿using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.Scopes;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-
-namespace MoonSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class RepeatStatement : Statement
     {
@@ -33,7 +34,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
 
         public override void Compile(ByteCode bc)
         {
-            Loop L = new Loop()
+            Loop L = new()
             {
                 Scope = m_StackFrame
             };

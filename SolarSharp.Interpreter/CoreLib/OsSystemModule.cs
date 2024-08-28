@@ -1,9 +1,10 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
-
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
 using System;
+#pragma warning disable IDE0060 // Remove unused parameter
 
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing system related Lua functions from the 'os' module.
@@ -13,7 +14,7 @@ namespace MoonSharp.Interpreter.CoreLib
     public class OsSystemModule
     {
         [MoonSharpModuleMethod]
-        public static DynValue execute(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue execute(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v = args.AsType(0, "execute", DataType.String, true);
 
@@ -41,7 +42,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue exit(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue exit(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_exitCode = args.AsType(0, "exit", DataType.Number, true);
             int exitCode = 0;
@@ -55,7 +56,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue getenv(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue getenv(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue varName = args.AsType(0, "getenv", DataType.String, false);
 
@@ -68,7 +69,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue remove(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue remove(ScriptExecutionContext _, CallbackArguments args)
         {
             string fileName = args.AsType(0, "remove", DataType.String, false).String;
 
@@ -94,7 +95,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue rename(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue rename(ScriptExecutionContext _, CallbackArguments args)
         {
             string fileNameOld = args.AsType(0, "rename", DataType.String, false).String;
             string fileNameNew = args.AsType(1, "rename", DataType.String, false).String;
@@ -118,15 +119,18 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue setlocale(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue setlocale(ScriptExecutionContext _, CallbackArguments _args)
         {
+            // TODO:
             return DynValue.NewString("n/a");
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue tmpname(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue tmpname(ScriptExecutionContext _, CallbackArguments _args)
         {
             return DynValue.NewString(Script.GlobalOptions.Platform.IO_OS_GetTempFilename());
         }
     }
 }
+
+#pragma warning restore IDE0060 // Remove unused parameter

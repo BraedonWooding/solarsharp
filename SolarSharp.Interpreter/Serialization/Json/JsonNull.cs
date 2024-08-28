@@ -1,4 +1,7 @@
-﻿namespace MoonSharp.Interpreter.Serialization.Json
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.Attributes;
+
+namespace SolarSharp.Interpreter.Serialization.Json
 {
     /// <summary>
     /// UserData representing a null value in a table converted from Json

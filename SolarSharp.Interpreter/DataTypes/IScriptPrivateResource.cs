@@ -1,5 +1,6 @@
-﻿
-namespace MoonSharp.Interpreter
+﻿using SolarSharp.Interpreter.Errors;
+
+namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
     /// Common interface for all resources which are uniquely bound to a script.
@@ -20,7 +21,7 @@ namespace MoonSharp.Interpreter
         public static void CheckScriptOwnership(this IScriptPrivateResource containingResource, DynValue[] values)
         {
             foreach (DynValue v in values)
-                CheckScriptOwnership(containingResource, v);
+                containingResource.CheckScriptOwnership(v);
         }
 
 
@@ -32,7 +33,7 @@ namespace MoonSharp.Interpreter
 
                 if (otherResource != null)
                 {
-                    CheckScriptOwnership(containingResource, otherResource);
+                    containingResource.CheckScriptOwnership(otherResource);
                 }
             }
         }

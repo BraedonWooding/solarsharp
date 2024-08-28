@@ -1,16 +1,16 @@
 ﻿using System;
 using System.CodeDom;
-using MoonSharp.Interpreter;
-using MoonSharp.Interpreter.Interop;
-using MoonSharp.Interpreter.Serialization;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
+using SolarSharp.Interpreter.Serialization;
 
-namespace MoonSharp.Hardwire.Generators
+namespace SolarSharp.Hardwire.Generators
 {
     public class DynValueMemberDescriptorGenerator : IHardwireGenerator
     {
         public string ManagedType
         {
-            get { return "MoonSharp.Interpreter.Interop.DynValueMemberDescriptor"; }
+            get { return "SolarSharp.Interpreter.Interop.DynValueMemberDescriptor"; }
         }
 
         public CodeExpression[] Generate(Table table, HardwireCodeGenerationContext generatorContext, CodeTypeMemberCollection members)
@@ -21,8 +21,8 @@ namespace MoonSharp.Hardwire.Generators
             DynValue vtype = table.Get("type");
             DynValue vstaticType = table.Get("staticType");
 
-            string type = (vtype.Type == DataType.String) ? vtype.String : null;
-            string staticType = (vstaticType.Type == DataType.String) ? vstaticType.String : null;
+            string type = vtype.Type == DataType.String ? vtype.String : null;
+            string staticType = vstaticType.Type == DataType.String ? vstaticType.String : null;
 
 
             CodeTypeDeclaration classCode = new(className)

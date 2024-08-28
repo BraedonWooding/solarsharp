@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter.Diagnostics.PerformanceCounters
+namespace SolarSharp.Interpreter.Diagnostics.PerformanceCounters
 {
     internal interface IPerformanceStopwatch
     {

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Text;
-using MoonSharp.Interpreter.Diagnostics.PerformanceCounters;
+using SolarSharp.Interpreter.Diagnostics.PerformanceCounters;
 
-namespace MoonSharp.Interpreter.Diagnostics
+namespace SolarSharp.Interpreter.Diagnostics
 {
     /// <summary>
     /// A single object of this type exists for every script and gives access to performance statistics.
@@ -52,7 +52,7 @@ namespace MoonSharp.Interpreter.Diagnostics
         public PerformanceResult GetPerformanceCounterResult(PerformanceCounter pc)
         {
             var pco = m_Stopwatches[(int)pc];
-            return (pco != null) ? pco.GetResult() : null;
+            return pco?.GetResult();
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace MoonSharp.Interpreter.Diagnostics
         internal IDisposable StartStopwatch(PerformanceCounter pc)
         {
             var pco = m_Stopwatches[(int)pc];
-            return (pco != null) ? pco.Start() : null;
+            return pco?.Start();
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace MoonSharp.Interpreter.Diagnostics
         internal static IDisposable StartGlobalStopwatch(PerformanceCounter pc)
         {
             var pco = m_GlobalStopwatches[(int)pc];
-            return (pco != null) ? pco.Start() : null;
+            return pco?.Start();
         }
 
         /// <summary>
@@ -81,11 +81,11 @@ namespace MoonSharp.Interpreter.Diagnostics
         /// <returns></returns>
         public string GetPerformanceLog()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             for (int i = 0; i < (int)PerformanceCounter.LastValue; i++)
             {
-                var res = this.GetPerformanceCounterResult((PerformanceCounter)i);
+                var res = GetPerformanceCounterResult((PerformanceCounter)i);
                 if (res != null)
                     sb.AppendLine(res.ToString());
             }

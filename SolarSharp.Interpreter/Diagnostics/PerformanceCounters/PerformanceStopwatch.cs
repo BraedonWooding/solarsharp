@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace MoonSharp.Interpreter.Diagnostics.PerformanceCounters
+namespace SolarSharp.Interpreter.Diagnostics.PerformanceCounters
 {
     /// <summary>
     /// This class is not *really* IDisposable.. it's just use to have a RAII like pattern.
@@ -9,7 +9,7 @@ namespace MoonSharp.Interpreter.Diagnostics.PerformanceCounters
     /// </summary>
     internal class PerformanceStopwatch : IDisposable, IPerformanceStopwatch
     {
-        private readonly Stopwatch m_Stopwatch = new Stopwatch();
+        private readonly Stopwatch m_Stopwatch = new();
         private int m_Count = 0;
         private int m_Reentrant = 0;
         private readonly PerformanceCounter m_Counter;

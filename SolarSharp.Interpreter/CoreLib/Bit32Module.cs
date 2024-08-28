@@ -1,9 +1,10 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
-
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
 using System;
 
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing bit32 Lua functions 
@@ -61,7 +62,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
 
         [MoonSharpModuleMethod]
-        public static DynValue extract(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue extract(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "extract", DataType.Number);
             uint v = ToUInt32(v_v);
@@ -70,17 +71,17 @@ namespace MoonSharp.Interpreter.CoreLib
             DynValue v_width = args.AsType(2, "extract", DataType.Number, true);
 
             int pos = (int)v_pos.Number;
-            int width = (v_width).IsNilOrNan() ? 1 : (int)v_width.Number;
+            int width = v_width.IsNilOrNan() ? 1 : (int)v_width.Number;
 
             ValidatePosWidth("extract", 2, pos, width);
 
-            uint res = (v >> pos) & NBitMask(width);
+            uint res = v >> pos & NBitMask(width);
             return DynValue.NewNumber(res);
         }
 
 
         [MoonSharpModuleMethod]
-        public static DynValue replace(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue replace(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "replace", DataType.Number);
             uint v = ToUInt32(v_v);
@@ -91,22 +92,21 @@ namespace MoonSharp.Interpreter.CoreLib
             DynValue v_width = args.AsType(3, "replace", DataType.Number, true);
 
             int pos = (int)v_pos.Number;
-            int width = (v_width).IsNilOrNan() ? 1 : (int)v_width.Number;
+            int width = v_width.IsNilOrNan() ? 1 : (int)v_width.Number;
 
             ValidatePosWidth("replace", 3, pos, width);
 
             uint mask = NBitMask(width) << pos;
-            v = v & (~mask);
-            u = u & (mask);
-            v = v | u;
+            v &= ~mask;
+            u &= mask;
+            v |= u;
 
             return DynValue.NewNumber(v);
         }
 
-
         private static void ValidatePosWidth(string func, int argPos, int pos, int width)
         {
-            if (pos > 31 || (pos + width) > 31)
+            if (pos > 31 || pos + width > 31)
                 throw new ScriptRuntimeException("trying to access non-existent bits");
 
             if (pos < 0)
@@ -116,9 +116,8 @@ namespace MoonSharp.Interpreter.CoreLib
                 throw new ScriptRuntimeException("bad argument #{1} to '{0}' (width must be positive)", func, argPos + 1);
         }
 
-
         [MoonSharpModuleMethod]
-        public static DynValue arshift(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue arshift(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "arshift", DataType.Number);
             int v = ToInt32(v_v);
@@ -128,16 +127,15 @@ namespace MoonSharp.Interpreter.CoreLib
             int a = (int)v_a.Number;
 
             if (a < 0)
-                v = v << -a;
+                v <<= -a;
             else
-                v = v >> a;
+                v >>= a;
 
             return DynValue.NewNumber(v);
         }
 
-
         [MoonSharpModuleMethod]
-        public static DynValue rshift(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue rshift(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "rshift", DataType.Number);
             uint v = ToUInt32(v_v);
@@ -147,16 +145,15 @@ namespace MoonSharp.Interpreter.CoreLib
             int a = (int)v_a.Number;
 
             if (a < 0)
-                v = v << -a;
+                v <<= -a;
             else
-                v = v >> a;
+                v >>= a;
 
             return DynValue.NewNumber(v);
         }
 
-
         [MoonSharpModuleMethod]
-        public static DynValue lshift(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue lshift(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "lshift", DataType.Number);
             uint v = ToUInt32(v_v);
@@ -166,33 +163,33 @@ namespace MoonSharp.Interpreter.CoreLib
             int a = (int)v_a.Number;
 
             if (a < 0)
-                v = v >> -a;
+                v >>= -a;
             else
-                v = v << a;
+                v <<= a;
 
             return DynValue.NewNumber(v);
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue band(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue band(ScriptExecutionContext _, CallbackArguments args)
         {
             return DynValue.NewNumber(Bitwise("band", args, (x, y) => x & y));
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue btest(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue btest(ScriptExecutionContext _, CallbackArguments args)
         {
             return DynValue.NewBoolean(0 != Bitwise("btest", args, (x, y) => x & y));
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue bor(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue bor(ScriptExecutionContext _, CallbackArguments args)
         {
             return DynValue.NewNumber(Bitwise("bor", args, (x, y) => x | y));
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue bnot(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue bnot(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "bnot", DataType.Number);
             uint v = ToUInt32(v_v);
@@ -200,43 +197,37 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue bxor(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue bxor(ScriptExecutionContext _, CallbackArguments args)
         {
             return DynValue.NewNumber(Bitwise("bxor", args, (x, y) => x ^ y));
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue lrotate(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue lrotate(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "lrotate", DataType.Number);
             uint v = ToUInt32(v_v);
 
             DynValue v_a = args.AsType(1, "lrotate", DataType.Number);
 
-            int a = ((int)v_a.Number) % 32;
+            int a = (int)v_a.Number % 32;
 
-            if (a < 0)
-                v = (v >> (-a)) | (v << (32 + a));
-            else
-                v = (v << a) | (v >> (32 - a));
+            v = a < 0 ? v >> -a | v << 32 + a : v << a | v >> 32 - a;
 
             return DynValue.NewNumber(v);
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue rrotate(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue rrotate(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "rrotate", DataType.Number);
             uint v = ToUInt32(v_v);
 
             DynValue v_a = args.AsType(1, "rrotate", DataType.Number);
 
-            int a = ((int)v_a.Number) % 32;
+            int a = (int)v_a.Number % 32;
 
-            if (a < 0)
-                v = (v << (-a)) | (v >> (32 + a));
-            else
-                v = (v >> a) | (v << (32 - a));
+            v = a < 0 ? v << -a | v >> 32 + a : v >> a | v << 32 - a;
 
             return DynValue.NewNumber(v);
         }

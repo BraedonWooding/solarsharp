@@ -1,5 +1,7 @@
-﻿
-namespace MoonSharp.Interpreter.Interop
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.StandardDescriptors;
+
+namespace SolarSharp.Interpreter.Interop
 {
     /// <summary>
     /// As a convenience, every type deriving from IUserDataType is "self-described". That is, no descriptor is needed/generated

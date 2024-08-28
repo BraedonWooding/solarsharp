@@ -1,6 +1,10 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
+using System;
 
-namespace MoonSharp.Interpreter.Interop.StandardDescriptors
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors
 {
     internal class EventFacade : IUserDataType
     {

@@ -1,10 +1,10 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter.Diagnostics.PerformanceCounters
+namespace SolarSharp.Interpreter.Diagnostics.PerformanceCounters
 {
     internal class DummyPerformanceStopwatch : IPerformanceStopwatch, IDisposable
     {
-        public static DummyPerformanceStopwatch Instance = new DummyPerformanceStopwatch();
+        public static DummyPerformanceStopwatch Instance = new();
         private readonly PerformanceResult m_Result;
 
         private DummyPerformanceStopwatch()

@@ -1,5 +1,4 @@
-﻿
-namespace MoonSharp.Interpreter
+﻿namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
     /// A base class for many MoonSharp objects. 

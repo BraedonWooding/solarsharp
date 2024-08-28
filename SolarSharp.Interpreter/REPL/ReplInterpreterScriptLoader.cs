@@ -1,8 +1,9 @@
 ﻿#if !(PCL || ENABLE_DOTNET || NETFX_CORE)
 using System;
-using MoonSharp.Interpreter.Loaders;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Loaders;
 
-namespace MoonSharp.Interpreter.REPL
+namespace SolarSharp.Interpreter.REPL
 {
     /// <summary>
     /// A script loader loading scripts directly from the file system (does not go through platform object)
@@ -39,10 +40,7 @@ namespace MoonSharp.Interpreter.REPL
                 if (!string.IsNullOrEmpty(env)) ModulePaths = UnpackStringPaths(env);
             }
 
-            if (ModulePaths == null)
-            {
-                ModulePaths = UnpackStringPaths("?;?.lua");
-            }
+            ModulePaths ??= UnpackStringPaths("?;?.lua");
         }
 
         /// <summary>

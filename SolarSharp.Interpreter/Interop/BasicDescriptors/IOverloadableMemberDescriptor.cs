@@ -1,6 +1,8 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using System;
 
-namespace MoonSharp.Interpreter.Interop.BasicDescriptors
+namespace SolarSharp.Interpreter.Interop.BasicDescriptors
 {
     /// <summary>
     /// Specialized <see cref="IMemberDescriptor"/> for members supporting overloads resolution.

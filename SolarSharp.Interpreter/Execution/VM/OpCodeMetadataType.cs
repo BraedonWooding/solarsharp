@@ -1,4 +1,4 @@
-﻿namespace MoonSharp.Interpreter.Execution.VM
+﻿namespace SolarSharp.Interpreter.Execution.VM
 {
     public enum OpCodeMetadataType
     {

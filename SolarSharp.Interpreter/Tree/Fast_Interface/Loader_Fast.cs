@@ -1,10 +1,13 @@
-﻿using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Execution.VM;
-using MoonSharp.Interpreter.Tree.Expressions;
-using MoonSharp.Interpreter.Tree.Statements;
+﻿using SolarSharp.Interpreter.Tree.Statements;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Diagnostics;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.Execution.Scopes;
 
-namespace MoonSharp.Interpreter.Tree.Fast_Interface
+namespace SolarSharp.Interpreter.Tree.Fast_Interface
 {
     internal static class Loader_Fast
     {
@@ -18,7 +21,7 @@ namespace MoonSharp.Interpreter.Tree.Fast_Interface
                 lcontext.Anonymous = true;
 
                 Expression exp;
-                using (script.PerformanceStats.StartStopwatch(Diagnostics.PerformanceCounter.AstCreation))
+                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
                     exp = Expression.Expr(lcontext);
 
                 return new DynamicExprExpression(exp, lcontext);
@@ -37,7 +40,7 @@ namespace MoonSharp.Interpreter.Tree.Fast_Interface
             {
                 Scope = new BuildTimeScope(),
                 Source = source,
-                Lexer = new Lexer(source.SourceID, source.Code, true)
+                Lexer = new Lexer.Lexer(source.SourceID, source.Code, true)
             };
         }
 
@@ -48,14 +51,14 @@ namespace MoonSharp.Interpreter.Tree.Fast_Interface
             {
                 Statement stat;
 
-                using (script.PerformanceStats.StartStopwatch(Diagnostics.PerformanceCounter.AstCreation))
+                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
                     stat = new ChunkStatement(lcontext);
 
                 int beginIp = -1;
 
                 //var srcref = new SourceRef(source.SourceID);
 
-                using (script.PerformanceStats.StartStopwatch(Diagnostics.PerformanceCounter.Compilation))
+                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
                 using (bytecode.EnterSource(null))
                 {
                     bytecode.Emit_Nop(string.Format("Begin chunk {0}", source.Name));
@@ -84,14 +87,14 @@ namespace MoonSharp.Interpreter.Tree.Fast_Interface
             {
                 FunctionDefinitionExpression fnx;
 
-                using (script.PerformanceStats.StartStopwatch(Diagnostics.PerformanceCounter.AstCreation))
+                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
                     fnx = new FunctionDefinitionExpression(lcontext, usesGlobalEnv);
 
                 int beginIp = -1;
 
                 //var srcref = new SourceRef(source.SourceID);
 
-                using (script.PerformanceStats.StartStopwatch(Diagnostics.PerformanceCounter.Compilation))
+                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
                 using (bytecode.EnterSource(null))
                 {
                     bytecode.Emit_Nop(string.Format("Begin function {0}", source.Name));

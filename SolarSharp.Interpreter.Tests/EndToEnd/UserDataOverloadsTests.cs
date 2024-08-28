@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
-#pragma warning disable IDE0060 // Remove unused parameter
+using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     public static class OverloadsExtMethods
     {
@@ -298,10 +298,10 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
             Script s = new();
 
             // Create an instance of the overload resolver
-            var ov = new OverloadedMethodMemberDescriptor("Method1", this.GetType());
+            var ov = new OverloadedMethodMemberDescriptor("Method1", GetType());
 
             // Iterate over the two methods through reflection
-            foreach (var method in Framework.Do.GetMethods(this.GetType())
+            foreach (var method in Framework.Do.GetMethods(GetType())
                 .Where(mi => mi.Name == "Method1" && mi.IsPrivate && !mi.IsStatic))
             {
                 ov.AddOverload(new MethodMemberDescriptor(method));
@@ -324,10 +324,5 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
             });
         }
 #endif
-
-
-
     }
 }
-
-#pragma warning restore IDE0060 // Remove unused parameter

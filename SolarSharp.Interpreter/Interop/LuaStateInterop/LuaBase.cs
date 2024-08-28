@@ -1,10 +1,12 @@
 ﻿// Disable warnings about XML documentation
 #pragma warning disable 1591
 
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
 using System;
 using lua_Integer = System.Int32;
 
-namespace MoonSharp.Interpreter.Interop.LuaStateInterop
+namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 {
     /// <summary>
     /// Classes using the classic interface should inherit from this class.
@@ -100,8 +102,7 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
 
         protected static string LuaToString(LuaState luaState, lua_Integer p)
         {
-            uint l;
-            return LuaLCheckLString(luaState, p, out l);
+            return LuaLCheckLString(luaState, p, out uint l);
         }
 
         protected static void LuaLAddValue(LuaLBuffer b)
@@ -244,14 +245,12 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
 
         protected static CharPtr LuaLCheckString(LuaState L, lua_Integer p)
         {
-            uint dummy;
-            return LuaLCheckLString(L, p, out dummy);
+            return LuaLCheckLString(L, p, out uint dummy);
         }
 
         protected static string LuaLCheckStringStr(LuaState L, lua_Integer p)
         {
-            uint dummy;
-            return LuaLCheckLString(L, p, out dummy);
+            return LuaLCheckLString(L, p, out uint dummy);
         }
 
         protected static void LuaLArgError(LuaState L, lua_Integer arg, string p)

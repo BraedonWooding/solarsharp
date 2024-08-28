@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
-using MoonSharp.Interpreter.Interop;
-using MoonSharp.Interpreter.Loaders;
+using SolarSharp.Interpreter.Loaders;
+using SolarSharp.Interpreter.Interop;
 
-namespace MoonSharp.Interpreter.Platforms
+namespace SolarSharp.Interpreter.Platforms
 {
     /// <summary>
     /// A static class offering properties for autodetection of system/platform details
@@ -99,9 +99,9 @@ namespace MoonSharp.Interpreter.Platforms
 #endif
 #endif
 
-            IsRunningOnMono = (Type.GetType("Mono.Runtime") != null);
+            IsRunningOnMono = Type.GetType("Mono.Runtime") != null;
 
-            IsRunningOnClr4 = (Type.GetType("System.Lazy`1") != null);
+            IsRunningOnClr4 = Type.GetType("System.Lazy`1") != null;
 
             m_AutoDetectionsDone = true;
         }

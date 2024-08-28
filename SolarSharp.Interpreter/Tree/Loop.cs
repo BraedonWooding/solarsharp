@@ -1,13 +1,14 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution.Scopes;
+using SolarSharp.Interpreter.Execution.VM;
 
-namespace MoonSharp.Interpreter.Tree
+namespace SolarSharp.Interpreter.Tree
 {
     internal class Loop : ILoop
     {
         public RuntimeScopeBlock Scope;
-        public List<Instruction> BreakJumps = new List<Instruction>();
+        public List<Instruction> BreakJumps = new();
 
         public void CompileBreak(ByteCode bc)
         {

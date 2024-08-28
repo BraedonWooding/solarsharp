@@ -4,20 +4,24 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
-using MoonSharp.Interpreter.Interop.RegistrationPolicies;
+using SolarSharp.Interpreter.Interop.StandardDescriptors;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.Attributes;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.ProxyObjects;
+using SolarSharp.Interpreter.Interop.RegistrationPolicies;
 
-namespace MoonSharp.Interpreter.Interop.UserDataRegistries
+namespace SolarSharp.Interpreter.Interop.UserDataRegistries
 {
     /// <summary>
     /// Registry of all type descriptors. Use UserData statics to access these.
     /// </summary>
     internal static class TypeDescriptorRegistry
     {
-        private static readonly object s_Lock = new object();
-        private static readonly Dictionary<Type, IUserDataDescriptor> s_TypeRegistry = new Dictionary<Type, IUserDataDescriptor>();
-        private static readonly Dictionary<Type, IUserDataDescriptor> s_TypeRegistryHistory = new Dictionary<Type, IUserDataDescriptor>();
+        private static readonly object s_Lock = new();
+        private static readonly Dictionary<Type, IUserDataDescriptor> s_TypeRegistry = new();
+        private static readonly Dictionary<Type, IUserDataDescriptor> s_TypeRegistryHistory = new();
         private static InteropAccessMode s_DefaultAccessMode;
 
         /// <summary>
@@ -103,7 +107,7 @@ namespace MoonSharp.Interpreter.Interop.UserDataRegistries
         /// <value>
         /// The default access mode.
         /// </value>
-        /// <exception cref="System.ArgumentException">InteropAccessMode is InteropAccessMode.Default</exception>
+        /// <exception cref="ArgumentException">InteropAccessMode is InteropAccessMode.Default</exception>
         internal static InteropAccessMode DefaultAccessMode
         {
             get { return s_DefaultAccessMode; }
@@ -144,8 +148,7 @@ namespace MoonSharp.Interpreter.Interop.UserDataRegistries
 
             lock (s_Lock)
             {
-                IUserDataDescriptor oldDescriptor = null;
-                s_TypeRegistry.TryGetValue(type, out oldDescriptor);
+                s_TypeRegistry.TryGetValue(type, out IUserDataDescriptor oldDescriptor);
 
                 if (descriptor == null)
                 {
@@ -154,12 +157,12 @@ namespace MoonSharp.Interpreter.Interop.UserDataRegistries
 
                     if (Framework.Do.GetInterfaces(type).Any(ii => ii == typeof(IUserDataType)))
                     {
-                        AutoDescribingUserDataDescriptor audd = new AutoDescribingUserDataDescriptor(type, friendlyName);
+                        AutoDescribingUserDataDescriptor audd = new(type, friendlyName);
                         return PerformRegistration(type, audd, oldDescriptor);
                     }
                     else if (Framework.Do.IsGenericTypeDefinition(type))
                     {
-                        StandardGenericsUserDataDescriptor typeGen = new StandardGenericsUserDataDescriptor(type, accessMode);
+                        StandardGenericsUserDataDescriptor typeGen = new(type, accessMode);
                         return PerformRegistration(type, typeGen, oldDescriptor);
                     }
                     else if (Framework.Do.IsEnum(type))
@@ -169,7 +172,7 @@ namespace MoonSharp.Interpreter.Interop.UserDataRegistries
                     }
                     else
                     {
-                        StandardUserDataDescriptor udd = new StandardUserDataDescriptor(type, accessMode, friendlyName);
+                        StandardUserDataDescriptor udd = new(type, accessMode, friendlyName);
 
                         if (accessMode == InteropAccessMode.BackgroundOptimized)
                         {
@@ -256,7 +259,7 @@ namespace MoonSharp.Interpreter.Interop.UserDataRegistries
                 if (RegistrationPolicy.AllowTypeAutoRegistration(type))
                 {
                     // no autoreg of delegates
-                    if (!Framework.Do.IsAssignableFrom((typeof(Delegate)), type))
+                    if (!Framework.Do.IsAssignableFrom(typeof(Delegate), type))
                     {
                         return RegisterType_Impl(type, DefaultAccessMode, type.FullName, null);
                     }
@@ -265,9 +268,8 @@ namespace MoonSharp.Interpreter.Interop.UserDataRegistries
                 // search for the base object descriptors
                 for (Type t = type; t != null; t = Framework.Do.GetBaseType(t))
                 {
-                    IUserDataDescriptor u;
 
-                    if (s_TypeRegistry.TryGetValue(t, out u))
+                    if (s_TypeRegistry.TryGetValue(t, out IUserDataDescriptor u))
                     {
                         typeDescriptor = u;
                         break;
@@ -290,7 +292,7 @@ namespace MoonSharp.Interpreter.Interop.UserDataRegistries
                 if (!searchInterfaces)
                     return typeDescriptor;
 
-                List<IUserDataDescriptor> descriptors = new List<IUserDataDescriptor>();
+                List<IUserDataDescriptor> descriptors = new();
 
                 if (typeDescriptor != null)
                     descriptors.Add(typeDescriptor);
@@ -300,9 +302,8 @@ namespace MoonSharp.Interpreter.Interop.UserDataRegistries
                 {
                     foreach (Type interfaceType in Framework.Do.GetInterfaces(type))
                     {
-                        IUserDataDescriptor interfaceDescriptor;
 
-                        if (s_TypeRegistry.TryGetValue(interfaceType, out interfaceDescriptor))
+                        if (s_TypeRegistry.TryGetValue(interfaceType, out IUserDataDescriptor interfaceDescriptor))
                         {
                             if (interfaceDescriptor is IGeneratorUserDataDescriptor)
                                 interfaceDescriptor = ((IGeneratorUserDataDescriptor)interfaceDescriptor).Generate(type);

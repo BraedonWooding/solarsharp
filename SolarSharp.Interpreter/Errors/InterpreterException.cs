@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using MoonSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Debugging;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.Errors
 {
     /// <summary>
     /// Base type of all exceptions thrown in MoonSharp
@@ -61,7 +61,7 @@ namespace MoonSharp.Interpreter
         /// <summary>
         /// Gets the interpreter call stack.
         /// </summary>
-        public IList<MoonSharp.Interpreter.Debugging.WatchItem> CallStack { get; internal set; }
+        public IList<WatchItem> CallStack { get; internal set; }
 
         /// <summary>
         /// Gets the decorated message (error message plus error location in script) if possible.
@@ -77,20 +77,18 @@ namespace MoonSharp.Interpreter
 
         internal void DecorateMessage(Script script, SourceRef sref, int ip = -1)
         {
-            if (string.IsNullOrEmpty(this.DecoratedMessage))
+            if (string.IsNullOrEmpty(DecoratedMessage))
             {
                 if (DoNotDecorateMessage)
                 {
-                    this.DecoratedMessage = this.Message;
+                    DecoratedMessage = Message;
                     return;
-                }
-                else if (sref != null)
-                {
-                    this.DecoratedMessage = string.Format("{0}: {1}", sref.FormatLocation(script), this.Message);
                 }
                 else
                 {
-                    this.DecoratedMessage = string.Format("bytecode:{0}: {1}", ip, this.Message);
+                    DecoratedMessage = sref != null
+                        ? string.Format("{0}: {1}", sref.FormatLocation(script), Message)
+                        : string.Format("bytecode:{0}: {1}", ip, Message);
                 }
             }
         }

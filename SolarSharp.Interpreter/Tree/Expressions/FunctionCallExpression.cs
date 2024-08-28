@@ -1,8 +1,12 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace MoonSharp.Interpreter.Tree.Expressions
+namespace SolarSharp.Interpreter.Tree.Expressions
 {
     internal class FunctionCallExpression : Expression
     {
@@ -19,7 +23,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
         {
             Token callToken = thisCallName ?? lcontext.Lexer.Current;
 
-            m_Name = thisCallName != null ? thisCallName.Text : null;
+            m_Name = thisCallName?.Text;
             m_DebugErr = function.GetFriendlyDebugName();
             m_Function = function;
 
@@ -53,20 +57,22 @@ namespace MoonSharp.Interpreter.Tree.Expressions
                 case TokenType.Brk_Open_Curly:
                 case TokenType.Brk_Open_Curly_Shared:
                     {
-                        m_Arguments = new List<Expression>();
-                        m_Arguments.Add(new TableConstructor(lcontext, lcontext.Lexer.Current.Type == TokenType.Brk_Open_Curly_Shared));
+                        m_Arguments = new List<Expression>
+                        {
+                            new TableConstructor(lcontext, lcontext.Lexer.Current.Type == TokenType.Brk_Open_Curly_Shared)
+                        };
                         SourceRef = callToken.GetSourceRefUpTo(lcontext.Lexer.Current);
                     }
                     break;
                 default:
                     throw new SyntaxErrorException(lcontext.Lexer.Current, "function arguments expected")
                     {
-                        IsPrematureStreamTermination = (lcontext.Lexer.Current.Type == TokenType.Eof)
+                        IsPrematureStreamTermination = lcontext.Lexer.Current.Type == TokenType.Eof
                     };
             }
         }
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
             m_Function.Compile(bc);
 

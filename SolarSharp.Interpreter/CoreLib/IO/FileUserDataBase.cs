@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using MoonSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
 
-namespace MoonSharp.Interpreter.CoreLib.IO
+namespace SolarSharp.Interpreter.CoreLib.IO
 {
     /// <summary>
     /// Abstract class implementing a file Lua userdata. Methods are meant to be called by Lua code.
@@ -12,7 +15,7 @@ namespace MoonSharp.Interpreter.CoreLib.IO
     {
         public DynValue lines(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            List<DynValue> readLines = new List<DynValue>();
+            List<DynValue> readLines = new();
 
             DynValue readValue = null;
 
@@ -40,7 +43,7 @@ namespace MoonSharp.Interpreter.CoreLib.IO
             }
             else
             {
-                List<DynValue> rets = new List<DynValue>();
+                List<DynValue> rets = new();
 
                 for (int i = 0; i < args.Count; i++)
                 {
@@ -68,10 +71,7 @@ namespace MoonSharp.Interpreter.CoreLib.IO
                         {
                             double? d = ReadNumber();
 
-                            if (d.HasValue)
-                                v = DynValue.NewNumber(d.Value);
-                            else
-                                v = DynValue.Nil;
+                            v = d.HasValue ? DynValue.NewNumber(d.Value) : DynValue.Nil;
                         }
                         else if (opt.StartsWith("*a"))
                         {
@@ -169,9 +169,8 @@ namespace MoonSharp.Interpreter.CoreLib.IO
                 else break;
             }
 
-            double d;
 
-            if (double.TryParse(chr, out d))
+            if (double.TryParse(chr, out double d))
             {
                 return d;
             }
@@ -216,7 +215,7 @@ namespace MoonSharp.Interpreter.CoreLib.IO
         public override string ToString()
         {
             if (isopen())
-                return string.Format("file ({0:X8})", base.ReferenceID);
+                return string.Format("file ({0:X8})", ReferenceID);
             else
                 return "file (closed)";
         }

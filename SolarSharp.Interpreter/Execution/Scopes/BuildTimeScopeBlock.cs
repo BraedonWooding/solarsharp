@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using MoonSharp.Interpreter.Tree.Statements;
+using SolarSharp.Interpreter.DataStructs;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Tree.Statements;
 
-namespace MoonSharp.Interpreter.Execution.Scopes
+namespace SolarSharp.Interpreter.Execution.Scopes
 {
     internal class BuildTimeScopeBlock
     {
@@ -11,7 +14,7 @@ namespace MoonSharp.Interpreter.Execution.Scopes
 
         internal RuntimeScopeBlock ScopeBlock { get; private set; }
 
-        private readonly Dictionary<string, SymbolRef> m_DefinedNames = new Dictionary<string, SymbolRef>();
+        private readonly Dictionary<string, SymbolRef> m_DefinedNames = new();
 
 
 
@@ -32,7 +35,7 @@ namespace MoonSharp.Interpreter.Execution.Scopes
 
         internal BuildTimeScopeBlock AddChild()
         {
-            BuildTimeScopeBlock block = new BuildTimeScopeBlock(this);
+            BuildTimeScopeBlock block = new(this);
             ChildNodes.Add(block);
             return block;
         }
@@ -65,22 +68,22 @@ namespace MoonSharp.Interpreter.Execution.Scopes
                 lastVal = pos;
             }
 
-            this.ScopeBlock.From = firstVal;
-            this.ScopeBlock.ToInclusive = this.ScopeBlock.To = lastVal;
+            ScopeBlock.From = firstVal;
+            ScopeBlock.ToInclusive = ScopeBlock.To = lastVal;
 
             if (firstVal < 0)
-                this.ScopeBlock.From = buildTimeScopeFrame.GetPosForNextVar();
+                ScopeBlock.From = buildTimeScopeFrame.GetPosForNextVar();
 
             foreach (var child in ChildNodes)
             {
-                this.ScopeBlock.ToInclusive = Math.Max(this.ScopeBlock.ToInclusive, child.ResolveLRefs(buildTimeScopeFrame));
+                ScopeBlock.ToInclusive = Math.Max(ScopeBlock.ToInclusive, child.ResolveLRefs(buildTimeScopeFrame));
             }
 
             if (m_LocalLabels != null)
                 foreach (var label in m_LocalLabels.Values)
-                    label.SetScope(this.ScopeBlock);
+                    label.SetScope(ScopeBlock);
 
-            return this.ScopeBlock.ToInclusive;
+            return ScopeBlock.ToInclusive;
         }
 
         private List<GotoStatement> m_PendingGotos;
@@ -89,8 +92,7 @@ namespace MoonSharp.Interpreter.Execution.Scopes
 
         internal void DefineLabel(LabelStatement label)
         {
-            if (m_LocalLabels == null)
-                m_LocalLabels = new Dictionary<string, LabelStatement>();
+            m_LocalLabels ??= new Dictionary<string, LabelStatement>();
 
             if (m_LocalLabels.ContainsKey(label.Label))
             {
@@ -105,8 +107,7 @@ namespace MoonSharp.Interpreter.Execution.Scopes
 
         internal void RegisterGoto(GotoStatement gotostat)
         {
-            if (m_PendingGotos == null)
-                m_PendingGotos = new List<GotoStatement>();
+            m_PendingGotos ??= new List<GotoStatement>();
 
             m_PendingGotos.Add(gotostat);
             gotostat.SetDefinedVars(m_DefinedNames.Count, m_LastDefinedName);
@@ -119,9 +120,8 @@ namespace MoonSharp.Interpreter.Execution.Scopes
 
             foreach (GotoStatement gotostat in m_PendingGotos)
             {
-                LabelStatement label;
 
-                if (m_LocalLabels != null && m_LocalLabels.TryGetValue(gotostat.Label, out label))
+                if (m_LocalLabels != null && m_LocalLabels.TryGetValue(gotostat.Label, out LabelStatement label))
                 {
                     if (label.DefinedVarsCount > gotostat.DefinedVarsCount)
                         throw new SyntaxErrorException(gotostat.GotoToken,

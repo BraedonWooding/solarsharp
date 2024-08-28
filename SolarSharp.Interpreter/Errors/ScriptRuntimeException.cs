@@ -1,8 +1,9 @@
 ﻿using System;
-using MoonSharp.Interpreter.Interop;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.Errors
 {
     /// <summary>
     /// Exception for all runtime errors. In addition to constructors, it offers a lot of static methods
@@ -29,8 +30,8 @@ namespace MoonSharp.Interpreter
         public ScriptRuntimeException(ScriptRuntimeException ex)
             : base(ex, ex.DecoratedMessage)
         {
-            this.DecoratedMessage = Message;
-            this.DoNotDecorateMessage = true;
+            DecoratedMessage = Message;
+            DoNotDecorateMessage = true;
         }
 
         /// <summary>
@@ -68,7 +69,7 @@ namespace MoonSharp.Interpreter
                 return new ScriptRuntimeException("attempt to perform arithmetic on a {0} value", l.Type.ToLuaTypeString());
             else if (r != null && r.Type != DataType.Number && r.Type != DataType.String)
                 return new ScriptRuntimeException("attempt to perform arithmetic on a {0} value", r.Type.ToLuaTypeString());
-            else if (l.Type == DataType.String || (r != null && r.Type == DataType.String))
+            else if (l.Type == DataType.String || r != null && r.Type == DataType.String)
                 return new ScriptRuntimeException("attempt to perform arithmetic on a string value");
             else
                 throw new InternalErrorException("ArithmeticOnNonNumber - both are numbers");

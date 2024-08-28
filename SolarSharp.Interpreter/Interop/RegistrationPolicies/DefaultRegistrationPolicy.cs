@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter.Interop.RegistrationPolicies
+namespace SolarSharp.Interpreter.Interop.RegistrationPolicies
 {
     /// <summary>
     /// The default registration policy used by MoonSharp unless explicitely replaced.

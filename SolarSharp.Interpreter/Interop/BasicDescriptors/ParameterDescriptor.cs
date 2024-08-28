@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-using MoonSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
 
-namespace MoonSharp.Interpreter.Interop.BasicDescriptors
+namespace SolarSharp.Interpreter.Interop.BasicDescriptors
 {
     /// <summary>
     /// Descriptor of parameters used in <see cref="IOverloadableMemberDescriptor"/> implementations.
@@ -112,19 +113,19 @@ namespace MoonSharp.Interpreter.Interop.BasicDescriptors
         {
             Name = pi.Name;
             Type = pi.ParameterType;
-            HasDefaultValue = !(Framework.Do.IsDbNull(pi.DefaultValue));
+            HasDefaultValue = !Framework.Do.IsDbNull(pi.DefaultValue);
             DefaultValue = pi.DefaultValue;
             IsOut = pi.IsOut;
             IsRef = pi.ParameterType.IsByRef;
-            IsVarArgs = (pi.ParameterType.IsArray && pi.GetCustomAttributes(typeof(ParamArrayAttribute), true).Any());
+            IsVarArgs = pi.ParameterType.IsArray && pi.GetCustomAttributes(typeof(ParamArrayAttribute), true).Any();
         }
 
 
         /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
         /// <returns>
-        /// A <see cref="System.String" /> that represents this instance.
+        /// A <see cref="string" /> that represents this instance.
         /// </returns>
         public override string ToString()
         {
@@ -137,7 +138,7 @@ namespace MoonSharp.Interpreter.Interop.BasicDescriptors
         /// parameter is used in any way.
         /// </summary>
         /// <param name="type">The new type.</param>
-        /// <exception cref="System.InvalidOperationException">
+        /// <exception cref="InvalidOperationException">
         /// Cannot restrict a ref/out or varargs param
         /// or
         /// Specified operation is not a restriction

@@ -1,7 +1,9 @@
-﻿using MoonSharp.Interpreter.CoreLib;
+﻿using SolarSharp.Interpreter.CoreLib;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
 
-namespace MoonSharp.Interpreter.Tests.EndToEnd
+namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     public class MetatableTests
@@ -35,7 +37,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 
 				return x;";
 
-            DynValue res = (new Script()).DoString(script);
+            DynValue res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -98,7 +100,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 				return ( t1a == t1b ), ( t1a == t2 ) 
 				";
 
-            DynValue res = (new Script()).DoString(script);
+            DynValue res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -160,7 +162,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 					return x;
 				";
 
-            DynValue res = (new Script()).DoString(script);
+            DynValue res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -202,7 +204,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 					return(s);
 				";
 
-            DynValue res = (new Script()).DoString(script);
+            DynValue res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -234,7 +236,7 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 					return(s);
 				";
 
-            DynValue res = (new Script()).DoString(script);
+            DynValue res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {

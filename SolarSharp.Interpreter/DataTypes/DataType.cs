@@ -1,6 +1,6 @@
-﻿
+﻿using SolarSharp.Interpreter.Errors;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
     /// Enumeration of possible data types in MoonSharp

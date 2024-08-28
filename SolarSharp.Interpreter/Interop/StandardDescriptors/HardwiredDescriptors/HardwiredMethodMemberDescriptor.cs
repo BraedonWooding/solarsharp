@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
 
-namespace MoonSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors
 {
     public abstract class HardwiredMethodMemberDescriptor : FunctionMemberDescriptorBase
     {
@@ -9,8 +12,7 @@ namespace MoonSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors
         {
             this.CheckAccess(MemberDescriptorAccess.CanExecute, obj);
 
-            List<int> outParams = null;
-            object[] pars = base.BuildArgumentList(script, obj, context, args, out outParams);
+            object[] pars = base.BuildArgumentList(script, obj, context, args, out List<int> outParams);
             object retv = Invoke(script, obj, pars, CalcArgsCount(pars));
 
             return DynValue.FromObject(script, retv);
@@ -21,7 +23,7 @@ namespace MoonSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors
             int count = pars.Length;
 
             for (int i = 0; i < pars.Length; i++)
-                if (Parameters[i].HasDefaultValue && (pars[i] is DefaultValue))
+                if (Parameters[i].HasDefaultValue && pars[i] is DefaultValue)
                 {
                     count -= 1;
                 }

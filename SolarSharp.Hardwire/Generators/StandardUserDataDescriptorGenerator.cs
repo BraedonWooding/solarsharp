@@ -1,15 +1,16 @@
 ﻿using System;
 using System.CodeDom;
-using MoonSharp.Interpreter;
-using MoonSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors;
+using SolarSharp.Hardwire;
 
-namespace MoonSharp.Hardwire.Generators
+namespace SolarSharp.Hardwire.Generators
 {
     public class StandardUserDataDescriptorGenerator : IHardwireGenerator
     {
         public string ManagedType
         {
-            get { return "MoonSharp.Interpreter.Interop.StandardUserDataDescriptor"; }
+            get { return "SolarSharp.Interpreter.Interop.StandardUserDataDescriptor"; }
         }
 
         public CodeExpression[] Generate(Table table, HardwireCodeGenerationContext generator,

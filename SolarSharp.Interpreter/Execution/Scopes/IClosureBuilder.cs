@@ -1,5 +1,6 @@
-﻿
-namespace MoonSharp.Interpreter.Execution
+﻿using SolarSharp.Interpreter.DataTypes;
+
+namespace SolarSharp.Interpreter.Execution.Scopes
 {
     internal interface IClosureBuilder
     {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace MoonSharp.Interpreter.DataStructs
+namespace SolarSharp.Interpreter.DataStructs
 {
     /// <summary>
     /// A Dictionary where multiple values can be associated to the same key
@@ -38,16 +38,17 @@ namespace MoonSharp.Interpreter.DataStructs
         /// <returns></returns>
         public bool Add(K key, V value)
         {
-            List<V> list;
-            if (m_Map.TryGetValue(key, out list))
+            if (m_Map.TryGetValue(key, out List<V> list))
             {
                 list.Add(value);
                 return false;
             }
             else
             {
-                list = new List<V>();
-                list.Add(value);
+                list = new List<V>
+                {
+                    value
+                };
                 m_Map.Add(key, list);
                 return true;
             }
@@ -60,8 +61,7 @@ namespace MoonSharp.Interpreter.DataStructs
         /// <param name="key">The key.</param>
         public IEnumerable<V> Find(K key)
         {
-            List<V> list;
-            if (m_Map.TryGetValue(key, out list))
+            if (m_Map.TryGetValue(key, out List<V> list))
                 return list;
             else
                 return m_DefaultRet;
@@ -109,9 +109,8 @@ namespace MoonSharp.Interpreter.DataStructs
         /// <returns></returns>
         public bool RemoveValue(K key, V value)
         {
-            List<V> list;
 
-            if (m_Map.TryGetValue(key, out list))
+            if (m_Map.TryGetValue(key, out List<V> list))
             {
                 list.Remove(value);
 

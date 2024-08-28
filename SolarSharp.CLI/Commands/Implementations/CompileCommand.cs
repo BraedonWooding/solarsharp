@@ -1,8 +1,12 @@
 ﻿using System;
 using System.IO;
-using MoonSharp.Interpreter;
+using SolarSharp.Interpreter;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Modules;
+using SolarSharp;
+using SolarSharp.Commands;
 
-namespace MoonSharp.Commands.Implementations
+namespace SolarSharp.Commands.Implementations
 {
     internal class CompileCommand : ICommand
     {

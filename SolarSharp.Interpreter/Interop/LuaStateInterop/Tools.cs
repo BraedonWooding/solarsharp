@@ -55,7 +55,7 @@ using System.Text.RegularExpressions;
 
 #endregion
 
-namespace MoonSharp.Interpreter.Interop.LuaStateInterop
+namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 {
     internal static class Tools
     {
@@ -70,7 +70,7 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
         /// </returns>
         public static bool IsNumericType(object o)
         {
-            return (o is byte ||
+            return o is byte ||
                 o is sbyte ||
                 o is short ||
                 o is ushort ||
@@ -80,7 +80,7 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                 o is ulong ||
                 o is float ||
                 o is double ||
-                o is decimal);
+                o is decimal;
         }
         #endregion
         #region IsPositive
@@ -97,29 +97,29 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
             Type t = Value.GetType();
 
             if (t == typeof(sbyte))
-                return (ZeroIsPositive ? (sbyte)Value >= 0 : (sbyte)Value > 0);
+                return ZeroIsPositive ? (sbyte)Value >= 0 : (sbyte)Value > 0;
             if (t == typeof(short))
-                return (ZeroIsPositive ? (short)Value >= 0 : (short)Value > 0);
+                return ZeroIsPositive ? (short)Value >= 0 : (short)Value > 0;
             if (t == typeof(int))
-                return (ZeroIsPositive ? (int)Value >= 0 : (int)Value > 0);
+                return ZeroIsPositive ? (int)Value >= 0 : (int)Value > 0;
             if (t == typeof(long))
-                return (ZeroIsPositive ? (long)Value >= 0 : (long)Value > 0);
+                return ZeroIsPositive ? (long)Value >= 0 : (long)Value > 0;
             if (t == typeof(byte))
-                return (ZeroIsPositive ? true : (byte)Value > 0);
+                return ZeroIsPositive ? true : (byte)Value > 0;
             if (t == typeof(ushort))
-                return (ZeroIsPositive ? true : (ushort)Value > 0);
+                return ZeroIsPositive ? true : (ushort)Value > 0;
             if (t == typeof(uint))
-                return (ZeroIsPositive ? true : (uint)Value > 0);
+                return ZeroIsPositive ? true : (uint)Value > 0;
             if (t == typeof(ulong))
-                return (ZeroIsPositive ? true : (ulong)Value > 0);
+                return ZeroIsPositive ? true : (ulong)Value > 0;
             if (t == typeof(float))
-                return (ZeroIsPositive ? (float)Value >= 0 : (float)Value > 0);
+                return ZeroIsPositive ? (float)Value >= 0 : (float)Value > 0;
             if (t == typeof(double))
-                return (ZeroIsPositive ? (double)Value >= 0 : (double)Value > 0);
+                return ZeroIsPositive ? (double)Value >= 0 : (double)Value > 0;
             if (t == typeof(decimal))
-                return (ZeroIsPositive ? (decimal)Value >= 0 : (decimal)Value > 0);
+                return ZeroIsPositive ? (decimal)Value >= 0 : (decimal)Value > 0;
             if (t == typeof(char))
-                return (ZeroIsPositive ? true : (char)Value != '\0');
+                return ZeroIsPositive ? true : (char)Value != '\0';
 
             return ZeroIsPositive;
         }
@@ -136,13 +136,13 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
             Type t = Value.GetType();
 
             if (t == typeof(sbyte))
-                return (byte)((sbyte)Value);
+                return (byte)(sbyte)Value;
             if (t == typeof(short))
-                return (ushort)((short)Value);
+                return (ushort)(short)Value;
             if (t == typeof(int))
-                return (uint)((int)Value);
+                return (uint)(int)Value;
             if (t == typeof(long))
-                return (ulong)((long)Value);
+                return (ulong)(long)Value;
             if (t == typeof(byte))
                 return Value;
             if (t == typeof(ushort))
@@ -152,11 +152,11 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
             if (t == typeof(ulong))
                 return Value;
             if (t == typeof(float))
-                return (uint)((float)Value);
+                return (uint)(float)Value;
             if (t == typeof(double))
-                return (ulong)((double)Value);
+                return (ulong)(double)Value;
             if (t == typeof(decimal))
-                return (ulong)((decimal)Value);
+                return (ulong)(decimal)Value;
 
             return null;
         }
@@ -192,11 +192,11 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
             if (t == typeof(ulong))
                 return Value;
             if (t == typeof(float))
-                return (Round ? (int)Math.Round((float)Value) : (int)((float)Value));
+                return Round ? (int)Math.Round((float)Value) : (int)(float)Value;
             if (t == typeof(double))
-                return (Round ? (long)Math.Round((double)Value) : (long)((double)Value));
+                return Round ? (long)Math.Round((double)Value) : (long)(double)Value;
             if (t == typeof(decimal))
-                return (Round ? Math.Round((decimal)Value) : (decimal)Value);
+                return Round ? Math.Round((decimal)Value) : (decimal)Value;
 
             return null;
         }
@@ -207,27 +207,27 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
             Type t = Value.GetType();
 
             if (t == typeof(sbyte))
-                return (long)((sbyte)Value);
+                return (sbyte)Value;
             if (t == typeof(short))
-                return (long)((short)Value);
+                return (short)Value;
             if (t == typeof(int))
-                return (long)((int)Value);
+                return (int)Value;
             if (t == typeof(long))
                 return (long)Value;
             if (t == typeof(byte))
-                return (long)((byte)Value);
+                return (byte)Value;
             if (t == typeof(ushort))
-                return (long)((ushort)Value);
+                return (ushort)Value;
             if (t == typeof(uint))
-                return (long)((uint)Value);
+                return (uint)Value;
             if (t == typeof(ulong))
-                return (long)((ulong)Value);
+                return (long)(ulong)Value;
             if (t == typeof(float))
-                return (Round ? (long)Math.Round((float)Value) : (long)((float)Value));
+                return Round ? (long)Math.Round((float)Value) : (long)(float)Value;
             if (t == typeof(double))
-                return (Round ? (long)Math.Round((double)Value) : (long)((double)Value));
+                return Round ? (long)Math.Round((double)Value) : (long)(double)Value;
             if (t == typeof(decimal))
-                return (Round ? (long)Math.Round((decimal)Value) : (long)((decimal)Value));
+                return Round ? (long)Math.Round((decimal)Value) : (long)(decimal)Value;
 
             return 0;
         }
@@ -281,21 +281,21 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
         #region fprintf
         public static void fprintf(TextWriter Destination, string Format, params object[] Parameters)
         {
-            Destination.Write(Tools.sprintf(Format, Parameters));
+            Destination.Write(sprintf(Format, Parameters));
         }
 
 
         #endregion
         #region sprintf
-        internal static Regex r = new Regex(@"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])");
+        internal static Regex r = new(@"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])");
         public static string sprintf(string Format, params object[] Parameters)
         {
             #region Variables
-            StringBuilder f = new StringBuilder();
+            StringBuilder f = new();
             //Regex r = new Regex( @"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])" );
             //"%[parameter][flags][width][.precision][length]type"
             Match m = null;
-            string w = String.Empty;
+            string w = string.Empty;
             int defaultParamIx = 0;
             int paramIx;
             object o = null;
@@ -323,7 +323,7 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                 paramIx = defaultParamIx;
                 if (m.Groups[1] != null && m.Groups[1].Value.Length > 0)
                 {
-                    string val = m.Groups[1].Value.Substring(0, m.Groups[1].Value.Length - 1);
+                    string val = m.Groups[1].Value[..^1];
                     paramIx = Convert.ToInt32(val) - 1;
                 };
                 #endregion
@@ -340,11 +340,11 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                 {
                     string flags = m.Groups[2].Value;
 
-                    flagAlternate = (flags.IndexOf('#') >= 0);
-                    flagLeft2Right = (flags.IndexOf('-') >= 0);
-                    flagPositiveSign = (flags.IndexOf('+') >= 0);
-                    flagPositiveSpace = (flags.IndexOf(' ') >= 0);
-                    flagGroupThousands = (flags.IndexOf('\'') >= 0);
+                    flagAlternate = flags.IndexOf('#') >= 0;
+                    flagLeft2Right = flags.IndexOf('-') >= 0;
+                    flagPositiveSign = flags.IndexOf('+') >= 0;
+                    flagPositiveSpace = flags.IndexOf(' ') >= 0;
+                    flagGroupThousands = flags.IndexOf('\'') >= 0;
 
                     // positive + indicator overrides a
                     // positive space character
@@ -361,7 +361,7 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                 if (m.Groups[3] != null && m.Groups[3].Value.Length > 0)
                 {
                     fieldLength = Convert.ToInt32(m.Groups[3].Value);
-                    flagZeroPadding = (m.Groups[3].Value[0] == '0');
+                    flagZeroPadding = m.Groups[3].Value[0] == '0';
                 }
                 #endregion
 
@@ -384,14 +384,14 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
 
                 #region short / long indicator
                 // extract short / long indicator
-                shortLongIndicator = Char.MinValue;
+                shortLongIndicator = char.MinValue;
                 if (m.Groups[5] != null && m.Groups[5].Value.Length > 0)
                     shortLongIndicator = m.Groups[5].Value[0];
                 #endregion
 
                 #region format specifier
                 // extract format
-                formatSpecifier = Char.MinValue;
+                formatSpecifier = char.MinValue;
                 if (m.Groups[6] != null && m.Groups[6].Value.Length > 0)
                     formatSpecifier = m.Groups[6].Value[0];
                 #endregion
@@ -400,7 +400,7 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                 if (fieldPrecision == int.MinValue &&
                     formatSpecifier != 's' &&
                     formatSpecifier != 'c' &&
-                    Char.ToUpper(formatSpecifier) != 'X' &&
+                    char.ToUpper(formatSpecifier) != 'X' &&
                     formatSpecifier != 'o')
                     fieldPrecision = 6;
 
@@ -415,30 +415,30 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                     if (shortLongIndicator == 'h')
                     {
                         if (o is int)
-                            o = (short)((int)o);
+                            o = (short)(int)o;
                         else if (o is long)
-                            o = (short)((long)o);
+                            o = (short)(long)o;
                         else if (o is uint)
-                            o = (ushort)((uint)o);
+                            o = (ushort)(uint)o;
                         else if (o is ulong)
-                            o = (ushort)((ulong)o);
+                            o = (ushort)(ulong)o;
                     }
                     else if (shortLongIndicator == 'l')
                     {
                         if (o is short)
-                            o = (long)((short)o);
+                            o = (long)(short)o;
                         else if (o is int)
-                            o = (long)((int)o);
+                            o = (long)(int)o;
                         else if (o is ushort)
-                            o = (ulong)((ushort)o);
+                            o = (ulong)(ushort)o;
                         else if (o is uint)
-                            o = (ulong)((uint)o);
+                            o = (ulong)(uint)o;
                     }
                 }
                 #endregion
 
                 // convert value parameters to a string depending on the formatSpecifier
-                w = String.Empty;
+                w = string.Empty;
                 switch (formatSpecifier)
                 {
                     #region % - character
@@ -448,7 +448,7 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                     #endregion
                     #region d - integer
                     case 'd':   // integer
-                        w = FormatNumber((flagGroupThousands ? "n" : "d"), flagAlternate,
+                        w = FormatNumber(flagGroupThousands ? "n" : "d", flagAlternate,
                                         fieldLength, int.MinValue, flagLeft2Right,
                                         flagPositiveSign, flagPositiveSpace,
                                         paddingCharacter, o);
@@ -485,7 +485,7 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                     #endregion
                     #region u - unsigned integer
                     case 'u':   // unsigned integer
-                        w = FormatNumber((flagGroupThousands ? "n" : "d"), flagAlternate,
+                        w = FormatNumber(flagGroupThousands ? "n" : "d", flagAlternate,
                                         fieldLength, int.MinValue, flagLeft2Right,
                                         false, false,
                                         paddingCharacter, ToUnsigned(o));
@@ -508,19 +508,16 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                                 //string t = "{0" + ( fieldLength != int.MinValue ? "," + ( flagLeft2Right ? "-" : String.Empty ) + fieldLength.ToString() : String.Empty ) + ":s}";
                         w = o.ToString();
                         if (fieldPrecision >= 0)
-                            w = w.Substring(0, fieldPrecision);
+                            w = w[..fieldPrecision];
 
                         if (fieldLength != int.MinValue)
-                            if (flagLeft2Right)
-                                w = w.PadRight(fieldLength, paddingCharacter);
-                            else
-                                w = w.PadLeft(fieldLength, paddingCharacter);
+                            w = flagLeft2Right ? w.PadRight(fieldLength, paddingCharacter) : w.PadLeft(fieldLength, paddingCharacter);
                         defaultParamIx++;
                         break;
                     #endregion
                     #region f - double number
                     case 'f':   // double
-                        w = FormatNumber((flagGroupThousands ? "n" : "f"), flagAlternate,
+                        w = FormatNumber(flagGroupThousands ? "n" : "f", flagAlternate,
                                         fieldLength, fieldPrecision, flagLeft2Right,
                                         flagPositiveSign, flagPositiveSpace,
                                         paddingCharacter, o);
@@ -583,7 +580,7 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                         break;
                     #endregion
                     default:
-                        w = String.Empty;
+                        w = string.Empty;
                         defaultParamIx++;
                         break;
                 }
@@ -610,12 +607,12 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                                             bool Left2Right,
                                             char Padding, object Value)
         {
-            string w = String.Empty;
+            string w = string.Empty;
             string lengthFormat = "{0" + (FieldLength != int.MinValue ?
                                             "," + (Left2Right ?
                                                     "-" :
-                                                    String.Empty) + FieldLength.ToString() :
-                                            String.Empty) + "}";
+                                                    string.Empty) + FieldLength.ToString() :
+                                            string.Empty) + "}";
 
             if (IsNumericType(Value))
             {
@@ -625,7 +622,7 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                 {
                     if (Alternate && w != "0")
                         w = "0" + w;
-                    w = String.Format(lengthFormat, w);
+                    w = string.Format(lengthFormat, w);
                 }
                 else
                 {
@@ -645,25 +642,25 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                                             bool Left2Right,
                                             char Padding, object Value)
         {
-            string w = String.Empty;
+            string w = string.Empty;
             string lengthFormat = "{0" + (FieldLength != int.MinValue ?
                                             "," + (Left2Right ?
                                                     "-" :
-                                                    String.Empty) + FieldLength.ToString() :
-                                            String.Empty) + "}";
+                                                    string.Empty) + FieldLength.ToString() :
+                                            string.Empty) + "}";
             string numberFormat = "{0:" + NativeFormat + (FieldPrecision != int.MinValue ?
                                             FieldPrecision.ToString() :
-                                            String.Empty) + "}";
+                                            string.Empty) + "}";
 
             if (IsNumericType(Value))
             {
-                w = String.Format(numberFormat, Value);
+                w = string.Format(numberFormat, Value);
 
                 if (Left2Right || Padding == ' ')
                 {
                     if (Alternate)
                         w = (NativeFormat == "x" ? "0x" : "0X") + w;
-                    w = String.Format(lengthFormat, w);
+                    w = string.Format(lengthFormat, w);
                 }
                 else
                 {
@@ -684,36 +681,33 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
                                             bool PositiveSign, bool PositiveSpace,
                                             char Padding, object Value)
         {
-            string w = String.Empty;
+            string w = string.Empty;
             string lengthFormat = "{0" + (FieldLength != int.MinValue ?
                                             "," + (Left2Right ?
                                                     "-" :
-                                                    String.Empty) + FieldLength.ToString() :
-                                            String.Empty) + "}";
+                                                    string.Empty) + FieldLength.ToString() :
+                                            string.Empty) + "}";
             string numberFormat = "{0:" + NativeFormat + (FieldPrecision != int.MinValue ?
                                             FieldPrecision.ToString() :
                                             "0") + "}";
 
             if (IsNumericType(Value))
             {
-                w = String.Format(CultureInfo.InvariantCulture, numberFormat, Value);
+                w = string.Format(CultureInfo.InvariantCulture, numberFormat, Value);
 
                 if (Left2Right || Padding == ' ')
                 {
                     if (IsPositive(Value, true))
                         w = (PositiveSign ?
-                                "+" : (PositiveSpace ? " " : String.Empty)) + w;
-                    w = String.Format(lengthFormat, w);
+                                "+" : PositiveSpace ? " " : string.Empty) + w;
+                    w = string.Format(lengthFormat, w);
                 }
                 else
                 {
                     if (w.StartsWith("-"))
-                        w = w.Substring(1);
+                        w = w[1..];
                     if (FieldLength != int.MinValue)
-                        if (PositiveSign)  // xan - change here
-                            w = w.PadLeft(FieldLength - 1, Padding);
-                        else
-                            w = w.PadLeft(FieldLength, Padding);
+                        w = PositiveSign ? w.PadLeft(FieldLength - 1, Padding) : w.PadLeft(FieldLength, Padding);
                     if (IsPositive(Value, true))
                         w = (PositiveSign ?
                                 "+" : "") + w;  // xan - change here

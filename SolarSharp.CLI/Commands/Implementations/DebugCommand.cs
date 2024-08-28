@@ -1,6 +1,8 @@
-﻿using System;
+﻿using SolarSharp;
+using SolarSharp.Commands;
+using System;
 
-namespace MoonSharp.Commands.Implementations
+namespace SolarSharp.Commands.Implementations
 {
     internal class DebugCommand : ICommand
     {

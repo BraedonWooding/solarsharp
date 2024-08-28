@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using MoonSharp.Interpreter.REPL;
+using SolarSharp.Interpreter.REPL;
 
-namespace MoonSharp.Interpreter
+namespace SolarSharp.Interpreter
 {
 	/// <summary>
 	/// This class contains extension methods providing async wrappers of many methods.

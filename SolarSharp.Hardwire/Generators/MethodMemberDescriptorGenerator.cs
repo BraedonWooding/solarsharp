@@ -2,13 +2,15 @@
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
-using MoonSharp.Hardwire.Utils;
-using MoonSharp.Interpreter;
-using MoonSharp.Interpreter.Interop;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
-using MoonSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors;
+using SolarSharp.Interpreter;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors;
+using SolarSharp.Hardwire;
+using SolarSharp.Hardwire.Utils;
 
-namespace MoonSharp.Hardwire.Generators
+namespace SolarSharp.Hardwire.Generators
 {
     internal class MethodMemberDescriptorGenerator : IHardwireGenerator
     {
@@ -26,7 +28,7 @@ namespace MoonSharp.Hardwire.Generators
 
         public string ManagedType
         {
-            get { return "MoonSharp.Interpreter.Interop.MethodMemberDescriptor"; }
+            get { return "SolarSharp.Interpreter.Interop.MethodMemberDescriptor"; }
         }
 
         public CodeExpression[] Generate(Table table, HardwireCodeGenerationContext generator, CodeTypeMemberCollection members)
@@ -37,7 +39,7 @@ namespace MoonSharp.Hardwire.Generators
             // Ignore arrays weird special members 
             if (isArray)
             {
-                if ((memberName == "Get") || (memberName == "Set") || (memberName == "Address"))
+                if (memberName == "Get" || memberName == "Set" || memberName == "Address")
                     return null;
             }
 
@@ -100,8 +102,8 @@ namespace MoonSharp.Hardwire.Generators
             string declType = table.Get("decltype").String;
             var paramArray = new CodeVariableReferenceExpression("pars");
             var paramThis = isStatic
-                ? (CodeExpression)(new CodeTypeReferenceExpression(declType))
-                : (CodeExpression)(new CodeCastExpression(declType, new CodeVariableReferenceExpression("obj")));
+                ? new CodeTypeReferenceExpression(declType)
+                : (CodeExpression)new CodeCastExpression(declType, new CodeVariableReferenceExpression("obj"));
 
             // Build a list of arguments to the call
             int refparCount = 0;
@@ -214,7 +216,7 @@ namespace MoonSharp.Hardwire.Generators
                 if (isVoid)
                 {
                     coll.Add(new CodeExpressionStatement(retVal));
-                    retVal = new CodePropertyReferenceExpression(new CodeTypeReferenceExpression(typeof(DynValue)), (refparCount == 0) ? "Void" : "Nil");
+                    retVal = new CodePropertyReferenceExpression(new CodeTypeReferenceExpression(typeof(DynValue)), refparCount == 0 ? "Void" : "Nil");
                 }
 
 

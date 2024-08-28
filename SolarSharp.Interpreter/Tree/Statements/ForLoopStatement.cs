@@ -1,10 +1,12 @@
-﻿using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Execution.VM;
+﻿using SolarSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.Scopes;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-using MoonSharp.Interpreter.Tree.Expressions;
-
-namespace MoonSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class ForLoopStatement : Statement
     {
@@ -53,7 +55,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
         {
             bc.PushSourceRef(m_RefFor);
 
-            Loop L = new Loop()
+            Loop L = new()
             {
                 Scope = m_StackFrame
             };

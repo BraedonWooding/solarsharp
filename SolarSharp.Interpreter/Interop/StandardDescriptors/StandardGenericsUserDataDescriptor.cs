@@ -1,7 +1,8 @@
 ﻿using System;
-using MoonSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors
 {
     /// <summary>
     /// Standard user data descriptor used to instantiate generics.
@@ -25,8 +26,8 @@ namespace MoonSharp.Interpreter.Interop
                 throw new ArgumentException("Can't create a StandardGenericsUserDataDescriptor under a NoReflectionAllowed access mode");
 
             AccessMode = accessMode;
-            this.Type = type;
-            this.Name = "@@" + type.FullName;
+            Type = type;
+            Name = "@@" + type.FullName;
         }
 
 

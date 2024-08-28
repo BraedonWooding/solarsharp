@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace MoonSharp.Interpreter.Execution
+﻿namespace SolarSharp.Interpreter.Execution.Scopes
 {
     internal class RuntimeScopeBlock
     {
@@ -10,7 +8,7 @@ namespace MoonSharp.Interpreter.Execution
 
         public override string ToString()
         {
-            return String.Format("ScopeBlock : {0} -> {1} --> {2}", From, To, ToInclusive);
+            return string.Format("ScopeBlock : {0} -> {1} --> {2}", From, To, ToInclusive);
         }
     }
 }

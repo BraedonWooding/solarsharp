@@ -1,6 +1,10 @@
-﻿using MoonSharp.Interpreter.Serialization.Json;
+﻿using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Serialization.Json;
+using SolarSharp.Interpreter.Modules;
 
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     [MoonSharpModule(Namespace = "json")]
     public class JsonModule
@@ -21,12 +25,12 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue serialize(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue serialize(ScriptExecutionContext _, CallbackArguments args)
         {
             try
             {
                 DynValue vt = args.AsType(0, "serialize", DataType.Table, false);
-                string s = JsonTableConverter.TableToJson(vt.Table);
+                string s = vt.Table.TableToJson();
                 return DynValue.NewString(s);
             }
             catch (SyntaxErrorException ex)
@@ -36,14 +40,16 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue isnull(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue isnull(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue vs = args[0];
-            return DynValue.NewBoolean((JsonNull.IsJsonNull(vs)) || (vs.IsNil()));
+            return DynValue.NewBoolean(JsonNull.IsJsonNull(vs) || vs.IsNil());
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue @null(ScriptExecutionContext executionContext, CallbackArguments args)
+#pragma warning disable IDE0060 // Remove unused parameter
+        public static DynValue @null(ScriptExecutionContext _, CallbackArguments _args)
+#pragma warning restore IDE0060 // Remove unused parameter
         {
             return JsonNull.Create();
         }

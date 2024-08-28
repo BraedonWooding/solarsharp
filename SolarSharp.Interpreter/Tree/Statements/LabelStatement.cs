@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.Scopes;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace MoonSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class LabelStatement : Statement
     {
@@ -14,7 +17,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
         internal int DefinedVarsCount { get; private set; }
         internal string LastDefinedVarName { get; private set; }
 
-        private readonly List<GotoStatement> m_Gotos = new List<GotoStatement>();
+        private readonly List<GotoStatement> m_Gotos = new();
         private RuntimeScopeBlock m_StackFrame;
 
 
@@ -43,14 +46,14 @@ namespace MoonSharp.Interpreter.Tree.Statements
         }
 
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
             bc.Emit_Clean(m_StackFrame);
 
             Address = bc.GetJumpPointForLastInstruction();
 
             foreach (var gotostat in m_Gotos)
-                gotostat.SetAddress(this.Address);
+                gotostat.SetAddress(Address);
         }
 
         internal void SetScope(RuntimeScopeBlock runtimeScopeBlock)

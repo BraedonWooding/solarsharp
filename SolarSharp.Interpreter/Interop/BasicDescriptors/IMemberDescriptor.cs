@@ -1,5 +1,7 @@
-﻿
-namespace MoonSharp.Interpreter.Interop.BasicDescriptors
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+
+namespace SolarSharp.Interpreter.Interop.BasicDescriptors
 {
     /// <summary>
     /// Base interface to describe access to members of a given type.

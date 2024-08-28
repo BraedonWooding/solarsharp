@@ -1,5 +1,4 @@
-﻿
-namespace MoonSharp.Interpreter.Diagnostics
+﻿namespace SolarSharp.Interpreter.Diagnostics
 {
     /// <summary>
     /// Enumeration of unit of measures of the performance counters

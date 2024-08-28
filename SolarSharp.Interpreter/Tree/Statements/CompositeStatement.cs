@@ -1,13 +1,14 @@
 ﻿using System.Collections.Generic;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-using MoonSharp.Interpreter.Execution;
 
-
-namespace MoonSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class CompositeStatement : Statement
     {
-        private readonly List<Statement> m_Statements = new List<Statement>();
+        private readonly List<Statement> m_Statements = new();
 
         public CompositeStatement(ScriptLoadingContext lcontext)
             : base(lcontext)
@@ -17,9 +18,8 @@ namespace MoonSharp.Interpreter.Tree.Statements
                 Token t = lcontext.Lexer.Current;
                 if (t.IsEndOfBlock()) break;
 
-                bool forceLast;
 
-                Statement s = Statement.CreateStatement(lcontext, out forceLast);
+                Statement s = CreateStatement(lcontext, out bool forceLast);
                 m_Statements.Add(s);
 
                 if (forceLast) break;
@@ -31,7 +31,7 @@ namespace MoonSharp.Interpreter.Tree.Statements
         }
 
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
             if (m_Statements != null)
             {

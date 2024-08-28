@@ -2,9 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using MoonSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop.Attributes;
+using SolarSharp.Interpreter.Interop.Converters;
+using SolarSharp.Interpreter.Options;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop
 {
     /// <summary>
     /// Utility class which may be used to set properties on an object of type T, from values contained in a Lua table.
@@ -39,7 +44,7 @@ namespace MoonSharp.Interpreter.Interop
         /// </summary>
         /// <param name="obj">The object.</param>
         /// <param name="data">The table.</param>
-        /// <exception cref="System.ArgumentNullException">Object is null</exception>
+        /// <exception cref="ArgumentNullException">Object is null</exception>
         /// <exception cref="ScriptRuntimeException">A field does not correspond to any property and that property is not one of the expected missing ones.</exception>
         public void AssignObject(T obj, Table data)
         {
@@ -96,15 +101,15 @@ namespace MoonSharp.Interpreter.Interop
     public class PropertyTableAssigner : IPropertyTableAssigner
     {
         private readonly Type m_Type;
-        private readonly Dictionary<string, PropertyInfo> m_PropertyMap = new Dictionary<string, PropertyInfo>();
-        private readonly Dictionary<Type, IPropertyTableAssigner> m_SubAssigners = new Dictionary<Type, IPropertyTableAssigner>();
+        private readonly Dictionary<string, PropertyInfo> m_PropertyMap = new();
+        private readonly Dictionary<Type, IPropertyTableAssigner> m_SubAssigners = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PropertyTableAssigner"/> class.
         /// </summary>
         /// <param name="type">The type of the object.</param>
         /// <param name="expectedMissingProperties">The expected missing properties, that is expected fields in the table with no corresponding property in the object.</param>
-        /// <exception cref="System.ArgumentException">
+        /// <exception cref="ArgumentException">
         /// Type cannot be a value type.
         /// </exception>
         public PropertyTableAssigner(Type type, params string[] expectedMissingProperties)
@@ -166,7 +171,7 @@ namespace MoonSharp.Interpreter.Interop
                     }
                     else
                     {
-                        o = Interop.Converters.ScriptToClrConversions.DynValueToObjectOfType(value,
+                        o = ScriptToClrConversions.DynValueToObjectOfType(value,
                             pi.PropertyType, null, false);
                     }
 
@@ -194,8 +199,8 @@ namespace MoonSharp.Interpreter.Interop
         /// </summary>
         /// <param name="obj">The object.</param>
         /// <param name="data">The table.</param>
-        /// <exception cref="System.ArgumentNullException">Object is null</exception>
-        /// <exception cref="System.ArgumentException">The object is of an incompatible type.</exception>
+        /// <exception cref="ArgumentNullException">Object is null</exception>
+        /// <exception cref="ArgumentException">The object is of an incompatible type.</exception>
         /// <exception cref="ScriptRuntimeException">A field does not correspond to any property and that property is not one of the expected missing ones.</exception>
         public void AssignObject(object obj, Table data)
         {
@@ -241,7 +246,7 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="data">The data.</param>
         void IPropertyTableAssigner.AssignObjectUnchecked(object obj, Table data)
         {
-            this.AssignObject(obj, data);
+            AssignObject(obj, data);
         }
     }
 

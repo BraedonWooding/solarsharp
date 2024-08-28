@@ -1,8 +1,9 @@
 ﻿using System.IO;
-using MoonSharp.Interpreter.Loaders;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Loaders;
 using NUnit.Framework;
 
-namespace MoonSharp.Interpreter.Tests
+namespace SolarSharp.Interpreter.Tests
 {
 #if !EMBEDTEST
     internal class TestsScriptLoader : ScriptLoaderBase

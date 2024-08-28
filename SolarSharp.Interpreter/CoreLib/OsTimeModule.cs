@@ -1,11 +1,12 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
-
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MoonSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing time related Lua functions from the 'os' module.
@@ -14,7 +15,7 @@ namespace MoonSharp.Interpreter.CoreLib
     public class OsTimeModule
     {
         private static readonly DateTime Time0 = DateTime.UtcNow;
-        private static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        private static readonly DateTime Epoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         private static DynValue GetUnixTime(DateTime dateTime, DateTime? epoch = null)
         {
@@ -33,7 +34,9 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue clock(ScriptExecutionContext executionContext, CallbackArguments args)
+#pragma warning disable IDE0060 // Remove unused parameter
+        public static DynValue clock(ScriptExecutionContext _, CallbackArguments _args)
+#pragma warning restore IDE0060 // Remove unused parameter
         {
             var t = GetUnixTime(DateTime.UtcNow, Time0);
             if (t.IsNil()) return DynValue.NewNumber(0.0);
@@ -41,7 +44,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue difftime(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue difftime(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue t2 = args.AsType(0, "difftime", DataType.Number, false);
             DynValue t1 = args.AsType(1, "difftime", DataType.Number, true);
@@ -53,7 +56,7 @@ namespace MoonSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue time(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue time(ScriptExecutionContext _, CallbackArguments args)
         {
             DateTime date = DateTime.UtcNow;
 
@@ -108,7 +111,7 @@ namespace MoonSharp.Interpreter.CoreLib
             DynValue vformat = args.AsType(0, "date", DataType.String, true);
             DynValue vtime = args.AsType(1, "date", DataType.Number, true);
 
-            string format = (vformat.IsNil()) ? "%c" : vformat.String;
+            string format = vformat.IsNil() ? "%c" : vformat.String;
 
             if (vtime.IsNotNil())
                 reference = FromUnixTime(vtime.Number);
@@ -117,7 +120,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
             if (format.StartsWith("!"))
             {
-                format = format.Substring(1);
+                format = format[1..];
             }
             else
             {
@@ -139,7 +142,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
             if (format == "*t")
             {
-                Table t = new Table(executionContext.GetScript());
+                Table t = new(executionContext.GetScript());
 
                 t.Set("year", DynValue.NewNumber(reference.Year));
                 t.Set("month", DynValue.NewNumber(reference.Month));
@@ -147,7 +150,7 @@ namespace MoonSharp.Interpreter.CoreLib
                 t.Set("hour", DynValue.NewNumber(reference.Hour));
                 t.Set("min", DynValue.NewNumber(reference.Minute));
                 t.Set("sec", DynValue.NewNumber(reference.Second));
-                t.Set("wday", DynValue.NewNumber(((int)reference.DayOfWeek) + 1));
+                t.Set("wday", DynValue.NewNumber((int)reference.DayOfWeek + 1));
                 t.Set("yday", DynValue.NewNumber(reference.DayOfYear));
                 t.Set("isdst", DynValue.NewBoolean(isDst));
 
@@ -161,7 +164,7 @@ namespace MoonSharp.Interpreter.CoreLib
         {
             // ref: http://www.cplusplus.com/reference/ctime/strftime/
 
-            Dictionary<char, string> STANDARD_PATTERNS = new Dictionary<char, string>()
+            Dictionary<char, string> STANDARD_PATTERNS = new()
             {
                 { 'a', "ddd" },
                 { 'A', "dddd" },
@@ -192,7 +195,7 @@ namespace MoonSharp.Interpreter.CoreLib
             };
 
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             bool isEscapeSequence = false;
 
@@ -243,7 +246,7 @@ namespace MoonSharp.Interpreter.CoreLib
                 }
                 else if (c == 'C')
                 {
-                    sb.Append((int)(d.Year / 100));
+                    sb.Append(d.Year / 100);
                 }
                 else if (c == 'j')
                 {

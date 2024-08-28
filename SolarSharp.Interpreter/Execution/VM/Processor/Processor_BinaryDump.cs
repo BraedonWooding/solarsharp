@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.IO;
+using SolarSharp.Interpreter.IO;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     internal sealed partial class Processor
     {
@@ -17,7 +18,7 @@ namespace MoonSharp.Interpreter.Execution.VM
         {
             if (stream.Length >= 8)
             {
-                using BinaryReader br = new BinaryReader(stream, Encoding.UTF8);
+                using BinaryReader br = new(stream, Encoding.UTF8);
                 ulong magic = br.ReadUInt64();
                 stream.Seek(-8, SeekOrigin.Current);
                 return magic == DUMP_CHUNK_MAGIC;
@@ -28,13 +29,9 @@ namespace MoonSharp.Interpreter.Execution.VM
         internal int Dump(Stream stream, int baseAddress, bool hasUpvalues)
         {
             using BinaryWriter bw = new BinDumpBinaryWriter(stream, Encoding.UTF8);
-            Dictionary<SymbolRef, int> symbolMap = new Dictionary<SymbolRef, int>();
+            Dictionary<SymbolRef, int> symbolMap = new();
 
-            Instruction meta = FindMeta(ref baseAddress);
-
-            if (meta == null)
-                throw new ArgumentException("baseAddress");
-
+            Instruction meta = FindMeta(ref baseAddress) ?? throw new ArgumentException("baseAddress");
             bw.Write(DUMP_CHUNK_MAGIC);
             bw.Write(DUMP_CHUNK_VERSION);
             bw.Write(hasUpvalues);
@@ -42,10 +39,8 @@ namespace MoonSharp.Interpreter.Execution.VM
 
             for (int i = 0; i <= meta.NumVal; i++)
             {
-                SymbolRef[] symbolList;
-                SymbolRef symbol;
 
-                m_RootChunk.Code[baseAddress + i].GetSymbolReferences(out symbolList, out symbol);
+                m_RootChunk.Code[baseAddress + i].GetSymbolReferences(out SymbolRef[] symbolList, out SymbolRef symbol);
 
                 if (symbol != null)
                     AddSymbolToMap(symbolMap, symbol);
@@ -91,7 +86,7 @@ namespace MoonSharp.Interpreter.Execution.VM
         internal int Undump(Stream stream, int sourceID, Table envTable, out bool hasUpvalues)
         {
             int baseAddress = m_RootChunk.Code.Count;
-            SourceRef sourceRef = new SourceRef(sourceID, 0, 0, 0, 0, false);
+            SourceRef sourceRef = new(sourceID, 0, 0, 0, 0, false);
 
             using BinaryReader br = new BinDumpBinaryReader(stream, Encoding.UTF8);
             ulong headerMark = br.ReadUInt64();

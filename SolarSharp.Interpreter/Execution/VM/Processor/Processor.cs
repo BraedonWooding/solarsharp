@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using MoonSharp.Interpreter.DataStructs;
-using MoonSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.DataStructs;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Diagnostics;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     internal sealed partial class Processor
     {
@@ -66,14 +68,14 @@ namespace MoonSharp.Interpreter.Execution.VM
         {
             List<Processor> coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : this.m_CoroutinesStack;
 
-            if (coroutinesStack.Count > 0 && coroutinesStack[coroutinesStack.Count - 1] != this)
-                return coroutinesStack[coroutinesStack.Count - 1].Call(function, args);
+            if (coroutinesStack.Count > 0 && coroutinesStack[^1] != this)
+                return coroutinesStack[^1].Call(function, args);
 
             EnterProcessor();
 
             try
             {
-                var stopwatch = this.m_Script.PerformanceStats.StartStopwatch(Diagnostics.PerformanceCounter.Execution);
+                var stopwatch = this.m_Script.PerformanceStats.StartStopwatch(PerformanceCounter.Execution);
 
                 m_CanYield = false;
 
@@ -86,8 +88,7 @@ namespace MoonSharp.Interpreter.Execution.VM
                 {
                     m_CanYield = true;
 
-                    if (stopwatch != null)
-                        stopwatch.Dispose();
+                    stopwatch?.Dispose();
                 }
             }
             finally
@@ -133,10 +134,7 @@ namespace MoonSharp.Interpreter.Execution.VM
             m_ExecutionNesting -= 1;
             m_OwningThreadID = -1;
 
-            if (m_Parent != null)
-            {
-                m_Parent.m_CoroutinesStack.RemoveAt(m_Parent.m_CoroutinesStack.Count - 1);
-            }
+            m_Parent?.m_CoroutinesStack.RemoveAt(m_Parent.m_CoroutinesStack.Count - 1);
 
             if (m_ExecutionNesting == 0 && m_Debug != null && m_Debug.DebuggerEnabled
                 && m_Debug.DebuggerAttached != null)
@@ -168,10 +166,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 
             m_ExecutionNesting += 1;
 
-            if (m_Parent != null)
-            {
-                m_Parent.m_CoroutinesStack.Add(this);
-            }
+            m_Parent?.m_CoroutinesStack.Add(this);
         }
 
         internal SourceRef GetCoroutineSuspendedLocation()

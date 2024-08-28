@@ -1,8 +1,9 @@
-﻿using MoonSharp.Interpreter.Execution;
-using MoonSharp.Interpreter.Tree.Expressions;
-using MoonSharp.Interpreter.Tree.Statements;
+﻿using SolarSharp.Interpreter.Tree.Statements;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace MoonSharp.Interpreter.Tree
+namespace SolarSharp.Interpreter.Tree
 {
     internal abstract class Statement : NodeBase
     {
@@ -54,9 +55,8 @@ namespace MoonSharp.Interpreter.Tree
                     {
                         Token l = lcontext.Lexer.Current;
                         Expression exp = Expression.PrimaryExp(lcontext);
-                        FunctionCallExpression fnexp = exp as FunctionCallExpression;
 
-                        if (fnexp != null)
+                        if (exp is FunctionCallExpression fnexp)
                             return new FunctionCallStatement(lcontext, fnexp);
                         else
                             return new AssignmentStatement(lcontext, exp, l);

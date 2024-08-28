@@ -2,12 +2,14 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Diagnostics;
-using MoonSharp.Interpreter.Interop.BasicDescriptors;
-using MoonSharp.Interpreter.Interop.Converters;
+using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Diagnostics;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop.Converters;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors
 {
     /// <summary>
     /// Class providing easier marshalling of CLR properties
@@ -70,15 +72,15 @@ namespace MoonSharp.Interpreter.Interop
 
             if (pvisible.HasValue)
             {
-                return PropertyMemberDescriptor.TryCreate(pi, accessMode,
-                    (gvisible ?? pvisible.Value) ? getter : null,
-                    (svisible ?? pvisible.Value) ? setter : null);
+                return TryCreate(pi, accessMode,
+                    gvisible ?? pvisible.Value ? getter : null,
+                    svisible ?? pvisible.Value ? setter : null);
             }
             else
             {
-                return PropertyMemberDescriptor.TryCreate(pi, accessMode,
-                    (gvisible ?? getter.IsPublic) ? getter : null,
-                    (svisible ?? setter.IsPublic) ? setter : null);
+                return TryCreate(pi, accessMode,
+                    gvisible ?? getter.IsPublic ? getter : null,
+                    svisible ?? setter.IsPublic ? setter : null);
             }
         }
 
@@ -118,19 +120,19 @@ namespace MoonSharp.Interpreter.Interop
             if (Script.GlobalOptions.Platform.IsRunningOnAOT())
                 accessMode = InteropAccessMode.Reflection;
 
-            this.PropertyInfo = pi;
-            this.AccessMode = accessMode;
-            this.Name = pi.Name;
+            PropertyInfo = pi;
+            AccessMode = accessMode;
+            Name = pi.Name;
 
             m_Getter = getter;
             m_Setter = setter;
 
-            this.IsStatic = (m_Getter ?? m_Setter).IsStatic;
+            IsStatic = (m_Getter ?? m_Setter).IsStatic;
 
             if (AccessMode == InteropAccessMode.Preoptimized)
             {
-                this.OptimizeGetter();
-                this.OptimizeSetter();
+                OptimizeGetter();
+                OptimizeSetter();
             }
         }
 
@@ -146,7 +148,7 @@ namespace MoonSharp.Interpreter.Interop
             this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
 
             if (m_Getter == null)
-                throw new ScriptRuntimeException("userdata property '{0}.{1}' cannot be read from.", this.PropertyInfo.DeclaringType.Name, this.Name);
+                throw new ScriptRuntimeException("userdata property '{0}.{1}' cannot be read from.", PropertyInfo.DeclaringType.Name, Name);
 
             if (AccessMode == InteropAccessMode.LazyOptimized && m_OptimizedGetter == null)
                 OptimizeGetter();
@@ -178,7 +180,7 @@ namespace MoonSharp.Interpreter.Interop
                     else
                     {
                         var paramExp = Expression.Parameter(typeof(object), "obj");
-                        var castParamExp = Expression.Convert(paramExp, this.PropertyInfo.DeclaringType);
+                        var castParamExp = Expression.Convert(paramExp, PropertyInfo.DeclaringType);
                         var propAccess = Expression.Property(castParamExp, PropertyInfo);
                         var castPropAccess = Expression.Convert(propAccess, typeof(object));
                         var lambda = Expression.Lambda<Func<object, object>>(castPropAccess, paramExp);
@@ -192,7 +194,7 @@ namespace MoonSharp.Interpreter.Interop
         {
             using (PerformanceStatistics.StartGlobalStopwatch(PerformanceCounter.AdaptersCompilation))
             {
-                if (m_Setter != null && !(Framework.Do.IsValueType(PropertyInfo.DeclaringType)))
+                if (m_Setter != null && !Framework.Do.IsValueType(PropertyInfo.DeclaringType))
                 {
                     MethodInfo setterMethod = Framework.Do.GetSetMethod(PropertyInfo);
 
@@ -200,7 +202,7 @@ namespace MoonSharp.Interpreter.Interop
                     {
                         var paramExp = Expression.Parameter(typeof(object), "dummy");
                         var paramValExp = Expression.Parameter(typeof(object), "val");
-                        var castParamValExp = Expression.Convert(paramValExp, this.PropertyInfo.PropertyType);
+                        var castParamValExp = Expression.Convert(paramValExp, PropertyInfo.PropertyType);
                         var callExpression = Expression.Call(setterMethod, castParamValExp);
                         var lambda = Expression.Lambda<Action<object, object>>(callExpression, paramExp, paramValExp);
                         Interlocked.Exchange(ref m_OptimizedSetter, lambda.Compile());
@@ -209,8 +211,8 @@ namespace MoonSharp.Interpreter.Interop
                     {
                         var paramExp = Expression.Parameter(typeof(object), "obj");
                         var paramValExp = Expression.Parameter(typeof(object), "val");
-                        var castParamExp = Expression.Convert(paramExp, this.PropertyInfo.DeclaringType);
-                        var castParamValExp = Expression.Convert(paramValExp, this.PropertyInfo.PropertyType);
+                        var castParamExp = Expression.Convert(paramExp, PropertyInfo.DeclaringType);
+                        var castParamValExp = Expression.Convert(paramValExp, PropertyInfo.PropertyType);
                         var callExpression = Expression.Call(castParamExp, setterMethod, castParamValExp);
                         var lambda = Expression.Lambda<Action<object, object>>(callExpression, paramExp, paramValExp);
                         Interlocked.Exchange(ref m_OptimizedSetter, lambda.Compile());
@@ -230,9 +232,9 @@ namespace MoonSharp.Interpreter.Interop
             this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
 
             if (m_Setter == null)
-                throw new ScriptRuntimeException("userdata property '{0}.{1}' cannot be written to.", this.PropertyInfo.DeclaringType.Name, this.Name);
+                throw new ScriptRuntimeException("userdata property '{0}.{1}' cannot be written to.", PropertyInfo.DeclaringType.Name, Name);
 
-            object value = ScriptToClrConversions.DynValueToObjectOfType(v, this.PropertyInfo.PropertyType, null, false);
+            object value = ScriptToClrConversions.DynValueToObjectOfType(v, PropertyInfo.PropertyType, null, false);
 
             try
             {
@@ -285,8 +287,8 @@ namespace MoonSharp.Interpreter.Interop
         /// </summary>
         void IOptimizableDescriptor.Optimize()
         {
-            this.OptimizeGetter();
-            this.OptimizeSetter();
+            OptimizeGetter();
+            OptimizeSetter();
         }
 
         /// <summary>
@@ -296,15 +298,15 @@ namespace MoonSharp.Interpreter.Interop
         /// <param name="t">The table to be filled</param>
         public void PrepareForWiring(Table t)
         {
-            t.Set("class", DynValue.NewString(this.GetType().FullName));
-            t.Set("visibility", DynValue.NewString(this.PropertyInfo.GetClrVisibility()));
-            t.Set("name", DynValue.NewString(this.Name));
-            t.Set("static", DynValue.NewBoolean(this.IsStatic));
-            t.Set("read", DynValue.NewBoolean(this.CanRead));
-            t.Set("write", DynValue.NewBoolean(this.CanWrite));
-            t.Set("decltype", DynValue.NewString(this.PropertyInfo.DeclaringType.FullName));
-            t.Set("declvtype", DynValue.NewBoolean(Framework.Do.IsValueType(this.PropertyInfo.DeclaringType)));
-            t.Set("type", DynValue.NewString(this.PropertyInfo.PropertyType.FullName));
+            t.Set("class", DynValue.NewString(GetType().FullName));
+            t.Set("visibility", DynValue.NewString(PropertyInfo.GetClrVisibility()));
+            t.Set("name", DynValue.NewString(Name));
+            t.Set("static", DynValue.NewBoolean(IsStatic));
+            t.Set("read", DynValue.NewBoolean(CanRead));
+            t.Set("write", DynValue.NewBoolean(CanWrite));
+            t.Set("decltype", DynValue.NewString(PropertyInfo.DeclaringType.FullName));
+            t.Set("declvtype", DynValue.NewBoolean(Framework.Do.IsValueType(PropertyInfo.DeclaringType)));
+            t.Set("type", DynValue.NewString(PropertyInfo.PropertyType.FullName));
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoonSharp.Interpreter.Interop
+namespace SolarSharp.Interpreter.Interop.ProxyObjects
 {
     /// <summary>
     /// Interface for proxy objects (type unsafe version)

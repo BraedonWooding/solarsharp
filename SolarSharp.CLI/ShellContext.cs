@@ -1,6 +1,6 @@
-﻿using MoonSharp.Interpreter;
+﻿using SolarSharp.Interpreter;
 
-namespace MoonSharp
+namespace SolarSharp
 {
     public class ShellContext
     {
@@ -8,7 +8,7 @@ namespace MoonSharp
 
         public ShellContext(Script script)
         {
-            this.Script = script;
+            Script = script;
         }
     }
 }

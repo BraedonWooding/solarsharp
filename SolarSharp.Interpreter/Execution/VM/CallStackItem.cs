@@ -1,6 +1,8 @@
-﻿using MoonSharp.Interpreter.Debugging;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Execution.Scopes;
 
-namespace MoonSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM
 {
     internal class CallStackItem
     {
