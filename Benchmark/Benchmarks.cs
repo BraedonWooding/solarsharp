@@ -24,8 +24,8 @@ namespace Benchmark
 
         public IEnumerable<LuaFile> Tests()
         {
-            yield return new LuaFile("./Tests/binarytrees.lua-2.lua");
             yield return new LuaFile("./Tests/empty_test.lua");
+            yield return new LuaFile("./Tests/binarytrees.lua-2.lua");
             //yield return new LuaFile("./Tests/regexredux.lua-2.lua");
 
             //foreach (var file in Directory.GetFiles("./Tests", "*.lua", SearchOption.AllDirectories))

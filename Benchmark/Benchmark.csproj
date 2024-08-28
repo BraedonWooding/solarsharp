@@ -21,6 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Tests\empty_test.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Tests\binarytrees.lua-2.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
