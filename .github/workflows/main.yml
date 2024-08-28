@@ -10,6 +10,10 @@ on:
 permissions:
   contents: write
   deployments: write
+
+concurrency:
+  group: concurrency_token_benchmark_charts
+  cancel-in-progress: false
   
 jobs:
   benchmark:
