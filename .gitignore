@@ -17,17 +17,7 @@ build/
 bin-debug/
 
 # VS2017 .vs directory
-src/.vs/
-
-
-# Remove generated docs
-
-src/MoonSharp.Documentation/Help/html/
-src/MoonSharp.Documentation/Help/toc/
-src/MoonSharp.Documentation/Help/fti/
-src/MoonSharp.Documentation/Help/styles/
-src/MoonSharp.Documentation/Help/icons/
-src/MoonSharp.Documentation/Help/
+.vs/
 
 #
 

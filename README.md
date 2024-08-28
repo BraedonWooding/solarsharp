@@ -67,11 +67,3 @@ double MoonSharpFactorial()
 ```
 
 For more in-depth tutorials, samples, etc. please refer to http://www.moonsharp.org/getting_started.html
-
-
-
-
-
-
-
-
