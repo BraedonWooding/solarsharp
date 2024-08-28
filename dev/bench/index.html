@@ -241,7 +241,7 @@
                     const { range, unit } = dataset[item.datasetIndex][item.index].bench;
                     label += ' ' + unit;
                     if (range) {
-                      label += ' (' + range + ')';
+                      label += ' (' + '± ' + Number(range.replace('±', '')) / 1000 + ')';
                     }
                     return label;
                   },
