@@ -37,9 +37,9 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
       - name: Build
-        run: dotnet build --no-restore
+        run: dotnet build --no-restore --configuration Release
       - name: Run benchmark
-        run: cd Benchmark && dotnet run
+        run: cd Benchmark && dotnet run --configuration Release
       # Download previous benchmark result from cache (if exists)
       - name: Download previous benchmark data
         uses: actions/cache@v4
