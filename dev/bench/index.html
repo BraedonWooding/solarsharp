@@ -238,7 +238,7 @@
                   },
                   label: item => {
                     let label = item.value;
-                    const { range, unit } = dataset[0][item.index].bench;
+                    const { range, unit } = dataset[item.datasetIndex][item.index].bench;
                     label += ' ' + unit;
                     if (range) {
                       label += ' (' + range + ')';
@@ -246,7 +246,7 @@
                     return label;
                   },
                   afterLabel: item => {
-                    const { name } = dataset[0][item.index].bench;
+                    const { name } = dataset[item.datasetIndex][item.index].bench;
                     return name ? '\n' + name : '';
                   }
                 }
