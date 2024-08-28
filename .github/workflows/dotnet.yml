@@ -46,8 +46,6 @@ jobs:
         with:
           path: ./cache
           key: ${{ runner.os }}-benchmark
-      - name: Check files
-        run: ls Benchmark/bin/Release/net8.0/BenchmarkDotNet.Artifacts/results
       # Run `github-action-benchmark` action
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
