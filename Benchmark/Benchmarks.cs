@@ -13,9 +13,9 @@ namespace Benchmark
 
         public IEnumerable<AImplementation> Impls()
         {
+            yield return new NeoImplementation();
             yield return new KeraImplementation();
             yield return new MoonSharpImplementation();
-            yield return new NeoImplementation();
             yield return new NLuaImplementation();
             yield return new SolarSharpImplementation();
         }
@@ -29,9 +29,20 @@ namespace Benchmark
         }
 
         [Benchmark]
-        public object Benchmark()
+        public async Task<object> Benchmark()
         {
-            return Implementation.Run(Test.Contents);
+            var t = Task.Run(() => Implementation.Run(Test.Contents));
+            // limiting execution to 2 mins
+            var winner = await Task.WhenAny(t, Task.Delay(TimeSpan.FromSeconds(120)));
+            if (winner == t)
+            {
+                // success
+                return ((Task<object>)winner).Result;
+            }
+            else
+            {
+                throw new TimeoutException();
+            }
         }
     }
 }
