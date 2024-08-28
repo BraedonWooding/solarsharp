@@ -246,8 +246,8 @@
                     return label;
                   },
                   afterLabel: item => {
-                    const { extra } = dataset[0][item.index].bench;
-                    return extra ? '\n' + extra : '';
+                    const { name } = dataset[0][item.index].bench;
+                    return name ? '\n' + name : '';
                   }
                 }
               },
