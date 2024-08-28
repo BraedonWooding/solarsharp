@@ -3,6 +3,8 @@ using BenchmarkDotNet.Attributes;
 
 namespace Benchmark
 {
+    [JsonExporterAttribute.Full]
+    [JsonExporterAttribute.FullCompressed]
     public class Benchmarks
     {
         [ParamsSource(nameof(Impls))]
@@ -22,10 +24,12 @@ namespace Benchmark
 
         public IEnumerable<LuaFile> Tests()
         {
-            foreach (var file in Directory.GetFiles("./Tests", "*.lua", SearchOption.AllDirectories))
-            {
-                yield return new LuaFile(file);
-            }
+            yield return new LuaFile("./Tests/binarytrees.lua-2.lua");
+
+            //foreach (var file in Directory.GetFiles("./Tests", "*.lua", SearchOption.AllDirectories))
+            //{
+            //    yield return new LuaFile(file);
+            //}
         }
 
         [Benchmark]

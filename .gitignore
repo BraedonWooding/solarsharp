@@ -19,6 +19,7 @@ bin-debug/
 # VS2017 .vs directory
 .vs/
 packages/
+Properties/
 
 #
 
