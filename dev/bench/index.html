@@ -287,7 +287,7 @@
               k[1][0].bench.name = match[1]
               return match[2]
             }).entries()) {
-              renderGraph(graphsElem, benchName, benches)
+              renderGraph(graphsElem, benchName, benches.map(function(b){ return b[1][0]; }))
             }
           }
 
