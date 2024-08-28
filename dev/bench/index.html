@@ -254,6 +254,20 @@
             });
           }
 
+          function groupBy = function(list, keyGetter) {
+              let map = new Map();
+              list.forEach((item) => {
+                   const key = keyGetter(item);
+                   const collection = map.get(key);
+                   if (!collection) {
+                       map.set(key, [item]);
+                   } else {
+                       collection.push(item);
+                   }
+              });
+              return map;
+          }
+
           function renderBenchSet(name, benchSet, main) {
             const setElem = document.createElement('div');
             setElem.className = 'benchmark-set';
@@ -268,7 +282,11 @@
             graphsElem.className = 'benchmark-graphs';
             setElem.appendChild(graphsElem);
 
-            for (const [benchName, benches] of benchSet.entries()) {
+            for (const [benchName, benches] of groupBy(benchSet.entries(), function(k) {
+              const match = k[0].match(/Benchmark.Benchmarks.Benchmark\(Implementation: (.*?), Test: (.*?)\)/)
+              k[1].bench.name = match[1]
+              return match[2]
+            }).entries()) {
               renderGraph(graphsElem, benchName, benches)
             }
           }
