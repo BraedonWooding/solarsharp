@@ -10152,7 +10152,7 @@ namespace MyNamespace
 
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return ((VtUserDataOverloadsTests.OverloadsTestClass)obj).Method1(((bool)(pars[0])));
+					return VtUserDataOverloadsTests.OverloadsTestClass.Method1(((bool)(pars[0])));
 				}
 			}
 
@@ -10479,7 +10479,7 @@ namespace MyNamespace
 
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return ((VtUserDataMethodsTests.SomeClass)obj).SetComplexRecursive(((System.Collections.Generic.List<int[]>)(pars[0])));
+					return VtUserDataMethodsTests.SomeClass.SetComplexRecursive(((System.Collections.Generic.List<int[]>)(pars[0])));
 				}
 			}
 
@@ -10498,7 +10498,7 @@ namespace MyNamespace
 
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return ((VtUserDataMethodsTests.SomeClass)obj).SetComplexTypes(((System.Collections.Generic.List<string>)(pars[0])), ((System.Collections.Generic.IList<int>)(pars[1])), ((System.Collections.Generic.Dictionary<string, int>)(pars[2])), ((string[])(pars[3])), ((int[])(pars[4])));
+					return VtUserDataMethodsTests.SomeClass.SetComplexTypes(((System.Collections.Generic.List<string>)(pars[0])), ((System.Collections.Generic.IList<int>)(pars[1])), ((System.Collections.Generic.Dictionary<string, int>)(pars[2])), ((string[])(pars[3])), ((int[])(pars[4])));
 				}
 			}
 
@@ -10524,9 +10524,9 @@ namespace MyNamespace
 				{
 					if ((argscount <= 9))
 					{
-						return ((VtUserDataMethodsTests.SomeClass)obj).ConcatS(((int)(pars[0])), ((string)(pars[1])), ((System.IComparable)(pars[2])), ((bool)(pars[3])), ((System.Collections.Generic.List<object>)(pars[4])), ((System.Collections.Generic.IEnumerable<object>)(pars[5])), ((System.Text.StringBuilder)(pars[6])), ((System.Collections.Generic.Dictionary<object, object>)(pars[7])), ((VtUserDataMethodsTests.SomeClass)(pars[8])));
+						return VtUserDataMethodsTests.SomeClass.ConcatS(((int)(pars[0])), ((string)(pars[1])), ((System.IComparable)(pars[2])), ((bool)(pars[3])), ((System.Collections.Generic.List<object>)(pars[4])), ((System.Collections.Generic.IEnumerable<object>)(pars[5])), ((System.Text.StringBuilder)(pars[6])), ((System.Collections.Generic.Dictionary<object, object>)(pars[7])), ((VtUserDataMethodsTests.SomeClass)(pars[8])));
 					}
-					return ((VtUserDataMethodsTests.SomeClass)obj).ConcatS(((int)(pars[0])), ((string)(pars[1])), ((System.IComparable)(pars[2])), ((bool)(pars[3])), ((System.Collections.Generic.List<object>)(pars[4])), ((System.Collections.Generic.IEnumerable<object>)(pars[5])), ((System.Text.StringBuilder)(pars[6])), ((System.Collections.Generic.Dictionary<object, object>)(pars[7])), ((VtUserDataMethodsTests.SomeClass)(pars[8])), ((int)(pars[9])));
+					return VtUserDataMethodsTests.SomeClass.ConcatS(((int)(pars[0])), ((string)(pars[1])), ((System.IComparable)(pars[2])), ((bool)(pars[3])), ((System.Collections.Generic.List<object>)(pars[4])), ((System.Collections.Generic.IEnumerable<object>)(pars[5])), ((System.Text.StringBuilder)(pars[6])), ((System.Collections.Generic.Dictionary<object, object>)(pars[7])), ((VtUserDataMethodsTests.SomeClass)(pars[8])), ((int)(pars[9])));
 				}
 			}
 
@@ -14304,7 +14304,7 @@ namespace MyNamespace
 
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return ((UserDataOverloadsTests.OverloadsTestClass)obj).Method1(((bool)(pars[0])));
+					return UserDataOverloadsTests.OverloadsTestClass.Method1(((bool)(pars[0])));
 				}
 			}
 

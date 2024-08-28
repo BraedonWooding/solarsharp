@@ -1,5 +1,6 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -27,7 +28,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             {
                 var otc = new OverloadsTestClass();
                 otc.Method1();
-                otc.Method1(false);
+                Method1(false);
             }
 
             public string MethodV(string fmt, params object[] args)
@@ -45,7 +46,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return "1";
             }
 
-            public string Method1(bool b)
+            public static string Method1(bool b)
             {
                 return "s";
             }
@@ -178,21 +179,19 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void VInterop_Overloads_ExtMethods2()
         {
             UserData.RegisterExtensionType(typeof(VtOverloadsExtMethods));
-            RunTestOverload("s:method3()", "X3");
+            Assert.Throws<ScriptRuntimeException>(() => RunTestOverload("s:method3()", "X3"));
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void VInterop_Overloads_Static2()
         {
             // pollute cache
             RunTestOverload("o:method1(5)", "3");
             // exec non static on static
-            RunTestOverload("s:method1(5)", "s");
+            Assert.Throws<ScriptRuntimeException>(() => RunTestOverload("s:method1(5)", "s"));
         }
 
         [Test]
@@ -229,10 +228,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             RunTestOverload("o:method1(5, 5, 0)", "5");
             RunTestOverload("s:method1(true)", "s");
         }
-
-
-
-
-
     }
 }

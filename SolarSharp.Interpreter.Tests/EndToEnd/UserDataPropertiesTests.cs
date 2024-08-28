@@ -235,9 +235,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(obj.IntProp, Is.EqualTo(321));
 
-            _ = S.DoString(script);
-
-            Assert.That(obj.IntProp, Is.EqualTo(19));
+            Assert.Throws<ScriptRuntimeException>(() => S.DoString(script));
         }
 
         private static void Test_StaticPropertyAccess(InteropAccessMode opt)

@@ -219,7 +219,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 return bestOverload.Execute(script, obj, context, args);
             }
 
-            throw new ScriptRuntimeException("function call doesn't match any overload");
+            throw new ScriptRuntimeException($"function call doesn't match any overload");
         }
 
         private void Cache(bool hasObject, CallbackArguments args, IOverloadableMemberDescriptor bestOverload)

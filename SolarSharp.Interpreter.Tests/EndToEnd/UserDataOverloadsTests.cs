@@ -49,7 +49,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return "1";
             }
 
-            public string Method1(bool b)
+            public static string Method1(bool b)
             {
                 return "s";
             }
@@ -190,7 +190,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Overloads_Static1()
         {
-            Assert.Throws<ScriptRuntimeException>(() => RunTestOverload("s:method1(true)", "s"));
+            RunTestOverload("s:method1(true)", "s");
         }
 
         [Test]
@@ -276,14 +276,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
 #pragma warning disable IDE0051 // Remove unused private members
-        private static int Method1()
+        private int Method1()
 #pragma warning restore IDE0051 // Remove unused private members
         {
             return 1;
         }
 
 #pragma warning disable IDE0051 // Remove unused private members
-        private static int Method1(int a)
+        private int Method1(int a)
 #pragma warning restore IDE0051 // Remove unused private members
         {
             return 5 + a;

@@ -206,9 +206,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(obj.IntProp, Is.EqualTo(321));
 
-            _ = S.DoString(script);
-
-            Assert.That(obj.IntProp, Is.EqualTo(19));
+            Assert.Throws<ScriptRuntimeException>(() => S.DoString(script));
         }
 
         private static void Test_StaticPropertyAccess(InteropAccessMode opt)
@@ -599,21 +597,18 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void VInterop_InvalidPropertySetter_None()
         {
             Test_InvalidPropertySetter(InteropAccessMode.Reflection);
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void VInterop_InvalidPropertySetter_Lazy()
         {
             Test_InvalidPropertySetter(InteropAccessMode.LazyOptimized);
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void VInterop_InvalidPropertySetter_Precomputed()
         {
             Test_InvalidPropertySetter(InteropAccessMode.Preoptimized);

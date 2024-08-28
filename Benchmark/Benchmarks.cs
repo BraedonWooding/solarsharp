@@ -3,7 +3,6 @@ using BenchmarkDotNet.Attributes;
 
 namespace Benchmark
 {
-    [JsonExporterAttribute.Full]
     [JsonExporterAttribute.FullCompressed]
     public class Benchmarks
     {
@@ -15,7 +14,8 @@ namespace Benchmark
 
         public IEnumerable<AImplementation> Impls()
         {
-            yield return new NeoImplementation();
+            // crashing for now
+            //yield return new NeoImplementation();
             yield return new KeraImplementation();
             yield return new MoonSharpImplementation();
             yield return new NLuaImplementation();
