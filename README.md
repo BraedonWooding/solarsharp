@@ -6,9 +6,9 @@ A complete Lua solution written entirely in C# for the .NET, Mono, and Unity3D p
 > Is a modernized version of [MoonSharp](https://github.com/moonsharp-devs/moonsharp)
 
 Changes from MoonSharp:
-* High compatibility with Lua 5.4
-* Built on .net standard 2.1 to tkae advantage of more modern C# features
+* Built on .net standard 2.1 to take advantage of more modern C# features
 * Performance improvements across the interpreter & parser
+* Bug fixes
 
 Features:
 * High compatibility with Lua 5.2 (with the only unsupported feature being weak tables support) 

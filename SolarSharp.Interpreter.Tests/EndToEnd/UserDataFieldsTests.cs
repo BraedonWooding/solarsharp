@@ -328,10 +328,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             S.Globals.Set("myobj", UserData.Create(obj));
 
             Assert.That(obj.IntProp, Is.EqualTo(321));
-
-            DynValue res = S.DoString(script);
-
-            Assert.That(obj.IntProp, Is.EqualTo(19));
+            Assert.Throws<ScriptRuntimeException>(() => S.DoString(script));
         }
 
         private static void Test_StaticFieldAccess(InteropAccessMode opt)
@@ -465,21 +462,18 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void Interop_InvalidFieldSetter_None()
         {
             Test_InvalidFieldSetter(InteropAccessMode.Reflection);
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void Interop_InvalidFieldSetter_Lazy()
         {
             Test_InvalidFieldSetter(InteropAccessMode.LazyOptimized);
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void Interop_InvalidFieldSetter_Precomputed()
         {
             Test_InvalidFieldSetter(InteropAccessMode.Preoptimized);

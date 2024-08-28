@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -83,7 +84,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void Interop_MultiIndexerMetamethodGetSet()
         {
             string script = @"
@@ -97,7 +97,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				setmetatable(t, m);
 
 				t[10,11,12] = 1234; return t[10,11,12];";
-            IndexerTest(script, 1234);
+            Assert.Throws<ScriptRuntimeException>(() => IndexerTest(script, 1234));
         }
 
         [Test]
@@ -108,7 +108,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void Interop_ExpListIndexingCompilesButNotRun1()
         {
             string script = @"    
@@ -116,17 +115,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return x[2,3];
 				";
 
-            DynValue res = Script.RunString(script);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(res.Type, Is.EqualTo(DataType.Number));
-                Assert.That(res.Number, Is.EqualTo(98));
-            });
+            Assert.Throws<ScriptRuntimeException>(() => Script.RunString(script));
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void Interop_ExpListIndexingCompilesButNotRun2()
         {
             string script = @"    
@@ -134,13 +126,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x[2,3] = 5;
 				";
 
-            DynValue res = Script.RunString(script);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(res.Type, Is.EqualTo(DataType.Number));
-                Assert.That(res.Number, Is.EqualTo(98));
-            });
+            Assert.Throws<ScriptRuntimeException>(() => Script.RunString(script));
         }
     }
 }

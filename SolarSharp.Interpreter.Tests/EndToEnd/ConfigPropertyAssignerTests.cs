@@ -3,6 +3,7 @@ using SolarSharp.Interpreter.Interop;
 using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
 using SolarSharp.Interpreter.Interop.Attributes;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -81,10 +82,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void ConfigProp_ThrowsOnInvalid()
         {
-            MyClass x = Test(@"
+            Assert.Throws<ScriptRuntimeException>(() => Test(@"
 				{
 				class = 'oohoh',
 				myString = 'ciao',
@@ -92,15 +92,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				some_table = {},
 				invalid = 3,
 				nativeValue = function() end,
-				}");
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(x.MyNumber, Is.EqualTo(3));
-                Assert.That(x.MyString, Is.EqualTo("ciao"));
-                Assert.That(x.NativeValue.Type, Is.EqualTo(DataType.Function));
-            });
-            Assert.That(x.SomeTable, Is.Not.Null);
+				}"));
         }
 
     }

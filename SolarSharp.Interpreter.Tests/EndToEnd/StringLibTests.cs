@@ -1,6 +1,7 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -221,13 +222,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void String_GSub_2()
         {
             string script = @"
 				string.gsub('hello world', '%w+', '%e')
 			";
-            DynValue res = Script.RunString(script);
+            Assert.Throws<ScriptRuntimeException>(() => Script.RunString(script));
         }
 
         [Test]

@@ -1,6 +1,7 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -555,12 +556,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Multiple(() =>
             {
                 Assert.That(s.Globals["t", "ciao"], Is.EqualTo("hello"));
-                Assert.That(s.Globals.Get("t").Table.OwnerScript == null, Is.True);
+                Assert.That(s.Globals.Get("t").Table.OwnerScript, Is.EqualTo(null));
             });
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void PrimeTable_2()
         {
             string script = @"    
@@ -570,9 +570,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 		";
 
             Script s = new();
-            s.DoString(script);
-
-            Assert.Fail();
+            Assert.Throws<ScriptRuntimeException>(() => s.DoString(script));
         }
 
         [Test]

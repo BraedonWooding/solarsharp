@@ -1,6 +1,7 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
 using SolarSharp.Interpreter.Interop.Attributes;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -128,7 +129,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void Interop_NestedTypes_Private_Ref_2()
         {
             Script S = new();
@@ -137,13 +137,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("o", UserData.CreateStatic<SomeType>());
 
-            DynValue res = S.DoString("return o.SomeNestedTypePrivate2:Get()");
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(res.Type, Is.EqualTo(DataType.String));
-                Assert.That(res.String, Is.EqualTo("Ciao from SomeNestedTypePrivate2"));
-            });
+            Assert.Throws<ScriptRuntimeException>(() => S.DoString("return o.SomeNestedTypePrivate2:Get()"));
         }
 
         [Test]
@@ -183,7 +177,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void Interop_NestedTypes_Private_Val_2()
         {
             Script S = new();
@@ -192,13 +185,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("o", UserData.CreateStatic<VSomeType>());
 
-            DynValue res = S.DoString("return o.SomeNestedTypePrivate2:Get()");
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(res.Type, Is.EqualTo(DataType.String));
-                Assert.That(res.String, Is.EqualTo("Ciao from SomeNestedTypePrivate2"));
-            });
+            Assert.Throws<ScriptRuntimeException>(() => S.DoString("return o.SomeNestedTypePrivate2:Get()"));
         }
     }
 }

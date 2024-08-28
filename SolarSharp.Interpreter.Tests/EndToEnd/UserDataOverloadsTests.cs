@@ -4,6 +4,7 @@ using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
 using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -27,7 +28,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             return "X!";
         }
     }
-
 
     [TestFixture]
     public class UserDataOverloadsTests
@@ -190,7 +190,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Overloads_Static1()
         {
-            RunTestOverload("s:method1(true)", "s");
+            Assert.Throws<ScriptRuntimeException>(() => RunTestOverload("s:method1(true)", "s"));
         }
 
         [Test]
@@ -225,21 +225,19 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void Interop_Overloads_ExtMethods2()
         {
             UserData.RegisterExtensionType(typeof(OverloadsExtMethods));
-            RunTestOverload("s:method3()", "X3");
+            Assert.Throws<ScriptRuntimeException>(() => RunTestOverload("s:method3()", "X3"));
         }
 
         [Test]
-        //[ExpectedException(typeof(ScriptRuntimeException))]
         public void Interop_Overloads_Static2()
         {
             // pollute cache
             RunTestOverload("o:method1(5)", "3");
             // exec non static on static
-            RunTestOverload("s:method1(5)", "s");
+            Assert.Throws<ScriptRuntimeException>(() => RunTestOverload("s:method1(5)", "s"));
         }
 
         [Test]
@@ -291,7 +289,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             return 5 + a;
         }
 
-#if !DOTNET_CORE
         [Test]
         public void OverloadTest_WithoutObjects()
         {
@@ -323,6 +320,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(result.Tuple[1].Number, Is.EqualTo(22));
             });
         }
-#endif
     }
 }

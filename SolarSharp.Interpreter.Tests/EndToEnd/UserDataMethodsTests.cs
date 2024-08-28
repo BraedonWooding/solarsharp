@@ -151,7 +151,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return i * 2;
             }
 
-            public StringBuilder SetComplexRecursive(List<int[]> intList)
+            public static StringBuilder SetComplexRecursive(List<int[]> intList)
             {
                 StringBuilder sb = new();
 
@@ -164,7 +164,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return sb;
             }
 
-            public StringBuilder SetComplexTypes(List<string> strlist, IList<int> intlist, Dictionary<string, int> map,
+            public static StringBuilder SetComplexTypes(List<string> strlist, IList<int> intlist, Dictionary<string, int> map,
                 string[] strarray, int[] intarray)
             {
                 StringBuilder sb = new();
@@ -195,7 +195,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
 
 
-            public StringBuilder ConcatS(int p1, string p2, IComparable p3, bool p4, List<object> p5, IEnumerable<object> p6,
+            public static StringBuilder ConcatS(int p1, string p2, IComparable p3, bool p4, List<object> p5, IEnumerable<object> p6,
                 StringBuilder p7, Dictionary<object, object> p8, SomeClass p9, int p10 = 1994)
             {
                 p7.Append(p1);

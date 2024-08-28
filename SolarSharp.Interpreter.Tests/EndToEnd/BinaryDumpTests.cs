@@ -155,16 +155,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				end
 			";
 
-            DynValue fact = Script_LoadFunc(script, "fact");
-            fact.Function.OwnerScript.Globals.Set("fact", fact);
-            fact.Function.OwnerScript.Globals.Set("x", DynValue.NewNumber(0));
-            DynValue res = fact.Function.Call(5);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(res.Type, Is.EqualTo(DataType.Number));
-                Assert.That(res.Number, Is.EqualTo(120));
-            });
+            Assert.Throws<ArgumentException>(() => Script_LoadFunc(script, "fact"));
         }
 
         [Test]

@@ -1,5 +1,6 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -60,18 +61,16 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
         [Test]
-        //[ExpectedException(typeof(SyntaxErrorException))]
         public void Goto_UndefinedLabel()
         {
             string script = @"
 				goto there
 				";
 
-            Script.RunString(script);
+            Assert.Throws<SyntaxErrorException>(() => Script.RunString(script));
         }
 
         [Test]
-        //[ExpectedException(typeof(SyntaxErrorException))]
         public void Goto_DoubleDefinedLabel()
         {
             string script = @"
@@ -79,7 +78,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				::label::
 				";
 
-            Script.RunString(script);
+            Assert.Throws<SyntaxErrorException>(() => Script.RunString(script));
         }
 
         [Test]
@@ -118,7 +117,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
         [Test]
-        //[ExpectedException(typeof(SyntaxErrorException))]
         public void Goto_UndefinedLabel_2()
         {
             string script = @"
@@ -130,17 +128,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				end
 				";
 
-            DynValue res = Script.RunString(script);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(res.Type, Is.EqualTo(DataType.Number));
-                Assert.That(res.Number, Is.EqualTo(3));
-            });
+            Assert.Throws<SyntaxErrorException>(() => Script.RunString(script));
         }
 
         [Test]
-        //[ExpectedException(typeof(SyntaxErrorException))]
         public void Goto_VarInScope()
         {
             string script = @"
@@ -149,13 +140,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				::f::
 				";
 
-            DynValue res = Script.RunString(script);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(res.Type, Is.EqualTo(DataType.Number));
-                Assert.That(res.Number, Is.EqualTo(3));
-            });
+            Assert.Throws<SyntaxErrorException>(() => Script.RunString(script));
         }
 
 
