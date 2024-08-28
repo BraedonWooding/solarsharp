@@ -125,6 +125,21 @@
           customSmallerIsBetter: '#ff3838',
           _: '#333333'
         };
+        const implementationColors = {
+          NeoImplementation: '#dea584',
+          KeraImplementation: '#00add8',
+          MoonSharpImplementation: '#f1e05a',
+          NLuaImplementation: '#000080',
+          SolarSharpImplementation: '#3572a5',
+          googlecpp: '#f34b7d',
+          catch2: '#f34b7d',
+          julia: '#a270ba',
+          jmh: '#b07219',
+          benchmarkdotnet: '#178600',
+          customBiggerIsBetter: '#38ff38',
+          customSmallerIsBetter: '#ff3838',
+          _: '#333333'
+        };
 
         function init() {
           function collectBenchesPerTestCase(entries) {
@@ -182,15 +197,15 @@
               }
             }
 
-            const color = toolColors[dataset.length > 0 ? dataset[0][0].tool : '_'];
+            const color = implementationColors[dataset.length > 0 ? dataset[0][0].tool : '_'];
             const data = {
               labels: dataset[0].map(d => d.commit.id.slice(0, 7)),
               datasets: dataset.map(d => 
                 ({
                   label: d[0].bench.name,
                   data: d.map(d => d.bench.value),
-                //  borderColor: color,
-                //  backgroundColor: color + '60', // Add alpha for #rrggbbaa
+                  borderColor: color,
+                  backgroundColor: color + '60', // Add alpha for #rrggbbaa
                 })),
             };
             const options = {
