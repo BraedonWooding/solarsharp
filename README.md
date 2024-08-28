@@ -1,4 +1,4 @@
-SolarSharp
+SolarSharp [![.NET](https://github.com/BraedonWooding/solarsharp/actions/workflows/dotnet.yml/badge.svg)](https://github.com/BraedonWooding/solarsharp/actions/workflows/dotnet.yml)
 =========
 
 A complete Lua solution written entirely in C# for the .NET, Mono, and Unity3D platforms.
