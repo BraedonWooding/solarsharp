@@ -1,16 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <LangVersion>9.0</LangVersion>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <OutputType>Library</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
     <RootNamespace>MoonSharp.Interpreter.Tests</RootNamespace>
     <AssemblyName>MoonSharp.Interpreter.Tests</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyTitle>MoonSharp.Interpreter.Tests</AssemblyTitle>
     <Product>MoonSharp.Interpreter.Tests</Product>
-    <Copyright>Copyright © 2014</Copyright>
+    <Copyright>Copyright © 2024</Copyright>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
+    <AnalysisLevel>none</AnalysisLevel>
+    <AnalysisLevel>none</AnalysisLevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <OutputPath>bin\x86\Debug\</OutputPath>
@@ -40,6 +42,15 @@
     <OutputPath>bin\x86\Devp4\</OutputPath>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.3.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
   <ItemGroup>
     <Reference Update="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -181,9 +192,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="NUnit" Version="2.6.4" />
-  </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
       <ItemGroup>
@@ -202,4 +210,10 @@
       </ItemGroup>
     </When>
   </Choose>
+  <ItemGroup>
+    <EditorConfigFiles Remove="D:\Repos\SolarSharp\SolarSharp.Interpreter.Tests\.editorconfig" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\Repos\SolarSharp\SolarSharp.Interpreter.Tests\.editorconfig" />
+  </ItemGroup>
 </Project>

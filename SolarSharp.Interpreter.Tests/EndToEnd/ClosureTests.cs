@@ -1,16 +1,14 @@
-﻿using System;
-using MoonSharp.Interpreter.Execution;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace MoonSharp.Interpreter.Tests.EndToEnd
 {
-	[TestFixture]
-	public class ClosureTests
-	{
-		[Test]
-		public void ClosureOnParam()
-		{
-			string script = @"
+    [TestFixture]
+    public class ClosureTests
+    {
+        [Test]
+        public void ClosureOnParam()
+        {
+            string script = @"
 				local function g (z)
 				  local function f(a)
 					return a + z;
@@ -20,50 +18,59 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 
 				return (g(3)(2));";
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.Number, res.Type);
-			Assert.AreEqual(5, res.Number);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Number, Is.EqualTo(5));
+            });
+        }
 
-		[Test]
-		public void LambdaFunctions()
-		{
-			string script = @"
+        [Test]
+        public void LambdaFunctions()
+        {
+            string script = @"
 g = |f, x|f(x, x+1)
 f = |x, y, z|x*(y+z)
 return g(|x,y|f(x,y,1), 2)
 ";
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.Number, res.Type);
-			Assert.AreEqual(8, res.Number);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Number, Is.EqualTo(8));
+            });
+        }
 
 
 
-		[Test]
-		public void ClosureOnParamLambda()
-		{
-			string script = @"
+        [Test]
+        public void ClosureOnParamLambda()
+        {
+            string script = @"
 				local function g (z)
 				  return |a| a + z
 				end
 
 				return (g(3)(2));";
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.Number, res.Type);
-			Assert.AreEqual(5, res.Number);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Number, Is.EqualTo(5));
+            });
+        }
 
 
-		[Test]
-		public void Closures()
-		{
-			// expected : 201 2001 20001 200001 2000001
-			string script = @"
+        [Test]
+        public void Closures()
+        {
+            // expected : 201 2001 20001 200001 2000001
+            string script = @"
 						a = {}
 						x = 0
 
@@ -83,27 +90,33 @@ return g(|x,y|f(x,y,1), 2)
 						return a[1](), a[2](), a[3](), a[4](), a[5]()";
 
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.Tuple, res.Type);
-			Assert.AreEqual(5, res.Tuple.Length);
-			Assert.AreEqual(DataType.Number, res.Tuple[0].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[1].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[2].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[3].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[4].Type);
-			Assert.AreEqual(201, res.Tuple[0].Number);
-			Assert.AreEqual(2001, res.Tuple[1].Number);
-			Assert.AreEqual(20001, res.Tuple[2].Number);
-			Assert.AreEqual(200001, res.Tuple[3].Number);
-			Assert.AreEqual(2000001, res.Tuple[4].Number);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.Tuple));
+                Assert.That(res.Tuple.Length, Is.EqualTo(5));
+            });
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Tuple[0].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[1].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[2].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[3].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[4].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[0].Number, Is.EqualTo(201));
+                Assert.That(res.Tuple[1].Number, Is.EqualTo(2001));
+                Assert.That(res.Tuple[2].Number, Is.EqualTo(20001));
+                Assert.That(res.Tuple[3].Number, Is.EqualTo(200001));
+                Assert.That(res.Tuple[4].Number, Is.EqualTo(2000001));
+            });
+        }
 
-		[Test]
-		public void ClosuresNonAnonymousLocal()
-		{
-			// expected : 201 2001 20001 200001 2000001
-			string script = @"
+        [Test]
+        public void ClosuresNonAnonymousLocal()
+        {
+            // expected : 201 2001 20001 200001 2000001
+            string script = @"
 						a = {}
 						x = 0
 
@@ -123,28 +136,34 @@ return g(|x,y|f(x,y,1), 2)
 
 						return a[1](), a[2](), a[3](), a[4](), a[5]()";
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.Tuple, res.Type);
-			Assert.AreEqual(5, res.Tuple.Length);
-			Assert.AreEqual(DataType.Number, res.Tuple[0].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[1].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[2].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[3].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[4].Type);
-			Assert.AreEqual(201, res.Tuple[0].Number);
-			Assert.AreEqual(2001, res.Tuple[1].Number);
-			Assert.AreEqual(20001, res.Tuple[2].Number);
-			Assert.AreEqual(200001, res.Tuple[3].Number);
-			Assert.AreEqual(2000001, res.Tuple[4].Number);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.Tuple));
+                Assert.That(res.Tuple.Length, Is.EqualTo(5));
+            });
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Tuple[0].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[1].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[2].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[3].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[4].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[0].Number, Is.EqualTo(201));
+                Assert.That(res.Tuple[1].Number, Is.EqualTo(2001));
+                Assert.That(res.Tuple[2].Number, Is.EqualTo(20001));
+                Assert.That(res.Tuple[3].Number, Is.EqualTo(200001));
+                Assert.That(res.Tuple[4].Number, Is.EqualTo(2000001));
+            });
+        }
 
 
-		[Test]
-		public void ClosuresNonAnonymous()
-		{
-			// expected : 201 2001 20001 200001 2000001
-			string script = @"
+        [Test]
+        public void ClosuresNonAnonymous()
+        {
+            // expected : 201 2001 20001 200001 2000001
+            string script = @"
 						a = {}
 						x = 0
 
@@ -164,26 +183,32 @@ return g(|x,y|f(x,y,1), 2)
 
 						return a[1](), a[2](), a[3](), a[4](), a[5]()";
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.Tuple, res.Type);
-			Assert.AreEqual(5, res.Tuple.Length);
-			Assert.AreEqual(DataType.Number, res.Tuple[0].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[1].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[2].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[3].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[4].Type);
-			Assert.AreEqual(201, res.Tuple[0].Number);
-			Assert.AreEqual(2001, res.Tuple[1].Number);
-			Assert.AreEqual(20001, res.Tuple[2].Number);
-			Assert.AreEqual(200001, res.Tuple[3].Number);
-			Assert.AreEqual(2000001, res.Tuple[4].Number);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.Tuple));
+                Assert.That(res.Tuple.Length, Is.EqualTo(5));
+            });
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Tuple[0].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[1].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[2].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[3].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[4].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[0].Number, Is.EqualTo(201));
+                Assert.That(res.Tuple[1].Number, Is.EqualTo(2001));
+                Assert.That(res.Tuple[2].Number, Is.EqualTo(20001));
+                Assert.That(res.Tuple[3].Number, Is.EqualTo(200001));
+                Assert.That(res.Tuple[4].Number, Is.EqualTo(2000001));
+            });
+        }
 
-		[Test]
-		public void ClosureNoTable()
-		{
-			string script = @"
+        [Test]
+        public void ClosureNoTable()
+        {
+            string script = @"
 				x = 0
 
 				function container()
@@ -208,27 +233,33 @@ return g(|x,y|f(x,y,1), 2)
 
 				return a1(), a2(), a3(), a4(), a5()";
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.Tuple, res.Type);
-			Assert.AreEqual(5, res.Tuple.Length);
-			Assert.AreEqual(DataType.Number, res.Tuple[0].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[1].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[2].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[3].Type);
-			Assert.AreEqual(DataType.Number, res.Tuple[4].Type);
-			Assert.AreEqual(201, res.Tuple[0].Number);
-			Assert.AreEqual(2001, res.Tuple[1].Number);
-			Assert.AreEqual(20001, res.Tuple[2].Number);
-			Assert.AreEqual(200001, res.Tuple[3].Number);
-			Assert.AreEqual(2000001, res.Tuple[4].Number);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.Tuple));
+                Assert.That(res.Tuple.Length, Is.EqualTo(5));
+            });
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Tuple[0].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[1].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[2].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[3].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[4].Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Tuple[0].Number, Is.EqualTo(201));
+                Assert.That(res.Tuple[1].Number, Is.EqualTo(2001));
+                Assert.That(res.Tuple[2].Number, Is.EqualTo(20001));
+                Assert.That(res.Tuple[3].Number, Is.EqualTo(200001));
+                Assert.That(res.Tuple[4].Number, Is.EqualTo(2000001));
+            });
+        }
 
 
-		[Test]
-		public void NestedUpvalues()
-		{
-			string script = @"
+        [Test]
+        public void NestedUpvalues()
+        {
+            string script = @"
 	local y = y;
 
 	local x = 0;
@@ -247,16 +278,19 @@ return g(|x,y|f(x,y,1), 2)
 	return 10 * m.t.dojob();
 								";
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.Number, res.Type);
-			Assert.AreEqual(10, res.Number);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Number, Is.EqualTo(10));
+            });
+        }
 
-		[Test]
-		public void NestedOutOfScopeUpvalues()
-		{
-			string script = @"
+        [Test]
+        public void NestedOutOfScopeUpvalues()
+        {
+            string script = @"
 
 	function X()
 		local y = y;
@@ -282,17 +316,20 @@ return g(|x,y|f(x,y,1), 2)
 	return 10 * Q.t.dojob();
 								";
 
-			DynValue res = new Script(CoreModules.Preset_HardSandbox).DoString(script);
+            DynValue res = new Script(CoreModules.Preset_HardSandbox).DoString(script);
 
-			Assert.AreEqual(DataType.Number, res.Type);
-			Assert.AreEqual(10, res.Number);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Number, Is.EqualTo(10));
+            });
+        }
 
 
-		[Test]
-		public void LocalRedefinition()
-		{
-			string script = @"
+        [Test]
+        public void LocalRedefinition()
+        {
+            string script = @"
 
 				result = ''
 
@@ -315,12 +352,15 @@ return g(|x,y|f(x,y,1), 2)
 				return result;
 								";
 
-			DynValue res = new Script(CoreModules.Preset_HardSandbox).DoString(script);
+            DynValue res = new Script(CoreModules.Preset_HardSandbox).DoString(script);
 
-			Assert.AreEqual(DataType.String, res.Type);
-			Assert.AreEqual("helloXX", res.String);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.String));
+                Assert.That(res.String, Is.EqualTo("helloXX"));
+            });
+        }
 
 
-	}
+    }
 }

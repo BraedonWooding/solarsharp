@@ -1,76 +1,86 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using MoonSharp.Interpreter;
-using MoonSharp.Interpreter.Serialization.Json;
+﻿using MoonSharp.Interpreter.Serialization.Json;
 using NUnit.Framework;
 
 
 namespace MoonSharp.Interpreter.Tests.EndToEnd
 {
-	[TestFixture]
-	public class JsonSerializationTests
-	{
-		void AssertTableValues(Table t)
-		{
-			Assert.AreEqual(DataType.Number, t.Get("aNumber").Type);
-			Assert.AreEqual(1, t.Get("aNumber").Number);
+    [TestFixture]
+    public class JsonSerializationTests
+    {
+        private static void AssertTableValues(Table t)
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(t.Get("aNumber").Type, Is.EqualTo(DataType.Number));
+                Assert.That(t.Get("aNumber").Number, Is.EqualTo(1));
 
-			Assert.AreEqual(DataType.String, t.Get("aString").Type);
-			Assert.AreEqual("2", t.Get("aString").String);
+                Assert.That(t.Get("aString").Type, Is.EqualTo(DataType.String));
+                Assert.That(t.Get("aString").String, Is.EqualTo("2"));
 
-			Assert.AreEqual(DataType.Table, t.Get("anObject").Type);
-			Assert.AreEqual(DataType.Table, t.Get("anArray").Type);
+                Assert.That(t.Get("anObject").Type, Is.EqualTo(DataType.Table));
+                Assert.That(t.Get("anArray").Type, Is.EqualTo(DataType.Table));
 
-			Assert.AreEqual(DataType.String, t.Get("slash").Type);
-			Assert.AreEqual("a/b", t.Get("slash").String);
+                Assert.That(t.Get("slash").Type, Is.EqualTo(DataType.String));
+                Assert.That(t.Get("slash").String, Is.EqualTo("a/b"));
+            });
 
-			Table o = t.Get("anObject").Table;
+            Table o = t.Get("anObject").Table;
 
-			Assert.AreEqual(DataType.Number, o.Get("aNumber").Type);
-			Assert.AreEqual(3, o.Get("aNumber").Number);
+            Assert.Multiple(() =>
+            {
+                Assert.That(o.Get("aNumber").Type, Is.EqualTo(DataType.Number));
+                Assert.That(o.Get("aNumber").Number, Is.EqualTo(3));
 
-			Assert.AreEqual(DataType.String, o.Get("aString").Type);
-			Assert.AreEqual("4", o.Get("aString").String);
+                Assert.That(o.Get("aString").Type, Is.EqualTo(DataType.String));
+                Assert.That(o.Get("aString").String, Is.EqualTo("4"));
+            });
 
-			Table a = t.Get("anArray").Table;
+            Table a = t.Get("anArray").Table;
 
-			//				'anArray' : [ 5, '6', true, null, { 'aNumber' : 7, 'aString' : '8' } ]
+            Assert.Multiple(() =>
+            {
+                //				'anArray' : [ 5, '6', true, null, { 'aNumber' : 7, 'aString' : '8' } ]
 
-			Assert.AreEqual(DataType.Number, a.Get(1).Type);
-			Assert.AreEqual(5, a.Get(1).Number);
+                Assert.That(a.Get(1).Type, Is.EqualTo(DataType.Number));
+                Assert.That(a.Get(1).Number, Is.EqualTo(5));
 
-			Assert.AreEqual(DataType.String, a.Get(2).Type);
-			Assert.AreEqual("6", a.Get(2).String);
+                Assert.That(a.Get(2).Type, Is.EqualTo(DataType.String));
+                Assert.That(a.Get(2).String, Is.EqualTo("6"));
 
-			Assert.AreEqual(DataType.Boolean, a.Get(3).Type);
-			Assert.IsTrue(a.Get(3).Boolean);
+                Assert.That(a.Get(3).Type, Is.EqualTo(DataType.Boolean));
+            });
+            Assert.Multiple(() =>
+            {
+                Assert.That(a.Get(3).Boolean, Is.True);
 
-			Assert.AreEqual(DataType.Boolean, a.Get(3).Type);
-			Assert.IsTrue(a.Get(3).Boolean);
+                Assert.That(a.Get(3).Type, Is.EqualTo(DataType.Boolean));
+            });
+            Assert.That(a.Get(3).Boolean, Is.True);
 
-			Assert.AreEqual(DataType.UserData, a.Get(4).Type);
-			Assert.IsTrue(JsonNull.IsJsonNull(a.Get(4)));
+            Assert.That(a.Get(4).Type, Is.EqualTo(DataType.UserData));
+            Assert.That(JsonNull.IsJsonNull(a.Get(4)), Is.True);
 
-			Assert.AreEqual(DataType.Table, a.Get(5).Type);
-			Table s = a.Get(5).Table;
+            Assert.That(a.Get(5).Type, Is.EqualTo(DataType.Table));
+            Table s = a.Get(5).Table;
 
-			Assert.AreEqual(DataType.Number, s.Get("aNumber").Type);
-			Assert.AreEqual(7, s.Get("aNumber").Number);
+            Assert.Multiple(() =>
+            {
+                Assert.That(s.Get("aNumber").Type, Is.EqualTo(DataType.Number));
+                Assert.That(s.Get("aNumber").Number, Is.EqualTo(7));
 
-			Assert.AreEqual(DataType.String, s.Get("aString").Type);
-			Assert.AreEqual("8", s.Get("aString").String);
+                Assert.That(s.Get("aString").Type, Is.EqualTo(DataType.String));
+                Assert.That(s.Get("aString").String, Is.EqualTo("8"));
 
-			Assert.AreEqual(DataType.Number, t.Get("aNegativeNumber").Type);
-			Assert.AreEqual(-9, t.Get("aNegativeNumber").Number);
-		}
+                Assert.That(t.Get("aNegativeNumber").Type, Is.EqualTo(DataType.Number));
+                Assert.That(t.Get("aNegativeNumber").Number, Is.EqualTo(-9));
+            });
+        }
 
 
-		[Test]
-		public void JsonDeserialization()
-		{
-			string json = @"{
+        [Test]
+        public void JsonDeserialization()
+        {
+            string json = @"{
 				'aNumber' : 1,
 				'aString' : '2',
 				'anObject' : { 'aNumber' : 3, 'aString' : '4' },
@@ -80,14 +90,14 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 				}
 			".Replace('\'', '\"');
 
-			Table t = JsonTableConverter.JsonToTable(json);
-			AssertTableValues(t);
-		}
+            Table t = JsonTableConverter.JsonToTable(json);
+            AssertTableValues(t);
+        }
 
-		[Test]
-		public void JsonSerialization()
-		{
-			string json = @"{
+        [Test]
+        public void JsonSerialization()
+        {
+            string json = @"{
 				'aNumber' : 1,
 				'aString' : '2',
 				'anObject' : { 'aNumber' : 3, 'aString' : '4' },
@@ -97,52 +107,52 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 				}
 			".Replace('\'', '\"');
 
-			Table t1 = JsonTableConverter.JsonToTable(json);
+            Table t1 = JsonTableConverter.JsonToTable(json);
 
-			string json2 = JsonTableConverter.TableToJson(t1);
+            string json2 = JsonTableConverter.TableToJson(t1);
 
-			Table t = JsonTableConverter.JsonToTable(json2);
+            Table t = JsonTableConverter.JsonToTable(json2);
 
-			AssertTableValues(t);
-		}
-
-
-		[Test]
-		public void JsonObjectSerialization()
-		{
-			object o = new
-			{
-				aNumber = 1,
-				aString = "2",
-				anObject = new
-				{
-					aNumber = 3,
-					aString = "4"
-				},
-				anArray = new object[]
-				{
-					5,
-					"6",
-					true,
-					null,
-					new
-					{
-						aNumber = 7,
-						aString = "8"
-					}
-				},
-				aNegativeNumber = -9,
-				slash = "a/b"
-			};
+            AssertTableValues(t);
+        }
 
 
-			string json = JsonTableConverter.ObjectToJson(o);
+        [Test]
+        public void JsonObjectSerialization()
+        {
+            object o = new
+            {
+                aNumber = 1,
+                aString = "2",
+                anObject = new
+                {
+                    aNumber = 3,
+                    aString = "4"
+                },
+                anArray = new object[]
+                {
+                    5,
+                    "6",
+                    true,
+                    null,
+                    new
+                    {
+                        aNumber = 7,
+                        aString = "8"
+                    }
+                },
+                aNegativeNumber = -9,
+                slash = "a/b"
+            };
 
-			Table t = JsonTableConverter.JsonToTable(json);
 
-			AssertTableValues(t);
-		}
+            string json = JsonTableConverter.ObjectToJson(o);
+
+            Table t = JsonTableConverter.JsonToTable(json);
+
+            AssertTableValues(t);
+        }
 
 
-	}
+    }
 }

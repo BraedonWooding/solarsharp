@@ -1,47 +1,47 @@
-﻿using System;
-using System.Text;
-using System.Collections.Generic;
-using System.Linq;
-using MoonSharp.Interpreter.Execution;
-using NUnit.Framework;
-using MoonSharp.Interpreter.CoreLib;
+﻿using NUnit.Framework;
 
 namespace MoonSharp.Interpreter.Tests.EndToEnd
 {
-	[TestFixture]
-	public class DynamicTests
-	{
-		[Test]
-		public void DynamicAccessEval()
-		{
-			string script = @"
+    [TestFixture]
+    public class DynamicTests
+    {
+        [Test]
+        public void DynamicAccessEval()
+        {
+            string script = @"
 				return dynamic.eval('5+1');		
 				";
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.Number, res.Type);
-			Assert.AreEqual(6, res.Number);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Number, Is.EqualTo(6));
+            });
+        }
 
-		[Test]
-		public void DynamicAccessPrepare()
-		{
-			string script = @"
+        [Test]
+        public void DynamicAccessPrepare()
+        {
+            string script = @"
 				x = dynamic.prepare('5+1');		
 				return dynamic.eval(x);
 				";
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.Number, res.Type);
-			Assert.AreEqual(6, res.Number);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Number, Is.EqualTo(6));
+            });
+        }
 
-		[Test]
-		public void DynamicAccessScope()
-		{
-			string script = @"
+        [Test]
+        public void DynamicAccessScope()
+        {
+            string script = @"
 				a = 3;
 
 				x = dynamic.prepare('a+1');		
@@ -54,16 +54,19 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 				return f();
 				";
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.Number, res.Type);
-			Assert.AreEqual(6, res.Number);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.Number));
+                Assert.That(res.Number, Is.EqualTo(6));
+            });
+        }
 
-		[Test]
-		public void DynamicAccessScopeSecurity()
-		{
-			string script = @"
+        [Test]
+        public void DynamicAccessScopeSecurity()
+        {
+            string script = @"
 				a = 5;
 
 				local x = dynamic.prepare('a');		
@@ -79,27 +82,27 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 				return f();
 				";
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.Nil, res.Type);
-			//Assert.AreEqual(6, res.Number);
-		}
+            Assert.That(res.Type, Is.EqualTo(DataType.Nil));
+            //Assert.AreEqual(6, res.Number);
+        }
 
-		[Test]
-		public void DynamicAccessFromCSharp()
-		{
-			string code = @"
+        [Test]
+        public void DynamicAccessFromCSharp()
+        {
+            string code = @"
 				t = { ciao = { 'hello' } }
 				";
 
-			Script script = new Script();
-			script.DoString(code);
+            Script script = new();
+            script.DoString(code);
 
-			DynValue v = script.CreateDynamicExpression("t.ciao[1] .. ' world'").Evaluate();
+            DynValue v = script.CreateDynamicExpression("t.ciao[1] .. ' world'").Evaluate();
 
-			Assert.AreEqual(v.String, "hello world");
-		}
+            Assert.That(v.String, Is.EqualTo("hello world"));
+        }
 
 
-	}
+    }
 }

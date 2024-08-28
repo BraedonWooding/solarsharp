@@ -1,0 +1,10 @@
+[*.cs]
+
+# IDE0251: Make member 'readonly'
+csharp_style_prefer_readonly_struct_member = false
+
+# IDE1006: Naming Styles
+dotnet_diagnostic.IDE1006.severity = none
+
+# IDE0060: Remove unused parameter
+dotnet_diagnostic.IDE0060.severity = none

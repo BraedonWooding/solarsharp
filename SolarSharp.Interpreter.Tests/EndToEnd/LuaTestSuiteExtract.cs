@@ -1,63 +1,59 @@
-﻿using System;
-using System.Collections.Generic;
-using MoonSharp.Interpreter.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using MoonSharp.Interpreter.Execution;
 using NUnit.Framework;
 
 namespace MoonSharp.Interpreter.Tests.EndToEnd
 {
-	/// <summary>
-	/// Selected tests extracted from Lua test suite
-	/// </summary>
-	[TestFixture]
-	class LuaTestSuiteExtract
-	{
-		void RunTest(string script)
-		{
-			HashSet<string> failedTests = new HashSet<string>();
-			int i = 0;
+    /// <summary>
+    /// Selected tests extracted from Lua test suite
+    /// </summary>
+    [TestFixture]
+    internal class LuaTestSuiteExtract
+    {
+        private static void RunTest(string script)
+        {
+            HashSet<string> failedTests = new();
+            int i = 0;
 
-			Script S = new Script();
+            Script S = new();
 
-			var globalCtx = S.Globals;
-			globalCtx.Set(DynValue.NewString("xassert"), DynValue.NewCallback(new CallbackFunction(
-				(x, a) =>
-				{
-					if (!a[1].CastToBool())
-						failedTests.Add(a[0].String);
+            var globalCtx = S.Globals;
+            globalCtx.Set(DynValue.NewString("xassert"), DynValue.NewCallback(new CallbackFunction(
+                (x, a) =>
+                {
+                    if (!a[1].CastToBool())
+                        failedTests.Add(a[0].String);
 
-					return DynValue.Nil;
-				})));
-			globalCtx.Set(DynValue.NewString("assert"), DynValue.NewCallback(new CallbackFunction(
-				(x, a) =>
-				{
-					++i;
+                    return DynValue.Nil;
+                })));
+            globalCtx.Set(DynValue.NewString("assert"), DynValue.NewCallback(new CallbackFunction(
+                (x, a) =>
+                {
+                    ++i;
 
-					if (!a[0].CastToBool())
-						failedTests.Add(string.Format("assert #{0}", i));
+                    if (!a[0].CastToBool())
+                        failedTests.Add(string.Format("assert #{0}", i));
 
-					return DynValue.Nil;
-				})));
+                    return DynValue.Nil;
+                })));
 
-			globalCtx.Set(DynValue.NewString("print"), DynValue.NewCallback(new CallbackFunction((x, a) =>
-			{
-				// Debug.WriteLine(string.Join(" ", a.Select(v => v.AsString()).ToArray()));
-				return DynValue.Nil;
-			})));
+            globalCtx.Set(DynValue.NewString("print"), DynValue.NewCallback(new CallbackFunction((x, a) =>
+            {
+                // Debug.WriteLine(string.Join(" ", a.Select(v => v.AsString()).ToArray()));
+                return DynValue.Nil;
+            })));
 
 
-			DynValue res = S.DoString(script);
+            DynValue res = S.DoString(script);
 
-			Assert.IsFalse(failedTests.Any(), string.Format("Failed asserts {0}",
-				string.Join(", ", failedTests.Select(xi => xi.ToString()).ToArray())));
-		}
+            Assert.That(failedTests.Any(), Is.False, string.Format("Failed asserts {0}",
+                string.Join(", ", failedTests.Select(xi => xi.ToString()).ToArray())));
+        }
 
-		[Test]
-		public void LuaSuite_Calls_LocalFunctionRecursion()
-		{
-			RunTest(@"
+        [Test]
+        public void LuaSuite_Calls_LocalFunctionRecursion()
+        {
+            RunTest(@"
 				-- testing local-function recursion
 				fact = false
 				do
@@ -71,12 +67,12 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 				end
 				xassert('fact == false', fact == false)
 				");
-		}
+        }
 
-		[Test]
-		public void LuaSuite_Calls_Declarations()
-		{
-			RunTest(@"
+        [Test]
+        public void LuaSuite_Calls_Declarations()
+        {
+            RunTest(@"
 				-- testing local-function recursion
 				-- testing declarations
 				a = {i = 10}
@@ -117,14 +113,14 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 				xassert('extraparam', t[1] == 1 and t[2] == 2 and t[3] == 3 and t[4] == 'a')
 
 				");
-		}
+        }
 
 
 
-		[Test]
-		public void LuaSuite_Calls_Closures()
-		{
-			RunTest(@"
+        [Test]
+        public void LuaSuite_Calls_Closures()
+        {
+            RunTest(@"
 				-- fixed-point operator
 				Z = function (le)
 					  local function a (f)
@@ -161,11 +157,11 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 				Z, F, f = nil
 				--print('+')
 				");
-		}
+        }
 
 
 
 
 
-	}
+    }
 }

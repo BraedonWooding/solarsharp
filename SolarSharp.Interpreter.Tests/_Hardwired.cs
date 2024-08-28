@@ -10147,7 +10147,7 @@ namespace MyNamespace
 
 				protected override object Invoke(MoonSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataOverloadsTests.OverloadsTestClass.Method1(((bool)(pars[0])));
+					return ((MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataOverloadsTests.OverloadsTestClass)obj).Method1(((bool)(pars[0])));
 				}
 			}
 
@@ -10474,7 +10474,7 @@ namespace MyNamespace
 
 				protected override object Invoke(MoonSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataMethodsTests.SomeClass.SetComplexRecursive(((System.Collections.Generic.List<int[]>)(pars[0])));
+					return ((MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataMethodsTests.SomeClass)obj).SetComplexRecursive(((System.Collections.Generic.List<int[]>)(pars[0])));
 				}
 			}
 
@@ -10493,7 +10493,7 @@ namespace MyNamespace
 
 				protected override object Invoke(MoonSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataMethodsTests.SomeClass.SetComplexTypes(((System.Collections.Generic.List<string>)(pars[0])), ((System.Collections.Generic.IList<int>)(pars[1])), ((System.Collections.Generic.Dictionary<string, int>)(pars[2])), ((string[])(pars[3])), ((int[])(pars[4])));
+					return ((MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataMethodsTests.SomeClass)obj).SetComplexTypes(((System.Collections.Generic.List<string>)(pars[0])), ((System.Collections.Generic.IList<int>)(pars[1])), ((System.Collections.Generic.Dictionary<string, int>)(pars[2])), ((string[])(pars[3])), ((int[])(pars[4])));
 				}
 			}
 
@@ -10519,9 +10519,9 @@ namespace MyNamespace
 				{
 					if ((argscount <= 9))
 					{
-						return MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataMethodsTests.SomeClass.ConcatS(((int)(pars[0])), ((string)(pars[1])), ((System.IComparable)(pars[2])), ((bool)(pars[3])), ((System.Collections.Generic.List<object>)(pars[4])), ((System.Collections.Generic.IEnumerable<object>)(pars[5])), ((System.Text.StringBuilder)(pars[6])), ((System.Collections.Generic.Dictionary<object, object>)(pars[7])), ((MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataMethodsTests.SomeClass)(pars[8])));
+						return ((MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataMethodsTests.SomeClass)obj).ConcatS(((int)(pars[0])), ((string)(pars[1])), ((System.IComparable)(pars[2])), ((bool)(pars[3])), ((System.Collections.Generic.List<object>)(pars[4])), ((System.Collections.Generic.IEnumerable<object>)(pars[5])), ((System.Text.StringBuilder)(pars[6])), ((System.Collections.Generic.Dictionary<object, object>)(pars[7])), ((MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataMethodsTests.SomeClass)(pars[8])));
 					}
-					return MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataMethodsTests.SomeClass.ConcatS(((int)(pars[0])), ((string)(pars[1])), ((System.IComparable)(pars[2])), ((bool)(pars[3])), ((System.Collections.Generic.List<object>)(pars[4])), ((System.Collections.Generic.IEnumerable<object>)(pars[5])), ((System.Text.StringBuilder)(pars[6])), ((System.Collections.Generic.Dictionary<object, object>)(pars[7])), ((MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataMethodsTests.SomeClass)(pars[8])), ((int)(pars[9])));
+					return ((MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataMethodsTests.SomeClass)obj).ConcatS(((int)(pars[0])), ((string)(pars[1])), ((System.IComparable)(pars[2])), ((bool)(pars[3])), ((System.Collections.Generic.List<object>)(pars[4])), ((System.Collections.Generic.IEnumerable<object>)(pars[5])), ((System.Text.StringBuilder)(pars[6])), ((System.Collections.Generic.Dictionary<object, object>)(pars[7])), ((MoonSharp.Interpreter.Tests.EndToEnd.VtUserDataMethodsTests.SomeClass)(pars[8])), ((int)(pars[9])));
 				}
 			}
 
@@ -13324,7 +13324,7 @@ namespace MyNamespace
 
 				protected override object Invoke(MoonSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return MoonSharp.Interpreter.Tests.EndToEnd.UserDataMethodsTests.SomeClass.SetComplexRecursive(((System.Collections.Generic.List<int[]>)(pars[0])));
+					return ((MoonSharp.Interpreter.Tests.EndToEnd.UserDataMethodsTests.SomeClass)obj).SetComplexRecursive(((System.Collections.Generic.List<int[]>)(pars[0])));
 				}
 			}
 
@@ -13343,7 +13343,7 @@ namespace MyNamespace
 
 				protected override object Invoke(MoonSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return MoonSharp.Interpreter.Tests.EndToEnd.UserDataMethodsTests.SomeClass.SetComplexTypes(((System.Collections.Generic.List<string>)(pars[0])), ((System.Collections.Generic.IList<int>)(pars[1])), ((System.Collections.Generic.Dictionary<string, int>)(pars[2])), ((string[])(pars[3])), ((int[])(pars[4])));
+					return ((MoonSharp.Interpreter.Tests.EndToEnd.UserDataMethodsTests.SomeClass)obj).SetComplexTypes(((System.Collections.Generic.List<string>)(pars[0])), ((System.Collections.Generic.IList<int>)(pars[1])), ((System.Collections.Generic.Dictionary<string, int>)(pars[2])), ((string[])(pars[3])), ((int[])(pars[4])));
 				}
 			}
 
@@ -13369,9 +13369,9 @@ namespace MyNamespace
 				{
 					if ((argscount <= 9))
 					{
-						return MoonSharp.Interpreter.Tests.EndToEnd.UserDataMethodsTests.SomeClass.ConcatS(((int)(pars[0])), ((string)(pars[1])), ((System.IComparable)(pars[2])), ((bool)(pars[3])), ((System.Collections.Generic.List<object>)(pars[4])), ((System.Collections.Generic.IEnumerable<object>)(pars[5])), ((System.Text.StringBuilder)(pars[6])), ((System.Collections.Generic.Dictionary<object, object>)(pars[7])), ((MoonSharp.Interpreter.Tests.EndToEnd.UserDataMethodsTests.SomeClass)(pars[8])));
+						return ((MoonSharp.Interpreter.Tests.EndToEnd.UserDataMethodsTests.SomeClass)obj).ConcatS(((int)(pars[0])), ((string)(pars[1])), ((System.IComparable)(pars[2])), ((bool)(pars[3])), ((System.Collections.Generic.List<object>)(pars[4])), ((System.Collections.Generic.IEnumerable<object>)(pars[5])), ((System.Text.StringBuilder)(pars[6])), ((System.Collections.Generic.Dictionary<object, object>)(pars[7])), ((MoonSharp.Interpreter.Tests.EndToEnd.UserDataMethodsTests.SomeClass)(pars[8])));
 					}
-					return MoonSharp.Interpreter.Tests.EndToEnd.UserDataMethodsTests.SomeClass.ConcatS(((int)(pars[0])), ((string)(pars[1])), ((System.IComparable)(pars[2])), ((bool)(pars[3])), ((System.Collections.Generic.List<object>)(pars[4])), ((System.Collections.Generic.IEnumerable<object>)(pars[5])), ((System.Text.StringBuilder)(pars[6])), ((System.Collections.Generic.Dictionary<object, object>)(pars[7])), ((MoonSharp.Interpreter.Tests.EndToEnd.UserDataMethodsTests.SomeClass)(pars[8])), ((int)(pars[9])));
+					return ((MoonSharp.Interpreter.Tests.EndToEnd.UserDataMethodsTests.SomeClass)obj).ConcatS(((int)(pars[0])), ((string)(pars[1])), ((System.IComparable)(pars[2])), ((bool)(pars[3])), ((System.Collections.Generic.List<object>)(pars[4])), ((System.Collections.Generic.IEnumerable<object>)(pars[5])), ((System.Text.StringBuilder)(pars[6])), ((System.Collections.Generic.Dictionary<object, object>)(pars[7])), ((MoonSharp.Interpreter.Tests.EndToEnd.UserDataMethodsTests.SomeClass)(pars[8])), ((int)(pars[9])));
 				}
 			}
 
@@ -14018,8 +14018,10 @@ namespace MyNamespace
 
 				protected override object Invoke(MoonSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					((System.Collections.Generic.Dictionary<int, int>)(obj)).GetObjectData(((System.Runtime.Serialization.SerializationInfo)(pars[0])), ((System.Runtime.Serialization.StreamingContext)(pars[1])));
-					return MoonSharp.Interpreter.DynValue.Void;
+#pragma warning disable SYSLIB0051 // Type or member is obsolete
+                    ((System.Collections.Generic.Dictionary<int, int>)(obj)).GetObjectData(((System.Runtime.Serialization.SerializationInfo)(pars[0])), ((System.Runtime.Serialization.StreamingContext)(pars[1])));
+#pragma warning restore SYSLIB0051 // Type or member is obsolete
+                    return MoonSharp.Interpreter.DynValue.Void;
 				}
 			}
 
@@ -14297,7 +14299,7 @@ namespace MyNamespace
 
 				protected override object Invoke(MoonSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return MoonSharp.Interpreter.Tests.EndToEnd.UserDataOverloadsTests.OverloadsTestClass.Method1(((bool)(pars[0])));
+					return ((MoonSharp.Interpreter.Tests.EndToEnd.UserDataOverloadsTests.OverloadsTestClass)obj).Method1(((bool)(pars[0])));
 				}
 			}
 

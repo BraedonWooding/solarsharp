@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace MoonSharp.Interpreter.Tests.EndToEnd
 {
-	[TestFixture]
-	class CoroutineTests
-	{
-		[Test]
-		public void Coroutine_Basic()
-		{
-			string script = @"
+    [TestFixture]
+    internal class CoroutineTests
+    {
+        [Test]
+        public void Coroutine_Basic()
+        {
+            string script = @"
 				s = ''
 
 				function foo()
@@ -42,16 +38,19 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 				return s;
 				";
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.String, res.Type);
-			Assert.AreEqual("1-5;2-6;3-7;4-8;", res.String);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.String));
+                Assert.That(res.String, Is.EqualTo("1-5;2-6;3-7;4-8;"));
+            });
+        }
 
-		[Test]
-		public void Coroutine_Wrap()
-		{
-			string script = @"
+        [Test]
+        public void Coroutine_Wrap()
+        {
+            string script = @"
 				s = ''
 
 				function foo()
@@ -81,16 +80,19 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 				return s;
 				";
 
-			DynValue res = Script.RunString(script);
+            DynValue res = Script.RunString(script);
 
-			Assert.AreEqual(DataType.String, res.Type);
-			Assert.AreEqual("1-5;2-6;3-7;4-8;", res.String);
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.String));
+                Assert.That(res.String, Is.EqualTo("1-5;2-6;3-7;4-8;"));
+            });
+        }
 
-		[Test]
-		public void Coroutine_ClrBoundaryHandling()
-		{
-			string code = @"
+        [Test]
+        public void Coroutine_ClrBoundaryHandling()
+        {
+            string code = @"
 				function a()
 					callback(b)
 				end
@@ -104,28 +106,34 @@ namespace MoonSharp.Interpreter.Tests.EndToEnd
 				return coroutine.resume(c);		
 				";
 
-			// Load the code and get the returned function
-			Script script = new Script();
+            // Load the code and get the returned function
+            Script script = new();
 
-			script.Globals["callback"] = DynValue.NewCallback(
-				(ctx, args) => args[0].Function.Call()
-				);
+            script.Globals["callback"] = DynValue.NewCallback(
+                (ctx, args) => args[0].Function.Call()
+                );
 
-			DynValue ret = script.DoString(code);
+            DynValue ret = script.DoString(code);
 
-			Assert.AreEqual(DataType.Tuple, ret.Type);
-			Assert.AreEqual(2, ret.Tuple.Length);
-			Assert.AreEqual(DataType.Boolean, ret.Tuple[0].Type);
-			Assert.AreEqual(false, ret.Tuple[0].Boolean);
-			Assert.AreEqual(DataType.String, ret.Tuple[1].Type);
-			Assert.IsTrue(ret.Tuple[1].String.EndsWith("attempt to yield across a CLR-call boundary"));
-		}
+            Assert.Multiple(() =>
+            {
+                Assert.That(ret.Type, Is.EqualTo(DataType.Tuple));
+                Assert.That(ret.Tuple.Length, Is.EqualTo(2));
+            });
+            Assert.Multiple(() =>
+            {
+                Assert.That(ret.Tuple[0].Type, Is.EqualTo(DataType.Boolean));
+                Assert.That(ret.Tuple[0].Boolean, Is.EqualTo(false));
+                Assert.That(ret.Tuple[1].Type, Is.EqualTo(DataType.String));
+            });
+            Assert.That(ret.Tuple[1].String.EndsWith("attempt to yield across a CLR-call boundary"), Is.True);
+        }
 
-		[Test]
-		public void Coroutine_VariousErrorHandling()
-		{
-			string last = "";
-			string code = @"
+        [Test]
+        public void Coroutine_VariousErrorHandling()
+        {
+            string last = "";
+            string code = @"
 
 function checkresume(step, ex, ey)
 	local x, y = coroutine.resume(c)
@@ -158,20 +166,20 @@ checkresume(6, false, 'cannot resume dead coroutine');
 
 				";
 
-			// Load the code and get the returned function
-			Script script = new Script();
+            // Load the code and get the returned function
+            Script script = new();
 
-			script.Options.DebugPrint = (s) => last = s;
+            script.Options.DebugPrint = (s) => last = s;
 
-			script.DoString(code);
+            script.DoString(code);
 
-			Assert.AreEqual(last, "2");
-		}
+            Assert.That(last, Is.EqualTo("2"));
+        }
 
-		[Test]
-		public void Coroutine_Direct_Resume()
-		{
-			string code = @"
+        [Test]
+        public void Coroutine_Direct_Resume()
+        {
+            string code = @"
 				return function()
 					local x = 0
 					while true do
@@ -184,29 +192,29 @@ checkresume(6, false, 'cannot resume dead coroutine');
 				end
 				";
 
-			// Load the code and get the returned function
-			Script script = new Script();
-			DynValue function = script.DoString(code);
+            // Load the code and get the returned function
+            Script script = new();
+            DynValue function = script.DoString(code);
 
-			// Create the coroutine in C#
-			DynValue coroutine = script.CreateCoroutine(function);
+            // Create the coroutine in C#
+            DynValue coroutine = script.CreateCoroutine(function);
 
-			// Loop the coroutine 
-			string ret = "";
-			while (coroutine.Coroutine.State != CoroutineState.Dead)
-			{
-				DynValue x = coroutine.Coroutine.Resume();
-				ret = ret + x.ToString();
-			}
+            // Loop the coroutine 
+            string ret = "";
+            while (coroutine.Coroutine.State != CoroutineState.Dead)
+            {
+                DynValue x = coroutine.Coroutine.Resume();
+                ret = ret + x.ToString();
+            }
 
-			Assert.AreEqual("1234567", ret);
-		}
+            Assert.That(ret, Is.EqualTo("1234567"));
+        }
 
 
-		[Test]
-		public void Coroutine_Direct_AsEnumerable()
-		{
-			string code = @"
+        [Test]
+        public void Coroutine_Direct_AsEnumerable()
+        {
+            string code = @"
 				return function()
 					local x = 0
 					while true do
@@ -219,29 +227,29 @@ checkresume(6, false, 'cannot resume dead coroutine');
 				end
 				";
 
-			// Load the code and get the returned function
-			Script script = new Script();
-			DynValue function = script.DoString(code);
+            // Load the code and get the returned function
+            Script script = new();
+            DynValue function = script.DoString(code);
 
-			// Create the coroutine in C#
-			DynValue coroutine = script.CreateCoroutine(function);
+            // Create the coroutine in C#
+            DynValue coroutine = script.CreateCoroutine(function);
 
-			// Loop the coroutine 
-			string ret = "";
+            // Loop the coroutine 
+            string ret = "";
 
-			foreach (DynValue x in coroutine.Coroutine.AsTypedEnumerable())
-			{
-				ret = ret + x.ToString();
-			}
+            foreach (DynValue x in coroutine.Coroutine.AsTypedEnumerable())
+            {
+                ret = ret + x.ToString();
+            }
 
-			Assert.AreEqual("1234567", ret);
-		}
+            Assert.That(ret, Is.EqualTo("1234567"));
+        }
 
 
-		[Test]
-		public void Coroutine_AutoYield()
-		{
-			string code = @"
+        [Test]
+        public void Coroutine_AutoYield()
+        {
+            string code = @"
 				function fib(n)
 					if (n == 0 or n == 1) then
 						return 1;
@@ -251,43 +259,46 @@ checkresume(6, false, 'cannot resume dead coroutine');
 				end
 				";
 
-			// Load the code and get the returned function
-			Script script = new Script(CoreModules.None);
-			script.DoString(code);
+            // Load the code and get the returned function
+            Script script = new(CoreModules.None);
+            script.DoString(code);
 
-			// get the function
-			DynValue function = script.Globals.Get("fib");
+            // get the function
+            DynValue function = script.Globals.Get("fib");
 
-			// Create the coroutine in C#
-			DynValue coroutine = script.CreateCoroutine(function);
+            // Create the coroutine in C#
+            DynValue coroutine = script.CreateCoroutine(function);
 
-			// Set the automatic yield counter every 10 instructions. 
-			// 10 is a too small! Use a much bigger value in your code to avoid interrupting too often!
-			coroutine.Coroutine.AutoYieldCounter = 10;
+            // Set the automatic yield counter every 10 instructions. 
+            // 10 is a too small! Use a much bigger value in your code to avoid interrupting too often!
+            coroutine.Coroutine.AutoYieldCounter = 10;
 
-			int cycles = 0;
-			DynValue result = null;
+            int cycles = 0;
+            DynValue result = null;
 
-			// Cycle until we get that the coroutine has returned something useful and not an automatic yield..
-			for (result = coroutine.Coroutine.Resume(8); 
-				result.Type == DataType.YieldRequest;
-				result = coroutine.Coroutine.Resume()) 
-			{
-				cycles += 1;
-			}
+            // Cycle until we get that the coroutine has returned something useful and not an automatic yield..
+            for (result = coroutine.Coroutine.Resume(8);
+                result.Type == DataType.YieldRequest;
+                result = coroutine.Coroutine.Resume())
+            {
+                cycles += 1;
+            }
 
-			// Check the values of the operation
-			Assert.AreEqual(DataType.Number, result.Type);
-			Assert.AreEqual(34, result.Number);
+            Assert.Multiple(() =>
+            {
+                // Check the values of the operation
+                Assert.That(result.Type, Is.EqualTo(DataType.Number));
+                Assert.That(result.Number, Is.EqualTo(34));
+            });
 
-			// Check the autoyield actually triggered
-			Assert.IsTrue(cycles > 10);
-		}
+            // Check the autoyield actually triggered
+            Assert.That(cycles > 10, Is.True);
+        }
 
 
 
 
 
 
-	}
+    }
 }
