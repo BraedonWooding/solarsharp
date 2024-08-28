@@ -284,7 +284,7 @@
 
             for (const [benchName, benches] of groupBy(benchSet.entries(), function(k) {
               const match = k[0].match(/Benchmark.Benchmarks.Benchmark\(Implementation: (.*?), Test: (.*?)\)/)
-              k[1].bench.name = match[1]
+              k[1][0].bench.name = match[1]
               return match[2]
             }).entries()) {
               renderGraph(graphsElem, benchName, benches)
