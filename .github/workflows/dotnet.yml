@@ -53,7 +53,7 @@ jobs:
           # What benchmark tool the output.txt came from
           tool: 'benchmarkdotnet'
           # Where the output from the benchmark tool is stored
-          output-file-path: Benchmark/bin/Release/net8.0/BenchmarkDotNet.Artifacts/results/Sample.Benchmarks-report-full-compressed.json
+          output-file-path: Benchmark/bin/Release/net8.0/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
           # Where the previous data file is stored
           external-data-json-path: ./cache/benchmark-data.json
           # Workflow will fail when an alert happens
