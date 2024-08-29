@@ -16,7 +16,7 @@ namespace Benchmark
         public IEnumerable<AImplementation> Impls()
         {
             // crashing for now
-            //yield return new NeoImplementation();
+            yield return new NeoImplementation();
             yield return new KeraImplementation();
             yield return new MoonSharpImplementation();
             yield return new NLuaImplementation();
@@ -40,7 +40,7 @@ namespace Benchmark
         {
             var t = Task.Run(() => Implementation.Run(Test.Contents));
             // limiting execution to 2 mins
-            var winner = await Task.WhenAny(t, Task.Delay(TimeSpan.FromSeconds(120)));
+            var winner = await Task.WhenAny(t, Task.Delay(TimeSpan.FromSeconds(10)));
             if (winner == t)
             {
                 // success
