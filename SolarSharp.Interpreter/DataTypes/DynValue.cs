@@ -304,20 +304,6 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Creates a new request for a yield of the current coroutine.
-        /// </summary>
-        /// <param name="args">The yield argumenst.</param>
-        /// <returns></returns>
-        internal static DynValue NewForcedYieldReq()
-        {
-            return new DynValue()
-            {
-                m_Object = new YieldRequest() { Forced = true },
-                m_Type = DataType.YieldRequest,
-            };
-        }
-
-        /// <summary>
         /// Creates a new tuple initialized to the specified values.
         /// </summary>
         public static DynValue NewTuple(params DynValue[] values)

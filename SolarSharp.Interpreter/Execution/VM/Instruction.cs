@@ -7,6 +7,12 @@ using SolarSharp.Interpreter.Debugging;
 
 namespace SolarSharp.Interpreter.Execution.VM
 {
+    /// <summary>
+    /// The bytecode instruction that is executed on our CLR VM
+    /// 
+    /// This is very large at 56 bytes per instruction given lua
+    /// can store their bytecode instructions in 4 bytes we clearly can do better.
+    /// </summary>
     internal class Instruction
     {
         internal OpCode OpCode;

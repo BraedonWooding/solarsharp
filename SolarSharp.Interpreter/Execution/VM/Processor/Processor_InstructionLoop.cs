@@ -13,15 +13,12 @@ namespace SolarSharp.Interpreter.Execution.VM
     {
         private const int YIELD_SPECIAL_TRAP = -99;
 
-        internal long AutoYieldCounter = 0;
-
         private DynValue Processing_Loop(int instructionPtr)
         {
             // This is the main loop of the processor, has a weird control flow and needs to be as fast as possible.
             // This sentence is just a convoluted way to say "don't complain about gotos".
 
             long executedInstructions = 0;
-            bool canAutoYield = (AutoYieldCounter > 0) && m_CanYield && (this.State != CoroutineState.Main);
 
         repeat_execution:
 
@@ -37,13 +34,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                     }
 
                     ++executedInstructions;
-
-                    if (canAutoYield && executedInstructions > AutoYieldCounter)
-                    {
-                        m_SavedInstructionPtr = instructionPtr;
-                        return DynValue.NewForcedYieldReq();
-                    }
-
                     ++instructionPtr;
 
                     switch (i.OpCode)
@@ -313,10 +303,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         return_to_native_code:
             return m_ValueStack.Pop();
-
-
         }
-
 
         internal string PerformMessageDecorationBeforeUnwind(DynValue messageHandler, string decoratedMessage, SourceRef sourceRef)
         {
@@ -350,8 +337,6 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             return decoratedMessage;
         }
-
-
 
         private void AssignLocal(SymbolRef symref, DynValue value)
         {
@@ -394,7 +379,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             m_ValueStack.Set(i.NumVal, v2);
             m_ValueStack.Set(i.NumVal2, v1);
         }
-
 
         private DynValue GetStoreValue(Instruction i)
         {
@@ -522,7 +506,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             m_ValueStack.Push(DynValue.NewTuple(f, s, var));
         }
 
-
         private int ExecJFor(Instruction i, int instructionPtr)
         {
             double val = m_ValueStack.Peek(0).Number;
@@ -536,8 +519,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             else
                 return instructionPtr;
         }
-
-
 
         private void ExecIncr(Instruction i)
         {
@@ -556,7 +537,6 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             top.AssignNumber(top.Number + btm.Number);
         }
-
 
         private void ExecCNot(Instruction i)
         {
@@ -629,7 +609,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-
         private void ExecArgs(Instruction I)
         {
             int numargs = (int)m_ValueStack.Peek(0).Number;
@@ -661,9 +640,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
             }
         }
-
-
-
 
         private int Internal_ExecCall(int argsCount, int instructionPtr, CallbackFunction handler = null,
             CallbackFunction continuation = null, bool thisCall = false, string debugText = null, DynValue unwindHandler = null)
@@ -825,8 +801,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             return retpoint;
         }
 
-
-
         private int Internal_CheckForTailRequests(Instruction i, int instructionPtr)
         {
             DynValue tail = m_ValueStack.Peek(0);
@@ -850,11 +824,8 @@ namespace SolarSharp.Interpreter.Execution.VM
                 return YIELD_SPECIAL_TRAP;
             }
 
-
             return instructionPtr;
         }
-
-
 
         private int JumpBool(Instruction i, bool expectedValueForJump, int instructionPtr)
         {
@@ -1285,7 +1256,6 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             // stack: base - index
             bool isNameIndex = i.OpCode == OpCode.IndexN;
-
             bool isMultiIndex = (i.OpCode == OpCode.IndexL);
 
             DynValue originalIdx = i.Value ?? m_ValueStack.Pop();
@@ -1294,7 +1264,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             while (nestedMetaOps > 0)
             {
                 --nestedMetaOps;
-
 
                 DynValue h;
                 if (obj.Type == DataType.Table)
@@ -1352,10 +1321,5 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             throw ScriptRuntimeException.LoopInIndex();
         }
-
-
-
-
-
     }
 }

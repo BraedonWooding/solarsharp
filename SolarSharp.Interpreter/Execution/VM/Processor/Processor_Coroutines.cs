@@ -48,23 +48,18 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 int entrypoint = 0;
 
-                if (m_State != CoroutineState.NotStarted && m_State != CoroutineState.Suspended && m_State != CoroutineState.ForceSuspended)
+                if (m_State != CoroutineState.NotStarted && m_State != CoroutineState.Suspended)
                     throw ScriptRuntimeException.CannotResumeNotSuspended(m_State);
 
                 if (m_State == CoroutineState.NotStarted)
                 {
+                    // TODO: I feel like this should just be m_SavedInstructionPtr = PushClr...
+                    //       then we just get rid of the argument to this function
                     entrypoint = PushClrToScriptStackFrame(CallStackItemFlags.ResumeEntryPoint, null, args);
                 }
                 else if (m_State == CoroutineState.Suspended)
                 {
                     m_ValueStack.Push(DynValue.NewTuple(args));
-                    entrypoint = m_SavedInstructionPtr;
-                }
-                else if (m_State == CoroutineState.ForceSuspended)
-                {
-                    if (args != null && args.Length > 0)
-                        throw new ArgumentException("When resuming a force-suspended coroutine, args must be empty.");
-
                     entrypoint = m_SavedInstructionPtr;
                 }
 
@@ -73,16 +68,8 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                 if (retVal.Type == DataType.YieldRequest)
                 {
-                    if (retVal.YieldRequest.Forced)
-                    {
-                        m_State = CoroutineState.ForceSuspended;
-                        return retVal;
-                    }
-                    else
-                    {
-                        m_State = CoroutineState.Suspended;
-                        return DynValue.NewTuple(retVal.YieldRequest.ReturnValues);
-                    }
+                    m_State = CoroutineState.Suspended;
+                    return DynValue.NewTuple(retVal.YieldRequest.ReturnValues);
                 }
                 else
                 {
