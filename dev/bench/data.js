@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724900662897,
+  "lastUpdate": 1724910548322,
   "repoUrl": "https://github.com/BraedonWooding/solarsharp",
   "entries": {
     "Benchmark": [
@@ -336,6 +336,84 @@ window.BENCHMARK_DATA = {
             "value": 12057.94766857006,
             "unit": "ns",
             "range": "± 785.732417688066"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "braedonww@gmail.com",
+            "name": "Braedon Wooding",
+            "username": "BraedonWooding"
+          },
+          "committer": {
+            "email": "braedonww@gmail.com",
+            "name": "Braedon Wooding",
+            "username": "BraedonWooding"
+          },
+          "distinct": true,
+          "id": "5cd73168c295e4685741659ac02f9100ef472b7c",
+          "message": "[Perf/Interperter]: Remove AutoYield\n\nThis was a feature that let you have the interpreter yield every X\ninstructions, the intention was to allow you to limit how much a script\ncould run in a given frame.\n\nThis sounds like a good idea but in practice doesn't work;\n- Games want to separate rendering from computation anyways this is what\n  TPS vs FPS represents.  You also want your LUA mods to execute the\n  same across all clients so you need them to execute their entire\n  \"tick\" within a tick, so switching a simple call into a for loop\n  just to spread TPS over multiple frames is a very complicated way to\n  solve that problem.  Instead just perform your rendering on a\n  separate thread...\n- You pay for the cost of managing the special forced yields,\n  this results in a compariosn on *every single instruction*.  In\n  practice most modern languages don't support instruction trapping down\n  to every singl eone, instead they do it on boundaries i.e. calling\n  into functions.",
+          "timestamp": "2024-08-29T15:37:30+10:00",
+          "tree_id": "1a18fd741f015347e88932d78f2c052d42f146bb",
+          "url": "https://github.com/BraedonWooding/solarsharp/commit/5cd73168c295e4685741659ac02f9100ef472b7c"
+        },
+        "date": 1724910547410,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 1613351.255580357,
+            "unit": "ns",
+            "range": "± 11067.485199922192"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: empty_test.lua)",
+            "value": 5273.570155779521,
+            "unit": "ns",
+            "range": "± 136.46550998446085"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 4067509.7265625,
+            "unit": "ns",
+            "range": "± 40517.61732365159"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: empty_test.lua)",
+            "value": 12202.978253682455,
+            "unit": "ns",
+            "range": "± 539.0390188459484"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 1611960.5153645833,
+            "unit": "ns",
+            "range": "± 14953.139074670136"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: empty_test.lua)",
+            "value": 5197.181037113584,
+            "unit": "ns",
+            "range": "± 253.60359010536348"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: empty_test.lua)",
+            "value": 101771.51891559103,
+            "unit": "ns",
+            "range": "± 2551.346599096026"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 3947788.775,
+            "unit": "ns",
+            "range": "± 36008.61854444085"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: empty_test.lua)",
+            "value": 12628.270559183757,
+            "unit": "ns",
+            "range": "± 692.7442868851618"
           }
         ]
       }
