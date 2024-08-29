@@ -35,7 +35,7 @@ local function abs(x)
 end
 
 xmin=-2.0	xmax=2.0	ymin=-2.0	ymax=2.0
-N=arg[1] or 256 
+N=256 
 
 function level(x,y)
  local c=complex(x,y)

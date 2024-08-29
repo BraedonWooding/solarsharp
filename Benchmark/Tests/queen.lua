@@ -1,4 +1,5 @@
-local N = tonumber(arg[1] or 8)    -- board size
+-- TODO: we should be able to do args[1] and have it not fail it should return nil 
+local N = tonumber(8)    -- board size
 
 -- check whether position (n,c) is free from attacks
 local function isplaceok (a, n, c)
