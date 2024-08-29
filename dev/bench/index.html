@@ -231,6 +231,7 @@
       
         }
       }
+      Chart.plugins.register(plugin);
 
       function renderAllChars(dataSets) {
 
@@ -317,7 +318,6 @@
               data,
               options,
             });
-            chart.register(plugin);
           }
 
           function groupBy(list, keyGetter) {
