@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724929970826,
+  "lastUpdate": 1724933023682,
   "repoUrl": "https://github.com/BraedonWooding/solarsharp",
   "entries": {
     "Benchmark": [
@@ -492,6 +492,216 @@ window.BENCHMARK_DATA = {
             "value": 12910.801413536072,
             "unit": "ns",
             "range": "± 220.53326856384786"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "braedonww@gmail.com",
+            "name": "Braedon Wooding",
+            "username": "BraedonWooding"
+          },
+          "committer": {
+            "email": "braedonww@gmail.com",
+            "name": "Braedon Wooding",
+            "username": "BraedonWooding"
+          },
+          "distinct": true,
+          "id": "9f692f2df7d0435037883d2edc0067c4bed46b13",
+          "message": "Set values for mandel/queen rather than args",
+          "timestamp": "2024-08-29T21:35:48+10:00",
+          "tree_id": "5c6282c62e43d8058ec0b782c987b31ff6db130d",
+          "url": "https://github.com/BraedonWooding/solarsharp/commit/9f692f2df7d0435037883d2edc0067c4bed46b13"
+        },
+        "date": 1724933022748,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: ack.lua)",
+            "value": 184821241.6,
+            "unit": "ns",
+            "range": "± 695866.634370108"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 1602062.1140625,
+            "unit": "ns",
+            "range": "± 11585.052679171387"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: empty_test.lua)",
+            "value": 5314.451402791341,
+            "unit": "ns",
+            "range": "± 290.74490498044713"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: heapsort.lua)",
+            "value": 76254906.45714286,
+            "unit": "ns",
+            "range": "± 299540.67972703354"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: mandel.lua)",
+            "value": 5917314776.8,
+            "unit": "ns",
+            "range": "± 14508307.14957355"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: queen.lua)",
+            "value": 9833702.394791666,
+            "unit": "ns",
+            "range": "± 35213.51243125888"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: sieve.lua)",
+            "value": 104900444.75384615,
+            "unit": "ns",
+            "range": "± 322597.88348137564"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: ack.lua)",
+            "value": 1199276431.5333333,
+            "unit": "ns",
+            "range": "± 13142598.927502956"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 4060222.6489583333,
+            "unit": "ns",
+            "range": "± 38520.96842642407"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: empty_test.lua)",
+            "value": 11688.315604654948,
+            "unit": "ns",
+            "range": "± 1242.2751220006094"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: heapsort.lua)",
+            "value": 654310441,
+            "unit": "ns",
+            "range": "± 7756080.04549847"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: queen.lua)",
+            "value": 40827525.169230774,
+            "unit": "ns",
+            "range": "± 433479.2744873363"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: sieve.lua)",
+            "value": 617399779.1428572,
+            "unit": "ns",
+            "range": "± 3034009.7003181186"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: ack.lua)",
+            "value": 182224766.14285713,
+            "unit": "ns",
+            "range": "± 783423.0555150497"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 1694540.812565104,
+            "unit": "ns",
+            "range": "± 57226.74163906333"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: empty_test.lua)",
+            "value": 5118.132065073649,
+            "unit": "ns",
+            "range": "± 237.85598320112146"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: heapsort.lua)",
+            "value": 76121574.92857143,
+            "unit": "ns",
+            "range": "± 200008.94114698409"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: mandel.lua)",
+            "value": 5915836061.133333,
+            "unit": "ns",
+            "range": "± 8635403.939454133"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: queen.lua)",
+            "value": 9816645.58984375,
+            "unit": "ns",
+            "range": "± 16416.501842321726"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: sieve.lua)",
+            "value": 103969710.17333333,
+            "unit": "ns",
+            "range": "± 176232.04777759482"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: ack.lua)",
+            "value": 192091092.4,
+            "unit": "ns",
+            "range": "± 1384284.1049806192"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: empty_test.lua)",
+            "value": 101738.22896634616,
+            "unit": "ns",
+            "range": "± 678.6194497293731"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: heapsort.lua)",
+            "value": 206540153.61904764,
+            "unit": "ns",
+            "range": "± 1525292.2653854175"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: queen.lua)",
+            "value": 11999954.458333334,
+            "unit": "ns",
+            "range": "± 32681.55178157412"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: sieve.lua)",
+            "value": 217726386.61538458,
+            "unit": "ns",
+            "range": "± 1638822.829534693"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: ack.lua)",
+            "value": 1138552356.6153846,
+            "unit": "ns",
+            "range": "± 4125109.9563621846"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 3968797.6869791667,
+            "unit": "ns",
+            "range": "± 28555.047314196283"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: empty_test.lua)",
+            "value": 12633.909031835095,
+            "unit": "ns",
+            "range": "± 621.9796586777684"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: heapsort.lua)",
+            "value": 671188352.4,
+            "unit": "ns",
+            "range": "± 6636348.429686084"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: queen.lua)",
+            "value": 41375796.95384614,
+            "unit": "ns",
+            "range": "± 279136.7382763332"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: sieve.lua)",
+            "value": 588173754.4285715,
+            "unit": "ns",
+            "range": "± 2672740.5555652683"
           }
         ]
       }
