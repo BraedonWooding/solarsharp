@@ -271,7 +271,7 @@
 
           function groupBy(list, keyGetter) {
               let map = new Map();
-              foreach (const item of list) {
+              for (const item of list) {
                  const key = keyGetter(item);
                  const collection = map.get(key);
                  if (!collection) {
