@@ -3,6 +3,7 @@ using BenchmarkDotNet.Attributes;
 
 namespace Benchmark
 {
+    [MaxIterationCount(30)]
     [JsonExporterAttribute.FullCompressed]
     public class Benchmarks
     {
