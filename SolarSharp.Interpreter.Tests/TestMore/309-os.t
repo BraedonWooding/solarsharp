@@ -120,7 +120,6 @@ else
     skip("io.popen not supported", 5)
 end
 
---]===]
 
 is(os.getenv('__IMPROBABLE__'), nil, "function getenv")
 
@@ -201,3 +200,5 @@ ok(fname ~= os.tmpname())
 -- End:
 -- vim: ft=lua expandtab shiftwidth=4:
 
+
+--]===]

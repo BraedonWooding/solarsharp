@@ -77,6 +77,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 return -1;
             }
         }
+
         private int Internal_InvokeBinaryMetaMethod(DynValue l, DynValue r, string eventName, int instructionPtr, DynValue extraPush = null)
         {
             var m = GetBinaryMetamethod(l, r, eventName);
@@ -96,9 +97,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                 return -1;
             }
         }
-
-
-
 
         private DynValue[] StackTopToArray(int items, bool pop)
         {

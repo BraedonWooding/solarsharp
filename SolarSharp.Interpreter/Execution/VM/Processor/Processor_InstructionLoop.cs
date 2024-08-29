@@ -18,8 +18,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             // This is the main loop of the processor, has a weird control flow and needs to be as fast as possible.
             // This sentence is just a convoluted way to say "don't complain about gotos".
 
-            long executedInstructions = 0;
-
         repeat_execution:
 
             try
@@ -33,7 +31,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                         ListenDebugger(i, instructionPtr);
                     }
 
-                    ++executedInstructions;
                     ++instructionPtr;
 
                     switch (i.OpCode)
@@ -56,51 +53,39 @@ namespace SolarSharp.Interpreter.Execution.VM
                             break;
                         case OpCode.Add:
                             instructionPtr = ExecAdd(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Concat:
                             instructionPtr = ExecConcat(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Neg:
                             instructionPtr = ExecNeg(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Sub:
                             instructionPtr = ExecSub(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Mul:
                             instructionPtr = ExecMul(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Div:
                             instructionPtr = ExecDiv(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Mod:
                             instructionPtr = ExecMod(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Power:
                             instructionPtr = ExecPower(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Eq:
                             instructionPtr = ExecEq(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.LessEq:
                             instructionPtr = ExecLessEq(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Less:
                             instructionPtr = ExecLess(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Len:
                             instructionPtr = ExecLen(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Call:
                         case OpCode.ThisCall:
@@ -119,7 +104,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                         case OpCode.JfOrPop:
                         case OpCode.JtOrPop:
                             instructionPtr = ExecShortCircuitingOperator(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.JNil:
                             {
@@ -128,15 +112,12 @@ namespace SolarSharp.Interpreter.Execution.VM
                                 if (v.Type == DataType.Nil || v.Type == DataType.Void)
                                     instructionPtr = i.NumVal;
                             }
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Jf:
                             instructionPtr = JumpBool(i, false, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Jump:
                             instructionPtr = i.NumVal;
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.MkTuple:
                             ExecMkTuple(i);
@@ -170,7 +151,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                             break;
                         case OpCode.JFor:
                             instructionPtr = ExecJFor(i, instructionPtr);
-                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.NewTable:
                             if (i.NumVal == 0)
@@ -227,7 +207,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
 
             yield_to_calling_coroutine:
-
                 DynValue yieldRequest = m_ValueStack.Pop().ToScalar();
 
                 if (m_CanYield)
@@ -236,7 +215,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                     throw ScriptRuntimeException.CannotYieldMain();
                 else
                     throw ScriptRuntimeException.CannotYield();
-
             }
             catch (InterpreterException ex)
             {
@@ -266,7 +244,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                     if (c.ErrorHandlerBeforeUnwind != null)
                         ex.DecoratedMessage = PerformMessageDecorationBeforeUnwind(c.ErrorHandlerBeforeUnwind, ex.DecoratedMessage, GetCurrentSourceRef(instructionPtr));
                 }
-
 
                 while (m_ExecutionStack.Count > 0)
                 {
@@ -648,6 +625,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             CallStackItemFlags flags = (thisCall ? CallStackItemFlags.MethodCall : CallStackItemFlags.None);
 
             // if TCO threshold reached
+            // TODO: Remove this, I doubt it helps with performance since we already have support for tail call...
             if ((m_ExecutionStack.Count > this.m_Script.Options.TailCallOptimizationThreshold && m_ExecutionStack.Count > 1)
                 || (m_ValueStack.Count > this.m_Script.Options.TailCallOptimizationThreshold && m_ValueStack.Count > 1))
             {
@@ -671,8 +649,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                     }
                 }
             }
-
-
 
             if (fn.Type == DataType.ClrFunction)
             {
@@ -763,9 +739,6 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             return retpoint;
         }
-
-
-
 
         private int ExecRet(Instruction i)
         {
@@ -1118,13 +1091,11 @@ namespace SolarSharp.Interpreter.Execution.VM
                     return ip;
                 else if (r.Type == DataType.Table)
                     m_ValueStack.Push(DynValue.NewNumber(r.Table.Length));
-
                 else throw ScriptRuntimeException.LenOnInvalidType(r);
             }
 
             return instructionPtr;
         }
-
 
         private int ExecConcat(Instruction i, int instructionPtr)
         {
@@ -1145,9 +1116,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 if (ip >= 0) return ip;
                 else throw ScriptRuntimeException.ConcatOnNonString(l, r);
             }
-
         }
-
 
         private void ExecTblInitI(Instruction i)
         {
