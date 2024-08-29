@@ -231,8 +231,6 @@
       
         }
       }
-      
-      Chart.register(plugin);
 
       function renderAllChars(dataSets) {
 
@@ -314,11 +312,12 @@
               },
             };
 
-            new Chart(canvas, {
+            var chart = new Chart(canvas, {
               type: 'line',
               data,
               options,
             });
+            chart.register(plugin);
           }
 
           function groupBy(list, keyGetter) {
