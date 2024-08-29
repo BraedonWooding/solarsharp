@@ -1,7 +1,7 @@
 ﻿#if !USE_DYNAMIC_STACKS
 
 using System;
-using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace SolarSharp.Interpreter.DataStructs
 {
@@ -9,59 +9,58 @@ namespace SolarSharp.Interpreter.DataStructs
     /// A preallocated, non-resizable, stack
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal class FastStack<T> : IList<T>
+    internal class FastStack<T>
     {
         private readonly T[] m_Storage;
         private int m_HeadIdx = 0;
 
+        public T[] Storage => m_Storage;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FastStack(int maxCapacity)
         {
             m_Storage = new T[maxCapacity];
         }
 
-        public T this[int index]
-        {
-            get { return m_Storage[index]; }
-            set { m_Storage[index] = value; }
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Push(T item)
         {
             m_Storage[m_HeadIdx++] = item;
             return item;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Expand(int size)
         {
             m_HeadIdx += size;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Zero(int from, int to)
         {
             Array.Clear(m_Storage, from, to - from + 1);
         }
 
-        private void Zero(int index)
-        {
-            m_Storage[index] = default;
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Peek(int idxofs = 0)
         {
             T item = m_Storage[m_HeadIdx - 1 - idxofs];
             return item;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(int idxofs, T item)
         {
             m_Storage[m_HeadIdx - 1 - idxofs] = item;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void CropAtCount(int p)
         {
             RemoveLast(Count - p);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RemoveLast(int cnt = 1)
         {
             if (cnt == 1)
@@ -77,6 +76,7 @@ namespace SolarSharp.Interpreter.DataStructs
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Pop()
         {
             --m_HeadIdx;
@@ -85,100 +85,14 @@ namespace SolarSharp.Interpreter.DataStructs
             return retval;
         }
 
-        public void Clear()
-        {
-            Array.Clear(m_Storage, 0, m_Storage.Length);
-            m_HeadIdx = 0;
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ClearUsed()
         {
             Array.Clear(m_Storage, 0, m_HeadIdx);
             m_HeadIdx = 0;
         }
 
-        public int Count
-        {
-            get { return m_HeadIdx; }
-        }
-
-
-        #region IList<T> Impl.
-
-        int IList<T>.IndexOf(T item)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IList<T>.Insert(int index, T item)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IList<T>.RemoveAt(int index)
-        {
-            throw new NotImplementedException();
-        }
-
-        T IList<T>.this[int index]
-        {
-            get
-            {
-                return this[index];
-            }
-            set
-            {
-                this[index] = value;
-            }
-        }
-
-        void ICollection<T>.Add(T item)
-        {
-            Push(item);
-        }
-
-        void ICollection<T>.Clear()
-        {
-            Clear();
-        }
-
-        bool ICollection<T>.Contains(T item)
-        {
-            throw new NotImplementedException();
-        }
-
-        void ICollection<T>.CopyTo(T[] array, int arrayIndex)
-        {
-            throw new NotImplementedException();
-        }
-
-        int ICollection<T>.Count
-        {
-            get { return Count; }
-        }
-
-        bool ICollection<T>.IsReadOnly
-        {
-            get { return false; }
-        }
-
-        bool ICollection<T>.Remove(T item)
-        {
-            throw new NotImplementedException();
-        }
-
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
-        {
-            throw new NotImplementedException();
-        }
-
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
-
+        public int Count => m_HeadIdx;
     }
 }
 

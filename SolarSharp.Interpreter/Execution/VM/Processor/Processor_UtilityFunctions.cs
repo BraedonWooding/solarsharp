@@ -113,7 +113,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 for (int i = 0; i < items; i++)
                 {
-                    values[i] = m_ValueStack[m_ValueStack.Count - 1 - i];
+                    values[i] = m_ValueStack.Storage[m_ValueStack.Count - 1 - i];
                 }
             }
 
@@ -135,7 +135,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 for (int i = 0; i < items; i++)
                 {
-                    values[items - 1 - i] = m_ValueStack[m_ValueStack.Count - 1 - i];
+                    values[items - 1 - i] = m_ValueStack.Storage[m_ValueStack.Count - 1 - i];
                 }
             }
 

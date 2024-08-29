@@ -17,19 +17,18 @@ namespace SolarSharp.Interpreter.Execution.VM
         {
             // This is the main loop of the processor, has a weird control flow and needs to be as fast as possible.
             // This sentence is just a convoluted way to say "don't complain about gotos".
-
         repeat_execution:
-
             try
             {
                 while (true)
                 {
                     Instruction i = m_RootChunk.Code[instructionPtr];
 
-                    if (m_Debug.DebuggerAttached != null)
-                    {
-                        ListenDebugger(i, instructionPtr);
-                    }
+                    // TODO: Decide on debugger implementation, for now presuming no implementation.
+                    //if (m_Debug.DebuggerAttached != null)
+                    //{
+                    //    ListenDebugger(i, instructionPtr);
+                    //}
 
                     ++instructionPtr;
 
@@ -394,12 +393,10 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private void ExecMkTuple(Instruction i)
         {
-            Slice<DynValue> slice = new(m_ValueStack, m_ValueStack.Count - i.NumVal, i.NumVal, false);
+            Slice<DynValue> slice = new(m_ValueStack.Storage, m_ValueStack.Count - i.NumVal, i.NumVal, false);
 
             var v = Internal_AdjustTuple(slice);
-
             m_ValueStack.RemoveLast(i.NumVal);
-
             m_ValueStack.Push(DynValue.NewTuple(v));
         }
 
@@ -582,7 +579,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
             else
             {
-                return new Slice<DynValue>(m_ValueStack, m_ValueStack.Count - numargs - offsFromTop, numargs, false);
+                return new Slice<DynValue>(m_ValueStack.Storage, m_ValueStack.Count - numargs - offsFromTop, numargs, false);
             }
         }
 

@@ -4,7 +4,6 @@ using SolarSharp.Interpreter.Execution.Scopes;
 using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Lexer;
 
-
 namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class WhileStatement : Statement
@@ -43,7 +42,6 @@ namespace SolarSharp.Interpreter.Tree.Statements
             {
                 Scope = m_StackFrame
             };
-
 
             bc.LoopTracker.Loops.Push(L);
 
