@@ -203,7 +203,7 @@
         return [found, res];
       };
       
-      const getLabelHitboxes = (scales) => (Object.values(scales).map((s) => ({
+      const getLabelHitboxes = (scales) => (Object.values(scales).filter((s) => !!s._labelItems).map((s) => ({
         scaleId: s.id,
         labels: s._labelItems.map((e, i) => ({
           x: e.translation[0] - s._labelSizes.widths[i],
