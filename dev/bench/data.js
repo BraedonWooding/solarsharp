@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724910548322,
+  "lastUpdate": 1724929970826,
   "repoUrl": "https://github.com/BraedonWooding/solarsharp",
   "entries": {
     "Benchmark": [
@@ -414,6 +414,84 @@ window.BENCHMARK_DATA = {
             "value": 12628.270559183757,
             "unit": "ns",
             "range": "± 692.7442868851618"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "braedonww@gmail.com",
+            "name": "Braedon Wooding",
+            "username": "BraedonWooding"
+          },
+          "committer": {
+            "email": "braedonww@gmail.com",
+            "name": "Braedon Wooding",
+            "username": "BraedonWooding"
+          },
+          "distinct": true,
+          "id": "6134cb9b6ca5c396e6c3c492b58c57f3cc3f3277",
+          "message": "[Perf/Interpreter]: Remove some yield cases from opcodes\n\nSome opcodes had special handling for yield but this wasn't actually\npossible to be hit (to my knowledge) for example ExecEq/Add/... all\nchecked whether or not the instructionPtr would be < 0 and if so threw\nexceptions so having another check checking if the value is == -99 after\nthat doesn't make any sense...\n\nThis is unlikely to significantly improve performance because well it's\njust another conditional on each loop but given the last one had about a\n50ms impact I would expect something around that.\n\nThere are still some cases that check it (where it's possible to be hit)\nbut I'll probably remove those too.\n\nI want to change how coroutines are handled anyways for performance\nreasons (they should operate more like a c# coroutine).",
+          "timestamp": "2024-08-29T21:01:06+10:00",
+          "tree_id": "91c3a1cc342fad823eac610d206ef4e100220c37",
+          "url": "https://github.com/BraedonWooding/solarsharp/commit/6134cb9b6ca5c396e6c3c492b58c57f3cc3f3277"
+        },
+        "date": 1724929970200,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 1677791.8960658482,
+            "unit": "ns",
+            "range": "± 46566.057489410116"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: empty_test.lua)",
+            "value": 5439.568394380457,
+            "unit": "ns",
+            "range": "± 106.22780323962694"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 4081401.909375,
+            "unit": "ns",
+            "range": "± 45426.361004359045"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: empty_test.lua)",
+            "value": 12776.438686116537,
+            "unit": "ns",
+            "range": "± 757.1767503563757"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 1742264.9343098958,
+            "unit": "ns",
+            "range": "± 84141.66652207864"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: empty_test.lua)",
+            "value": 5412.583927154541,
+            "unit": "ns",
+            "range": "± 124.49291488608354"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: empty_test.lua)",
+            "value": 98442.43623234675,
+            "unit": "ns",
+            "range": "± 2501.215091361995"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 4015850.927604167,
+            "unit": "ns",
+            "range": "± 28449.531518480722"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: empty_test.lua)",
+            "value": 12910.801413536072,
+            "unit": "ns",
+            "range": "± 220.53326856384786"
           }
         ]
       }
