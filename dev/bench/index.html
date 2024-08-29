@@ -253,7 +253,7 @@
               datasets: dataset.map(d => 
                 ({
                   label: d[0].bench.name,
-                  data: d.map(d => d.bench.value),
+                  data: d.map(d => ({ x: d.bench.value, y: d.commit.id.slice(0, 7)})),
                   borderColor: implementationColors[d[0].bench.name],
                   backgroundColor: implementationColors[d[0].bench.name] + '60', // Add alpha for #rrggbbaa
                 })),
