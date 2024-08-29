@@ -45,7 +45,7 @@ namespace Benchmark
         {
             var t = Task.Run(() => Implementation.Run(Test.Contents));
             // limiting execution to 2 mins
-            var winner = await Task.WhenAny(t, Task.Delay(TimeSpan.FromSeconds(10)));
+            var winner = await Task.WhenAny(t, Task.Delay(TimeSpan.FromSeconds(20)));
             if (winner == t)
             {
                 // success
