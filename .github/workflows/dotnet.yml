@@ -41,7 +41,9 @@ jobs:
       - name: Run benchmark
         run: cd Benchmark && dotnet run --configuration Release
       - name: Filter out bad benchmarks
-        run: cat Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json | jq ".Benchmarks[] | select( .Statistics != null )" > INPUT.tmp && mv INPUT.tmp Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
+        run: cat Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json | jq ".Benchmarks[] |= select( .Statistics != null )" > INPUT.tmp && mv INPUT.tmp Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
+      - name: Output Benchmark
+        run: cat Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
       # Download previous benchmark result from cache (if exists)
       - name: Download previous benchmark data
         uses: actions/cache@v4
