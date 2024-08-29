@@ -264,8 +264,8 @@
                 tooltip: {
                   callbacks: {
                     afterTitle: items => {
-                      const {index} = items[0];
-                      const data = dataset[0][index];
+                      const {dataIndex, datasetIndex} = items[0];
+                      const data = dataset[datasetIndex][dataIndex];
                       return '\n' + data.commit.message.split("\n")[0] + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
                     },
                     label: item => {
