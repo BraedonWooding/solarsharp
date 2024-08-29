@@ -259,46 +259,40 @@
             };
             const options = {
               responsive: true,
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    afterTitle: items => {
+                      const {index} = items[0];
+                      const data = dataset[0][index];
+                      return '\n' + data.commit.message.split("\n")[0] + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
+                    },
+                    label: item => {
+                      let label = item.value;
+                      const { range, unit } = dataset[item.datasetIndex][item.index].bench;
+                      label += ' ' + unit;
+                      if (range) {
+                        label += ' (' + '± ' + Number(range.replace('±', '')) / 1000 + ')';
+                      }
+                      return label;
+                    },
+                    afterLabel: item => {
+                      const { name } = dataset[item.datasetIndex][item.index].bench;
+                      return name ? '\n' + name : '';
+                    }
+                  }
+                }
+              }
               scales: {
-                xAxes: [
-                  {
-                    scaleLabel: {
-                      display: true,
-                      labelString: 'commit',
-                    },
-                  }
-                ],
-                yAxes: [
-                  {
-                    scaleLabel: {
-                      display: true,
-                      labelString: dataset.length > 0 ? dataset[0][0].bench.unit : '',
-                    },
-                    ticks: {
-                      beginAtZero: true,
-                    }
-                  }
-                ],
-              },
-              tooltips: {
-                callbacks: {
-                  afterTitle: items => {
-                    const {index} = items[0];
-                    const data = dataset[0][index];
-                    return '\n' + data.commit.message.split("\n")[0] + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
-                  },
-                  label: item => {
-                    let label = item.value;
-                    const { range, unit } = dataset[item.datasetIndex][item.index].bench;
-                    label += ' ' + unit;
-                    if (range) {
-                      label += ' (' + '± ' + Number(range.replace('±', '')) / 1000 + ')';
-                    }
-                    return label;
-                  },
-                  afterLabel: item => {
-                    const { name } = dataset[item.datasetIndex][item.index].bench;
-                    return name ? '\n' + name : '';
+                x: {
+                  display: true,
+                  text: 'commit'
+                },
+                y: {
+                  display: true,
+                  text: dataset.length > 0 ? dataset[0][0].bench.unit : '',
+                  ticks: {
+                    beginAtZero: true,
                   }
                 }
               },
@@ -307,8 +301,8 @@
                   return;
                 }
                 // XXX: Undocumented. How can we know the index?
-                const index = activeElems[0]._index;
-                const url = dataset[activeElems[0]._datasetIndex][index].commit.url;
+                const index = activeElems[0].index;
+                const url = dataset[activeElems[0].datasetIndex][index].commit.url;
                 window.open(url, '_blank');
               },
             };
