@@ -85,7 +85,7 @@ namespace SolarSharp.Interpreter.DataTypes
             if (Type != CoroutineType.Coroutine)
                 throw new InvalidOperationException("Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead");
 
-            while (State == CoroutineState.NotStarted || State == CoroutineState.Suspended || State == CoroutineState.ForceSuspended)
+            while (State == CoroutineState.NotStarted || State == CoroutineState.Suspended)
                 yield return Resume();
         }
 
@@ -285,18 +285,6 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             get;
             private set;
-        }
-
-        /// <summary>
-        /// Gets or sets the automatic yield counter.
-        /// </summary>
-        /// <value>
-        /// The automatic yield counter.
-        /// </value>
-        public long AutoYieldCounter
-        {
-            get { return m_Processor.AutoYieldCounter; }
-            set { m_Processor.AutoYieldCounter = value; }
         }
     }
 }
