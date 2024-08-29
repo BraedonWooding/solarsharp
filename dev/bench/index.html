@@ -217,7 +217,7 @@
       const plugin = {
         id: 'customHover',
         afterEvent: (chart, event, opts) => {
-          const evt = event.event;
+          const evt = event;
       
           if (evt.type !== 'click') {
             return;
