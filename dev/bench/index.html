@@ -269,7 +269,7 @@
                       return '\n' + data.commit.message.split("\n")[0] + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
                     },
                     label: item => {
-                      let label = item.value;
+                      let label = item.formattedValue;
                       const { range, unit } = dataset[item.datasetIndex][item.dataIndex].bench;
                       label += ' ' + unit;
                       if (range) {
