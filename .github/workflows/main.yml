@@ -33,6 +33,8 @@ jobs:
         run: cd Benchmark && dotnet run --configuration Release
       - name: Filter out bad benchmarks
         run: cat Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json | jq ".Benchmarks[] | select( .Statistics != null )" > INPUT.tmp && mv INPUT.tmp Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
+      - name: Output Benchmark
+        run: cat Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
       # Run `github-action-benchmark` action
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
