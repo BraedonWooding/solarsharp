@@ -152,10 +152,8 @@ namespace SolarSharp.Interpreter.Execution.VM
                             instructionPtr = ExecJFor(i, instructionPtr);
                             break;
                         case OpCode.NewTable:
-                            if (i.NumVal == 0)
-                                m_ValueStack.Push(DynValue.NewTable(m_Script));
-                            else
-                                m_ValueStack.Push(DynValue.NewPrimeTable());
+                            // we pass the hints we got from the instruction args
+                            m_ValueStack.Push(DynValue.NewTable(m_Script, i.NumVal, i.NumVal2));
                             break;
                         case OpCode.IterPrep:
                             ExecIterPrep();
@@ -858,7 +856,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-
         private int ExecMul(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
@@ -1114,7 +1111,8 @@ namespace SolarSharp.Interpreter.Execution.VM
             if (tbl.Type != DataType.Table)
                 throw new InternalErrorException("Unexpected type in table ctor : {0}", tbl);
 
-            tbl.Table.InitNextArrayKeys(val, i.NumVal != 0);
+            // the instruction arg holds the index
+            tbl.Table.InitNextArrayKeys(val, i.NumVal);
         }
 
         private void ExecTblInitN()

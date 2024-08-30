@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.Errors;
@@ -10,31 +11,33 @@ namespace SolarSharp.Interpreter.DataTypes
     /// </summary>
     public class Table : RefIdObject, IScriptPrivateResource
     {
-        private readonly LinkedList<TablePair> m_Values;
-        private readonly LinkedListIndex<DynValue, TablePair> m_ValueMap;
-        private readonly LinkedListIndex<string, TablePair> m_StringMap;
-        private readonly LinkedListIndex<int, TablePair> m_ArrayMap;
         private readonly Script m_Owner;
-        private int m_InitArray = 0;
         private int m_CachedLength = -1;
         private bool m_ContainsNilEntries = false;
 
         /// <summary>
-        /// The array segment of the table.
+        /// The array segment of the table.  This starts from 0
+        /// with the first slot always being empty (similar to LuaJIT)
+        /// 
+        /// This does mean that doing table[0] = X will write to the 0 slot.
         /// </summary>
         private readonly List<DynValue> ArraySegment;
+
+        /// <summary>
+        /// Fallback value map for all other keys/values
+        /// </summary>
+        private readonly Dictionary<DynValue, DynValue> ValueMap;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Table"/> class.
         /// </summary>
         /// <param name="owner">The owner script.</param>
-        public Table(Script owner)
+        public Table(Script owner, int arraySizeHint = 0, int associativeSizeHint = 0)
         {
-            m_Values = new LinkedList<TablePair>();
-            m_StringMap = new LinkedListIndex<string, TablePair>(m_Values);
-            m_ArrayMap = new LinkedListIndex<int, TablePair>(m_Values);
-            m_ValueMap = new LinkedListIndex<DynValue, TablePair>(m_Values);
             m_Owner = owner;
+            ArraySegment = new List<DynValue>(arraySizeHint + 1);
+            // we don't have a string map here too because strings are pretty efficiently handled by dynvalues.
+            ValueMap = new Dictionary<DynValue, DynValue>(associativeSizeHint);
         }
 
         /// <summary>
@@ -47,7 +50,7 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             for (int i = 0; i < arrayValues.Length; i++)
             {
-                Set(DynValue.NewNumber(i + 1), arrayValues[i]);
+                Set(i + 1, arrayValues[i]);
             }
         }
 
@@ -64,10 +67,8 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public void Clear()
         {
-            m_Values.Clear();
-            m_StringMap.Clear();
-            m_ArrayMap.Clear();
-            m_ValueMap.Clear();
+            ArraySegment.Clear();
+            ValueMap.Clear();
             m_CachedLength = -1;
         }
 
@@ -77,7 +78,6 @@ namespace SolarSharp.Interpreter.DataTypes
         private int GetIntegralKey(double d)
         {
             int v = (int)d;
-
             if (d >= 1.0 && d == v)
                 return v;
 
@@ -129,9 +129,6 @@ namespace SolarSharp.Interpreter.DataTypes
 
         private Table ResolveMultipleKeys(object[] keys, out object key)
         {
-            //Contract.Ensures(Contract.Result<Table>() != null);
-            //Contract.Requires(keys != null);
-
             Table t = this;
             key = keys.Length > 0 ? keys[0] : null;
 
@@ -502,11 +499,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns><c>true</c> if values was successfully removed; otherwise, <c>false</c>.</returns>
         public bool Remove(object key)
         {
-            if (key is string)
-                return Remove((string)key);
+            if (key is string v1)
+                return Remove(v1);
 
-            if (key is int)
-                return Remove((int)key);
+            if (key is int v)
+                return Remove(v);
 
             return Remove(DynValue.FromObject(OwnerScript, key));
         }
@@ -620,16 +617,31 @@ namespace SolarSharp.Interpreter.DataTypes
             }
         }
 
-        internal void InitNextArrayKeys(DynValue val, bool lastpos)
+        internal void InitNextArrayKeys(DynValue val, int idx)
         {
-            if (val.Type == DataType.Tuple && lastpos)
+            if (ArraySegment.Capacity == 2 && idx == 1 && val.Type == DataType.Tuple && val.Tuple.Length > 1)
             {
-                foreach (DynValue v in val.Tuple)
-                    InitNextArrayKeys(v, true);
+                // in this specific case we are creating a table from a tuple
+                // i.e. function a() return 1, 2 end; local t = { a() }
+                // this only works when a() is the only argument to the table ctor
+                // for example local t = { a(), 2 } or t = { 2, a() } or even t = { a(), ["A"] = 1 }
+                // all will just read the first value of the tuple.
+                // (this is because in Lua "tuples" don't exist functions aren't returning multiple values
+                // wrapped in a structure they are returning multiple values).
+                
+                // For performance let's reserve now since we know the final tuple length
+                ArraySegment.Capacity = val.Tuple.Length + 1;
+                for (int i = 0; i < val.Tuple.Length; i++)
+                {
+                    // we can presume that tuples can't be composed of other tuples
+                    // tuples in general are a concept that I'm likely to be phasing out / removing
+                    // since they add a lot of complexity
+                    Set(i + 1, val.Tuple[i]);
+                }
             }
             else
             {
-                Set(++m_InitArray, val.ToScalar());
+                Set(idx, val.ToScalar());
             }
         }
 
@@ -642,8 +654,6 @@ namespace SolarSharp.Interpreter.DataTypes
             set { this.CheckScriptOwnership(m_MetaTable); m_MetaTable = value; }
         }
         private Table m_MetaTable;
-
-
 
         /// <summary>
         /// Enumerates the key/value pairs.

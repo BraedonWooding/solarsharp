@@ -231,9 +231,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Creates a new writable value initialized to an empty table.
         /// </summary>
-        public static DynValue NewTable(Script script)
+        public static DynValue NewTable(Script script, int arraySizeHint = 0, int associativeSizeHint = 0)
         {
-            return NewTable(new Table(script));
+            return NewTable(new Table(script, arraySizeHint, associativeSizeHint));
         }
 
         /// <summary>
