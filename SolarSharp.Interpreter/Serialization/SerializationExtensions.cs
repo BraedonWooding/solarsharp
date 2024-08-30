@@ -31,11 +31,11 @@ namespace SolarSharp.Interpreter.Serialization
 
             if (!table.Values.Any())
             {
-                sb.Append("{ }");
+                sb.Append("${ }");
                 return sb.ToString();
             }
 
-            sb.AppendLine("{");
+            sb.AppendLine("${");
 
             foreach (var kvp in table.Pairs)
             {

@@ -26,6 +26,8 @@ namespace SolarSharp.Interpreter.CoreLib
             if (args.Count < 1) throw ScriptRuntimeException.BadArgumentValueExpected(0, "type");
 
             DynValue v = args[0];
+            if (v.Type == DataType.Iterator) return DynValue.NewString(v.Iterator.Current.Type.ToLuaTypeString());
+
             return DynValue.NewString(v.Type.ToLuaTypeString());
         }
 

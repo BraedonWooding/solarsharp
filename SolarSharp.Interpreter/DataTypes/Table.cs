@@ -82,7 +82,7 @@ namespace SolarSharp.Interpreter.DataTypes
         private int GetIntegralKey(double d)
         {
             int v = (int)d;
-            if (d >= 1.0 && d == v)
+            if (d >= 0.0 && d == v)
                 return v;
 
             return -1;
@@ -417,7 +417,7 @@ namespace SolarSharp.Interpreter.DataTypes
             // this only cleans up the map and doesn't touch the array
             foreach (var key in DeadKeys)
             {
-                ValueMap.Remove(key);
+                if (ValueMap[key] == null) ValueMap.Remove(key);
             }
             DeadKeys.Clear();
             // note: we could use ValueMap.remove & an iterator in new versions of C# (.netcore 3)
@@ -434,13 +434,21 @@ namespace SolarSharp.Interpreter.DataTypes
             if (v.IsNil())
             {
                 v = DynValue.NewNumber(0);
+                if (ArraySegment.Length > 0 && ArraySegment[0] != null)
+                {
+                    return DynValue.NewTuple(v, ArraySegment[0]);
+                }
             }
 
             if (v.Type == DataType.Number && GetIntegralKey(v.Number) is var n
                 && n >= 0 && n < MAX_INT_KEY_ARRAY)
             {
                 // we are looping through the array segment first
-                while (n < ArraySegment.Length - 1 && ArraySegment[n + 1] != null) n++;
+                do
+                {
+                    n++;
+                }
+                while (n < ArraySegment.Length && ArraySegment[n] == null);
                 
                 // if we are at the end
                 if (n == ArraySegment.Length)

@@ -196,33 +196,21 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="ScriptRuntimeException">The DataType is not a Lua type</exception>
         public static string ToLuaTypeString(this DataType type)
         {
-            switch (type)
+            return type switch
             {
-                case DataType.Void:
-                case DataType.Nil:
-                    return "nil";
-                case DataType.Boolean:
-                    return "boolean";
-                case DataType.Number:
-                    return "number";
-                case DataType.String:
-                    return "string";
-                case DataType.Function:
-                    return "function";
-                case DataType.ClrFunction:
-                    return "function";
-                case DataType.Table:
-                    return "table";
-                case DataType.UserData:
-                    return "userdata";
-                case DataType.Thread:
-                    return "thread";
-                case DataType.Tuple:
-                case DataType.TailCallRequest:
-                case DataType.YieldRequest:
-                default:
-                    throw new ScriptRuntimeException("Unexpected LuaType {0}", type);
-            }
+                // TODO: This should take a dyn value not a type so we can properly handle this better.
+                DataType.Iterator => "iterator",
+                DataType.Void or DataType.Nil => "nil",
+                DataType.Boolean => "boolean",
+                DataType.Number => "number",
+                DataType.String => "string",
+                DataType.Function => "function",
+                DataType.ClrFunction => "function",
+                DataType.Table => "table",
+                DataType.UserData => "userdata",
+                DataType.Thread => "thread",
+                _ => throw new ScriptRuntimeException("Unexpected LuaType {0}", type),
+            };
         }
     }
 }

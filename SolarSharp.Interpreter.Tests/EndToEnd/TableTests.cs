@@ -241,7 +241,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					x[k] = v;
 				end
 
-
 				t = 
 				{
 					a = 1,
@@ -343,7 +342,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.String));
-                Assert.That(res.String, Is.EqualTo("{ [1] = A,[2] = B,[3] = C,[\"a\"] = 1,[\"c\"] = 3,[\"b\"] = 2,[\"e\"] = 5,[\"d\"] = 4,}"));
+                Assert.That(res.String, Is.EqualTo("{ [1] = A,[2] = B,[3] = C,[\"a\"] = 1,[\"b\"] = 2,[\"c\"] = 3,[\"d\"] = 4,[\"e\"] = 5,} "));
             });
         }
 
