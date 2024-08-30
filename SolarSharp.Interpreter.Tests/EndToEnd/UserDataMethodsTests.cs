@@ -198,6 +198,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             public static StringBuilder ConcatS(int p1, string p2, IComparable p3, bool p4, List<object> p5, IEnumerable<object> p6,
                 StringBuilder p7, Dictionary<object, object> p8, SomeClass p9, int p10 = 1994)
             {
+                // eheh1ciao!SOMECLASS!True|asdqwezxc|asdqwezxc|123xy|asdqweXYzxc|!SOMECLASS!1912
                 p7.Append(p1);
                 p7.Append(p2);
                 p7.Append(p3);

@@ -592,23 +592,28 @@ namespace SolarSharp.Interpreter.DataTypes
             m_MetaTable = value; }
         }
         private Table m_MetaTable;
+        
+        private IEnumerable<KeyValuePair<DynValue, DynValue>> ArrayPairs =>
+            ArraySegment
+                .Select((v, i) => new KeyValuePair<DynValue, DynValue>(DynValue.NewNumber(i), v))
+                .Where(kvp => kvp.Value != null);
 
         /// <summary>
         /// Enumerates the key/value pairs.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<KeyValuePair<DynValue, DynValue>> Pairs => ValueMap;
+        public IEnumerable<KeyValuePair<DynValue, DynValue>> Pairs => ArrayPairs.Concat(ValueMap.Where(kvp => kvp.Value != null));
 
         /// <summary>
         /// Enumerates the keys.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<DynValue> Keys => ValueMap.Keys;
+        public IEnumerable<DynValue> Keys => Pairs.Select(p => p.Key);
 
         /// <summary>
         /// Enumerates the values
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<DynValue> Values => ValueMap.Values;
+        public IEnumerable<DynValue> Values => Pairs.Select(p => p.Value);
     }
 }
