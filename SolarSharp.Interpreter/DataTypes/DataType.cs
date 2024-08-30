@@ -3,6 +3,66 @@
 namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
+    /// Is similar to <see cref="DataType"/> but matches Lua closer
+    /// and gets rid of the unnecessary types.
+    /// </summary>
+    public enum LuaDataType
+    {
+        /// <summary>
+        /// No value
+        /// </summary>
+        None = -1,
+
+        /// <summary>
+        /// A nil/null value
+        /// </summary>
+        Nil,
+
+        /// <summary>
+        /// True/false
+        /// </summary>
+        Boolean,
+
+        /// <summary>
+        /// This is pretty much just a pointer
+        /// much cheaper than normal user data.
+        /// </summary>
+        LightUserData,
+
+        /// <summary>
+        /// Doubles only for now (lua 5.2)
+        /// </summary>
+        Number,
+
+        /// <summary>
+        /// It's a c# string which doesn't match lua's specs
+        /// but makes it easier to work with in c#
+        /// </summary>
+        String,
+
+        /// <summary>
+        /// For both associative and arrays
+        /// </summary>
+        Table,
+
+        /// <summary>
+        /// Any callable
+        /// </summary>
+        Function,
+
+        /// <summary>
+        /// Heavier user data than <see cref="LightUserData"/>
+        /// but has more functionalities
+        /// </summary>
+        UserData,
+
+        /// <summary>
+        /// A coroutine handle
+        /// </summary>
+        Thread,
+    }
+
+    /// <summary>
     /// Enumeration of possible data types in MoonSharp
     /// </summary>
     public enum DataType

@@ -294,7 +294,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             return true;
         }
 
-
         /// <summary>
         /// Calculates the score for the overload.
         /// </summary>
@@ -309,7 +308,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             int argsBase = args.IsMethodCall ? 1 : 0;
             int argsCnt = argsBase;
             bool varArgsUsed = false;
-
 
             for (int i = 0; i < method.Parameters.Length; i++)
             {
@@ -414,8 +412,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             return score;
         }
 
-
-
         /// <summary>
         /// Gets a callback function as a delegate
         /// </summary>
@@ -426,7 +422,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         {
             return (context, args) => PerformOverloadedCall(script, obj, context, args);
         }
-
 
         void IOptimizableDescriptor.Optimize()
         {

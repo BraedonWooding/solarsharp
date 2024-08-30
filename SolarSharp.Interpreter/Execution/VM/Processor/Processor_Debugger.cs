@@ -28,7 +28,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             return meta;
         }
 
-
         internal void AttachDebugger(IDebugger debugger)
         {
             m_Debug.DebuggerAttached = debugger;
@@ -41,7 +40,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             get { return m_Debug.DebuggerEnabled; }
             set { m_Debug.DebuggerEnabled = value; }
         }
-
 
         private void ListenDebugger(Instruction instr, int instructionPtr)
         {
@@ -58,7 +56,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 isOnDifferentRef = instr.SourceCodeRef != null;
             }
-
 
             if (m_Debug.DebuggerAttached.IsPauseRequested() ||
                 (instr.SourceCodeRef != null && instr.SourceCodeRef.Breakpoint && isOnDifferentRef))
@@ -87,7 +84,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                     if (instr.SourceCodeRef == null || instr.SourceCodeRef == m_Debug.LastHlRef || m_ExecutionStack.Count > m_Debug.ExStackDepthAtStep) return;
                     break;
             }
-
 
             RefreshDebugger(false, instructionPtr);
 

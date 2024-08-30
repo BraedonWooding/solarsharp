@@ -19,7 +19,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-
         public DynValue GetGenericSymbol(SymbolRef symref)
         {
             return symref.i_Type switch
@@ -47,7 +46,6 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             dynValue.Table.Set(name, value ?? DynValue.Nil);
         }
-
 
         public void AssignGenericSymbol(SymbolRef symref, DynValue value)
         {
@@ -102,7 +100,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             return stackframe;
         }
 
-
         public SymbolRef FindSymbolByName(string name)
         {
             if (m_ExecutionStack.Count > 0)
@@ -144,6 +141,5 @@ namespace SolarSharp.Interpreter.Execution.VM
                 return SymbolRef.DefaultEnv;
             }
         }
-
     }
 }

@@ -76,7 +76,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public YieldRequest YieldRequest { get { return m_Object as YieldRequest; } }
         /// <summary>
-        /// Gets the tail call data.
+        /// Gets the user data.
         /// </summary>
         public UserData UserData { get { return m_Object as UserData; } }
 
@@ -84,8 +84,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Returns true if this instance is write protected.
         /// </summary>
         public bool ReadOnly { get { return m_ReadOnly; } }
-
-
 
         /// <summary>
         /// Creates a new writable value initialized to Nil.
@@ -727,7 +725,6 @@ namespace SolarSharp.Interpreter.DataTypes
             return m_Object as IScriptPrivateResource;
         }
 
-
         /// <summary>
         /// Converts a tuple to a scalar value. If it's already a scalar value, this function returns "this".
         /// </summary>
@@ -755,10 +752,11 @@ namespace SolarSharp.Interpreter.DataTypes
             m_Number = value.m_Number;
             m_Object = value.m_Object;
             m_Type = value.Type;
+            // TODO: I'm not certain this is correct, this seems very odd
+            //       hashcodes should be preservable and we should be able to just
+            //       take the dyn value's hash code.
             m_HashCode = -1;
         }
-
-
 
         /// <summary>
         /// Gets the length of a string or table value.
@@ -871,15 +869,13 @@ namespace SolarSharp.Interpreter.DataTypes
             return myObject;
         }
 
-#if HASDYNAMIC
 		/// <summary>
 		/// Converts this MoonSharp DynValue to a CLR object, marked as dynamic
 		/// </summary>
 		public dynamic ToDynamic()
 		{
-			return SolarSharp.Interpreter.Interop.Converters.ScriptToClrConversions.DynValueToObject(this);
+			return ScriptToClrConversions.DynValueToObject(this);
 		}
-#endif
 
         /// <summary>
         /// Checks the type of this value corresponds to the desired type. A propert ScriptRuntimeException is thrown

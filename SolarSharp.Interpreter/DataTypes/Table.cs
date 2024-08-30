@@ -20,6 +20,11 @@ namespace SolarSharp.Interpreter.DataTypes
         private bool m_ContainsNilEntries = false;
 
         /// <summary>
+        /// The array segment of the table.
+        /// </summary>
+        private readonly List<DynValue> ArraySegment;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="Table"/> class.
         /// </summary>
         /// <param name="owner">The owner script.</param>
@@ -271,10 +276,10 @@ namespace SolarSharp.Interpreter.DataTypes
             if (key == null)
                 throw ScriptRuntimeException.TableIndexIsNil();
 
-            if (key is string)
-                Set((string)key, value);
-            else if (key is int)
-                Set((int)key, value);
+            if (key is string s)
+                Set(s, value);
+            else if (key is int i)
+                Set(i, value);
             else
                 Set(DynValue.FromObject(OwnerScript, key), value);
         }
@@ -283,7 +288,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Sets the value associated with the specified keys.
         /// Multiple keys can be used to access subtables.
         /// </summary>
-        /// <param name="key">The keys.</param>
+        /// <param name="keys">The keys.</param>
         /// <param name="value">The value.</param>
         public void Set(object[] keys, DynValue value)
         {
@@ -541,7 +546,6 @@ namespace SolarSharp.Interpreter.DataTypes
             m_CachedLength = -1;
         }
 
-
         /// <summary>
         /// Returns the next pair from a value
         /// </summary>
@@ -596,7 +600,6 @@ namespace SolarSharp.Interpreter.DataTypes
                     return linkedListNode.Value;
             }
         }
-
 
         /// <summary>
         /// Gets the length of the "array part".

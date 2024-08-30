@@ -4,7 +4,7 @@ namespace Benchmark.Implementations
 {
     public class SolarSharpImplementation : AImplementation
     {
-        private readonly Script script;
+        public readonly Script script;
 
         public SolarSharpImplementation()
         {
