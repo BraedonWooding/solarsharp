@@ -748,6 +748,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public DynValue ToScalar()
         {
+            if (Type == DataType.Iterator)
+                return Iterator.Current;
+
             if (Type != DataType.Tuple)
                 return this;
 

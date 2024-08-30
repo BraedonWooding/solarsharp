@@ -35,7 +35,7 @@ function countmatches(variant)
 end
 
 for _, p in ipairs(variants) do
-   io.write( string.format('%s %d\n', p, countmatches(p)) )
+  string.format('%s %d\n', p, countmatches(p))
 end
 
 function partitionstring(seq)
@@ -58,5 +58,5 @@ for k, v in pairs(subst) do
   chunk_gsub(seq, k, v)
 end
 seq = table.concat(seq)
-io.write(string.format('\n%d\n%d\n%d\n', ilen, clen, #seq))
+string.format('\n%d\n%d\n%d\n', ilen, clen, #seq)
 
