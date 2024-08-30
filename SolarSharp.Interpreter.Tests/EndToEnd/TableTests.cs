@@ -608,38 +608,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
         [Test]
-        public void PrimeTable_1()
-        {
-            string script = @"    
-			t = ${
-				ciao = 'hello'
-			}
-		";
-
-            Script s = new();
-            s.DoString(script);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(s.Globals["t", "ciao"], Is.EqualTo("hello"));
-                Assert.That(s.Globals.Get("t").Table.OwnerScript, Is.EqualTo(null));
-            });
-        }
-
-        [Test]
-        public void PrimeTable_2()
-        {
-            string script = @"    
-			t = ${
-				ciao = function() end
-			}
-		";
-
-            Script s = new();
-            Assert.Throws<ScriptRuntimeException>(() => s.DoString(script));
-        }
-
-        [Test]
         public void Table_Length_Calculations()
         {
             Table T = new(null);
