@@ -124,13 +124,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// A request to coroutine.yield
         /// </summary>
         YieldRequest,
-
-        /// <summary>
-        /// Special type that is purely used for cases like next
-        /// let's us do efficient cycling through a table while still allowing
-        /// the value to be used as an index.
-        /// </summary>
-        Iterator,
     }
 
     /// <summary>
@@ -198,8 +191,6 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return type switch
             {
-                // TODO: This should take a dyn value not a type so we can properly handle this better.
-                DataType.Iterator => "iterator",
                 DataType.Void or DataType.Nil => "nil",
                 DataType.Boolean => "boolean",
                 DataType.Number => "number",

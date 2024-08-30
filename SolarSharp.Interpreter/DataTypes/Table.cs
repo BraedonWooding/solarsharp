@@ -250,8 +250,6 @@ namespace SolarSharp.Interpreter.DataTypes
                     throw ScriptRuntimeException.TableIndexIsNaN();
             }
 
-            if (key.Type == DataType.Iterator) key = key.Iterator.Current;
-
             if (key.Type == DataType.Number)
             {
                 int idx = GetIntegralKey(key.Number);
@@ -363,7 +361,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="key">The key.</param>
         public DynValue Get(DynValue key)
         {
-            if (key.Type == DataType.Iterator) key = key.Iterator.Current;
             if (key.Type == DataType.Number)
             {
                 int idx = GetIntegralKey(key.Number);
@@ -430,9 +427,11 @@ namespace SolarSharp.Interpreter.DataTypes
 
         public DynValue GetNextFromIt(DynValue v)
         {
+            bool wasNil = false;
             // note a custom dictionary may be a smart idea to make some of this faster
             if (v.IsNil())
             {
+                wasNil = true;
                 v = DynValue.NewNumber(0);
                 if (ArraySegment.Length > 0 && ArraySegment[0] != null)
                 {
@@ -440,9 +439,16 @@ namespace SolarSharp.Interpreter.DataTypes
                 }
             }
 
+            bool skipFinding = false;
             if (v.Type == DataType.Number && GetIntegralKey(v.Number) is var n
                 && n >= 0 && n < MAX_INT_KEY_ARRAY)
             {
+                if (!wasNil && n >= ArraySegment.Length)
+                {
+                    throw new ScriptRuntimeException("invalid key to 'next'");
+                }
+                
+                skipFinding = true;
                 // we are looping through the array segment first
                 do
                 {
@@ -451,32 +457,29 @@ namespace SolarSharp.Interpreter.DataTypes
                 while (n < ArraySegment.Length && ArraySegment[n] == null);
                 
                 // if we are at the end
-                if (n == ArraySegment.Length)
-                {
-                    v = DynValue.NewIterator(new Iterator(ValueMap.GetEnumerator()));
-                }
-                else
+                if (n < ArraySegment.Length)
                 {
                     return DynValue.NewTuple(DynValue.NewNumber(n), ArraySegment[n]);
                 }
             }
-
-            if (v.Type != DataType.Iterator)
+            else if (!ValueMap.ContainsKey(v))
             {
-                // if it is not contained at all
-                if (!ValueMap.ContainsKey(v)) throw new ScriptRuntimeException("invalid key to 'next'");
-
-                var it = new Iterator(ValueMap.GetEnumerator());
-                DynValue test;
-                while ((test = it.Next()) != null && !test.Equals(v));
-                // since we know it contains our value we can just jump to the next one
-                v = DynValue.NewIterator(it);
+                throw new ScriptRuntimeException("invalid key to 'next'");
             }
 
-            var next = v.Iterator.Next();
+            // custom c# hashtable :)
+            var it = new Iterator(ValueMap.GetEnumerator());
+            if (!skipFinding)
+            {
+                do {
+                    it.Next();
+                } while (it.Current != null && !it.Current.Equals(v));
+            }
+
+            var next = it.Next();
             // no more
             if (next == null) return DynValue.Nil;
-            return DynValue.NewTuple(v, next);
+            return DynValue.NewTuple(it.Current, next);
         }
 
         /// <summary>
@@ -555,7 +558,7 @@ namespace SolarSharp.Interpreter.DataTypes
 
         internal void InitNextArrayKeys(DynValue val, int idx)
         {
-            if (ArraySegment.Length == 2 && idx == 1 && val.Type == DataType.Tuple && val.Tuple.Length > 1)
+            if (idx == ArraySegment.Length - 1 && val.Type == DataType.Tuple && val.Tuple.Length > 1)
             {
                 // in this specific case we are creating a table from a tuple
                 // i.e. function a() return 1, 2 end; local t = { a() }
@@ -566,13 +569,13 @@ namespace SolarSharp.Interpreter.DataTypes
                 // wrapped in a structure they are returning multiple values).
                 
                 // For performance let's reserve now since we know the final tuple length
-                Array.Resize(ref ArraySegment, NextPowOfTwo(val.Tuple.Length + 1));
+                Array.Resize(ref ArraySegment, NextPowOfTwo(ArraySegment.Length + val.Tuple.Length));
                 for (int i = 0; i < val.Tuple.Length; i++)
                 {
                     // we can presume that tuples can't be composed of other tuples
                     // tuples in general are a concept that I'm likely to be phasing out / removing
                     // since they add a lot of complexity
-                    Set(i + 1, val.Tuple[i]);
+                    Set(i + idx, val.Tuple[i]);
                 }
             }
             else

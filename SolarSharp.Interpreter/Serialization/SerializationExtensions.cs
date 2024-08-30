@@ -87,8 +87,6 @@ namespace SolarSharp.Interpreter.Serialization
                 return "nil";
             else if (dynValue.Type == DataType.Tuple)
                 return dynValue.Tuple.Any() ? dynValue.Tuple[0].SerializeValue(tabs) : "nil";
-            else if (dynValue.Type == DataType.Iterator)
-                return dynValue.Iterator.Current.SerializeValue(tabs);
             else if (dynValue.Type == DataType.Number)
                 return dynValue.Number.ToString("r");
             else if (dynValue.Type == DataType.Boolean)

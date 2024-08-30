@@ -9,33 +9,6 @@ using System.Text;
 
 namespace SolarSharp.Interpreter.DataTypes
 {
-    public class Iterator
-    {
-        public Iterator(IEnumerator<KeyValuePair<DynValue, DynValue>> it)
-        {
-            It = it;
-        }
-
-        public DynValue Current { get; set; }
-        public IEnumerator<KeyValuePair<DynValue, DynValue>> It { get; }
-
-        public DynValue Next()
-        {
-        repeat:
-            if (It.MoveNext()) 
-            {
-                // skip over nils
-                if (It.Current.Value == null) goto repeat;
-                Current = It.Current.Key;
-                return It.Current.Value;
-            }
-            else
-            {
-                return null;
-            }
-        }
-    }
-
     /// <summary>
     /// A class representing a value in a Lua/MoonSharp script.
     /// </summary>
@@ -107,8 +80,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public UserData UserData { get { return m_Object as UserData; } }
 
-        public Iterator Iterator => m_Object as Iterator;
-
         /// <summary>
         /// Returns true if this instance is write protected.
         /// </summary>
@@ -143,18 +114,6 @@ namespace SolarSharp.Interpreter.DataTypes
             {
                 m_Number = num,
                 m_Type = DataType.Number,
-            };
-        }
-
-        /// <summary>
-        /// Creates a new writable value initialized to the specified number.
-        /// </summary>
-        public static DynValue NewIterator(Iterator iterator)
-        {
-            return new DynValue()
-            {
-                m_Object = iterator,
-                m_Type = DataType.Iterator,
             };
         }
 
@@ -563,7 +522,6 @@ namespace SolarSharp.Interpreter.DataTypes
                 DataType.Void => "void",
                 DataType.Nil => "nil",
                 DataType.Boolean => Boolean.ToString().ToLower(),
-                DataType.Iterator => Iterator.Current.ToString(),
                 DataType.Number => Number.ToString(CultureInfo.InvariantCulture),
                 DataType.String => "\"" + String + "\"",
                 DataType.Function => string.Format("(Function {0:X8})", Function.EntryPointByteCodeLocation),
@@ -598,7 +556,6 @@ namespace SolarSharp.Interpreter.DataTypes
                 DataType.String => baseValue ^ String.GetHashCode(),
                 DataType.Function => baseValue ^ Function.GetHashCode(),
                 DataType.ClrFunction => baseValue ^ Callback.GetHashCode(),
-                DataType.Iterator => Iterator.Current.GetHashCode(),
                 DataType.Table => baseValue ^ Table.GetHashCode(),
                 DataType.Tuple or DataType.TailCallRequest => baseValue ^ Tuple.GetHashCode(),
                 _ => 999,
@@ -620,9 +577,6 @@ namespace SolarSharp.Interpreter.DataTypes
             if (other.Type == DataType.Nil && Type == DataType.Void
                 || other.Type == DataType.Void && Type == DataType.Nil)
                 return true;
-
-            if (other.Type == DataType.Iterator) other = other.Iterator.Current;
-            if (Type == DataType.Iterator) Iterator.Current.Equals(other);
 
             if (other.Type != Type) return false;
 
@@ -680,11 +634,7 @@ namespace SolarSharp.Interpreter.DataTypes
         public string CastToString()
         {
             DynValue rv = ToScalar();
-            if (rv.Type == DataType.Iterator)
-            {
-                return rv.Iterator.Current.CastToString();
-            }
-            else if (rv.Type == DataType.Number)
+            if (rv.Type == DataType.Number)
             {
                 return rv.Number.ToString();
             }
@@ -702,10 +652,6 @@ namespace SolarSharp.Interpreter.DataTypes
         public double? CastToNumber()
         {
             DynValue rv = ToScalar();
-            if (rv.Type == DataType.Iterator)
-            {
-                return rv.Iterator.Current.CastToNumber();
-            }
             if (rv.Type == DataType.Number)
             {
                 return rv.Number;
@@ -726,9 +672,7 @@ namespace SolarSharp.Interpreter.DataTypes
         public bool CastToBool()
         {
             DynValue rv = ToScalar();
-            if (rv.Type == DataType.Iterator)
-                return rv.Iterator.Current.CastToBool();
-            else if (rv.Type == DataType.Boolean)
+            if (rv.Type == DataType.Boolean)
                 return rv.Boolean;
             else return rv.Type != DataType.Nil && rv.Type != DataType.Void;
         }
@@ -748,9 +692,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public DynValue ToScalar()
         {
-            if (Type == DataType.Iterator)
-                return Iterator.Current;
-
             if (Type != DataType.Tuple)
                 return this;
 
@@ -790,8 +731,6 @@ namespace SolarSharp.Interpreter.DataTypes
                 return NewNumber(Table.Length);
             if (Type == DataType.String)
                 return NewNumber(String.Length);
-            if (Type == DataType.Iterator)
-                return Iterator.Current.GetLength();
 
             throw new ScriptRuntimeException("Can't get length of type {0}", Type);
         }
@@ -915,8 +854,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// to the specified type.</exception>
         public DynValue CheckType(string funcName, DataType desiredType, int argNum = -1, TypeValidationFlags flags = TypeValidationFlags.Default)
         {
-            if (Type == DataType.Iterator)
-                return Iterator.Current.CheckType(funcName, desiredType, argNum, flags);
             if (Type == desiredType)
                 return this;
 
@@ -963,8 +900,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public T CheckUserDataType<T>(string funcName, int argNum = -1, TypeValidationFlags flags = TypeValidationFlags.Default)
         {
-            if (Type == DataType.Iterator) return Iterator.Current.CheckUserDataType<T>(funcName, argNum, flags);
-
             DynValue v = CheckType(funcName, DataType.UserData, argNum, flags);
             bool allowNil = (flags & TypeValidationFlags.AllowNil) != 0;
 
