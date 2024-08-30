@@ -184,9 +184,9 @@ namespace SolarSharp.Interpreter.DataTypes
         public string AsStringUsingMeta(ScriptExecutionContext executionContext, int argNum, string funcName)
         {
             if (this[argNum].Type == DataType.Table && this[argNum].Table.MetaTable != null &&
-                this[argNum].Table.MetaTable.RawGet("__tostring") != null)
+                this[argNum].Table.MetaTable.Get("__tostring") is var method && method.IsNotNil())
             {
-                var v = executionContext.GetScript().Call(this[argNum].Table.MetaTable.RawGet("__tostring"), this[argNum]);
+                var v = executionContext.GetScript().Call(method, this[argNum]);
 
                 if (v.Type != DataType.String)
                     throw new ScriptRuntimeException("'tostring' must return a string to '{0}'", funcName);

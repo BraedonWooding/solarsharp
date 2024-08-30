@@ -16,7 +16,6 @@ namespace SolarSharp.Interpreter.Serialization
             "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "goto", "if", "in", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while"
         };
 
-
         public static string Serialize(this Table table, bool prefixReturn = false, int tabs = 0)
         {
             if (table.OwnerScript != null)
@@ -38,16 +37,16 @@ namespace SolarSharp.Interpreter.Serialization
 
             sb.AppendLine("${");
 
-            foreach (TablePair tp in table.Pairs)
+            foreach (var kvp in table.Pairs)
             {
                 sb.Append(tabstr);
 
                 string key =
-                    IsStringIdentifierValid(tp.Key) ?
-                    tp.Key.String : "[" + tp.Key.SerializeValue(tabs + 1) + "]";
+                    IsStringIdentifierValid(kvp.Key) ?
+                    kvp.Key.String : "[" + kvp.Key.SerializeValue(tabs + 1) + "]";
 
                 sb.AppendFormat("\t{0} = {1},\n",
-                    key, tp.Value.SerializeValue(tabs + 1));
+                    key, kvp.Value.SerializeValue(tabs + 1));
             }
 
             sb.Append(tabstr);
@@ -88,6 +87,8 @@ namespace SolarSharp.Interpreter.Serialization
                 return "nil";
             else if (dynValue.Type == DataType.Tuple)
                 return dynValue.Tuple.Any() ? dynValue.Tuple[0].SerializeValue(tabs) : "nil";
+            else if (dynValue.Type == DataType.Iterator)
+                return dynValue.Iterator.Current.SerializeValue(tabs);
             else if (dynValue.Type == DataType.Number)
                 return dynValue.Number.ToString("r");
             else if (dynValue.Type == DataType.Boolean)
@@ -114,6 +115,5 @@ namespace SolarSharp.Interpreter.Serialization
             s = s.Replace("\'", @"\'");
             return "\"" + s + "\"";
         }
-
     }
 }

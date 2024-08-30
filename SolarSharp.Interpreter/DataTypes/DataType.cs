@@ -124,6 +124,13 @@ namespace SolarSharp.Interpreter.DataTypes
         /// A request to coroutine.yield
         /// </summary>
         YieldRequest,
+
+        /// <summary>
+        /// Special type that is purely used for cases like next
+        /// let's us do efficient cycling through a table while still allowing
+        /// the value to be used as an index.
+        /// </summary>
+        Iterator,
     }
 
     /// <summary>

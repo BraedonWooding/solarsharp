@@ -194,17 +194,17 @@ namespace SolarSharp.Interpreter.Modules
                 }
 
 
-                DynValue package = gtable.RawGet("package");
+                DynValue package = gtable.Get("package");
 
-                if (package == null || package.Type != DataType.Table)
+                if (package.IsNotNil() || package.Type != DataType.Table)
                 {
                     gtable.Set("package", package = DynValue.NewTable(gtable.OwnerScript));
                 }
 
 
-                DynValue loaded = package.Table.RawGet("loaded");
+                DynValue loaded = package.Table.Get("loaded");
 
-                if (loaded == null || loaded.Type != DataType.Table)
+                if (loaded.IsNotNil() || loaded.Type != DataType.Table)
                 {
                     package.Table.Set("loaded", loaded = DynValue.NewTable(gtable.OwnerScript));
                 }

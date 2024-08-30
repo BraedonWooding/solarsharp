@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.Errors;
 
@@ -15,13 +16,15 @@ namespace SolarSharp.Interpreter.DataTypes
         private int m_CachedLength = -1;
         private bool m_ContainsNilEntries = false;
 
+        private readonly List<DynValue> DeadKeys = new();
+
         /// <summary>
         /// The array segment of the table.  This starts from 0
         /// with the first slot always being empty (similar to LuaJIT)
         /// 
         /// This does mean that doing table[0] = X will write to the 0 slot.
         /// </summary>
-        private readonly List<DynValue> ArraySegment;
+        private DynValue[] ArraySegment;
 
         /// <summary>
         /// Fallback value map for all other keys/values
@@ -35,7 +38,7 @@ namespace SolarSharp.Interpreter.DataTypes
         public Table(Script owner, int arraySizeHint = 0, int associativeSizeHint = 0)
         {
             m_Owner = owner;
-            ArraySegment = new List<DynValue>(arraySizeHint + 1);
+            ArraySegment = new DynValue[arraySizeHint + 1];
             // we don't have a string map here too because strings are pretty efficiently handled by dynvalues.
             ValueMap = new Dictionary<DynValue, DynValue>(associativeSizeHint);
         }
@@ -67,8 +70,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public void Clear()
         {
-            ArraySegment.Clear();
+            ArraySegment = new DynValue[1];
             ValueMap.Clear();
+            DeadKeys.Clear();
             m_CachedLength = -1;
         }
 
@@ -134,7 +138,8 @@ namespace SolarSharp.Interpreter.DataTypes
 
             for (int i = 1; i < keys.Length; ++i)
             {
-                DynValue vt = t.RawGet(key) ?? throw new ScriptRuntimeException("Key '{0}' did not point to anything");
+                DynValue vt = t.Get(key);
+                if (vt.IsNil()) throw new ScriptRuntimeException("Key '{0}' did not point to anything");
                 if (vt.Type != DataType.Table)
                     throw new ScriptRuntimeException("Key '{0}' did not point to a table");
 
@@ -151,52 +156,67 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="value">The value.</param>
         public void Append(DynValue value)
         {
-            this.CheckScriptOwnership(value);
-            PerformTableSet(m_ArrayMap, Length + 1, DynValue.NewNumber(Length + 1), value, true, Length + 1);
+            // I don't really see much value in preventing cross script table accesses
+            // keep in mind this is for a *game* so it's pretty hard for a given resource
+            // to even access a cross script resource without you directly passing it in.
+            // Maybe server side this makes more sense but even then I think there are better ways to sandbox it...
+            // this.CheckScriptOwnership(value);
+            ArraySet(Length + 1, value);
         }
+
+        private int NextPowOfTwo(int v) {
+            // these should be done on unsigned int, but should be safe on int
+            v--;
+            v |= v >> 1;
+            v |= v >> 2;
+            v |= v >> 4;
+            v |= v >> 8;
+            v |= v >> 16;
+            v++;
+            return v;
+        }
+        private const int MAX_INT_KEY_ARRAY = 16_000_000;
 
         #region Set
 
-        private void PerformTableSet<T>(LinkedListIndex<T, TablePair> listIndex, T key, DynValue keyDynValue, DynValue value, bool isNumber, int appendKey)
+        private void ArraySet(int index, DynValue value)
         {
-            TablePair prev = listIndex.Set(key, new TablePair(keyDynValue, value));
-
-            // If this is an insert, we can invalidate all iterators and collect dead keys
-            if (m_ContainsNilEntries && value.IsNotNil() && (prev.Value == null || prev.Value.IsNil()))
+            // just a quick check for our max index
+            // this is probably a *bit* too large
+            // but the real large limit is: 2_146_435_071
+            // so this is semi-reasonable for now.
+            if (index >= MAX_INT_KEY_ARRAY)
             {
+                Set(DynValue.NewNumber(index), value);
+                return;
+            }
+
+            if (index >= ArraySegment.Length)
+            {
+                Array.Resize(ref ArraySegment, NextPowOfTwo(index + 1));
+            }
+
+            bool hasPrev = ArraySegment[index] != null;
+
+            if (value.IsNil())
+            {
+                // we use the actual null value to represent "nil" in our tables
+                ArraySegment[index] = null;
+                m_ContainsNilEntries = true;
+                m_CachedLength = -1;
+            }
+            else if (m_ContainsNilEntries && !hasPrev)
+            {
+                ArraySegment[index] = value;
+                // we collect dead keys if there are nils & we aren't inserting nil & there was not a previous value
                 CollectDeadKeys();
             }
-            // If this value is nil (and we didn't collect), set that there are nil entries, and invalidate array len cache
-            else if (value.IsNil())
+            else
             {
-                m_ContainsNilEntries = true;
-
-                if (isNumber)
-                    m_CachedLength = -1;
-            }
-            else if (isNumber)
-            {
-                // If this is an array insert, we might have to invalidate the array length
-                if (prev.Value == null || prev.Value.IsNilOrNan())
-                {
-                    // If this is an array append, let's check the next element before blindly invalidating
-                    if (appendKey >= 0)
-                    {
-                        LinkedListNode<TablePair> next = m_ArrayMap.Find(appendKey + 1);
-                        if (next == null || next.Value.Value == null || next.Value.Value.IsNil())
-                        {
-                            m_CachedLength += 1;
-                        }
-                        else
-                        {
-                            m_CachedLength = -1;
-                        }
-                    }
-                    else
-                    {
-                        m_CachedLength = -1;
-                    }
-                }
+                ArraySegment[index] = value;
+                // this is the only case where we can reliabily say the length has gotten longer in some cases
+                // for now I'm just invalidating to be lazy
+                m_CachedLength = -1;
             }
         }
 
@@ -205,24 +225,14 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <param name="key">The key.</param>
         /// <param name="value">The value.</param>
-        public void Set(string key, DynValue value)
-        {
-            if (key == null)
-                throw ScriptRuntimeException.TableIndexIsNil();
-
-            this.CheckScriptOwnership(value);
-            PerformTableSet(m_StringMap, key, DynValue.NewString(key), value, false, -1);
-        }
-
-        /// <summary>
-        /// Sets the value associated to the specified key.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        /// <param name="value">The value.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(int key, DynValue value)
         {
-            this.CheckScriptOwnership(value);
-            PerformTableSet(m_ArrayMap, key, DynValue.NewNumber(key), value, true, -1);
+            // in some cases we are better of setting the the associative array
+            // rather than the list array for large gaps, but for now I'm skipping that analysis
+            // it won't effect current benchmarks that much.
+            ArraySet(key, value);
+            // this.CheckScriptOwnership(value);
         }
 
         /// <summary>
@@ -240,27 +250,55 @@ namespace SolarSharp.Interpreter.DataTypes
                     throw ScriptRuntimeException.TableIndexIsNaN();
             }
 
-            if (key.Type == DataType.String)
-            {
-                Set(key.String, value);
-                return;
-            }
+            if (key.Type == DataType.Iterator) key = key.Iterator.Current;
 
             if (key.Type == DataType.Number)
             {
                 int idx = GetIntegralKey(key.Number);
-
-                if (idx > 0)
+                if (idx < MAX_INT_KEY_ARRAY && idx >= 0)
                 {
-                    Set(idx, value);
+                    ArraySet(idx, value);
                     return;
                 }
             }
 
-            this.CheckScriptOwnership(key);
-            this.CheckScriptOwnership(value);
+            MapSet(key, value);
+        }
 
-            PerformTableSet(m_ValueMap, key, key, value, false, -1);
+        public void MapSet(DynValue key, DynValue value)
+        {
+            bool hasPrev;
+            if (ValueMap.TryGetValue(key, out var currentValue))
+            {
+                hasPrev = currentValue != null;
+            }
+            else 
+            {
+                hasPrev = false;
+            }
+
+            // we use null rather than nil when using keys
+            if (value.IsNil() && hasPrev)
+            {
+                ValueMap[key] = null;
+                DeadKeys.Add(key);
+            }
+            else if (hasPrev)
+            {
+                ValueMap[key] = value;
+            }
+            else if (!value.IsNil())
+            {
+                // no point doing an operation for t[k] = nil if there is no previous k element
+                ValueMap[key] = value;
+                CollectDeadKeys();
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Set(string s, DynValue value)
+        {
+            MapSet(DynValue.NewString(s), value);
         }
 
         /// <summary>
@@ -273,12 +311,10 @@ namespace SolarSharp.Interpreter.DataTypes
             if (key == null)
                 throw ScriptRuntimeException.TableIndexIsNil();
 
-            if (key is string s)
-                Set(s, value);
-            else if (key is int i)
-                Set(i, value);
+            if (key is int i && i < MAX_INT_KEY_ARRAY)
+                ArraySet(i, value);
             else
-                Set(DynValue.FromObject(OwnerScript, key), value);
+                MapSet(DynValue.FromObject(OwnerScript, key), value);
         }
 
         /// <summary>
@@ -303,20 +339,22 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Gets the value associated with the specified key.
         /// </summary>
         /// <param name="key">The key.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DynValue Get(string key)
         {
-            //Contract.Ensures(Contract.Result<DynValue>() != null);
-            return RawGet(key) ?? DynValue.Nil;
+            return Get(DynValue.NewString(key));
         }
 
         /// <summary>
         /// Gets the value associated with the specified key.
         /// </summary>
         /// <param name="key">The key.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DynValue Get(int key)
-        {
-            //Contract.Ensures(Contract.Result<DynValue>() != null);
-            return RawGet(key) ?? DynValue.Nil;
+        {            
+            if (key < MAX_INT_KEY_ARRAY && key >= 0)
+                return key < ArraySegment.Length ? (ArraySegment[key] ?? DynValue.Nil) : DynValue.Nil;
+            return Get(DynValue.NewNumber(key));
         }
 
         /// <summary>
@@ -325,8 +363,14 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="key">The key.</param>
         public DynValue Get(DynValue key)
         {
-            //Contract.Ensures(Contract.Result<DynValue>() != null);
-            return RawGet(key) ?? DynValue.Nil;
+            if (key.Type == DataType.Iterator) key = key.Iterator.Current;
+            if (key.Type == DataType.Number)
+            {
+                int idx = GetIntegralKey(key.Number);
+                if (idx > 0 && idx < MAX_INT_KEY_ARRAY) return Get(idx);
+            }
+
+            return ValueMap.GetValueOrDefault(key) ?? DynValue.Nil;
         }
 
         /// <summary>
@@ -334,10 +378,16 @@ namespace SolarSharp.Interpreter.DataTypes
         /// (expressed as a <see cref="object"/>).
         /// </summary>
         /// <param name="key">The key.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DynValue Get(object key)
-        {
-            //Contract.Ensures(Contract.Result<DynValue>() != null);
-            return RawGet(key) ?? DynValue.Nil;
+        {            
+            if (key == null)
+                return null;
+
+            if (key is int v && v < MAX_INT_KEY_ARRAY)
+                return Get(v);
+
+            return Get(DynValue.FromObject(OwnerScript, key));
         }
 
         /// <summary>
@@ -349,177 +399,10 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="keys">The keys to access the table and subtables</param>
         public DynValue Get(params object[] keys)
         {
-            //Contract.Ensures(Contract.Result<DynValue>() != null);
-            return RawGet(keys) ?? DynValue.Nil;
-        }
-
-        #endregion
-
-        #region RawGet
-
-        private static DynValue RawGetValue(LinkedListNode<TablePair> linkedListNode)
-        {
-            return linkedListNode?.Value.Value;
-        }
-
-        /// <summary>
-        /// Gets the value associated with the specified key,
-        /// without bringing to Nil the non-existant values.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        public DynValue RawGet(string key)
-        {
-            return RawGetValue(m_StringMap.Find(key));
-        }
-
-        /// <summary>
-        /// Gets the value associated with the specified key,
-        /// without bringing to Nil the non-existant values.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        public DynValue RawGet(int key)
-        {
-            return RawGetValue(m_ArrayMap.Find(key));
-        }
-
-        /// <summary>
-        /// Gets the value associated with the specified key,
-        /// without bringing to Nil the non-existant values.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        public DynValue RawGet(DynValue key)
-        {
-            if (key.Type == DataType.String)
-                return RawGet(key.String);
-
-            if (key.Type == DataType.Number)
-            {
-                int idx = GetIntegralKey(key.Number);
-                if (idx > 0)
-                    return RawGet(idx);
-            }
-
-            return RawGetValue(m_ValueMap.Find(key));
-        }
-
-        /// <summary>
-        /// Gets the value associated with the specified key,
-        /// without bringing to Nil the non-existant values.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        public DynValue RawGet(object key)
-        {
-            if (key == null)
-                return null;
-
-            if (key is string)
-                return RawGet((string)key);
-
-            if (key is int)
-                return RawGet((int)key);
-
-            return RawGet(DynValue.FromObject(OwnerScript, key));
-        }
-
-        /// <summary>
-        /// Gets the value associated with the specified keys (expressed as an
-        /// array of <see cref="object"/>).
-        /// This will marshall CLR and MoonSharp objects in the best possible way.
-        /// Multiple keys can be used to access subtables.
-        /// </summary>
-        /// <param name="keys">The keys to access the table and subtables</param>
-        public DynValue RawGet(params object[] keys)
-        {
             if (keys == null || keys.Length <= 0)
-                return null;
+                return DynValue.Nil;
 
-            return ResolveMultipleKeys(keys, out object key).RawGet(key);
-        }
-
-        #endregion
-
-        #region Remove
-
-        private bool PerformTableRemove<T>(LinkedListIndex<T, TablePair> listIndex, T key, bool isNumber)
-        {
-            var removed = listIndex.Remove(key);
-
-            if (removed && isNumber)
-            {
-                m_CachedLength = -1;
-            }
-
-            return removed;
-        }
-
-        /// <summary>
-        /// Remove the value associated with the specified key from the table.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        /// <returns><c>true</c> if values was successfully removed; otherwise, <c>false</c>.</returns>
-        public bool Remove(string key)
-        {
-            return PerformTableRemove(m_StringMap, key, false);
-        }
-
-        /// <summary>
-        /// Remove the value associated with the specified key from the table.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        /// <returns><c>true</c> if values was successfully removed; otherwise, <c>false</c>.</returns>
-        public bool Remove(int key)
-        {
-            return PerformTableRemove(m_ArrayMap, key, true);
-        }
-
-        /// <summary>
-        /// Remove the value associated with the specified key from the table.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        /// <returns><c>true</c> if values was successfully removed; otherwise, <c>false</c>.</returns>
-        public bool Remove(DynValue key)
-        {
-            if (key.Type == DataType.String)
-                return Remove(key.String);
-
-            if (key.Type == DataType.Number)
-            {
-                int idx = GetIntegralKey(key.Number);
-                if (idx > 0)
-                    return Remove(idx);
-            }
-
-            return PerformTableRemove(m_ValueMap, key, false);
-        }
-
-        /// <summary>
-        /// Remove the value associated with the specified key from the table.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        /// <returns><c>true</c> if values was successfully removed; otherwise, <c>false</c>.</returns>
-        public bool Remove(object key)
-        {
-            if (key is string v1)
-                return Remove(v1);
-
-            if (key is int v)
-                return Remove(v);
-
-            return Remove(DynValue.FromObject(OwnerScript, key));
-        }
-
-        /// <summary>
-        /// Remove the value associated with the specified keys from the table.
-        /// Multiple keys can be used to access subtables.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        /// <returns><c>true</c> if values was successfully removed; otherwise, <c>false</c>.</returns>
-        public bool Remove(params object[] keys)
-        {
-            if (keys == null || keys.Length <= 0)
-                return false;
-
-            return ResolveMultipleKeys(keys, out object key).Remove(key);
+            return ResolveMultipleKeys(keys, out object key).Get(key);
         }
 
         #endregion
@@ -531,72 +414,117 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public void CollectDeadKeys()
         {
-            for (LinkedListNode<TablePair> node = m_Values.First; node != null; node = node.Next)
+            // this only cleans up the map and doesn't touch the array
+            foreach (var key in DeadKeys)
             {
-                if (node.Value.Value.IsNil())
+                ValueMap.Remove(key);
+            }
+            DeadKeys.Clear();
+            // note: we could use ValueMap.remove & an iterator in new versions of C# (.netcore 3)
+            //       so might be worth doing some dual strategy with some #ifdefs if that seems to be faster
+            //       though it would only be faster on smaller values.
+            // with a custom dictionary we could store just the hashcodes and iterate through all possible keys for them.
+            m_ContainsNilEntries = false;
+            m_CachedLength = -1;
+        }
+
+        public DynValue GetNextFromIt(DynValue v)
+        {
+            // note a custom dictionary may be a smart idea to make some of this faster
+            if (v.IsNil())
+            {
+                v = DynValue.NewNumber(0);
+            }
+
+            if (v.Type == DataType.Number && GetIntegralKey(v.Number) is var n
+                && n >= 0 && n < MAX_INT_KEY_ARRAY)
+            {
+                // we are looping through the array segment first
+                while (n < ArraySegment.Length - 1 && ArraySegment[n + 1] != null) n++;
+                
+                // if we are at the end
+                if (n == ArraySegment.Length)
                 {
-                    Remove(node.Value.Key);
+                    v = DynValue.NewIterator(new Iterator(ValueMap.GetEnumerator()));
+                }
+                else
+                {
+                    return DynValue.NewTuple(DynValue.NewNumber(n), ArraySegment[n]);
                 }
             }
 
-            m_ContainsNilEntries = false;
-            m_CachedLength = -1;
+            if (v.Type != DataType.Iterator)
+            {
+                // if it is not contained at all
+                if (!ValueMap.ContainsKey(v)) throw new ScriptRuntimeException("invalid key to 'next'");
+
+                var it = new Iterator(ValueMap.GetEnumerator());
+                DynValue test;
+                while ((test = it.Next()) != null && !test.Equals(v));
+                // since we know it contains our value we can just jump to the next one
+                v = DynValue.NewIterator(it);
+            }
+
+            var next = v.Iterator.Next();
+            // no more
+            if (next == null) return DynValue.Nil;
+            return DynValue.NewTuple(v, next);
         }
 
         /// <summary>
         /// Returns the next pair from a value
         /// </summary>
-        public TablePair? NextKey(DynValue v)
-        {
-            if (v.IsNil())
-            {
-                LinkedListNode<TablePair> node = m_Values.First;
+        // public TablePair? NextKey(DynValue v)
+        // {
+        //     if (v.IsNil())
+        //     {
+        //         LinkedListNode<TablePair> node = m_Values.First;
 
-                if (node == null)
-                    return TablePair.Nil;
-                else
-                {
-                    if (node.Value.Value.IsNil())
-                        return NextKey(node.Value.Key);
-                    else
-                        return node.Value;
-                }
-            }
+        //         if (node == null)
+        //             return TablePair.Nil;
+        //         else
+        //         {
+        //             if (node.Value.Value.IsNil())
+        //                 return NextKey(node.Value.Key);
+        //             else
+        //                 return node.Value;
+        //         }
+        //     }
 
-            if (v.Type == DataType.String)
-            {
-                return GetNextOf(m_StringMap.Find(v.String));
-            }
+        //     if (v.Type == DataType.String)
+        //     {
+        //         return GetNextOf(m_StringMap.Find(v.String));
+        //     }
 
-            if (v.Type == DataType.Number)
-            {
-                int idx = GetIntegralKey(v.Number);
+        //     if (v.Type == DataType.Number)
+        //     {
+        //         int idx = GetIntegralKey(v.Number);
 
-                if (idx > 0)
-                {
-                    return GetNextOf(m_ArrayMap.Find(idx));
-                }
-            }
+        //         if (idx > 0)
+        //         {
+        //             return GetNextOf(m_ArrayMap.Find(idx));
+        //         }
+        //     }
 
-            return GetNextOf(m_ValueMap.Find(v));
-        }
+        //     return GetNextOf(m_ValueMap.Find(v));
+        // }
 
-        private TablePair? GetNextOf(LinkedListNode<TablePair> linkedListNode)
-        {
-            while (true)
-            {
-                if (linkedListNode == null)
-                    return null;
+        // private TablePair? GetNextOf(LinkedListNode<TablePair> linkedListNode)
+        // {
+        //     while (true)
+        //     {
+        //         if (linkedListNode == null)
+        //             return null;
 
-                if (linkedListNode.Next == null)
-                    return TablePair.Nil;
+        //         if (linkedListNode.Next == null)
+        //             return TablePair.Nil;
 
-                linkedListNode = linkedListNode.Next;
+        //         linkedListNode = linkedListNode.Next;
 
-                if (!linkedListNode.Value.Value.IsNil())
-                    return linkedListNode.Value;
-            }
-        }
+        //         if (!linkedListNode.Value.Value.IsNil())
+        //             return linkedListNode.Value;
+        //     }
+        // }
 
         /// <summary>
         /// Gets the length of the "array part".
@@ -609,7 +537,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 {
                     m_CachedLength = 0;
 
-                    for (int i = 1; m_ArrayMap.ContainsKey(i) && !m_ArrayMap.Find(i).Value.Value.IsNil(); i++)
+                    for (int i = 1; i < ArraySegment.Length && ArraySegment[i] != null; i++)
                         m_CachedLength = i;
                 }
 
@@ -619,7 +547,7 @@ namespace SolarSharp.Interpreter.DataTypes
 
         internal void InitNextArrayKeys(DynValue val, int idx)
         {
-            if (ArraySegment.Capacity == 2 && idx == 1 && val.Type == DataType.Tuple && val.Tuple.Length > 1)
+            if (ArraySegment.Length == 2 && idx == 1 && val.Type == DataType.Tuple && val.Tuple.Length > 1)
             {
                 // in this specific case we are creating a table from a tuple
                 // i.e. function a() return 1, 2 end; local t = { a() }
@@ -630,7 +558,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 // wrapped in a structure they are returning multiple values).
                 
                 // For performance let's reserve now since we know the final tuple length
-                ArraySegment.Capacity = val.Tuple.Length + 1;
+                Array.Resize(ref ArraySegment, NextPowOfTwo(val.Tuple.Length + 1));
                 for (int i = 0; i < val.Tuple.Length; i++)
                 {
                     // we can presume that tuples can't be composed of other tuples
@@ -651,7 +579,9 @@ namespace SolarSharp.Interpreter.DataTypes
         public Table MetaTable
         {
             get { return m_MetaTable; }
-            set { this.CheckScriptOwnership(m_MetaTable); m_MetaTable = value; }
+            set { 
+                // this.CheckScriptOwnership(m_MetaTable); 
+            m_MetaTable = value; }
         }
         private Table m_MetaTable;
 
@@ -659,36 +589,18 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Enumerates the key/value pairs.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<TablePair> Pairs
-        {
-            get
-            {
-                return m_Values.Select(n => new TablePair(n.Key, n.Value));
-            }
-        }
+        public IEnumerable<KeyValuePair<DynValue, DynValue>> Pairs => ValueMap;
 
         /// <summary>
         /// Enumerates the keys.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<DynValue> Keys
-        {
-            get
-            {
-                return m_Values.Select(n => n.Key);
-            }
-        }
+        public IEnumerable<DynValue> Keys => ValueMap.Keys;
 
         /// <summary>
         /// Enumerates the values
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<DynValue> Values
-        {
-            get
-            {
-                return m_Values.Select(n => n.Value);
-            }
-        }
+        public IEnumerable<DynValue> Values => ValueMap.Values;
     }
 }

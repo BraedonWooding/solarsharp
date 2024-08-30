@@ -58,8 +58,8 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                 if (op1_MetaTable != null)
                 {
-                    DynValue meta1 = op1_MetaTable.RawGet(eventName);
-                    if (meta1 != null && meta1.IsNotNil())
+                    DynValue meta1 = op1_MetaTable.Get(eventName);
+                    if (meta1.IsNotNil())
                         m = meta1;
                 }
             }

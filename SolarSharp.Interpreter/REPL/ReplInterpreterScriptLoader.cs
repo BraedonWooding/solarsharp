@@ -54,9 +54,9 @@ namespace SolarSharp.Interpreter.REPL
         /// <returns></returns>
         public override string ResolveModuleName(string modname, Table globalContext)
         {
-            DynValue s = globalContext.RawGet("LUA_PATH");
+            DynValue s = globalContext.Get("LUA_PATH");
 
-            if (s != null && s.Type == DataType.String)
+            if (s.IsNotNil() && s.Type == DataType.String)
                 return ResolveModuleName(modname, UnpackStringPaths(s.String));
 
             else

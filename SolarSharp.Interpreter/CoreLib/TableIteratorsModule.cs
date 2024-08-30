@@ -61,12 +61,7 @@ namespace SolarSharp.Interpreter.CoreLib
             DynValue table = args.AsType(0, "next", DataType.Table);
             DynValue index = args[1];
 
-            TablePair? pair = table.Table.NextKey(index);
-
-            if (pair.HasValue)
-                return DynValue.NewTuple(pair.Value.Key, pair.Value.Value);
-            else
-                throw new ScriptRuntimeException("invalid key to 'next'");
+            return table.Table.GetNextFromIt(index);
         }
 
         // __next_i (table [, index])

@@ -67,9 +67,9 @@ namespace SolarSharp.Interpreter.Loaders
         {
             if (!IgnoreLuaPathGlobal)
             {
-                DynValue s = globalContext.RawGet("LUA_PATH");
+                DynValue s = globalContext.Get("LUA_PATH");
 
-                if (s != null && s.Type == DataType.String)
+                if (s.IsNotNil() && s.Type == DataType.String)
                     return ResolveModuleName(modname, UnpackStringPaths(s.String));
             }
 
