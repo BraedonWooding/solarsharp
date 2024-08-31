@@ -186,14 +186,20 @@ namespace SolarSharp.Interpreter.Execution.VM
                             break;
                         case OpCode.Index:
                         case OpCode.IndexN:
+                            instructionPtr = ExecIndexGetSingleIdx(i, instructionPtr);
+                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
+                            break;
                         case OpCode.IndexL:
-                            instructionPtr = ExecIndex(i, instructionPtr);
+                            instructionPtr = ExecIndexGetMultiIdx(i, instructionPtr);
                             if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.IndexSet:
                         case OpCode.IndexSetN:
+                            instructionPtr = ExecIndexSetSingleIdx(i, instructionPtr);
+                            if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
+                            break;
                         case OpCode.IndexSetL:
-                            instructionPtr = ExecIndexSet(i, instructionPtr);
+                            instructionPtr = ExecIndexSetMultiIdx(i, instructionPtr);
                             if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                             break;
                         case OpCode.Invalid:
@@ -1128,49 +1134,29 @@ namespace SolarSharp.Interpreter.Execution.VM
             tbl.Table.Set(key, val.ToScalar());
         }
 
-        private int ExecIndexSet(Instruction i, int instructionPtr)
+        private int ExecIndexSetSingleIdx(Instruction i, int instructionPtr)
         {
-            int nestedMetaOps = 100; // sanity check, to avoid potential infinite loop here
-
-            // stack: vals.. - base - index
-            bool isNameIndex = i.OpCode == OpCode.IndexSetN;
-            bool isMultiIndex = (i.OpCode == OpCode.IndexSetL);
-
             DynValue originalIdx = i.Value ?? m_ValueStack.Pop();
             DynValue idx = originalIdx.ToScalar();
             DynValue obj = m_ValueStack.Pop().ToScalar();
             var value = GetStoreValue(i);
-            while (nestedMetaOps > 0)
-            {
-                --nestedMetaOps;
 
-                DynValue h;
+            // max 100 ops to prevent infinite recursion
+            for (int op = 0; op < 100; op++)
+            {
+                DynValue newIndexMethod;
                 if (obj.Type == DataType.Table)
                 {
-                    if (!isMultiIndex)
-                    {
-                        if (!obj.Table.Get(idx).IsNil())
-                        {
-                            obj.Table.Set(idx, value);
-                            return instructionPtr;
-                        }
-                    }
-
-                    h = GetMetamethodRaw(obj, "__newindex");
-
-                    if (h == null || h.IsNil())
-                    {
-                        if (isMultiIndex) throw new ScriptRuntimeException("cannot multi-index a table. userdata expected");
-
-                        obj.Table.Set(idx, value);
-                        return instructionPtr;
-                    }
+                    // if the meta method was invoked it returns the value of it for us to actually invoke
+                    // if there is no meta method it will just perform the set, so we are pretty safe here.
+                    newIndexMethod = obj.Table.Set(idx, value, invokeMetaMethods: true);
+                    if (newIndexMethod == null || newIndexMethod.IsNil()) return instructionPtr;
                 }
                 else if (obj.Type == DataType.UserData)
                 {
                     UserData ud = obj.UserData;
 
-                    if (!ud.Descriptor.SetIndex(GetScript(), ud.Object, originalIdx, value, isNameIndex))
+                    if (!ud.Descriptor.SetIndex(GetScript(), ud.Object, originalIdx, value, isDirectIndexing: i.OpCode == OpCode.IndexN))
                     {
                         throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
                     }
@@ -1179,18 +1165,17 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
                 else
                 {
-                    h = GetMetamethodRaw(obj, "__newindex");
+                    newIndexMethod = GetMetamethodRaw(obj, "__newindex");
 
-                    if (h == null || h.IsNil())
-                        throw ScriptRuntimeException.IndexType(obj);
+                    if (newIndexMethod == null || newIndexMethod.IsNil()) throw ScriptRuntimeException.IndexType(obj);
                 }
 
-                if (h.Type == DataType.Function || h.Type == DataType.ClrFunction)
+                if (newIndexMethod.Type == DataType.Function || newIndexMethod.Type == DataType.ClrFunction)
                 {
-                    if (isMultiIndex) throw new ScriptRuntimeException("cannot multi-index through metamethods. userdata expected");
+                    // wtf is this, TODO: Probably remove??
                     m_ValueStack.Pop(); // burn extra value ?
 
-                    m_ValueStack.Push(h);
+                    m_ValueStack.Push(newIndexMethod);
                     m_ValueStack.Push(obj);
                     m_ValueStack.Push(idx);
                     m_ValueStack.Push(value);
@@ -1198,47 +1183,84 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
                 else
                 {
-                    obj = h;
+                    obj = newIndexMethod;
+                }
+
+            }
+            throw ScriptRuntimeException.LoopInNewIndex();
+        }
+
+        private int ExecIndexSetMultiIdx(Instruction i, int instructionPtr)
+        {
+            DynValue originalIdx = i.Value ?? m_ValueStack.Pop();
+            DynValue idx = originalIdx.ToScalar();
+            DynValue obj = m_ValueStack.Pop().ToScalar();
+            var value = GetStoreValue(i);
+
+            // max 100 ops to prevent infinite recursion
+            for (int op = 0; op < 100; op++)
+            {
+                DynValue newIndexMethod;
+                if (obj.Type == DataType.UserData)
+                {
+                    UserData ud = obj.UserData;
+
+                    if (!ud.Descriptor.SetIndex(GetScript(), ud.Object, originalIdx, value, isDirectIndexing: false))
+                    {
+                        throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
+                    }
+
+                    return instructionPtr;
+                }
+                else
+                {
+                    newIndexMethod = GetMetamethodRaw(obj, "__newindex");
+
+                    if (newIndexMethod == null || newIndexMethod.IsNil())
+                    {
+                        if (obj.Type == DataType.Table) throw new ScriptRuntimeException("cannot multi-index a table. userdata expected");
+                        throw ScriptRuntimeException.IndexType(obj);
+                    }
+                    else if (newIndexMethod.Type == DataType.Function || newIndexMethod.Type == DataType.ClrFunction)
+                    {
+                        throw new ScriptRuntimeException("cannot multi-index through metamethods. userdata expected");
+                    }
+                    else
+                    {
+                        obj = newIndexMethod;
+                    }
                 }
             }
             throw ScriptRuntimeException.LoopInNewIndex();
         }
 
-        private int ExecIndex(Instruction i, int instructionPtr)
+        private int ExecIndexGetSingleIdx(Instruction i, int instructionPtr)
         {
-            int nestedMetaOps = 100; // sanity check, to avoid potential infinite loop here
-
-            // stack: base - index
-            bool isNameIndex = i.OpCode == OpCode.IndexN;
-            bool isMultiIndex = (i.OpCode == OpCode.IndexL);
-
             DynValue originalIdx = i.Value ?? m_ValueStack.Pop();
             DynValue idx = originalIdx.ToScalar();
             DynValue obj = m_ValueStack.Pop().ToScalar();
-            while (nestedMetaOps > 0)
-            {
-                --nestedMetaOps;
 
-                DynValue h;
+            // max 100 ops to prevent infinite recursion
+            for (int op = 0; op < 100; op++)
+            {
+                DynValue indexMethod;
                 if (obj.Type == DataType.Table)
                 {
-                    if (!isMultiIndex)
+                    // if the meta method was invoked it returns the value of it for us to actually invoke
+                    // if there is no meta method it will just perform the set, so we are pretty safe here.
+                    var v = obj.Table.Get(idx);
+                    if (v.IsNotNil())
                     {
-                        var v = obj.Table.Get(idx);
-
-                        if (!v.IsNil())
-                        {
-                            m_ValueStack.Push(v.AsReadOnly());
-                            return instructionPtr;
-                        }
+                        // removing the AsReadonly since I'm moving towards readonly instances anyways (structs)
+                        // for now I don't really see this as an issue since it's mostly just a type safety issue
+                        // and I don't like the .Clone allocation.
+                        m_ValueStack.Push(v);
+                        return instructionPtr;
                     }
 
-                    h = GetMetamethodRaw(obj, "__index");
-
-                    if (h == null || h.IsNil())
+                    indexMethod = GetMetamethodRaw(obj, "__index");
+                    if (indexMethod == null || indexMethod.IsNil())
                     {
-                        if (isMultiIndex) throw new ScriptRuntimeException("cannot multi-index a table. userdata expected");
-
                         m_ValueStack.Push(DynValue.Nil);
                         return instructionPtr;
                     }
@@ -1247,29 +1269,72 @@ namespace SolarSharp.Interpreter.Execution.VM
                 {
                     UserData ud = obj.UserData;
 
-                    var v = ud.Descriptor.Index(GetScript(), ud.Object, originalIdx, isNameIndex) ?? throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
+                    var v = ud.Descriptor.Index(GetScript(), ud.Object, originalIdx, isDirectIndexing: i.OpCode == OpCode.IndexN) ?? throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
                     m_ValueStack.Push(v.AsReadOnly());
                     return instructionPtr;
                 }
                 else
                 {
-                    h = GetMetamethodRaw(obj, "__index");
-
-                    if (h == null || h.IsNil())
-                        throw ScriptRuntimeException.IndexType(obj);
+                    indexMethod = GetMetamethodRaw(obj, "__index");
+                    if (indexMethod == null || indexMethod.IsNil()) throw ScriptRuntimeException.IndexType(obj);
                 }
 
-                if (h.Type == DataType.Function || h.Type == DataType.ClrFunction)
+                if (indexMethod.Type == DataType.Function || indexMethod.Type == DataType.ClrFunction)
                 {
-                    if (isMultiIndex) throw new ScriptRuntimeException("cannot multi-index through metamethods. userdata expected");
-                    m_ValueStack.Push(h);
+                    m_ValueStack.Push(indexMethod);
                     m_ValueStack.Push(obj);
                     m_ValueStack.Push(idx);
                     return Internal_ExecCall(2, instructionPtr);
                 }
                 else
                 {
-                    obj = h;
+                    obj = indexMethod;
+                }
+            }
+            throw ScriptRuntimeException.LoopInNewIndex();
+        }
+
+        private int ExecIndexGetMultiIdx(Instruction i, int instructionPtr)
+        {
+            DynValue originalIdx = i.Value ?? m_ValueStack.Pop();
+            DynValue idx = originalIdx.ToScalar();
+            DynValue obj = m_ValueStack.Pop().ToScalar();
+
+            // max 100 ops to prevent infinite recursion
+            for (int op = 0; op < 100; op++)
+            {
+                DynValue indexMethod;
+                if (obj.Type == DataType.UserData)
+                {
+                    UserData ud = obj.UserData;
+
+                    var v = ud.Descriptor.Index(GetScript(), ud.Object, originalIdx, isDirectIndexing: false) ?? throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
+                    m_ValueStack.Push(v.AsReadOnly());
+                    return instructionPtr;
+                }
+                else
+                {
+                    indexMethod = GetMetamethodRaw(obj, "__index");
+                    if (indexMethod == null || indexMethod.IsNil())
+                    {
+                        if (obj.Type == DataType.Table)
+                        {
+                            throw new ScriptRuntimeException("cannot multi-index a table. userdata expected");
+                        }
+                        else
+                        {
+                            throw ScriptRuntimeException.IndexType(obj);
+                        }
+                    }
+
+                    if (indexMethod.Type == DataType.Function || indexMethod.Type == DataType.ClrFunction)
+                    {
+                        throw new ScriptRuntimeException("cannot multi-index through metamethods. userdata expected");
+                    }
+                    else
+                    {
+                        obj = indexMethod;
+                    }
                 }
             }
 

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.DataTypes
@@ -16,6 +15,11 @@ namespace SolarSharp.Interpreter.DataTypes
         private int m_CachedLength = -1;
         private bool m_ContainsNilEntries = false;
 
+        /// <summary>
+        /// In future this probably should be managed by the dictionary.
+        /// 
+        /// We could compress the list, but this is sort of hard to do efficiently.
+        /// </summary>
         private readonly List<DynValue> DeadKeys = new();
 
         /// <summary>
@@ -35,6 +39,8 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Initializes a new instance of the <see cref="Table"/> class.
         /// </summary>
         /// <param name="owner">The owner script.</param>
+        /// <param name="arraySizeHint">A hint for the length of the array component</param>
+        /// <param name="associativeSizeHint">A hint for thet length of the map component</param>
         public Table(Script owner, int arraySizeHint = 0, int associativeSizeHint = 0)
         {
             m_Owner = owner;
@@ -156,12 +162,14 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="value">The value.</param>
         public void Append(DynValue value)
         {
+            // Table.Insert uses rawset
+
             // I don't really see much value in preventing cross script table accesses
             // keep in mind this is for a *game* so it's pretty hard for a given resource
             // to even access a cross script resource without you directly passing it in.
             // Maybe server side this makes more sense but even then I think there are better ways to sandbox it...
             // this.CheckScriptOwnership(value);
-            ArraySet(Length + 1, value);
+            ArraySet(Length + 1, value, invokeMetaMethods: false);
         }
 
         private int NextPowOfTwo(int v) {
@@ -179,7 +187,38 @@ namespace SolarSharp.Interpreter.DataTypes
 
         #region Set
 
-        private void ArraySet(int index, DynValue value)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="value"></param>
+        /// <param name="setIfAbsent"></param>
+        /// <returns></returns>
+        private DynValue RawArraySet(int index, DynValue value, bool setIfAbsent)
+        {
+            if (index >= ArraySegment.Length)
+            {
+                Array.Resize(ref ArraySegment, NextPowOfTwo(index + 1));
+            }
+
+            DynValue prev = ArraySegment[index];
+            if (prev == null && !setIfAbsent) return DynValue.Nil;
+
+            m_CachedLength = -1;
+            if (value.IsNil())
+            {
+                m_ContainsNilEntries = true;
+                ArraySegment[index] = null;
+            }
+            else
+            {
+                ArraySegment[index] = value;
+            }
+
+            return prev ?? DynValue.Nil;
+        }
+
+        private DynValue ArraySet(int index, DynValue value, bool invokeMetaMethods)
         {
             // just a quick check for our max index
             // this is probably a *bit* too large
@@ -187,37 +226,23 @@ namespace SolarSharp.Interpreter.DataTypes
             // so this is semi-reasonable for now.
             if (index >= MAX_INT_KEY_ARRAY)
             {
-                Set(DynValue.NewNumber(index), value);
-                return;
+                return MapSet(DynValue.NewNumber(index), value, invokeMetaMethods);
             }
 
-            if (index >= ArraySegment.Length)
+            if (RawArraySet(index, value, setIfAbsent: !invokeMetaMethods) is { Type: DataType.Nil } && invokeMetaMethods)
             {
-                Array.Resize(ref ArraySegment, NextPowOfTwo(index + 1));
+                if (MetaTable?.Get("__newindex") is DynValue newIndex && newIndex.IsNotNil())
+                {
+                    return newIndex;
+                }
+                else
+                {
+                    ArraySegment[index] = value;
+                    m_CachedLength = -1;
+                }
             }
 
-            bool hasPrev = ArraySegment[index] != null;
-
-            if (value.IsNil())
-            {
-                // we use the actual null value to represent "nil" in our tables
-                ArraySegment[index] = null;
-                m_ContainsNilEntries = true;
-                m_CachedLength = -1;
-            }
-            else if (m_ContainsNilEntries && !hasPrev)
-            {
-                ArraySegment[index] = value;
-                // we collect dead keys if there are nils & we aren't inserting nil & there was not a previous value
-                CollectDeadKeys();
-            }
-            else
-            {
-                ArraySegment[index] = value;
-                // this is the only case where we can reliabily say the length has gotten longer in some cases
-                // for now I'm just invalidating to be lazy
-                m_CachedLength = -1;
-            }
+            return DynValue.Nil;
         }
 
         /// <summary>
@@ -225,22 +250,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <param name="key">The key.</param>
         /// <param name="value">The value.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Set(int key, DynValue value)
-        {
-            // in some cases we are better of setting the the associative array
-            // rather than the list array for large gaps, but for now I'm skipping that analysis
-            // it won't effect current benchmarks that much.
-            ArraySet(key, value);
-            // this.CheckScriptOwnership(value);
-        }
-
-        /// <summary>
-        /// Sets the value associated to the specified key.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        /// <param name="value">The value.</param>
-        public void Set(DynValue key, DynValue value)
+        /// <param name="invokeMetaMethods">Set if the value in the table is absent</param>
+        /// <returns>Returns the previous value in the table</returns>
+        public DynValue Set(DynValue key, DynValue value, bool invokeMetaMethods)
         {
             if (key.IsNilOrNan())
             {
@@ -253,50 +265,79 @@ namespace SolarSharp.Interpreter.DataTypes
             if (key.Type == DataType.Number)
             {
                 int idx = GetIntegralKey(key.Number);
-                if (idx < MAX_INT_KEY_ARRAY && idx >= 0)
+                if (idx >= 0 && idx < MAX_INT_KEY_ARRAY)
                 {
-                    ArraySet(idx, value);
-                    return;
+                    return ArraySet(idx, value, invokeMetaMethods);
                 }
             }
 
-            MapSet(key, value);
+            return MapSet(key, value, invokeMetaMethods);
         }
 
-        public void MapSet(DynValue key, DynValue value)
+        /// <summary>
+        /// Attempts a set on the map.
+        /// </summary>
+        /// <returns></returns>
+        private DynValue RawMapSet(DynValue key, DynValue value, bool setIfAbsent)
         {
-            bool hasPrev;
-            if (ValueMap.TryGetValue(key, out var currentValue))
+            var prevValue = ValueMap.GetValueOrDefault(key);
+            if (prevValue == null)
             {
-                hasPrev = currentValue != null;
+                if (!setIfAbsent)
+                {
+                    return DynValue.Nil;
+                }
+                else if (value.IsNotNil())
+                {
+                    // no point doing an operation for t[k] = nil if there is no previous k element
+                    ValueMap[key] = value;
+                    CollectDeadKeys();
+                }
             }
-            else 
+            else
             {
-                hasPrev = false;
+                if (value.IsNotNil())
+                {
+                    ValueMap[key] = value;
+                }
+                else
+                {
+                    ValueMap[key] = null;
+                    DeadKeys.Add(key);
+                }
             }
 
-            // we use null rather than nil when using keys
-            if (value.IsNil() && hasPrev)
+            return prevValue ?? DynValue.Nil;
+        }
+
+        /// <summary>
+        /// Attempts a set on the map.
+        /// </summary>
+        /// <param name="invokeMetaMethods">This is used to implement __newindex operations</param>
+        /// <returns></returns>
+        private DynValue MapSet(DynValue key, DynValue value, bool invokeMetaMethods)
+        {
+            if (RawMapSet(key, value, setIfAbsent: !invokeMetaMethods) is { Type: DataType.Nil } && invokeMetaMethods)
             {
-                ValueMap[key] = null;
-                DeadKeys.Add(key);
+                if (MetaTable?.Get("__newindex") is DynValue newIndex && newIndex.IsNotNil())
+                {
+                    return newIndex;
+                }
+                else
+                {
+                    // the previous value was nil so we do have to collect dead keys
+                    ValueMap[key] = value;
+                    CollectDeadKeys();
+                }
             }
-            else if (hasPrev)
-            {
-                ValueMap[key] = value;
-            }
-            else if (!value.IsNil())
-            {
-                // no point doing an operation for t[k] = nil if there is no previous k element
-                ValueMap[key] = value;
-                CollectDeadKeys();
-            }
+
+            return DynValue.Nil;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(string s, DynValue value)
         {
-            MapSet(DynValue.NewString(s), value);
+            MapSet(DynValue.NewString(s), value, invokeMetaMethods: false);
         }
 
         /// <summary>
@@ -309,10 +350,7 @@ namespace SolarSharp.Interpreter.DataTypes
             if (key == null)
                 throw ScriptRuntimeException.TableIndexIsNil();
 
-            if (key is int i && i < MAX_INT_KEY_ARRAY)
-                ArraySet(i, value);
-            else
-                MapSet(DynValue.FromObject(OwnerScript, key), value);
+            Set(DynValue.FromObject(OwnerScript, key), value, invokeMetaMethods: false);
         }
 
         /// <summary>
@@ -411,9 +449,13 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public void CollectDeadKeys()
         {
+            // Right now this is a pretty frequent operation
+
             // this only cleans up the map and doesn't touch the array
             foreach (var key in DeadKeys)
             {
+                // we don't actually remove items from dead keys
+                // so doing map[key] = nil; map[key] = A would still have the dead key.
                 if (ValueMap[key] == null) ValueMap.Remove(key);
             }
             DeadKeys.Clear();
@@ -425,6 +467,10 @@ namespace SolarSharp.Interpreter.DataTypes
             m_CachedLength = -1;
         }
 
+        /// <summary>
+        /// Performs the Next() operation
+        /// </summary>
+        /// <param name="v">The previous value or nil</param>
         public DynValue GetNextFromIt(DynValue v)
         {
             bool wasNil = false;
@@ -483,61 +529,6 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Returns the next pair from a value
-        /// </summary>
-        // public TablePair? NextKey(DynValue v)
-        // {
-        //     if (v.IsNil())
-        //     {
-        //         LinkedListNode<TablePair> node = m_Values.First;
-
-        //         if (node == null)
-        //             return TablePair.Nil;
-        //         else
-        //         {
-        //             if (node.Value.Value.IsNil())
-        //                 return NextKey(node.Value.Key);
-        //             else
-        //                 return node.Value;
-        //         }
-        //     }
-
-        //     if (v.Type == DataType.String)
-        //     {
-        //         return GetNextOf(m_StringMap.Find(v.String));
-        //     }
-
-        //     if (v.Type == DataType.Number)
-        //     {
-        //         int idx = GetIntegralKey(v.Number);
-
-        //         if (idx > 0)
-        //         {
-        //             return GetNextOf(m_ArrayMap.Find(idx));
-        //         }
-        //     }
-
-        //     return GetNextOf(m_ValueMap.Find(v));
-        // }
-
-        // private TablePair? GetNextOf(LinkedListNode<TablePair> linkedListNode)
-        // {
-        //     while (true)
-        //     {
-        //         if (linkedListNode == null)
-        //             return null;
-
-        //         if (linkedListNode.Next == null)
-        //             return TablePair.Nil;
-
-        //         linkedListNode = linkedListNode.Next;
-
-        //         if (!linkedListNode.Value.Value.IsNil())
-        //             return linkedListNode.Value;
-        //     }
-        // }
-
-        /// <summary>
         /// Gets the length of the "array part".
         /// </summary>
         public int Length
@@ -587,14 +578,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Gets the meta-table associated with this instance.
         /// </summary>
-        public Table MetaTable
-        {
-            get { return m_MetaTable; }
-            set { 
-                // this.CheckScriptOwnership(m_MetaTable); 
-            m_MetaTable = value; }
-        }
-        private Table m_MetaTable;
+        public Table MetaTable { get; set; }
         
         private IEnumerable<KeyValuePair<DynValue, DynValue>> ArrayPairs =>
             ArraySegment
