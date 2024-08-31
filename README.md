@@ -4,6 +4,7 @@ SolarSharp [![.NET](https://github.com/BraedonWooding/solarsharp/actions/workflo
 A complete Lua solution written entirely in C# for the .NET, Mono, and Unity3D platforms.
 
 > Is a modernized version of [MoonSharp](https://github.com/moonsharp-devs/moonsharp)
+> Performance stats are here: https://braedonwooding.github.io/solarsharp/dev/bench/
 
 Changes from MoonSharp:
 * Built on .net standard 2.1 to take advantage of more modern C# features
