@@ -56,7 +56,6 @@
         Power,      // Power of the two topmost operands on the v-stack
         CNot,       // Conditional NOT - takes second operand from the v-stack (must be bool), if true execs a NOT otherwise execs a TOBOOL
 
-
         // Type conversions and manipulations
         MkTuple,    // Creates a tuple from the topmost n values
         Scalar,     // Converts the topmost tuple to a scalar
@@ -64,7 +63,6 @@
         ToNum,      // Converts the top of the stack to a number
         ToBool,     // Converts the top of the stack to a boolean
         ExpTuple,   // Expands a tuple on the stack
-
 
         // Iterators
         IterPrep,   // Prepares an iterator for execution 

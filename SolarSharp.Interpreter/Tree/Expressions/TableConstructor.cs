@@ -9,17 +9,14 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 {
     internal class TableConstructor : Expression
     {
-        private readonly bool m_Shared = false;
         private readonly List<Expression> m_PositionalValues = new();
         private readonly List<KeyValuePair<Expression, Expression>> m_CtorArgs = new();
 
-        public TableConstructor(ScriptLoadingContext lcontext, bool shared)
+        public TableConstructor(ScriptLoadingContext lcontext)
             : base(lcontext)
         {
-            m_Shared = shared;
-
             // here lexer is at the '{', go on
-            CheckTokenType(lcontext, TokenType.Brk_Open_Curly, TokenType.Brk_Open_Curly_Shared);
+            CheckTokenType(lcontext, TokenType.Brk_Open_Curly);
 
             while (lcontext.Lexer.Current.Type != TokenType.Brk_Close_Curly)
             {
@@ -95,7 +92,15 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
         public override void Compile(ByteCode bc)
         {
-            bc.Emit_NewTable(m_Shared);
+            // tuples could result in us writing more positional values so it's a hint
+            bc.Emit_NewTable(m_PositionalValues.Count, m_CtorArgs.Count);
+
+            for (int i = 0; i < m_PositionalValues.Count; i++)
+            {
+                m_PositionalValues[i].Compile(bc);
+                // note: +1 because lua tables start at 1 for positional indexes
+                bc.Emit_TblInitI(i + 1);
+            }
 
             foreach (var kvp in m_CtorArgs)
             {
@@ -103,37 +108,28 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                 kvp.Value.Compile(bc);
                 bc.Emit_TblInitN();
             }
-
-            for (int i = 0; i < m_PositionalValues.Count; i++)
-            {
-                m_PositionalValues[i].Compile(bc);
-                bc.Emit_TblInitI(i == m_PositionalValues.Count - 1);
-            }
         }
-
 
         public override DynValue Eval(ScriptExecutionContext context)
         {
-            if (!m_Shared)
-            {
-                throw new DynamicExpressionException("Dynamic Expressions cannot define new non-prime tables.");
-            }
+            // TODO: Not sure what eval is but we can probably safely remove it.
+            throw new DynamicExpressionException("Dynamic Expressions cannot define new non-prime tables.");
 
-            DynValue tval = DynValue.NewPrimeTable();
-            Table t = tval.Table;
+            // DynValue tval = DynValue.NewPrimeTable();
+            // Table t = tval.Table;
 
-            int idx = 0;
-            foreach (Expression e in m_PositionalValues)
-            {
-                t.Set(++idx, e.Eval(context));
-            }
+            // int idx = 0;
+            // foreach (Expression e in m_PositionalValues)
+            // {
+            //     t.Set(++idx, e.Eval(context));
+            // }
 
-            foreach (KeyValuePair<Expression, Expression> kvp in m_CtorArgs)
-            {
-                t.Set(kvp.Key.Eval(context), kvp.Value.Eval(context));
-            }
+            // foreach (KeyValuePair<Expression, Expression> kvp in m_CtorArgs)
+            // {
+            //     t.Set(kvp.Key.Eval(context), kvp.Value.Eval(context));
+            // }
 
-            return tval;
+            // return tval;
         }
     }
 }

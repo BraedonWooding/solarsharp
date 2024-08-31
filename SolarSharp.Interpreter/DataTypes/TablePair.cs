@@ -26,7 +26,6 @@
             set { if (key.IsNotNil()) Value = value; }
         }
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="TablePair"/> struct.
         /// </summary>

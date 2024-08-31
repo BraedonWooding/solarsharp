@@ -65,7 +65,6 @@
         SemiColon,
         Invalid,
 
-        Brk_Open_Curly_Shared,
         Op_Dollar,
     }
 

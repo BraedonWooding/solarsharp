@@ -55,11 +55,10 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                     }
                     break;
                 case TokenType.Brk_Open_Curly:
-                case TokenType.Brk_Open_Curly_Shared:
                     {
                         m_Arguments = new List<Expression>
                         {
-                            new TableConstructor(lcontext, lcontext.Lexer.Current.Type == TokenType.Brk_Open_Curly_Shared)
+                            new TableConstructor(lcontext)
                         };
                         SourceRef = callToken.GetSourceRefUpTo(lcontext.Lexer.Current);
                     }

@@ -241,7 +241,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					x[k] = v;
 				end
 
-
 				t = 
 				{
 					a = 1,
@@ -280,6 +279,72 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
+        [Test]
+        public void TableWithArraysNextWithChangeInCollection()
+        {
+            string script = @"
+				x = { }
+
+				function copy(k, v)
+					x[k] = v;
+				end
+
+				t = 
+				{
+                    ""A"", ""B"", ""C"",
+					a = 1,
+					b = 2,
+					c = 3,
+					d = 4,
+					e = 5
+				}
+
+				k,v = next(t, nil);
+				copy(k, v);
+				k,v = next(t, k);
+				copy(k, v);
+				k,v = next(t, k);
+				copy(k, v);
+
+				k,v = next(t, k);
+				copy(k, v);
+
+				k,v = next(t, k);
+				copy(k, v);
+				v = nil;
+
+				k,v = next(t, k);
+				copy(k, v);
+
+				k,v = next(t, k);
+				copy(k, v);
+
+				k,v = next(t, k);
+				copy(k, v);
+
+                function dump(o)
+                   if type(o) == 'table' then
+                      local s = '{ '
+                      for k,v in pairs(o) do
+                         if type(k) ~= 'number' then k = '""'..k..'""' end
+                         s = s .. '['..k..'] = ' .. dump(v) .. ','
+                      end
+                      return s .. '} '
+                   else
+                      return tostring(o)
+                   end
+                end
+
+				return dump(x)";
+
+            DynValue res = Script.RunString(script);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(res.Type, Is.EqualTo(DataType.String));
+                Assert.That(res.String, Is.EqualTo("{ [1] = A,[2] = B,[3] = C,[\"a\"] = 1,[\"b\"] = 2,[\"c\"] = 3,[\"d\"] = 4,[\"e\"] = 5,} "));
+            });
+        }
 
         [Test]
         public void TablePairsWithoutMetatable()
@@ -539,38 +604,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(res.Tuple[0].Number, Is.EqualTo(3));
                 Assert.That(res.Tuple[1].Number, Is.EqualTo(4));
             });
-        }
-
-        [Test]
-        public void PrimeTable_1()
-        {
-            string script = @"    
-			t = ${
-				ciao = 'hello'
-			}
-		";
-
-            Script s = new();
-            s.DoString(script);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(s.Globals["t", "ciao"], Is.EqualTo("hello"));
-                Assert.That(s.Globals.Get("t").Table.OwnerScript, Is.EqualTo(null));
-            });
-        }
-
-        [Test]
-        public void PrimeTable_2()
-        {
-            string script = @"    
-			t = ${
-				ciao = function() end
-			}
-		";
-
-            Script s = new();
-            Assert.Throws<ScriptRuntimeException>(() => s.DoString(script));
         }
 
         [Test]

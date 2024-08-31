@@ -15,7 +15,6 @@ namespace Benchmark
 
         public IEnumerable<AImplementation> Impls()
         {
-            // crashing for now
             yield return new NeoImplementation();
             yield return new KeraImplementation();
             yield return new MoonSharpImplementation();
@@ -25,14 +24,14 @@ namespace Benchmark
 
         public IEnumerable<LuaFile> Tests()
         {
+            yield return new LuaFile("./Tests/queen.lua");
+            yield return new LuaFile("./Tests/mandel.lua");
             yield return new LuaFile("./Tests/empty_test.lua");
             yield return new LuaFile("./Tests/binarytrees.lua-2.lua");
             yield return new LuaFile("./Tests/ack.lua");
-            yield return new LuaFile("./Tests/queen.lua");
             yield return new LuaFile("./Tests/sieve.lua");
-            yield return new LuaFile("./Tests/mandel.lua");
             yield return new LuaFile("./Tests/heapsort.lua");
-            //yield return new LuaFile("./Tests/regexredux.lua-2.lua");
+            yield return new LuaFile("./Tests/regexredux.lua-2.lua");
 
             //foreach (var file in Directory.GetFiles("./Tests", "*.lua", SearchOption.AllDirectories))
             //{
@@ -45,7 +44,7 @@ namespace Benchmark
         {
             var t = Task.Run(() => Implementation.Run(Test.Contents));
             // limiting execution to 2 mins
-            var winner = await Task.WhenAny(t, Task.Delay(TimeSpan.FromSeconds(10)));
+            var winner = await Task.WhenAny(t, Task.Delay(TimeSpan.FromSeconds(20)));
             if (winner == t)
             {
                 // success

@@ -43,8 +43,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-
-
         private int Internal_InvokeUnaryMetaMethod(DynValue op1, string eventName, int instructionPtr)
         {
             DynValue m = null;
@@ -60,8 +58,8 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                 if (op1_MetaTable != null)
                 {
-                    DynValue meta1 = op1_MetaTable.RawGet(eventName);
-                    if (meta1 != null && meta1.IsNotNil())
+                    DynValue meta1 = op1_MetaTable.Get(eventName);
+                    if (meta1.IsNotNil())
                         m = meta1;
                 }
             }
@@ -97,52 +95,5 @@ namespace SolarSharp.Interpreter.Execution.VM
                 return -1;
             }
         }
-
-        private DynValue[] StackTopToArray(int items, bool pop)
-        {
-            DynValue[] values = new DynValue[items];
-
-            if (pop)
-            {
-                for (int i = 0; i < items; i++)
-                {
-                    values[i] = m_ValueStack.Pop();
-                }
-            }
-            else
-            {
-                for (int i = 0; i < items; i++)
-                {
-                    values[i] = m_ValueStack.Storage[m_ValueStack.Count - 1 - i];
-                }
-            }
-
-            return values;
-        }
-
-        private DynValue[] StackTopToArrayReverse(int items, bool pop)
-        {
-            DynValue[] values = new DynValue[items];
-
-            if (pop)
-            {
-                for (int i = 0; i < items; i++)
-                {
-                    values[items - 1 - i] = m_ValueStack.Pop();
-                }
-            }
-            else
-            {
-                for (int i = 0; i < items; i++)
-                {
-                    values[items - 1 - i] = m_ValueStack.Storage[m_ValueStack.Count - 1 - i];
-                }
-            }
-
-            return values;
-        }
-
-
-
     }
 }

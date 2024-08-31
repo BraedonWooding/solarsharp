@@ -57,8 +57,8 @@ namespace SolarSharp.Interpreter.CoreLib
 
             if (meta == null)
                 return DynValue.Nil;
-            else if (meta.RawGet("__metatable") != null)
-                return meta.Get("__metatable");
+            else if (meta.Get("__metatable") is var metaTable && metaTable.IsNotNil())
+                return metaTable;
             else
                 return DynValue.NewTable(meta);
         }

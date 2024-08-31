@@ -25,16 +25,16 @@ namespace SolarSharp.Interpreter.Execution.VM
             var op1_MetaTable = GetMetatable(op1);
             if (op1_MetaTable != null)
             {
-                DynValue meta1 = op1_MetaTable.RawGet(eventName);
-                if (meta1 != null && meta1.IsNotNil())
+                DynValue meta1 = op1_MetaTable.Get(eventName);
+                if (meta1.IsNotNil())
                     return meta1;
             }
 
             var op2_MetaTable = GetMetatable(op2);
             if (op2_MetaTable != null)
             {
-                DynValue meta2 = op2_MetaTable.RawGet(eventName);
-                if (meta2 != null && meta2.IsNotNil())
+                DynValue meta2 = op2_MetaTable.Get(eventName);
+                if (meta2.IsNotNil())
                     return meta2;
             }
 
@@ -79,9 +79,9 @@ namespace SolarSharp.Interpreter.Execution.VM
             if (metatable == null)
                 return null;
 
-            var metameth = metatable.RawGet(metamethod);
+            var metameth = metatable.Get(metamethod);
 
-            if (metameth == null || metameth.IsNil())
+            if (metameth.IsNil())
                 return null;
 
             return metameth;

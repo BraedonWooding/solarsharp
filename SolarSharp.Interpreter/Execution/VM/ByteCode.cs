@@ -204,9 +204,9 @@ namespace SolarSharp.Interpreter.Execution.VM
             return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.Incr, NumVal = i });
         }
 
-        public Instruction Emit_NewTable(bool shared)
+        public Instruction Emit_NewTable(int arraySizeHint, int associativeSizeHint)
         {
-            return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.NewTable, NumVal = shared ? 1 : 0 });
+            return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.NewTable, NumVal = arraySizeHint, NumVal2 = associativeSizeHint });
         }
 
         public Instruction Emit_IterPrep()
@@ -295,9 +295,9 @@ namespace SolarSharp.Interpreter.Execution.VM
             return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.TblInitN });
         }
 
-        public Instruction Emit_TblInitI(bool lastpos)
+        public Instruction Emit_TblInitI(int idx)
         {
-            return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.TblInitI, NumVal = lastpos ? 1 : 0 });
+            return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.TblInitI, NumVal = idx });
         }
 
         public Instruction Emit_Index(DynValue index = null, bool isNameIndex = false, bool isExpList = false)

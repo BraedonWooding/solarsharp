@@ -76,7 +76,6 @@ namespace SolarSharp.Interpreter.Interop.Converters
             }
         }
 
-
         /// <summary>
         /// Converts a DynValue to a CLR object of a specific type
         /// </summary>

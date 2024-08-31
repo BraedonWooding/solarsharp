@@ -76,7 +76,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public YieldRequest YieldRequest { get { return m_Object as YieldRequest; } }
         /// <summary>
-        /// Gets the tail call data.
+        /// Gets the user data.
         /// </summary>
         public UserData UserData { get { return m_Object as UserData; } }
 
@@ -84,8 +84,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Returns true if this instance is write protected.
         /// </summary>
         public bool ReadOnly { get { return m_ReadOnly; } }
-
-
 
         /// <summary>
         /// Creates a new writable value initialized to Nil.
@@ -116,7 +114,6 @@ namespace SolarSharp.Interpreter.DataTypes
             {
                 m_Number = num,
                 m_Type = DataType.Number,
-                m_HashCode = -1,
             };
         }
 
@@ -233,9 +230,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Creates a new writable value initialized to an empty table.
         /// </summary>
-        public static DynValue NewTable(Script script)
+        public static DynValue NewTable(Script script, int arraySizeHint = 0, int associativeSizeHint = 0)
         {
-            return NewTable(new Table(script));
+            return NewTable(new Table(script, arraySizeHint, associativeSizeHint));
         }
 
         /// <summary>
@@ -520,35 +517,22 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </returns>
         public override string ToString()
         {
-            switch (Type)
+            return Type switch
             {
-                case DataType.Void:
-                    return "void";
-                case DataType.Nil:
-                    return "nil";
-                case DataType.Boolean:
-                    return Boolean.ToString().ToLower();
-                case DataType.Number:
-                    return Number.ToString(CultureInfo.InvariantCulture);
-                case DataType.String:
-                    return "\"" + String + "\"";
-                case DataType.Function:
-                    return string.Format("(Function {0:X8})", Function.EntryPointByteCodeLocation);
-                case DataType.ClrFunction:
-                    return string.Format("(Function CLR)", Function);
-                case DataType.Table:
-                    return "(Table)";
-                case DataType.Tuple:
-                    return string.Join(", ", Tuple.Select(t => t.ToString()).ToArray());
-                case DataType.TailCallRequest:
-                    return "Tail:(" + string.Join(", ", Tuple.Select(t => t.ToString()).ToArray()) + ")";
-                case DataType.UserData:
-                    return "(UserData)";
-                case DataType.Thread:
-                    return string.Format("(Coroutine {0:X8})", Coroutine.ReferenceID);
-                default:
-                    return "(???)";
-            }
+                DataType.Void => "void",
+                DataType.Nil => "nil",
+                DataType.Boolean => Boolean.ToString().ToLower(),
+                DataType.Number => Number.ToString(CultureInfo.InvariantCulture),
+                DataType.String => "\"" + String + "\"",
+                DataType.Function => string.Format("(Function {0:X8})", Function.EntryPointByteCodeLocation),
+                DataType.ClrFunction => string.Format("(Function CLR)", Function),
+                DataType.Table => "(Table)",
+                DataType.Tuple => string.Join(", ", Tuple.Select(t => t.ToString()).ToArray()),
+                DataType.TailCallRequest => "Tail:(" + string.Join(", ", Tuple.Select(t => t.ToString()).ToArray()) + ")",
+                DataType.UserData => "(UserData)",
+                DataType.Thread => string.Format("(Coroutine {0:X8})", Coroutine.ReferenceID),
+                _ => "(???)",
+            };
         }
 
         /// <summary>
@@ -564,41 +548,18 @@ namespace SolarSharp.Interpreter.DataTypes
 
             int baseValue = (int)Type << 27;
 
-            switch (Type)
+            m_HashCode = Type switch
             {
-                case DataType.Void:
-                case DataType.Nil:
-                    m_HashCode = 0;
-                    break;
-                case DataType.Boolean:
-                    m_HashCode = Boolean ? 1 : 2;
-                    break;
-                case DataType.Number:
-                    m_HashCode = baseValue ^ Number.GetHashCode();
-                    break;
-                case DataType.String:
-                    m_HashCode = baseValue ^ String.GetHashCode();
-                    break;
-                case DataType.Function:
-                    m_HashCode = baseValue ^ Function.GetHashCode();
-                    break;
-                case DataType.ClrFunction:
-                    m_HashCode = baseValue ^ Callback.GetHashCode();
-                    break;
-                case DataType.Table:
-                    m_HashCode = baseValue ^ Table.GetHashCode();
-                    break;
-                case DataType.Tuple:
-                case DataType.TailCallRequest:
-                    m_HashCode = baseValue ^ Tuple.GetHashCode();
-                    break;
-                case DataType.UserData:
-                case DataType.Thread:
-                default:
-                    m_HashCode = 999;
-                    break;
-            }
-
+                DataType.Void or DataType.Nil => 0,
+                DataType.Boolean => Boolean ? 1 : 2,
+                DataType.Number => baseValue ^ Number.GetHashCode(),
+                DataType.String => baseValue ^ String.GetHashCode(),
+                DataType.Function => baseValue ^ Function.GetHashCode(),
+                DataType.ClrFunction => baseValue ^ Callback.GetHashCode(),
+                DataType.Table => baseValue ^ Table.GetHashCode(),
+                DataType.Tuple or DataType.TailCallRequest => baseValue ^ Tuple.GetHashCode(),
+                _ => 999,
+            };
             return m_HashCode;
         }
 
@@ -611,14 +572,13 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is DynValue other)) return false;
+            if (obj is not DynValue other) return false;
 
             if (other.Type == DataType.Nil && Type == DataType.Void
                 || other.Type == DataType.Void && Type == DataType.Nil)
                 return true;
 
             if (other.Type != Type) return false;
-
 
             switch (Type)
             {
@@ -727,7 +687,6 @@ namespace SolarSharp.Interpreter.DataTypes
             return m_Object as IScriptPrivateResource;
         }
 
-
         /// <summary>
         /// Converts a tuple to a scalar value. If it's already a scalar value, this function returns "this".
         /// </summary>
@@ -755,10 +714,11 @@ namespace SolarSharp.Interpreter.DataTypes
             m_Number = value.m_Number;
             m_Object = value.m_Object;
             m_Type = value.Type;
+            // TODO: I'm not certain this is correct, this seems very odd
+            //       hashcodes should be preservable and we should be able to just
+            //       take the dyn value's hash code.
             m_HashCode = -1;
         }
-
-
 
         /// <summary>
         /// Gets the length of a string or table value.
@@ -871,15 +831,13 @@ namespace SolarSharp.Interpreter.DataTypes
             return myObject;
         }
 
-#if HASDYNAMIC
 		/// <summary>
 		/// Converts this MoonSharp DynValue to a CLR object, marked as dynamic
 		/// </summary>
 		public dynamic ToDynamic()
 		{
-			return SolarSharp.Interpreter.Interop.Converters.ScriptToClrConversions.DynValueToObject(this);
+			return ScriptToClrConversions.DynValueToObject(this);
 		}
-#endif
 
         /// <summary>
         /// Checks the type of this value corresponds to the desired type. A propert ScriptRuntimeException is thrown
@@ -954,10 +912,5 @@ namespace SolarSharp.Interpreter.DataTypes
 
             throw ScriptRuntimeException.BadArgumentUserData(argNum, funcName, typeof(T), o, allowNil);
         }
-
     }
-
-
-
-
 }

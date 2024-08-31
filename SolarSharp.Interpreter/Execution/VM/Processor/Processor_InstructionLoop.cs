@@ -51,40 +51,40 @@ namespace SolarSharp.Interpreter.Execution.VM
                             m_ValueStack.Push(i.Value);
                             break;
                         case OpCode.Add:
-                            instructionPtr = ExecAdd(i, instructionPtr);
+                            instructionPtr = ExecAdd(instructionPtr);
                             break;
                         case OpCode.Concat:
-                            instructionPtr = ExecConcat(i, instructionPtr);
+                            instructionPtr = ExecConcat(instructionPtr);
                             break;
                         case OpCode.Neg:
-                            instructionPtr = ExecNeg(i, instructionPtr);
+                            instructionPtr = ExecNeg(instructionPtr);
                             break;
                         case OpCode.Sub:
-                            instructionPtr = ExecSub(i, instructionPtr);
+                            instructionPtr = ExecSub(instructionPtr);
                             break;
                         case OpCode.Mul:
-                            instructionPtr = ExecMul(i, instructionPtr);
+                            instructionPtr = ExecMul(instructionPtr);
                             break;
                         case OpCode.Div:
-                            instructionPtr = ExecDiv(i, instructionPtr);
+                            instructionPtr = ExecDiv(instructionPtr);
                             break;
                         case OpCode.Mod:
-                            instructionPtr = ExecMod(i, instructionPtr);
+                            instructionPtr = ExecMod(instructionPtr);
                             break;
                         case OpCode.Power:
-                            instructionPtr = ExecPower(i, instructionPtr);
+                            instructionPtr = ExecPower(instructionPtr);
                             break;
                         case OpCode.Eq:
-                            instructionPtr = ExecEq(i, instructionPtr);
+                            instructionPtr = ExecEq(instructionPtr);
                             break;
                         case OpCode.LessEq:
-                            instructionPtr = ExecLessEq(i, instructionPtr);
+                            instructionPtr = ExecLessEq(instructionPtr);
                             break;
                         case OpCode.Less:
-                            instructionPtr = ExecLess(i, instructionPtr);
+                            instructionPtr = ExecLess(instructionPtr);
                             break;
                         case OpCode.Len:
-                            instructionPtr = ExecLen(i, instructionPtr);
+                            instructionPtr = ExecLen(instructionPtr);
                             break;
                         case OpCode.Call:
                         case OpCode.ThisCall:
@@ -95,10 +95,10 @@ namespace SolarSharp.Interpreter.Execution.VM
                             m_ValueStack.Push(m_ValueStack.Pop().ToScalar());
                             break;
                         case OpCode.Not:
-                            ExecNot(i);
+                            ExecNot();
                             break;
                         case OpCode.CNot:
-                            ExecCNot(i);
+                            ExecCNot();
                             break;
                         case OpCode.JfOrPop:
                         case OpCode.JtOrPop:
@@ -152,16 +152,14 @@ namespace SolarSharp.Interpreter.Execution.VM
                             instructionPtr = ExecJFor(i, instructionPtr);
                             break;
                         case OpCode.NewTable:
-                            if (i.NumVal == 0)
-                                m_ValueStack.Push(DynValue.NewTable(this.m_Script));
-                            else
-                                m_ValueStack.Push(DynValue.NewPrimeTable());
+                            // we pass the hints we got from the instruction args
+                            m_ValueStack.Push(DynValue.NewTable(m_Script, i.NumVal, i.NumVal2));
                             break;
                         case OpCode.IterPrep:
-                            ExecIterPrep(i);
+                            ExecIterPrep();
                             break;
                         case OpCode.IterUpd:
-                            ExecIterUpd(i);
+                            ExecIterUpd();
                             break;
                         case OpCode.ExpTuple:
                             ExecExpTuple(i);
@@ -181,7 +179,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                             ExecStoreLcl(i);
                             break;
                         case OpCode.TblInitN:
-                            ExecTblInitN(i);
+                            ExecTblInitN();
                             break;
                         case OpCode.TblInitI:
                             ExecTblInitI(i);
@@ -210,7 +208,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                 if (m_CanYield)
                     return yieldRequest;
-                else if (this.State == CoroutineState.Main)
+                else if (State == CoroutineState.Main)
                     throw ScriptRuntimeException.CannotYieldMain();
                 else
                     throw ScriptRuntimeException.CannotYield();
@@ -219,7 +217,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 FillDebugData(ex, instructionPtr);
 
-                if (!(ex is ScriptRuntimeException))
+                if (ex is not ScriptRuntimeException)
                 {
                     ex.Rethrow();
                     throw;
@@ -229,7 +227,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 {
                     if (m_Debug.DebuggerAttached.SignalRuntimeException((ScriptRuntimeException)ex))
                     {
-                        if (instructionPtr >= 0 && instructionPtr < this.m_RootChunk.Code.Count)
+                        if (instructionPtr >= 0 && instructionPtr < m_RootChunk.Code.Count)
                         {
                             ListenDebugger(m_RootChunk.Code[instructionPtr], instructionPtr);
                         }
@@ -290,7 +288,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                 if (messageHandler.Type == DataType.Function)
                 {
-                    ret = this.Call(messageHandler, args);
+                    ret = Call(messageHandler, args);
                 }
                 else if (messageHandler.Type == DataType.ClrFunction)
                 {
@@ -375,8 +373,8 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private void ExecClosure(Instruction i)
         {
-            Closure c = new(this.m_Script, i.NumVal, i.SymbolList,
-                i.SymbolList.Select(s => this.GetUpvalueSymbol(s)).ToList());
+            Closure c = new(m_Script, i.NumVal, i.SymbolList,
+                i.SymbolList.Select(s => GetUpvalueSymbol(s)).ToList());
 
             m_ValueStack.Push(DynValue.NewClosure(c));
         }
@@ -410,7 +408,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         }
 
 
-        private void ExecIterUpd(Instruction i)
+        private void ExecIterUpd()
         {
             DynValue v = m_ValueStack.Peek(0);
             DynValue t = m_ValueStack.Peek(1);
@@ -433,7 +431,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         }
 
-        private void ExecIterPrep(Instruction i)
+        private void ExecIterPrep()
         {
             DynValue v = m_ValueStack.Pop();
 
@@ -452,11 +450,11 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             if (f.Type != DataType.Function && f.Type != DataType.ClrFunction)
             {
-                DynValue meta = this.GetMetamethod(f, "__iterator");
+                DynValue meta = GetMetamethod(f, "__iterator");
 
                 if (meta != null && !meta.IsNil())
                 {
-                    v = meta.Type != DataType.Tuple ? this.GetScript().Call(meta, f, s, var) : meta;
+                    v = meta.Type != DataType.Tuple ? GetScript().Call(meta, f, s, var) : meta;
 
                     f = v.Tuple.Length >= 1 ? v.Tuple[0] : DynValue.Nil;
                     s = v.Tuple.Length >= 2 ? v.Tuple[1] : DynValue.Nil;
@@ -467,7 +465,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
                 else if (f.Type == DataType.Table)
                 {
-                    DynValue callmeta = this.GetMetamethod(f, "__call");
+                    DynValue callmeta = GetMetamethod(f, "__call");
 
                     if (callmeta == null || callmeta.IsNil())
                     {
@@ -512,7 +510,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             top.AssignNumber(top.Number + btm.Number);
         }
 
-        private void ExecCNot(Instruction i)
+        private void ExecCNot()
         {
             DynValue v = m_ValueStack.Pop().ToScalar();
             DynValue not = m_ValueStack.Pop().ToScalar();
@@ -526,7 +524,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 m_ValueStack.Push(DynValue.NewBoolean(v.CastToBool()));
         }
 
-        private void ExecNot(Instruction i)
+        private void ExecNot()
         {
             DynValue v = m_ValueStack.Pop().ToScalar();
             m_ValueStack.Push(DynValue.NewBoolean(!(v.CastToBool())));
@@ -548,15 +546,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             if (csi.BasePointer >= 0)
                 m_ValueStack.CropAtCount(csi.BasePointer);
             return csi;
-        }
-
-        private int PopExecStackAndCheckVStack(int vstackguard)
-        {
-            var xs = m_ExecutionStack.Pop();
-            if (vstackguard != xs.BasePointer)
-                throw new InternalErrorException("StackGuard violation");
-
-            return xs.ReturnAddress;
         }
 
         private IList<DynValue> CreateArgsListForFunctionCall(int numargs, int offsFromTop)
@@ -594,7 +583,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 if (i >= argsList.Count)
                 {
-                    this.AssignLocal(I.SymbolList[i], DynValue.NewNil());
+                    AssignLocal(I.SymbolList[i], DynValue.NewNil());
                 }
                 else if ((i == I.SymbolList.Length - 1) && (I.SymbolList[i].i_Name == WellKnownSymbols.VARARGS))
                 {
@@ -606,11 +595,11 @@ namespace SolarSharp.Interpreter.Execution.VM
                         varargs[ii] = argsList[i].ToScalar().CloneAsWritable();
                     }
 
-                    this.AssignLocal(I.SymbolList[^1], DynValue.NewTuple(Internal_AdjustTuple(varargs)));
+                    AssignLocal(I.SymbolList[^1], DynValue.NewTuple(Internal_AdjustTuple(varargs)));
                 }
                 else
                 {
-                    this.AssignLocal(I.SymbolList[i], argsList[i].ToScalar().CloneAsWritable());
+                    AssignLocal(I.SymbolList[i], argsList[i].ToScalar().CloneAsWritable());
                 }
             }
         }
@@ -623,13 +612,13 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             // if TCO threshold reached
             // TODO: Remove this, I doubt it helps with performance since we already have support for tail call...
-            if ((m_ExecutionStack.Count > this.m_Script.Options.TailCallOptimizationThreshold && m_ExecutionStack.Count > 1)
-                || (m_ValueStack.Count > this.m_Script.Options.TailCallOptimizationThreshold && m_ValueStack.Count > 1))
+            if ((m_ExecutionStack.Count > m_Script.Options.TailCallOptimizationThreshold && m_ExecutionStack.Count > 1)
+                || (m_ValueStack.Count > m_Script.Options.TailCallOptimizationThreshold && m_ValueStack.Count > 1))
             {
                 // and the "will-be" return address is valid (we don't want to crash here)
-                if (instructionPtr >= 0 && instructionPtr < this.m_RootChunk.Code.Count)
+                if (instructionPtr >= 0 && instructionPtr < m_RootChunk.Code.Count)
                 {
-                    Instruction I = this.m_RootChunk.Code[instructionPtr];
+                    Instruction I = m_RootChunk.Code[instructionPtr];
 
                     // and we are followed *exactly* by a RET 1
                     if (I.OpCode == OpCode.Ret && I.NumVal == 1)
@@ -640,7 +629,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                         if (csi.ClrFunction == null && csi.Continuation == null && csi.ErrorHandler == null
                             && csi.ErrorHandlerBeforeUnwind == null && continuation == null && unwindHandler == null && handler == null)
                         {
-                            instructionPtr = PerformTCO(instructionPtr, argsCount);
+                            instructionPtr = PerformTCO(argsCount);
                             flags |= CallStackItemFlags.TailCall;
                         }
                     }
@@ -676,7 +665,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                 m_ExecutionStack.Pop();
 
-                return Internal_CheckForTailRequests(null, instructionPtr);
+                return Internal_CheckForTailRequests(instructionPtr);
             }
             else if (fn.Type == DataType.Function)
             {
@@ -716,7 +705,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             throw ScriptRuntimeException.AttemptToCallNonFunc(fn.Type, debugText);
         }
 
-        private int PerformTCO(int instructionPtr, int argsCount)
+        private int PerformTCO(int argsCount)
         {
             DynValue[] args = new DynValue[argsCount + 1];
 
@@ -757,7 +746,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 var argscnt = (int)(m_ValueStack.Pop().Number);
                 m_ValueStack.RemoveLast(argscnt + 1);
                 m_ValueStack.Push(retval);
-                retpoint = Internal_CheckForTailRequests(i, retpoint);
+                retpoint = Internal_CheckForTailRequests(retpoint);
             }
             else
             {
@@ -771,7 +760,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             return retpoint;
         }
 
-        private int Internal_CheckForTailRequests(Instruction i, int instructionPtr)
+        private int Internal_CheckForTailRequests(int instructionPtr)
         {
             DynValue tail = m_ValueStack.Peek(0);
 
@@ -825,7 +814,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         }
 
 
-        private int ExecAdd(Instruction i, int instructionPtr)
+        private int ExecAdd(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
             DynValue l = m_ValueStack.Pop().ToScalar();
@@ -846,7 +835,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-        private int ExecSub(Instruction i, int instructionPtr)
+        private int ExecSub(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
             DynValue l = m_ValueStack.Pop().ToScalar();
@@ -867,8 +856,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-
-        private int ExecMul(Instruction i, int instructionPtr)
+        private int ExecMul(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
             DynValue l = m_ValueStack.Pop().ToScalar();
@@ -889,7 +877,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-        private int ExecMod(Instruction i, int instructionPtr)
+        private int ExecMod(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
             DynValue l = m_ValueStack.Pop().ToScalar();
@@ -912,7 +900,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-        private int ExecDiv(Instruction i, int instructionPtr)
+        private int ExecDiv(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
             DynValue l = m_ValueStack.Pop().ToScalar();
@@ -932,7 +920,8 @@ namespace SolarSharp.Interpreter.Execution.VM
                 else throw ScriptRuntimeException.ArithmeticOnNonNumber(l, r);
             }
         }
-        private int ExecPower(Instruction i, int instructionPtr)
+
+        private int ExecPower(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
             DynValue l = m_ValueStack.Pop().ToScalar();
@@ -954,7 +943,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         }
 
-        private int ExecNeg(Instruction i, int instructionPtr)
+        private int ExecNeg(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
             double? rn = r.CastToNumber();
@@ -972,8 +961,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-
-        private int ExecEq(Instruction i, int instructionPtr)
+        private int ExecEq(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
             DynValue l = m_ValueStack.Pop().ToScalar();
@@ -1015,7 +1003,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             return instructionPtr;
         }
 
-        private int ExecLess(Instruction i, int instructionPtr)
+        private int ExecLess(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
             DynValue l = m_ValueStack.Pop().ToScalar();
@@ -1040,8 +1028,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             return instructionPtr;
         }
 
-
-        private int ExecLessEq(Instruction i, int instructionPtr)
+        private int ExecLessEq(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
             DynValue l = m_ValueStack.Pop().ToScalar();
@@ -1075,7 +1062,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             return instructionPtr;
         }
 
-        private int ExecLen(Instruction i, int instructionPtr)
+        private int ExecLen(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
 
@@ -1094,7 +1081,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             return instructionPtr;
         }
 
-        private int ExecConcat(Instruction i, int instructionPtr)
+        private int ExecConcat(int instructionPtr)
         {
             DynValue r = m_ValueStack.Pop().ToScalar();
             DynValue l = m_ValueStack.Pop().ToScalar();
@@ -1124,10 +1111,11 @@ namespace SolarSharp.Interpreter.Execution.VM
             if (tbl.Type != DataType.Table)
                 throw new InternalErrorException("Unexpected type in table ctor : {0}", tbl);
 
-            tbl.Table.InitNextArrayKeys(val, i.NumVal != 0);
+            // the instruction arg holds the index
+            tbl.Table.InitNextArrayKeys(val, i.NumVal);
         }
 
-        private void ExecTblInitN(Instruction i)
+        private void ExecTblInitN()
         {
             // stack: tbl - key - val
             DynValue val = m_ValueStack.Pop();
@@ -1182,7 +1170,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 {
                     UserData ud = obj.UserData;
 
-                    if (!ud.Descriptor.SetIndex(this.GetScript(), ud.Object, originalIdx, value, isNameIndex))
+                    if (!ud.Descriptor.SetIndex(GetScript(), ud.Object, originalIdx, value, isNameIndex))
                     {
                         throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
                     }
@@ -1259,7 +1247,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 {
                     UserData ud = obj.UserData;
 
-                    var v = ud.Descriptor.Index(this.GetScript(), ud.Object, originalIdx, isNameIndex) ?? throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
+                    var v = ud.Descriptor.Index(GetScript(), ud.Object, originalIdx, isNameIndex) ?? throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
                     m_ValueStack.Push(v.AsReadOnly());
                     return instructionPtr;
                 }

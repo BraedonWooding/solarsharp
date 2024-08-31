@@ -309,9 +309,5 @@ end
 
             DynValue res = script.DoString(scriptCode);
         }
-
-
-
-
     }
 }
