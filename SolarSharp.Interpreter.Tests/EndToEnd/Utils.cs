@@ -20,7 +20,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.Multiple(() =>
                 {
                     Assert.That(result.Type, Is.EqualTo(DataType.Tuple));
-                    Assert.That(result.Tuple.Length, Is.EqualTo(args.Length));
+                    Assert.That(result.Tuple, Has.Length.EqualTo(args.Length));
                 });
 
                 for (int i = 0; i < args.Length; i++)

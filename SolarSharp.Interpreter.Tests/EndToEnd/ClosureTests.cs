@@ -97,7 +97,7 @@ return g(|x,y|f(x,y,1), 2)
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.Tuple));
-                Assert.That(res.Tuple.Length, Is.EqualTo(5));
+                Assert.That(res.Tuple, Has.Length.EqualTo(5));
             });
             Assert.Multiple(() =>
             {
@@ -143,7 +143,7 @@ return g(|x,y|f(x,y,1), 2)
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.Tuple));
-                Assert.That(res.Tuple.Length, Is.EqualTo(5));
+                Assert.That(res.Tuple, Has.Length.EqualTo(5));
             });
             Assert.Multiple(() =>
             {
@@ -190,7 +190,7 @@ return g(|x,y|f(x,y,1), 2)
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.Tuple));
-                Assert.That(res.Tuple.Length, Is.EqualTo(5));
+                Assert.That(res.Tuple, Has.Length.EqualTo(5));
             });
             Assert.Multiple(() =>
             {
@@ -240,7 +240,7 @@ return g(|x,y|f(x,y,1), 2)
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.Tuple));
-                Assert.That(res.Tuple.Length, Is.EqualTo(5));
+                Assert.That(res.Tuple, Has.Length.EqualTo(5));
             });
             Assert.Multiple(() =>
             {

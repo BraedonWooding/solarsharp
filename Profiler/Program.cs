@@ -2,7 +2,7 @@
 using Benchmark;
 using Benchmark.Implementations;
 
-var file = new LuaFile("./Tests/specific_features/table_array_insert_indexed.lua");
+var file = new LuaFile("./Tests/specific_features/table_array_remove_then_add_immediate.lua");
 var itCount = 10;
 
 var impl = new SolarSharpImplementation();

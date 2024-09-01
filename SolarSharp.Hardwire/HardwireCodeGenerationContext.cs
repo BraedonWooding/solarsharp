@@ -95,7 +95,7 @@ namespace SolarSharp.Hardwire
         /// <param name="action">The action to be performed, or null.</param>
         public void DispatchTablePairs(Table table, CodeTypeMemberCollection members, Action<string, CodeExpression> action = null)
         {
-            foreach (var pair in table.Pairs)
+            foreach (var pair in table)
             {
                 var key = pair.Key;
                 var value = pair.Value;
@@ -104,7 +104,6 @@ namespace SolarSharp.Hardwire
                 {
                     value = value.Table.Get("error");
                 }
-
 
                 if (value.Type == DataType.Table)
                 {

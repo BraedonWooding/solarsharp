@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -10,17 +11,10 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// A class representing a Lua table.
     /// </summary>
-    public class Table : RefIdObject, IScriptPrivateResource
+    public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePair<DynValue, DynValue>>
     {
         private readonly Script m_Owner;
         private int m_CachedLength = -1;
-
-        /// <summary>
-        /// In future this probably should be managed by the dictionary.
-        /// 
-        /// We could compress the list, but this is sort of hard to do efficiently.
-        /// </summary>
-        private readonly List<DynValue> DeadKeys = new();
 
         /// <summary>
         /// The array segment of the table.  This starts from 0
@@ -78,7 +72,6 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             ArraySegment = new DynValue[1];
             ValueMap.Clear();
-            DeadKeys.Clear();
             m_CachedLength = -1;
         }
 
@@ -160,6 +153,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Append the value to the table using the next available integer index.
         /// </summary>
         /// <param name="value">The value.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(DynValue value)
         {
             // Table.Insert uses rawset
@@ -172,7 +166,8 @@ namespace SolarSharp.Interpreter.DataTypes
             ArraySet(Length + 1, value, invokeMetaMethods: false);
         }
 
-        private int NextPowOfTwo(int v) {
+        private int NextPowOfTwo(int v)
+        {
             // these should be done on unsigned int, but should be safe on int
             v--;
             v |= v >> 1;
@@ -187,6 +182,34 @@ namespace SolarSharp.Interpreter.DataTypes
 
         #region Set
 
+        public void Insert(int index, DynValue value)
+        {
+            // inserting at end
+            if (index == Length + 1)
+            {
+                if (index >= ArraySegment.Length)
+                {
+                    Array.Resize(ref ArraySegment, NextPowOfTwo(index + 1));
+                }
+
+                ArraySegment[index] = value;
+                m_CachedLength++;
+            }
+            else
+            {
+                // ensure we have 1 space at-least
+                // we -1 from array segment length since it starts from 0 but length starts from 1
+                if (Length >= ArraySegment.Length - 1)
+                {
+                    Array.Resize(ref ArraySegment, NextPowOfTwo(ArraySegment.Length + 1));
+                }
+
+                Array.Copy(ArraySegment, index, ArraySegment, index + 1, Length - index + 1);
+                ArraySegment[index] = value;
+                m_CachedLength++; 
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -194,7 +217,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="value"></param>
         /// <param name="setIfAbsent"></param>
         /// <returns></returns>
-        private DynValue RawArraySet(int index, DynValue value, bool setIfAbsent)
+        private bool RawArraySet(int index, DynValue value, bool setIfAbsent)
         {
             if (index >= ArraySegment.Length)
             {
@@ -202,19 +225,33 @@ namespace SolarSharp.Interpreter.DataTypes
             }
 
             DynValue prev = ArraySegment[index];
-            if (prev == null && !setIfAbsent) return DynValue.Nil;
+            if (prev == null && !setIfAbsent) return false;
 
-            m_CachedLength = -1;
             if (value.IsNil())
             {
-                ArraySegment[index] = null;
+                // no point setting if prev was null
+                if (prev != null)
+                {
+                    ArraySegment[index] = null;
+                    m_CachedLength = index - 1;
+                }
             }
             else
             {
                 ArraySegment[index] = value;
+                // then we can increment it if we are adding to end
+                if (prev == null && m_CachedLength == index - 1)
+                {
+                    m_CachedLength = index;
+                    while (m_CachedLength + 1 < ArraySegment.Length && ArraySegment[m_CachedLength + 1] != null) m_CachedLength++;
+                }
+                else if (prev == null)
+                {
+                    m_CachedLength = -1;
+                }
             }
 
-            return prev ?? DynValue.Nil;
+            return true;
         }
 
         private DynValue ArraySet(int index, DynValue value, bool invokeMetaMethods)
@@ -228,7 +265,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 return MapSet(DynValue.NewNumber(index), value, invokeMetaMethods);
             }
 
-            if (RawArraySet(index, value, setIfAbsent: !invokeMetaMethods) is { Type: DataType.Nil } && invokeMetaMethods)
+            if (!RawArraySet(index, value, setIfAbsent: !invokeMetaMethods || MetaTable == null) && invokeMetaMethods)
             {
                 if (MetaTable?.Get("__newindex") is DynValue newIndex && newIndex.IsNotNil())
                 {
@@ -237,6 +274,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 else
                 {
                     ArraySegment[index] = value;
+                    // The meta method could do anything to the array so I can't presume it's length
                     m_CachedLength = -1;
                 }
             }
@@ -277,36 +315,18 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Attempts a set on the map.
         /// </summary>
         /// <returns></returns>
-        private DynValue RawMapSet(DynValue key, DynValue value, bool setIfAbsent)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool RawMapSet(DynValue key, DynValue value, bool setIfAbsent)
         {
-            var prevValue = ValueMap.GetValueOrDefault(key);
-            if (prevValue == null)
+            if (value.IsNil())
             {
-                if (!setIfAbsent)
-                {
-                    return DynValue.Nil;
-                }
-                else if (value.IsNotNil())
-                {
-                    // no point doing an operation for t[k] = nil if there is no previous k element
-                    ValueMap[key] = value;
-                    CollectDeadKeys();
-                }
+                ValueMap.Remove(key);
+                return true;
             }
             else
             {
-                if (value.IsNotNil())
-                {
-                    ValueMap[key] = value;
-                }
-                else
-                {
-                    ValueMap[key] = null;
-                    DeadKeys.Add(key);
-                }
+                return ValueMap.DictionaryConditionalSet(key, value, setIfAbsent);
             }
-
-            return prevValue ?? DynValue.Nil;
         }
 
         /// <summary>
@@ -316,7 +336,8 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         private DynValue MapSet(DynValue key, DynValue value, bool invokeMetaMethods)
         {
-            if (RawMapSet(key, value, setIfAbsent: !invokeMetaMethods) is { Type: DataType.Nil } && invokeMetaMethods)
+            // we optimize specifically for MetaTable == null which is quite common
+            if (!RawMapSet(key, value, setIfAbsent: !invokeMetaMethods || MetaTable == null) && invokeMetaMethods)
             {
                 if (MetaTable?.Get("__newindex") is DynValue newIndex && newIndex.IsNotNil())
                 {
@@ -324,9 +345,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 }
                 else
                 {
-                    // the previous value was nil so we do have to collect dead keys
                     ValueMap[key] = value;
-                    CollectDeadKeys();
                 }
             }
 
@@ -386,7 +405,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="key">The key.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DynValue Get(int key)
-        {            
+        {
             if (key < MAX_INT_KEY_ARRAY && key >= 0)
                 return key < ArraySegment.Length ? (ArraySegment[key] ?? DynValue.Nil) : DynValue.Nil;
             return Get(DynValue.NewNumber(key));
@@ -414,7 +433,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="key">The key.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DynValue Get(object key)
-        {            
+        {
             if (key == null)
                 return null;
 
@@ -442,30 +461,6 @@ namespace SolarSharp.Interpreter.DataTypes
         #endregion
 
         /// <summary>
-        /// Collects the dead keys. This frees up memory but invalidates pending iterators.
-        /// It's called automatically internally when the semantics of Lua tables allow, but can be forced
-        /// externally if it's known that no iterators are pending.
-        /// </summary>
-        public void CollectDeadKeys()
-        {
-            // Right now this is a pretty frequent operation
-
-            // this only cleans up the map and doesn't touch the array
-            foreach (var key in DeadKeys)
-            {
-                // we don't actually remove items from dead keys
-                // so doing map[key] = nil; map[key] = A would still have the dead key.
-                if (ValueMap[key] == null) ValueMap.Remove(key);
-            }
-            DeadKeys.Clear();
-            // note: we could use ValueMap.remove & an iterator in new versions of C# (.netcore 3)
-            //       so might be worth doing some dual strategy with some #ifdefs if that seems to be faster
-            //       though it would only be faster on smaller values.
-            // with a custom dictionary we could store just the hashcodes and iterate through all possible keys for them.
-            m_CachedLength = -1;
-        }
-
-        /// <summary>
         /// Performs the Next() operation
         /// </summary>
         /// <param name="v">The previous value or nil</param>
@@ -491,7 +486,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 {
                     throw new ScriptRuntimeException("invalid key to 'next'");
                 }
-                
+
                 skipFinding = true;
                 // we are looping through the array segment first
                 do
@@ -499,31 +494,24 @@ namespace SolarSharp.Interpreter.DataTypes
                     n++;
                 }
                 while (n < ArraySegment.Length && ArraySegment[n] == null);
-                
+
                 // if we are at the end
                 if (n < ArraySegment.Length)
                 {
                     return DynValue.NewTuple(DynValue.NewNumber(n), ArraySegment[n]);
                 }
             }
-            else if (!ValueMap.ContainsKey(v))
+
+            if (skipFinding)
             {
-                throw new ScriptRuntimeException("invalid key to 'next'");
+                if (ValueMap.Count == 0) return DynValue.Nil;
+                var kvp = ValueMap.First();
+                return DynValue.NewTuple(kvp.Key, kvp.Value);
             }
 
-            // custom c# hashtable :)
-            var it = new Iterator(ValueMap.GetEnumerator());
-            if (!skipFinding)
-            {
-                do {
-                    it.Next();
-                } while (it.Current != null && !it.Current.Equals(v));
-            }
-
-            var next = it.Next();
-            // no more
-            if (next == null) return DynValue.Nil;
-            return DynValue.NewTuple(it.Current, next);
+            var it = ValueMap.TryGetEnumeratorFrom(v) ?? throw new ScriptRuntimeException("invalid key to 'next'");
+            if (!it.MoveNext()) return DynValue.Nil;
+            return DynValue.NewTuple(it.Current.Key, it.Current.Value);
         }
 
         /// <summary>
@@ -556,7 +544,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 // all will just read the first value of the tuple.
                 // (this is because in Lua "tuples" don't exist functions aren't returning multiple values
                 // wrapped in a structure they are returning multiple values).
-                
+
                 // For performance let's reserve now since we know the final tuple length
                 Array.Resize(ref ArraySegment, NextPowOfTwo(ArraySegment.Length + val.Tuple.Length));
                 for (int i = 0; i < val.Tuple.Length; i++)
@@ -564,41 +552,104 @@ namespace SolarSharp.Interpreter.DataTypes
                     // we can presume that tuples can't be composed of other tuples
                     // tuples in general are a concept that I'm likely to be phasing out / removing
                     // since they add a lot of complexity
-                    Set(i + idx, val.Tuple[i]);
+                    ArraySet(i + idx, val.Tuple[i], invokeMetaMethods: false);
                 }
             }
             else
             {
-                Set(idx, val.ToScalar());
+                ArraySet(idx, val.ToScalar(), invokeMetaMethods: false);
             }
+        }
+
+        public IEnumerator<KeyValuePair<DynValue, DynValue>> GetEnumerator()
+        {
+            return new Enumerator(this);
+        }
+
+        /// <summary>
+        /// Sort the array segment of the table.
+        /// </summary>
+        public void Sort(IComparer<DynValue> sortComparer) => Array.Sort(ArraySegment, 1, Length, sortComparer);
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return new Enumerator(this);
         }
 
         /// <summary>
         /// Gets the meta-table associated with this instance.
         /// </summary>
         public Table MetaTable { get; set; }
-        
-        private IEnumerable<KeyValuePair<DynValue, DynValue>> ArrayPairs =>
-            ArraySegment
-                .Select((v, i) => new KeyValuePair<DynValue, DynValue>(DynValue.NewNumber(i), v))
-                .Where(kvp => kvp.Value != null);
 
         /// <summary>
         /// Enumerates the key/value pairs.
         /// </summary>
-        /// <returns></returns>
-        public IEnumerable<KeyValuePair<DynValue, DynValue>> Pairs => ArrayPairs.Concat(ValueMap.Where(kvp => kvp.Value != null));
-
-        /// <summary>
-        /// Enumerates the keys.
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<DynValue> Keys => Pairs.Select(p => p.Key);
+        public IEnumerator<KeyValuePair<DynValue, DynValue>> AssociativePairs => ValueMap.GetEnumerator();
 
         /// <summary>
         /// Enumerates the values
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<DynValue> Values => Pairs.Select(p => p.Value);
+        public IEnumerable<DynValue> Values => this.Select(kvp => kvp.Value);
+
+        private struct Enumerator : IEnumerator<KeyValuePair<DynValue, DynValue>>, IEnumerator
+        {
+            private readonly Table table;
+            private int _index;
+            private KeyValuePair<DynValue, DynValue> _current;
+            private IEnumerator<KeyValuePair<DynValue, DynValue>> _map;
+
+            public Enumerator(Table table) : this()
+            {
+                this.table = table;
+                _index = -1;
+            }
+
+            public readonly KeyValuePair<DynValue, DynValue> Current => _current;
+
+            readonly object IEnumerator.Current => _current;
+
+            public void Dispose() { }
+
+            public bool MoveNext()
+            {
+                if (_map == null)
+                {
+                    do
+                    {
+                        _index++;
+                    } while (_index < table.ArraySegment.Length && table.ArraySegment[_index] == null);
+
+                    if (_index >= table.ArraySegment.Length)
+                    {
+                        _map = table.ValueMap.GetEnumerator();
+                        // fallthrough
+                    }
+                    else
+                    {
+                        _current = new KeyValuePair<DynValue, DynValue>(DynValue.NewNumber(_index), table.ArraySegment[_index]);
+                        return true;
+                    }
+                }
+
+                if (_map.MoveNext())
+                {
+                    _current = _map.Current;
+                    return true;
+                }
+                else
+                {
+                    _current = default;
+                    return false;
+                }
+            }
+
+            public void Reset()
+            {
+                _index = -1;
+                _current = default;
+                _map = null;
+            }
+        }
     }
 }

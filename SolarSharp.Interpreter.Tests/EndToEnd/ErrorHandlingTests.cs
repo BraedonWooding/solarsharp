@@ -19,7 +19,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.Tuple));
-                Assert.That(res.Tuple.Length, Is.EqualTo(4));
+                Assert.That(res.Tuple, Has.Length.EqualTo(4));
             });
             Assert.Multiple(() =>
             {
@@ -43,7 +43,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.Tuple));
-                Assert.That(res.Tuple.Length, Is.EqualTo(2));
+                Assert.That(res.Tuple, Has.Length.EqualTo(2));
             });
             Assert.Multiple(() =>
             {

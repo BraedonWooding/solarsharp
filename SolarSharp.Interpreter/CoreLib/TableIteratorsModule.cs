@@ -38,10 +38,13 @@ namespace SolarSharp.Interpreter.CoreLib
         public static DynValue pairs(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue table = args[0];
-
             DynValue meta = executionContext.GetMetamethodTailCall(table, "__pairs", args.GetArray());
+            if (meta != null) return meta;
 
-            return meta ?? DynValue.NewTuple(DynValue.NewCallback(next), table);
+            // we use an efficient iterator when using pairs()
+            // over the slower next(), this should save quite a few cycles
+            var it = table.Table.GetEnumerator();
+            return DynValue.NewTuple(DynValue.NewCallback((ex, args) => it.MoveNext() ? DynValue.NewTuple(it.Current.Key, it.Current.Value) : DynValue.Nil), table);
         }
 
         // next (table [, index])
