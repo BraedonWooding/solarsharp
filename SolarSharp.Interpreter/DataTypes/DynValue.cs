@@ -358,7 +358,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public DynValue AsReadOnly()
         {
-            return this;
+            return Clone();
         }
 
         /// <summary>
