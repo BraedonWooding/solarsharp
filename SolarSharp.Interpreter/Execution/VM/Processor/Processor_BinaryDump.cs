@@ -6,6 +6,8 @@ using System.Text;
 using SolarSharp.Interpreter.IO;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.DataTypes.Custom;
+using System.Runtime.CompilerServices;
 
 namespace SolarSharp.Interpreter.Execution.VM
 {
@@ -29,7 +31,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         internal int Dump(Stream stream, int baseAddress, bool hasUpvalues)
         {
             using BinaryWriter bw = new BinDumpBinaryWriter(stream, Encoding.UTF8);
-            Dictionary<SymbolRef, int> symbolMap = new();
+            LuaDictionary<SymbolRef, int> symbolMap = new();
 
             Instruction meta = FindMeta(ref baseAddress) ?? throw new ArgumentException("baseAddress");
             bw.Write(DUMP_CHUNK_MAGIC);
@@ -77,7 +79,8 @@ namespace SolarSharp.Interpreter.Execution.VM
             return meta.NumVal + baseAddress + 1;
         }
 
-        private void AddSymbolToMap(Dictionary<SymbolRef, int> symbolMap, SymbolRef s)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void AddSymbolToMap(LuaDictionary<SymbolRef, int> symbolMap, SymbolRef s)
         {
             if (!symbolMap.ContainsKey(s))
                 symbolMap.Add(s, symbolMap.Count);
