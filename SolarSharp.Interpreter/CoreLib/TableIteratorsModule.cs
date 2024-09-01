@@ -43,7 +43,7 @@ namespace SolarSharp.Interpreter.CoreLib
 
             // we use an efficient iterator when using pairs()
             // over the slower next(), this should save quite a few cycles
-            var it = table.Table.AssociativePairs;
+            var it = table.Table.GetEnumerator();
             return DynValue.NewTuple(DynValue.NewCallback((ex, args) => it.MoveNext() ? DynValue.NewTuple(it.Current.Key, it.Current.Value) : DynValue.Nil), table);
         }
 

@@ -227,14 +227,16 @@ eq_array(output, {
 
 MoonSharp: Sort callbacks work --]]
 
-
+-- We dont support this error message because we just presume that sorting functions are valid
+-- this is for performance (to save us calling both in half the cases)
+--[[
 error_like(function ()
     local t = { 1 }
     table.sort( { t, t, t, t, }, function (a, b) return a[1] == b[1] end )
            end,
            "^[^:]+:%d+: invalid order function for sorting",
            "function sort (bad func)")
-
+--]]
 
 eq_array({table.unpack({})}, {}, "function unpack")
 eq_array({table.unpack({'a'})}, {'a'})

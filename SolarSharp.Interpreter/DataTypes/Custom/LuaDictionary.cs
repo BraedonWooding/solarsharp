@@ -1466,7 +1466,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             {
                 _dictionary = dictionary;
                 _version = dictionary._version;
-                _index = index;
+                _index = index + 1;
                 _current = current;
                 _getEnumeratorRetType = getEnumeratorRetType;
             }
@@ -1708,7 +1708,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 {
                     _dictionary = dictionary;
                     _version = dictionary._version;
-                    _index = index;
+                    _index = index + 1;
                     _currentKey = currentKey;
                 }
 
@@ -1898,7 +1898,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 {
                     _dictionary = dictionary;
                     _version = dictionary._version;
-                    _index = index;
+                    _index = index + 1;
                     _currentValue = currentValue;
                 }
 

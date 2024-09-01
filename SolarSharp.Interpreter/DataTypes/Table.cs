@@ -201,10 +201,11 @@ namespace SolarSharp.Interpreter.DataTypes
                 // we -1 from array segment length since it starts from 0 but length starts from 1
                 if (Length >= ArraySegment.Length - 1)
                 {
-                    Array.Resize(ref ArraySegment, NextPowOfTwo(index + 1));
+                    Array.Resize(ref ArraySegment, NextPowOfTwo(ArraySegment.Length + 1));
                 }
 
                 Array.Copy(ArraySegment, index, ArraySegment, index + 1, Length - index + 1);
+                ArraySegment[index] = value;
                 m_CachedLength++; 
             }
         }
@@ -237,18 +238,16 @@ namespace SolarSharp.Interpreter.DataTypes
             }
             else
             {
-                if (prev == null)
+                ArraySegment[index] = value;
+                // then we can increment it if we are adding to end
+                if (prev == null && m_CachedLength == index - 1)
                 {
-                    // then we can increment it if we are adding to end
-                    if (m_CachedLength == index - 1 || index == 1)
-                    {
-                        m_CachedLength = index;
-                    }
+                    m_CachedLength = index;
+                    while (m_CachedLength + 1 < ArraySegment.Length && ArraySegment[m_CachedLength + 1] != null) m_CachedLength++;
                 }
-                else
+                else if (prev == null)
                 {
-                    // doesn't change length
-                    ArraySegment[index] = value;
+                    m_CachedLength = -1;
                 }
             }
 
@@ -553,12 +552,12 @@ namespace SolarSharp.Interpreter.DataTypes
                     // we can presume that tuples can't be composed of other tuples
                     // tuples in general are a concept that I'm likely to be phasing out / removing
                     // since they add a lot of complexity
-                    Set(i + idx, val.Tuple[i]);
+                    ArraySet(i + idx, val.Tuple[i], invokeMetaMethods: false);
                 }
             }
             else
             {
-                Set(idx, val.ToScalar());
+                ArraySet(idx, val.ToScalar(), invokeMetaMethods: false);
             }
         }
 
@@ -570,7 +569,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Sort the array segment of the table.
         /// </summary>
-        public void Sort(IComparer<DynValue> sortComparer) => Array.Sort(ArraySegment, 0, Length, sortComparer);
+        public void Sort(IComparer<DynValue> sortComparer) => Array.Sort(ArraySegment, 1, Length, sortComparer);
 
         IEnumerator IEnumerable.GetEnumerator()
         {
@@ -614,14 +613,14 @@ namespace SolarSharp.Interpreter.DataTypes
 
             public bool MoveNext()
             {
-                if (_map != null)
+                if (_map == null)
                 {
                     do
                     {
                         _index++;
-                    } while (_index < table.Length && table.ArraySegment[_index] == null);
+                    } while (_index < table.ArraySegment.Length && table.ArraySegment[_index] == null);
 
-                    if (_index >= table.Length)
+                    if (_index >= table.ArraySegment.Length)
                     {
                         _map = table.ValueMap.GetEnumerator();
                         // fallthrough
