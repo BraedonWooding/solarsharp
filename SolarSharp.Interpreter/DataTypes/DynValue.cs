@@ -19,7 +19,6 @@ namespace SolarSharp.Interpreter.DataTypes
         private readonly int m_RefID = ++s_RefIDCounter;
         private int m_HashCode = -1;
 
-        private bool m_ReadOnly;
         private double m_Number;
         private object m_Object;
         private DataType m_Type;
@@ -79,11 +78,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Gets the user data.
         /// </summary>
         public UserData UserData { get { return m_Object as UserData; } }
-
-        /// <summary>
-        /// Returns true if this instance is write protected.
-        /// </summary>
-        public bool ReadOnly { get { return m_ReadOnly; } }
 
         /// <summary>
         /// Creates a new writable value initialized to Nil.
@@ -364,21 +358,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public DynValue AsReadOnly()
         {
-            if (ReadOnly)
-                return this;
-            else
-            {
-                return Clone(true);
-            }
-        }
-
-        /// <summary>
-        /// Clones this instance.
-        /// </summary>
-        /// <returns></returns>
-        public DynValue Clone()
-        {
-            return Clone(ReadOnly);
+            return this;
         }
 
         /// <summary>
@@ -386,7 +366,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <param name="readOnly">if set to <c>true</c> the new instance is set as readonly, or writeable otherwise.</param>
         /// <returns></returns>
-        public DynValue Clone(bool readOnly)
+        public DynValue Clone()
         {
             DynValue v = new()
             {
@@ -394,7 +374,6 @@ namespace SolarSharp.Interpreter.DataTypes
                 m_Number = m_Number,
                 m_HashCode = m_HashCode,
                 m_Type = m_Type,
-                m_ReadOnly = readOnly
             };
             return v;
         }
@@ -405,9 +384,8 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="ArgumentException">Can't clone Symbol values</exception>
         public DynValue CloneAsWritable()
         {
-            return Clone(false);
+            return Clone();
         }
-
 
         /// <summary>
         /// A preinitialized, readonly instance, equaling Void
@@ -426,7 +404,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public static DynValue False { get; private set; }
 
-
         static DynValue()
         {
             Nil = new DynValue() { m_Type = DataType.Nil }.AsReadOnly();
@@ -434,7 +411,6 @@ namespace SolarSharp.Interpreter.DataTypes
             True = NewBoolean(true).AsReadOnly();
             False = NewBoolean(false).AsReadOnly();
         }
-
 
         /// <summary>
         /// Returns a string which is what it's expected to be output by the print function applied to this value.
@@ -708,9 +684,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="ScriptRuntimeException">If the value is readonly.</exception>
         public void Assign(DynValue value)
         {
-            if (ReadOnly)
-                throw new ScriptRuntimeException("Assigning on r-value");
-
             m_Number = value.m_Number;
             m_Object = value.m_Object;
             m_Type = value.Type;
@@ -780,9 +753,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         internal void AssignNumber(double num)
         {
-            if (ReadOnly)
-                throw new InternalErrorException(null, "Writing on r-value");
-
             if (Type != DataType.Number)
                 throw new InternalErrorException("Can't assign number to type {0}", Type);
 
