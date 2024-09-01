@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.DataTypes.Custom;
 using SolarSharp.Interpreter.Debugging;
 
 namespace SolarSharp.Interpreter.Execution.VM
@@ -74,7 +76,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             return new string(' ', 10 - OpCode.ToString().Length);
         }
 
-        internal void WriteBinary(BinaryWriter wr, int baseAddress, Dictionary<SymbolRef, int> symbolMap)
+        internal void WriteBinary(BinaryWriter wr, int baseAddress, LuaDictionary<SymbolRef, int> symbolMap)
         {
             wr.Write((byte)OpCode);
 
@@ -105,12 +107,14 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-        private static void WriteSymbol(BinaryWriter wr, SymbolRef symbolRef, Dictionary<SymbolRef, int> symbolMap)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteSymbol(BinaryWriter wr, SymbolRef symbolRef, LuaDictionary<SymbolRef, int> symbolMap)
         {
             int id = symbolRef == null ? -1 : symbolMap[symbolRef];
             wr.Write(id);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static SymbolRef ReadSymbol(BinaryReader rd, SymbolRef[] deserializedSymbols)
         {
             int id = rd.ReadInt32();
@@ -228,7 +232,6 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             if ((usage & (int)InstructionFieldUsage.SymbolList) != 0)
                 symbolList = SymbolList;
-
         }
     }
 }

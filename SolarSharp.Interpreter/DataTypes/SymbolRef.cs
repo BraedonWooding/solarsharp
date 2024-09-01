@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using SolarSharp.Interpreter.DataTypes.Custom;
 
 namespace SolarSharp.Interpreter.DataTypes
 {
@@ -115,7 +116,7 @@ namespace SolarSharp.Interpreter.DataTypes
             return that;
         }
 
-        internal void WriteBinaryEnv(BinaryWriter bw, Dictionary<SymbolRef, int> symbolMap)
+        internal void WriteBinaryEnv(BinaryWriter bw, LuaDictionary<SymbolRef, int> symbolMap)
         {
             if (i_Env != null)
                 bw.Write(symbolMap[i_Env]);

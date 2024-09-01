@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.DataTypes.Custom;
 
 namespace SolarSharp.Interpreter.Interop.Converters
 {
@@ -128,7 +129,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
 
 
         /// <summary>
-        /// Converts a table to a <see cref="Dictionary{K,V}"/>
+        /// Converts a table to a <see cref="LuaDictionary{K,V}"/>
         /// </summary>
         internal static object ConvertTableToDictionaryOfGenericType(Type dictionaryType, Type keyType, Type valueType, Table table)
         {

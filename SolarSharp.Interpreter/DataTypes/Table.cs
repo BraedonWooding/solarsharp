@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using SolarSharp.Interpreter.DataTypes.Custom;
 using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.DataTypes
@@ -13,7 +14,6 @@ namespace SolarSharp.Interpreter.DataTypes
     {
         private readonly Script m_Owner;
         private int m_CachedLength = -1;
-        private bool m_ContainsNilEntries = false;
 
         /// <summary>
         /// In future this probably should be managed by the dictionary.
@@ -33,7 +33,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Fallback value map for all other keys/values
         /// </summary>
-        private readonly Dictionary<DynValue, DynValue> ValueMap;
+        private readonly LuaDictionary<DynValue, DynValue> ValueMap;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Table"/> class.
@@ -46,7 +46,7 @@ namespace SolarSharp.Interpreter.DataTypes
             m_Owner = owner;
             ArraySegment = new DynValue[arraySizeHint + 1];
             // we don't have a string map here too because strings are pretty efficiently handled by dynvalues.
-            ValueMap = new Dictionary<DynValue, DynValue>(associativeSizeHint);
+            ValueMap = new LuaDictionary<DynValue, DynValue>(associativeSizeHint);
         }
 
         /// <summary>
@@ -207,7 +207,6 @@ namespace SolarSharp.Interpreter.DataTypes
             m_CachedLength = -1;
             if (value.IsNil())
             {
-                m_ContainsNilEntries = true;
                 ArraySegment[index] = null;
             }
             else
@@ -463,7 +462,6 @@ namespace SolarSharp.Interpreter.DataTypes
             //       so might be worth doing some dual strategy with some #ifdefs if that seems to be faster
             //       though it would only be faster on smaller values.
             // with a custom dictionary we could store just the hashcodes and iterate through all possible keys for them.
-            m_ContainsNilEntries = false;
             m_CachedLength = -1;
         }
 
