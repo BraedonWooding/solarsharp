@@ -239,15 +239,17 @@ namespace SolarSharp.Interpreter.DataTypes
             else
             {
                 ArraySegment[index] = value;
-                // then we can increment it if we are adding to end
-                if (prev == null && m_CachedLength == index - 1)
+                if (prev == null)
                 {
-                    m_CachedLength = index;
-                    while (m_CachedLength + 1 < ArraySegment.Length && ArraySegment[m_CachedLength + 1] != null) m_CachedLength++;
-                }
-                else if (prev == null)
-                {
-                    m_CachedLength = -1;
+                    // then we can increment it if we are adding to end
+                    if (m_CachedLength == index - 1 && (m_CachedLength >= ArraySegment.Length || ArraySegment[m_CachedLength] == null))
+                    {
+                        m_CachedLength = index;
+                    }
+                    else
+                    {
+                        m_CachedLength = -1;
+                    }
                 }
             }
 
