@@ -1,5 +1,4 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
 
@@ -21,10 +20,26 @@ namespace SolarSharp.Interpreter.CoreLib
         public static DynValue ipairs(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue table = args[0];
+            var tableVal = table.Table;
 
             DynValue meta = executionContext.GetMetamethodTailCall(table, "__ipairs", args.GetArray());
 
-            return meta ?? DynValue.NewTuple(DynValue.NewCallback(__next_i), table, DynValue.NewNumber(0));
+            var current = DynValue.NewNumber(0);
+            return meta ?? DynValue.NewTuple(DynValue.NewCallback((ex, args) =>
+            {
+                if (args[1].Number == current.Number)
+                {
+                    int next = (int)current.Number + 1;
+                    current.AssignNumber(next);
+                    var value = tableVal.Get(next);
+                    if (value.IsNil()) return value;
+                    return DynValue.NewTuple(current, value);
+                }
+                else
+                {
+                    return __next_i(executionContext, args);
+                }
+            }), table, current);
         }
 
         // pairs (t)
@@ -41,10 +56,23 @@ namespace SolarSharp.Interpreter.CoreLib
             DynValue meta = executionContext.GetMetamethodTailCall(table, "__pairs", args.GetArray());
             if (meta != null) return meta;
 
+            // TODO: Should we check if someone is calling this wrong?  i.e. if they do something like callback = pairs(); callback("BOO")
+            //       we could compare the dynvalues to check that the keys are the same (can use ref checks even) and in case they aren't fallback to next
             // we use an efficient iterator when using pairs()
             // over the slower next(), this should save quite a few cycles
             var it = table.Table.GetEnumerator();
-            return DynValue.NewTuple(DynValue.NewCallback((ex, args) => it.MoveNext() ? DynValue.NewTuple(it.Current.Key, it.Current.Value) : DynValue.Nil), table);
+            return DynValue.NewTuple(DynValue.NewCallback((ex, args) =>
+            {
+                if (args[1] == it.Current.Key)
+                {
+                    return it.MoveNext() ? DynValue.NewTuple(it.Current.Key, it.Current.Value) : DynValue.Nil;
+                }
+                else
+                {
+                    // fallback to next
+                    return next(executionContext, args);
+                }
+            }), table);
         }
 
         // next (table [, index])

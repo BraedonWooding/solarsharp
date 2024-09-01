@@ -1415,9 +1415,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.Tuple));
                 Assert.That(res.Tuple, Has.Length.EqualTo(4));
-            });
-            Assert.Multiple(() =>
-            {
                 Assert.That(res.Tuple[0].Number, Is.EqualTo(4));
                 Assert.That(res.Tuple[1].Number, Is.EqualTo(3));
                 Assert.That(res.Tuple[2].Number, Is.EqualTo(2));

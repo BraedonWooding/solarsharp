@@ -503,15 +503,9 @@ namespace SolarSharp.Interpreter.Execution.VM
             DynValue top = m_ValueStack.Peek(0);
             DynValue btm = m_ValueStack.Peek(i.NumVal);
 
-            if (top.ReadOnly)
-            {
-                m_ValueStack.Pop();
-
-                if (top.ReadOnly)
-                    top = top.CloneAsWritable();
-
-                m_ValueStack.Push(top);
-            }
+            m_ValueStack.Pop();
+            top = top.CloneAsWritable();
+            m_ValueStack.Push(top);
 
             top.AssignNumber(top.Number + btm.Number);
         }
