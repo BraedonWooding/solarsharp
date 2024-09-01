@@ -38,7 +38,7 @@ namespace SolarSharp.Interpreter.Serialization.Json
             if (table.Length == 0)
             {
                 sb.Append("{");
-                foreach (var pair in table.Pairs)
+                foreach (var pair in table)
                 {
                     if (pair.Key.Type == DataType.String && IsValueJsonCompatible(pair.Value))
                     {

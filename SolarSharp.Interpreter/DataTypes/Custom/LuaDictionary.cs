@@ -459,6 +459,39 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             return size;
         }
 
+        public IEnumerator<KeyValuePair<TKey, TValue>>? TryGetEnumeratorFrom(TKey key)
+        {
+            ref var valRef = ref CollectionsMarshalHelper.GetValueRef(this, key, out var index);
+            if (index == null)
+            {
+                return null;
+            }
+
+            return new Enumerator(this, index.Value, new KeyValuePair<TKey, TValue>(valRef.key, valRef.value), Enumerator.KeyValuePair);
+        }
+
+        public IEnumerator<TKey>? TryGetKeysEnumeratorFrom(TKey key)
+        {
+            ref var valRef = ref CollectionsMarshalHelper.GetValueRef(this, key, out var index);
+            if (index == null)
+            {
+                return null;
+            }
+
+            return new KeyCollection.Enumerator(this, index.Value, valRef.key);
+        }
+
+        public IEnumerator<TValue>? TryGetValuesEnumeratorFrom(TKey key)
+        {
+            ref var valRef = ref CollectionsMarshalHelper.GetValueRef(this, key, out var index);
+            if (index == null)
+            {
+                return null;
+            }
+
+            return new ValueCollection.Enumerator(this, index.Value, valRef.value);
+        }
+
         private bool TryInsert(TKey key, TValue value, InsertionBehavior behavior)
         {
             // NOTE: this method is mirrored in CollectionsMarshal.GetValueRefOrAddDefault below.
@@ -584,6 +617,120 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             return true;
         }
 
+        public ref Entry GetValueRef(TKey key, out int? indexIfExists)
+        {
+            return ref CollectionsMarshalHelper.GetValueRef(this, key, out indexIfExists);
+        }
+
+        public bool DictionaryConditionalSet(TKey key, TValue value, bool setIfAbsent)
+        {
+            // NOTE: this method is mirrored by Dictionary<TKey, TValue>.TryInsert above.
+            // If you make any changes here, make sure to keep that version in sync as well.
+
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            if (_buckets == null)
+            {
+                Initialize(0);
+            }
+            Debug.Assert(_buckets != null);
+
+            Entry[] entries = _entries;
+            Debug.Assert(entries != null, "expected entries to be non-null");
+
+            IEqualityComparer<TKey> comparer = _comparer;
+            Debug.Assert(comparer is not null || typeof(TKey).IsValueType);
+            uint hashCode = (uint)(typeof(TKey).IsValueType && comparer == null ? key.GetHashCode() : comparer!.GetHashCode(key));
+
+            uint collisionCount = 0;
+            ref int bucket = ref GetBucket(hashCode);
+            int i = bucket - 1; // Value in _buckets is 1-based
+            int last = -1;
+
+            if (typeof(TKey).IsValueType && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
+                comparer == null)
+            {
+                // ValueType: Devirtualize with EqualityComparer<TKey>.Default intrinsic
+                while ((uint)i < (uint)entries.Length)
+                {
+                    if (entries[i].hashCode == hashCode && EqualityComparer<TKey>.Default.Equals(entries[i].key, key))
+                    {
+                        entries[i].value = value;
+                        return true;
+                    }
+
+                    last = i;
+                    i = entries[i].next;
+
+                    collisionCount++;
+                    if (collisionCount > (uint)entries.Length)
+                    {
+                        // The chain of entries forms a loop; which means a concurrent update has happened.
+                        // Break out of the loop and throw, rather than looping forever.
+                        throw new InvalidOperationException("Concurrent operations not supported");
+                    }
+                }
+            }
+            else
+            {
+                Debug.Assert(comparer is not null);
+                while ((uint)i < (uint)entries.Length)
+                {
+                    if (entries[i].hashCode == hashCode && comparer.Equals(entries[i].key, key))
+                    {
+                        entries[i].value = value;
+                        return true;
+                    }
+
+                    last = i;
+                    i = entries[i].next;
+
+                    collisionCount++;
+                    if (collisionCount > (uint)entries.Length)
+                    {
+                        // The chain of entries forms a loop; which means a concurrent update has happened.
+                        // Break out of the loop and throw, rather than looping forever.
+                        throw new InvalidOperationException("Concurrent operations not supported");
+                    }
+                }
+            }
+
+            if (!setIfAbsent) return false;
+
+            int index;
+            if (_freeCount > 0)
+            {
+                index = _freeList;
+                Debug.Assert(StartOfFreeList - entries[_freeList].next >= -1, "shouldn't overflow because `next` cannot underflow");
+                _freeList = StartOfFreeList - entries[_freeList].next;
+                _freeCount--;
+            }
+            else
+            {
+                int count = _count;
+                if (count == entries.Length)
+                {
+                    Resize();
+                    bucket = ref GetBucket(hashCode);
+                }
+                index = count;
+                _count = count + 1;
+                entries = _entries;
+            }
+
+            ref Entry entry = ref entries![index];
+            entry.hashCode = hashCode;
+            entry.next = bucket - 1; // Value in _buckets is 1-based
+            entry.key = key;
+            entry.value = value;
+            bucket = index + 1; // Value in _buckets is 1-based
+            _version++;
+            return true;
+        }
+
         /// <summary>
         /// A helper class containing APIs exposed through <see cref="CollectionsMarshal"/> or <see cref="CollectionExtensions"/>.
         /// These methods are relatively niche and only used in specific scenarios, so adding them in a separate type avoids
@@ -591,8 +738,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
         /// </summary>
         internal static class CollectionsMarshalHelper
         {
-            /// <inheritdoc cref="CollectionsMarshal.GetValueRefOrAddDefault{TKey, TValue}(LuaDictionary{TKey, TValue}, TKey, out bool)"/>
-            public static ref TValue? GetValueRefOrAddDefault(LuaDictionary<TKey, TValue> dictionary, TKey key, out bool exists)
+            internal static ref Entry GetValueRef(LuaDictionary<TKey, TValue> dictionary, TKey key, out int? indexIfExists)
             {
                 // NOTE: this method is mirrored by Dictionary<TKey, TValue>.TryInsert above.
                 // If you make any changes here, make sure to keep that version in sync as well.
@@ -627,9 +773,8 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     {
                         if (entries[i].hashCode == hashCode && EqualityComparer<TKey>.Default.Equals(entries[i].key, key))
                         {
-                            exists = true;
-
-                            return ref entries[i].value!;
+                            indexIfExists = i;
+                            return ref entries[i];
                         }
 
                         i = entries[i].next;
@@ -650,9 +795,106 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     {
                         if (entries[i].hashCode == hashCode && comparer.Equals(entries[i].key, key))
                         {
-                            exists = true;
+                            indexIfExists = i;
+                            return ref entries[i];
+                        }
 
-                            return ref entries[i].value!;
+                        i = entries[i].next;
+
+                        collisionCount++;
+                        if (collisionCount > (uint)entries.Length)
+                        {
+                            // The chain of entries forms a loop; which means a concurrent update has happened.
+                            // Break out of the loop and throw, rather than looping forever.
+                            throw new InvalidOperationException("Concurrent operations not supported");
+                        }
+                    }
+                }
+
+                int index;
+                if (dictionary._freeCount > 0)
+                {
+                    index = dictionary._freeList;
+                    Debug.Assert(StartOfFreeList - entries[dictionary._freeList].next >= -1, "shouldn't overflow because `next` cannot underflow");
+                    dictionary._freeList = StartOfFreeList - entries[dictionary._freeList].next;
+                    dictionary._freeCount--;
+                }
+                else
+                {
+                    int count = dictionary._count;
+                    if (count == entries.Length)
+                    {
+                        dictionary.Resize();
+                        bucket = ref dictionary.GetBucket(hashCode);
+                    }
+                    index = count;
+                    dictionary._count = count + 1;
+                    entries = dictionary._entries;
+                }
+
+                indexIfExists = null;
+                return ref Unsafe.NullRef<Entry>();
+            }
+
+            internal static ref Entry GetValueRefOrAddDefault(LuaDictionary<TKey, TValue> dictionary, TKey key, out (int entryIndex, bool exists) info)
+            {
+                // NOTE: this method is mirrored by Dictionary<TKey, TValue>.TryInsert above.
+                // If you make any changes here, make sure to keep that version in sync as well.
+
+                if (key == null)
+                {
+                    throw new ArgumentNullException(nameof(key));
+                }
+
+                if (dictionary._buckets == null)
+                {
+                    dictionary.Initialize(0);
+                }
+                Debug.Assert(dictionary._buckets != null);
+
+                Entry[] entries = dictionary._entries;
+                Debug.Assert(entries != null, "expected entries to be non-null");
+
+                IEqualityComparer<TKey> comparer = dictionary._comparer;
+                Debug.Assert(comparer is not null || typeof(TKey).IsValueType);
+                uint hashCode = (uint)(typeof(TKey).IsValueType && comparer == null ? key.GetHashCode() : comparer!.GetHashCode(key));
+
+                uint collisionCount = 0;
+                ref int bucket = ref dictionary.GetBucket(hashCode);
+                int i = bucket - 1; // Value in _buckets is 1-based
+
+                if (typeof(TKey).IsValueType && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
+                    comparer == null)
+                {
+                    // ValueType: Devirtualize with EqualityComparer<TKey>.Default intrinsic
+                    while ((uint)i < (uint)entries.Length)
+                    {
+                        if (entries[i].hashCode == hashCode && EqualityComparer<TKey>.Default.Equals(entries[i].key, key))
+                        {
+                            info = (i, true);
+                            return ref entries[i];
+                        }
+
+                        i = entries[i].next;
+
+                        collisionCount++;
+                        if (collisionCount > (uint)entries.Length)
+                        {
+                            // The chain of entries forms a loop; which means a concurrent update has happened.
+                            // Break out of the loop and throw, rather than looping forever.
+                            throw new InvalidOperationException("Concurrent operations not supported");
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.Assert(comparer is not null);
+                    while ((uint)i < (uint)entries.Length)
+                    {
+                        if (entries[i].hashCode == hashCode && comparer.Equals(entries[i].key, key))
+                        {
+                            info = (i, true);
+                            return ref entries[i];
                         }
 
                         i = entries[i].next;
@@ -695,9 +937,8 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 entry.value = default!;
                 bucket = index + 1; // Value in _buckets is 1-based
                 dictionary._version++;
-                exists = false;
-
-                return ref entry.value!;
+                info = (index, false);
+                return ref entry;
             }
         }
 
@@ -946,12 +1187,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             }
             else
             {
-                object[] objects = array as object[];
-                if (objects == null)
-                {
-                    throw new ArgumentException(nameof(array));
-                }
-
+                object[] objects = array as object[] ?? throw new ArgumentException(nameof(array));
                 try
                 {
                     int count = _count;
@@ -1193,7 +1429,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 #endif
         }
 
-        private struct Entry
+        public struct Entry
         {
             public uint hashCode;
             /// <summary>
@@ -1224,6 +1460,15 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 _index = 0;
                 _getEnumeratorRetType = getEnumeratorRetType;
                 _current = default;
+            }
+
+            internal Enumerator(LuaDictionary<TKey, TValue> dictionary, int index, KeyValuePair<TKey, TValue> current, int getEnumeratorRetType)
+            {
+                _dictionary = dictionary;
+                _version = dictionary._version;
+                _index = index;
+                _current = current;
+                _getEnumeratorRetType = getEnumeratorRetType;
             }
 
             public bool MoveNext()
@@ -1459,6 +1704,14 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     _currentKey = default;
                 }
 
+                internal Enumerator(LuaDictionary<TKey, TValue> dictionary, int index, TKey currentKey)
+                {
+                    _dictionary = dictionary;
+                    _version = dictionary._version;
+                    _index = index;
+                    _currentKey = currentKey;
+                }
+
                 public void Dispose() { }
 
                 public bool MoveNext()
@@ -1639,6 +1892,14 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     _version = dictionary._version;
                     _index = 0;
                     _currentValue = default;
+                }
+
+                internal Enumerator(LuaDictionary<TKey, TValue> dictionary, int index, TValue currentValue)
+                {
+                    _dictionary = dictionary;
+                    _version = dictionary._version;
+                    _index = index;
+                    _currentValue = currentValue;
                 }
 
                 public void Dispose() { }

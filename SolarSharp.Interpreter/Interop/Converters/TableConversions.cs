@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.DataTypes.Custom;
@@ -141,7 +142,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
 
             System.Collections.IDictionary dic = (System.Collections.IDictionary)Activator.CreateInstance(dictionaryType);
 
-            foreach (var kvp in table.Pairs)
+            foreach (var kvp in table)
             {
                 object key = ScriptToClrConversions.DynValueToObjectOfType(kvp.Key, keyType, null, false);
                 object val = ScriptToClrConversions.DynValueToObjectOfType(kvp.Value, valueType, null, false);
@@ -222,7 +223,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
         {
             Dictionary<TK, TV> dict = new();
 
-            foreach (var kvp in table.Pairs)
+            foreach (var kvp in table)
             {
                 TK key = keyconverter(kvp.Key);
                 TV val = valconverter(kvp.Value);
@@ -232,10 +233,5 @@ namespace SolarSharp.Interpreter.Interop.Converters
 
             return dict;
         }
-
-
-
-
-
     }
 }

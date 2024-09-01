@@ -210,7 +210,7 @@ namespace SolarSharp.Interpreter.Interop
             if (!Framework.Do.IsInstanceOfType(m_Type, obj))
                 throw new ArgumentException(string.Format("Invalid type of object : got '{0}', expected {1}", obj.GetType().FullName, m_Type.FullName));
 
-            foreach (var pair in data.Pairs)
+            foreach (var pair in data)
             {
                 if (pair.Key.Type != DataType.String)
                 {

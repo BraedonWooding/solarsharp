@@ -37,7 +37,7 @@ namespace SolarSharp.Interpreter.Serialization
 
             sb.AppendLine("${");
 
-            foreach (var kvp in table.Pairs)
+            foreach (var kvp in table)
             {
                 sb.Append(tabstr);
 

@@ -58,114 +58,99 @@ namespace SolarSharp.Interpreter.CoreLib
             if (lt.Type != DataType.Function && lt.Type != DataType.ClrFunction && lt.IsNotNil())
                 args.AsType(1, "sort", DataType.Function, true); // this throws
 
-            int end = GetTableLength(executionContext, vlist);
-
-            List<DynValue> values = new();
-
-            for (int i = 1; i <= end; i++)
-                values.Add(vlist.Table.Get(i));
-
-            try
-            {
-                values.Sort((a, b) => SortComparer(executionContext, a, b, lt));
-            }
-            catch (InvalidOperationException ex)
-            {
-                if (ex.InnerException is ScriptRuntimeException)
-                    throw ex.InnerException;
-            }
-
-            for (int i = 0; i < values.Count; i++)
-            {
-                vlist.Table.Set(i + 1, values[i]);
-            }
-
+            vlist.Table.Sort(new Comparer(executionContext, lt));
             return vlist;
         }
 
-        private static int SortComparer(ScriptExecutionContext executionContext, DynValue a, DynValue b, DynValue lt)
+        private class Comparer : IComparer<DynValue>
         {
-            if (lt == null || lt.IsNil())
+            private ScriptExecutionContext _executionContext;
+            private DynValue _comparer;
+
+            public Comparer(ScriptExecutionContext executionContext, DynValue lt)
             {
-                lt = executionContext.GetBinaryMetamethod(a, b, "__lt");
+                _executionContext = executionContext;
+                _comparer = lt;
+            }
 
-                if (lt == null || lt.IsNil())
+            public int Compare(DynValue a, DynValue b)
+            {
+                if (_comparer == null || _comparer.IsNil())
                 {
-                    if (a.Type == DataType.Number && b.Type == DataType.Number)
-                        return a.Number.CompareTo(b.Number);
-                    if (a.Type == DataType.String && b.Type == DataType.String)
-                        return a.String.CompareTo(b.String);
+                    var comparer = _executionContext.GetBinaryMetamethod(a, b, "__lt");
+                    if (comparer == null || comparer.IsNil())
+                    {
+                        if (a.Type == DataType.Number && b.Type == DataType.Number)
+                            return a.Number.CompareTo(b.Number);
+                        if (a.Type == DataType.String && b.Type == DataType.String)
+                            return a.String.CompareTo(b.String);
 
-                    throw ScriptRuntimeException.CompareInvalidType(a, b);
+                        throw ScriptRuntimeException.CompareInvalidType(a, b);
+                    }
+                    else
+                    {
+                        return LuaComparerToClrComparer(comparer, a, b);
+                    }
                 }
                 else
                 {
-                    return LuaComparerToClrComparer(
-                        executionContext.GetScript().Call(lt, a, b),
-                        executionContext.GetScript().Call(lt, b, a));
+                    return LuaComparerToClrComparer(_comparer, a, b);
                 }
             }
-            else
+
+            private int LuaComparerToClrComparer(DynValue comparer, DynValue a, DynValue b)
             {
-                return LuaComparerToClrComparer(
-                    executionContext.GetScript().Call(lt, a, b),
-                    executionContext.GetScript().Call(lt, b, a));
+                // sadly we have to make 2 calls for each one.
+                // since we can do a non-stable sort, maybe it's worth looking at implementing that?
+                if (_executionContext.GetScript().Call(comparer, a, b).CastToBool())
+                {
+                    return -1;
+                }
+                else if (_executionContext.GetScript().Call(comparer, b, a).CastToBool())
+                {
+                    return 1;
+                }
+                else
+                {
+                    return 0;
+                }
             }
-        }
-
-        private static int LuaComparerToClrComparer(DynValue dynValue1, DynValue dynValue2)
-        {
-            bool v1 = dynValue1.CastToBool();
-            bool v2 = dynValue2.CastToBool();
-
-            if (v1 && !v2)
-                return -1;
-            if (v2 && !v1)
-                return 1;
-
-            if (v1 || v2)
-                throw new ScriptRuntimeException("invalid order function for sorting");
-
-            return 0;
         }
 
         [MoonSharpModuleMethod]
         public static DynValue insert(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue vlist = args.AsType(0, "table.insert", DataType.Table, false);
-            DynValue vpos = args[1];
-            DynValue vvalue = args[2];
+            Table table = vlist.Table;
+            DynValue vvalue;
 
             if (args.Count > 3)
                 throw new ScriptRuntimeException("wrong number of arguments to 'insert'");
 
             int len = GetTableLength(executionContext, vlist);
-            Table list = vlist.Table;
-
-            if (vvalue.IsNil())
+            int pos;
+            if (args.Count == 2)
             {
-                vvalue = vpos;
-                vpos = DynValue.NewNumber(len + 1);
+                // we insert at end of the array
+                vvalue = args[1];
+                pos = len + 1;
             }
-
-            if (vpos.Type != DataType.Number)
-                throw ScriptRuntimeException.BadArgument(1, "table.insert", DataType.Number, vpos.Type, false);
-
-            int pos = (int)vpos.Number;
+            else
+            {
+                DynValue vpos = args[1];
+                vvalue = args[2];
+                if (vpos.Type != DataType.Number)
+                    throw ScriptRuntimeException.BadArgument(1, "table.insert", DataType.Number, vpos.Type, false);
+                pos = (int)vpos.Number;
+            }
 
             if (pos > len + 1 || pos < 1)
                 throw new ScriptRuntimeException("bad argument #2 to 'insert' (position out of bounds)");
 
-            for (int i = len; i >= pos; i--)
-            {
-                list.Set(i + 1, list.Get(i));
-            }
-
-            list.Set(pos, vvalue);
+            table.Insert(pos, vvalue);
 
             return vlist;
         }
-
 
         [MoonSharpModuleMethod]
         public static DynValue remove(ScriptExecutionContext executionContext, CallbackArguments args)

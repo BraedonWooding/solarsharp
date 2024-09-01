@@ -62,7 +62,6 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
             return ConvertIterator(table.OwnerScript, table.Values.GetEnumerator());
         }
 
-
         public DynValue Index(Script script, DynValue index, bool isDirectIndexing)
         {
             if (index.Type == DataType.String)
