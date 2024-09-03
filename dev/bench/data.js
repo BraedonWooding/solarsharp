@@ -1411,14 +1411,12 @@ window.BENCHMARK_DATA = {
             "unit": "ns",
             "range": "± 38982.46104694198"
           },
-          // Removing this since it makes the graphs hard to read since it was such a big regression.
-          /*
           {
             "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_map_pairs.lua)",
             "value": 6739067.292708334,
             "unit": "ns",
             "range": "± 25550.63313530056"
-          },*/
+          },
           {
             "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_map_pairs_remove.lua)",
             "value": 7124696.237723215,
@@ -2043,12 +2041,14 @@ window.BENCHMARK_DATA = {
             "unit": "ns",
             "range": "± 965103.4027366947"
           },
+          // Removing this since it makes the graphs hard to read since it was such a big regression.
+          /*
           {
             "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_map_pairs.lua)",
             "value": 753979047.4666667,
             "unit": "ns",
             "range": "± 11173767.994385716"
-          },
+          },*/
           {
             "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_map_pairs_remove.lua)",
             "value": 9886968.887760418,
