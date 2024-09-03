@@ -242,7 +242,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         private void RefreshDebugger(bool hard, int instructionPtr)
         {
             SourceRef sref = GetCurrentSourceRef(instructionPtr);
-            ScriptExecutionContext context = new(this, null, sref);
+            ScriptExecutionContext context = new(this, sref);
 
             List<DynamicExpression> watchList = m_Debug.DebuggerAttached.GetWatchItems();
             List<WatchItem> callStack = Debugger_GetCallStack(sref);

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
@@ -106,6 +107,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public DynValue[] GetArray(int skip = 0)
         {
+            // TODO: Get rid of this class... or allow coroutine resume to take in slices
+            if (!m_LastIsTuple && skip == 0) return m_Args.ToArray();
+
             if (skip >= m_Count)
                 return new DynValue[0];
 

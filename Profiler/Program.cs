@@ -1,10 +1,9 @@
 ﻿// This is just a simple playground for profiling
 using Benchmark;
 using Benchmark.Implementations;
-using SolarSharp.Interpreter.DataTypes.Custom;
 
 var file = new LuaFile("./Tests/specific_features/table_map_pairs_remove.lua");
-var itCount = 10;
+var itCount = 300;
 
 var impl = new SolarSharpImplementation();
 //impl.Run(file.Contents);

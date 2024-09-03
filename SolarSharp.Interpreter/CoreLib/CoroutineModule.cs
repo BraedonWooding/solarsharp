@@ -28,15 +28,8 @@ namespace SolarSharp.Interpreter.CoreLib
                 args.AsType(0, "wrap", DataType.Function); // this throws
 
             DynValue v = create(executionContext, args);
-            DynValue c = DynValue.NewCallback(__wrap_wrapper);
-            c.Callback.AdditionalData = v;
+            DynValue c = DynValue.NewCallback((context, args) => v.Coroutine.Resume(args.GetArray()));
             return c;
-        }
-
-        public static DynValue __wrap_wrapper(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            DynValue handle = (DynValue)executionContext.AdditionalData;
-            return handle.Coroutine.Resume(args.GetArray());
         }
 
         [MoonSharpModuleMethod]
