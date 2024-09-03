@@ -63,7 +63,7 @@ namespace SolarSharp.Interpreter.CoreLib
             var it = table.Table.GetEnumerator();
             return DynValue.NewTuple(DynValue.NewCallback((ex, args) =>
             {
-                if (args[1] == it.Current.Key)
+                if (args[1].Equals(it.Current.Key))
                 {
                     return it.MoveNext() ? DynValue.NewTuple(it.Current.Key, it.Current.Value) : DynValue.Nil;
                 }

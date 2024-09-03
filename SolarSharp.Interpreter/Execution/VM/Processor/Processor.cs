@@ -66,7 +66,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         public DynValue Call(DynValue function, DynValue[] args)
         {
-            List<Processor> coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : this.m_CoroutinesStack;
+            List<Processor> coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : m_CoroutinesStack;
 
             if (coroutinesStack.Count > 0 && coroutinesStack[^1] != this)
                 return coroutinesStack[^1].Call(function, args);
@@ -75,7 +75,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             try
             {
-                var stopwatch = this.m_Script.PerformanceStats.StartStopwatch(PerformanceCounter.Execution);
+                var stopwatch = m_Script.PerformanceStats.StartStopwatch(PerformanceCounter.Execution);
 
                 m_CanYield = false;
 

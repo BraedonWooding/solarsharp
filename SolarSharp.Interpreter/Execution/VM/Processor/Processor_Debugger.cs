@@ -263,7 +263,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private List<WatchItem> Debugger_RefreshThreads(ScriptExecutionContext context)
         {
-            List<Processor> coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : this.m_CoroutinesStack;
+            List<Processor> coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : m_CoroutinesStack;
 
             return coroutinesStack.Select(c => new WatchItem()
             {
@@ -295,7 +295,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         private List<WatchItem> Debugger_RefreshLocals(ScriptExecutionContext context)
         {
             List<WatchItem> locals = new();
-            var top = this.m_ExecutionStack.Peek();
+            var top = m_ExecutionStack.Peek();
 
             if (top != null && top.Debug_Symbols != null && top.LocalScope != null)
             {

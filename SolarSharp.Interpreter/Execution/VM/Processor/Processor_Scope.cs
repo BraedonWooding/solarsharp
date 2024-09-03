@@ -11,7 +11,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             int from = I.NumVal;
             int to = I.NumVal2;
 
-            var array = this.m_ExecutionStack.Peek().LocalScope;
+            var array = m_ExecutionStack.Peek().LocalScope;
 
             if (to >= 0 && from >= 0 && to >= from)
             {
@@ -23,7 +23,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         {
             return symref.i_Type switch
             {
-                SymbolRefType.DefaultEnv => DynValue.NewTable(this.GetScript().Globals),
+                SymbolRefType.DefaultEnv => DynValue.NewTable(GetScript().Globals),
                 SymbolRefType.Global => GetGlobalSymbol(GetGenericSymbol(symref.i_Env), symref.i_Name),
                 SymbolRefType.Local => GetTopNonClrFunction().LocalScope[symref.i_Index],
                 SymbolRefType.Upvalue => GetTopNonClrFunction().ClosureScope[symref.i_Index],
