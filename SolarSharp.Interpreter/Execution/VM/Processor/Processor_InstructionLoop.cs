@@ -264,7 +264,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                         var cbargs = new DynValue[] { DynValue.NewString(ex.DecoratedMessage) };
 
-                        DynValue handled = csi.ErrorHandler.Invoke(new ScriptExecutionContext(this, csi.ErrorHandler, GetCurrentSourceRef(instructionPtr)), cbargs);
+                        DynValue handled = csi.ErrorHandler.Invoke(new ScriptExecutionContext(this, GetCurrentSourceRef(instructionPtr)), cbargs);
 
                         m_ValueStack.Push(handled);
 
@@ -298,7 +298,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
                 else if (messageHandler.Type == DataType.ClrFunction)
                 {
-                    ScriptExecutionContext ctx = new(this, messageHandler.Callback, sourceRef);
+                    ScriptExecutionContext ctx = new(this, sourceRef);
                     ret = messageHandler.Callback.Invoke(ctx, args);
                 }
                 else
@@ -659,7 +659,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                     Flags = flags,
                 });
 
-                var ret = fn.Callback.Invoke(new ScriptExecutionContext(this, fn.Callback, sref), args, isMethodCall: thisCall);
+                var ret = fn.Callback.Invoke(new ScriptExecutionContext(this, sref), args, isMethodCall: thisCall);
                 m_ValueStack.RemoveLast(argsCount + 1);
                 m_ValueStack.Push(ret);
 
@@ -754,7 +754,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
 
             if (csi.Continuation != null)
-                m_ValueStack.Push(csi.Continuation.Invoke(new ScriptExecutionContext(this, csi.Continuation, i.SourceCodeRef),
+                m_ValueStack.Push(csi.Continuation.Invoke(new ScriptExecutionContext(this, i.SourceCodeRef),
                     new DynValue[1] { m_ValueStack.Pop() }));
 
             return retpoint;

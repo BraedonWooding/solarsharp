@@ -5,28 +5,12 @@ name: .NET
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
-
-  benchmark:
-    name: Performance regression check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,35 +21,52 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
       - name: Build
-        run: dotnet build --no-restore --configuration Release
-      - name: Run benchmark
-        run: cd Benchmark && dotnet run --configuration Release
-      - name: Filter out bad benchmarks
-        run: cat Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json | jq ".Benchmarks[] |= select( .Statistics != null )" > INPUT.tmp && mv INPUT.tmp Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
-      - name: Output Benchmark
-        run: cat Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
-      # Download previous benchmark result from cache (if exists)
-      - name: Download previous benchmark data
-        uses: actions/cache@v4
-        with:
-          path: ./cache
-          key: ${{ runner.os }}-benchmark
-      # Run `github-action-benchmark` action
-      - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          # What benchmark tool the output.txt came from
-          tool: 'benchmarkdotnet'
-          save-data-file: ${{ github.event_name != 'pull_request' }}
-          # Where the output from the benchmark tool is stored
-          output-file-path: Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
-          # Where the previous data file is stored
-          external-data-json-path: ./cache/benchmark-data.json
-          # Access token to deploy GitHub Pages branch
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Enable alert commit comment
-          comment-on-alert: true
-          # Enable Job Summary for PRs
-          summary-always: true
-          # Workflow will fail when an alert happens
-          fail-on-alert: true
+        run: dotnet build --no-restore
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+
+  # Want faster builders for now :D
+  # benchmark:
+  #   name: Performance regression check
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Setup .NET
+  #       uses: actions/setup-dotnet@v4
+  #       with:
+  #         dotnet-version: 8.0.x
+  #     - name: Restore dependencies
+  #       run: dotnet restore
+  #     - name: Build
+  #       run: dotnet build --no-restore --configuration Release
+  #     - name: Run benchmark
+  #       run: cd Benchmark && dotnet run --configuration Release
+  #     - name: Filter out bad benchmarks
+  #       run: cat Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json | jq ".Benchmarks[] |= select( .Statistics != null )" > INPUT.tmp && mv INPUT.tmp Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
+  #     - name: Output Benchmark
+  #       run: cat Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
+  #     # Download previous benchmark result from cache (if exists)
+  #     - name: Download previous benchmark data
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: ./cache
+  #         key: ${{ runner.os }}-benchmark
+  #     # Run `github-action-benchmark` action
+  #     - name: Store benchmark result
+  #       uses: benchmark-action/github-action-benchmark@v1
+  #       with:
+  #         # What benchmark tool the output.txt came from
+  #         tool: "benchmarkdotnet"
+  #         save-data-file: ${{ github.event_name != 'pull_request' }}
+  #         # Where the output from the benchmark tool is stored
+  #         output-file-path: Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
+  #         # Where the previous data file is stored
+  #         external-data-json-path: ./cache/benchmark-data.json
+  #         # Access token to deploy GitHub Pages branch
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         # Enable alert commit comment
+  #         comment-on-alert: true
+  #         # Enable Job Summary for PRs
+  #         summary-always: true
+  #         # Workflow will fail when an alert happens
+  #         fail-on-alert: true

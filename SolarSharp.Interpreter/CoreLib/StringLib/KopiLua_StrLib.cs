@@ -52,6 +52,7 @@ using lua_Integer = System.Int32;
 using LUA_INTFRM_T = System.Int64;
 using ptrdiff_t = System.Int32;
 using UNSIGNED_LUA_INTFRM_T = System.UInt64;
+using System.Threading;
 
 namespace SolarSharp.Interpreter.CoreLib.StringLib
 {
@@ -590,7 +591,6 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
             public uint POS;
         }
 
-
         private static int gmatch_aux(LuaState L, GMatchAuxData auxdata)
         {
             MatchState ms = new();
@@ -622,29 +622,20 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
             return 0;  /* not found */
         }
 
-
-        private static DynValue gmatch_aux_2(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            return executionContext.EmulateClassicCall(args, "gmatch",
-                L => gmatch_aux(L, (GMatchAuxData)executionContext.AdditionalData));
-        }
-
-
         public static int str_gmatch(LuaState L)
         {
-            CallbackFunction C = new(gmatch_aux_2, "gmatch");
+            // TODO: Sorry what is this?? Surely we can write this faster...
             string s = ArgAsType(L, 1, DataType.String, false).String;
             string p = PatchPattern(ArgAsType(L, 2, DataType.String, false).String);
-
-
-            C.AdditionalData = new GMatchAuxData()
+            var data = new GMatchAuxData()
             {
                 S = new CharPtr(s),
                 P = new CharPtr(p),
                 LS = (uint)s.Length,
                 POS = 0
             };
-
+            CallbackFunction C = new((executionContext, args) => executionContext.EmulateClassicCall(args, "gmatch",
+                L => gmatch_aux(L, data)), "gmatch");
             L.Push(DynValue.NewCallback(C));
 
             return 1;
