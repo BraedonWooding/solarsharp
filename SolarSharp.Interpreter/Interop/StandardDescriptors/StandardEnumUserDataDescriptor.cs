@@ -338,7 +338,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             if (metaname == "__concat" && IsFlags)
                 return DynValue.NewCallback(Callback_Or);
 
-            return null;
+            return DynValue.Nil;
         }
     }
 }

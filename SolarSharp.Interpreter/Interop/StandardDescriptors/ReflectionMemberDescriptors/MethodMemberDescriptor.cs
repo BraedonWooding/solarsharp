@@ -193,12 +193,12 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             else if (m_OptimizedAction != null)
             {
                 m_OptimizedAction(obj, pars);
-                retv = DynValue.Void;
+                retv = DynValue.Nil;
             }
             else if (m_IsAction)
             {
                 MethodInfo.Invoke(obj, pars);
-                retv = DynValue.Void;
+                retv = DynValue.Nil;
             }
             else
             {

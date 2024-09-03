@@ -48,7 +48,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)
@@ -76,7 +76,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             var obj2 = new SomeClass();
             s.Globals["myobj"] = obj;
             s.Globals["myobj2"] = obj2;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)
@@ -104,7 +104,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)
@@ -131,7 +131,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)
@@ -159,7 +159,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)
@@ -189,7 +189,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Script s = new(CoreModules.None);
 
             s.Globals["myobj"] = typeof(SomeClass);
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)
@@ -218,7 +218,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Script s = new(CoreModules.None);
 
             s.Globals["myobj"] = typeof(SomeClass);
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)

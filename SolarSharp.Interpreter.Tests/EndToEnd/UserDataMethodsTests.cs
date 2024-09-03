@@ -309,7 +309,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public DynValue MetaIndex(Script script, object obj, string metaname)
             {
-                return null;
+                return DynValue.Nil;
             }
 
             public bool IsTypeCompatible(Type type, object obj)
@@ -317,9 +317,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return Framework.Do.IsInstanceOfType(type, obj);
             }
         }
-
-
-
 
         public class SelfDescribingClass : IUserDataType
         {

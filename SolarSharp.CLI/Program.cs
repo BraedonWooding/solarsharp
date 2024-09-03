@@ -68,7 +68,7 @@ namespace SolarSharp
             {
                 DynValue result = interpreter.Evaluate(s);
 
-                if (result != null && result.Type != DataType.Void)
+                if (result.IsNotNil())
                     Console.WriteLine("{0}", result);
             }
             catch (InterpreterException ex)

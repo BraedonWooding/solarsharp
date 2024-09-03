@@ -129,7 +129,7 @@ namespace SolarSharp.Interpreter.CoreLib
             DynValue v = args[0];
             DynValue tail = executionContext.GetMetamethodTailCall(v, "__tostring", v);
 
-            if (tail == null || tail.IsNil())
+            if (tail.IsNil())
                 return DynValue.NewString(v.ToPrintString());
 
             tail.TailCallData.Continuation = new CallbackFunction(__tostring_continuation, "__tostring");
@@ -279,7 +279,7 @@ namespace SolarSharp.Interpreter.CoreLib
 
             for (int i = 0; i < args.Count; i++)
             {
-                if (args[i].IsVoid())
+                if (args[i].IsNil())
                     break;
 
                 if (i != 0)

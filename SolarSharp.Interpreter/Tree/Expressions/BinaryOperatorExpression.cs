@@ -406,8 +406,8 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                     }
                     else if (r.Type != l.Type)
                     {
-                        if (l.Type == DataType.Nil && r.Type == DataType.Void
-                            || l.Type == DataType.Void && r.Type == DataType.Nil)
+                        if (l.Type == DataType.Nil && r.Type == DataType.Nil
+                            || l.Type == DataType.Nil && r.Type == DataType.Nil)
                             return true;
                         else
                             return false;

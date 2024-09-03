@@ -41,7 +41,7 @@ namespace SolarSharp.Interpreter.Execution
 
             this.CheckScriptOwnership(context.Value.GetScript());
 
-            if (m_Constant != null)
+            if (m_Constant.IsNotNil())
                 return m_Constant;
 
             return m_Exp.Eval(context.Value);
@@ -80,7 +80,7 @@ namespace SolarSharp.Interpreter.Execution
         /// <returns></returns>
         public bool IsConstant()
         {
-            return m_Constant != null;
+            return m_Constant.IsNotNil();
         }
 
         /// <summary>

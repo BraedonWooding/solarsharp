@@ -64,13 +64,13 @@ namespace SolarSharp.Interpreter.REPL
             m_CurrentCommand += input;
 
             if (m_CurrentCommand.Length == 0)
-                return DynValue.Void;
+                return DynValue.Nil;
 
             m_CurrentCommand += "\n";
 
             try
             {
-                DynValue result = null;
+                DynValue result = DynValue.Nil;
 
                 if (isFirstLine && HandleClassicExprsSyntax && m_CurrentCommand.StartsWith("="))
                 {
@@ -102,7 +102,7 @@ namespace SolarSharp.Interpreter.REPL
                 }
                 else
                 {
-                    return null;
+                    return DynValue.Nil;
                 }
             }
             catch (ScriptRuntimeException sre)

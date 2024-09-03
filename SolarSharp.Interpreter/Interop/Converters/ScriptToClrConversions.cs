@@ -47,7 +47,6 @@ namespace SolarSharp.Interpreter.Interop.Converters
 
             switch (value.Type)
             {
-                case DataType.Void:
                 case DataType.Nil:
                     return null;
                 case DataType.Boolean:
@@ -111,12 +110,6 @@ namespace SolarSharp.Interpreter.Interop.Converters
 
             switch (value.Type)
             {
-                case DataType.Void:
-                    if (isOptional)
-                        return defaultValue;
-                    else if (!Framework.Do.IsValueType(desiredType) || nullableType != null)
-                        return null;
-                    break;
                 case DataType.Nil:
                     if (Framework.Do.IsValueType(desiredType))
                     {
@@ -231,12 +224,6 @@ namespace SolarSharp.Interpreter.Interop.Converters
 
             switch (value.Type)
             {
-                case DataType.Void:
-                    if (isOptional)
-                        return WEIGHT_VOID_WITH_DEFAULT;
-                    else if (!Framework.Do.IsValueType(desiredType) || nullableType != null)
-                        return WEIGHT_VOID_WITHOUT_DEFAULT;
-                    break;
                 case DataType.Nil:
                     if (Framework.Do.IsValueType(desiredType))
                     {

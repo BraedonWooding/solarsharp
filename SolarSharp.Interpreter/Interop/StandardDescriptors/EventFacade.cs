@@ -46,7 +46,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
 
         public DynValue MetaIndex(Script script, string metaname)
         {
-            return null;
+            return DynValue.Nil;
         }
     }
 }

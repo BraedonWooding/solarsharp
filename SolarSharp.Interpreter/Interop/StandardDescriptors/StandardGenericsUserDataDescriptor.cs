@@ -40,7 +40,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <inheritdoc/>
         public DynValue Index(Script script, object obj, DynValue index, bool isDirectIndexing)
         {
-            return null;
+            return DynValue.Nil;
         }
 
         /// <inheritdoc/>
@@ -58,7 +58,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <inheritdoc/>
         public DynValue MetaIndex(Script script, object obj, string metaname)
         {
-            return null;
+            return DynValue.Nil;
         }
 
         /// <inheritdoc/>

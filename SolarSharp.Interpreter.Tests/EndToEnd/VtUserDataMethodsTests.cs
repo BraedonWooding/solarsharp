@@ -308,7 +308,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public readonly DynValue MetaIndex(Script script, object obj, string metaname)
             {
-                return null;
+                return DynValue.Nil;
             }
 
             public readonly bool IsTypeCompatible(Type type, object obj)
@@ -316,9 +316,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return Framework.Do.IsInstanceOfType(type, obj);
             }
         }
-
-
-
 
         public struct SelfDescribingClass : IUserDataType
         {

@@ -67,10 +67,10 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             {
                 DynValue v = dd.Index(script, obj, index, isNameIndex);
 
-                if (v != null)
+                if (v.IsNotNil())
                     return v;
             }
-            return null;
+            return DynValue.Nil;
         }
 
         /// <summary>
@@ -123,10 +123,10 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             {
                 DynValue v = dd.MetaIndex(script, obj, metaname);
 
-                if (v != null)
+                if (v.IsNotNil())
                     return v;
             }
-            return null;
+            return DynValue.Nil;
         }
 
 

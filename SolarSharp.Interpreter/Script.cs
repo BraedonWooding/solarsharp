@@ -429,7 +429,7 @@ namespace SolarSharp.Interpreter
             {
                 DynValue metafunction = m_MainProcessor.GetMetamethod(function, "__call");
 
-                if (metafunction != null)
+                if (metafunction.IsNotNil())
                 {
                     DynValue[] metaargs = new DynValue[args.Length + 1];
                     metaargs[0] = function;
@@ -529,7 +529,7 @@ namespace SolarSharp.Interpreter
 
             if (coroutine == null || coroutine.Type != Coroutine.CoroutineType.Coroutine)
                 throw new InvalidOperationException("coroutine is not CoroutineType.Coroutine");
-            if (function == null || function.Type != DataType.Function)
+            if (function.IsNil() || function.Type != DataType.Function)
                 throw new InvalidOperationException("function is not DataType.Function");
             if (coroutine.State != CoroutineState.Dead)
                 throw new InvalidOperationException("coroutine's state must be CoroutineState.Dead to recycle");

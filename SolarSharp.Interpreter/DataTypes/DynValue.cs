@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SolarSharp.Interpreter.DataTypes
@@ -12,80 +14,95 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// A class representing a value in a Lua/MoonSharp script.
     /// </summary>
-    public sealed class DynValue
+    [StructLayout(LayoutKind.Explicit)]
+    public struct DynValue
     {
         private static int s_RefIDCounter = 0;
 
-        private readonly int m_RefID = ++s_RefIDCounter;
-        private int m_HashCode = -1;
-
-        private double m_Number;
-        private object m_Object;
-        private DataType m_Type;
-
-
         /// <summary>
         /// Gets a unique reference identifier. This is guaranteed to be unique only for dynvalues created in a single thread as it's not thread-safe.
+        /// 
+        /// Has to be reimplemented later I think, I think this is a bad implementation TODO:
         /// </summary>
-        public int ReferenceID { get { return m_RefID; } }
+        public int ReferenceID { get { return s_RefIDCounter++; } }
 
         /// <summary>
-        /// Gets the type of the value.
+        /// Bools are 0/1
         /// </summary>
-        public DataType Type { get { return m_Type; } }
-        /// <summary>
-        /// Gets the function (valid only if the <see cref="Type"/> is <see cref="DataType.Function"/>)
-        /// </summary>
-        public Closure Function { get { return m_Object as Closure; } }
-        /// <summary>
-        /// Gets the numeric value (valid only if the <see cref="Type"/> is <see cref="DataType.Number"/>)
-        /// </summary>
-        public double Number { get { return m_Number; } }
-        /// <summary>
-        /// Gets the values in the tuple (valid only if the <see cref="Type"/> is Tuple).
-        /// This field is currently also used to hold arguments in values whose <see cref="Type"/> is <see cref="DataType.TailCallRequest"/>.
-        /// </summary>
-        public DynValue[] Tuple { get { return m_Object as DynValue[]; } }
-        /// <summary>
-        /// Gets the coroutine handle. (valid only if the <see cref="Type"/> is Thread).
-        /// </summary>
-        public Coroutine Coroutine { get { return m_Object as Coroutine; } }
-        /// <summary>
-        /// Gets the table (valid only if the <see cref="Type"/> is <see cref="DataType.Table"/>)
-        /// </summary>
-        public Table Table { get { return m_Object as Table; } }
-        /// <summary>
-        /// Gets the boolean value (valid only if the <see cref="Type"/> is <see cref="DataType.Boolean"/>)
-        /// </summary>
-        public bool Boolean { get { return Number != 0; } }
-        /// <summary>
-        /// Gets the string value (valid only if the <see cref="Type"/> is <see cref="DataType.String"/>)
-        /// </summary>
-        public string String { get { return m_Object as string; } }
-        /// <summary>
-        /// Gets the CLR callback (valid only if the <see cref="Type"/> is <see cref="DataType.ClrFunction"/>)
-        /// </summary>
-        public CallbackFunction Callback { get { return m_Object as CallbackFunction; } }
-        /// <summary>
-        /// Gets the tail call data.
-        /// </summary>
-        public TailCallData TailCallData { get { return m_Object as TailCallData; } }
-        /// <summary>
-        /// Gets the yield request data.
-        /// </summary>
-        public YieldRequest YieldRequest { get { return m_Object as YieldRequest; } }
-        /// <summary>
-        /// Gets the user data.
-        /// </summary>
-        public UserData UserData { get { return m_Object as UserData; } }
+        [FieldOffset(0)]
+        public bool Boolean;
 
         /// <summary>
-        /// Creates a new writable value initialized to Nil.
+        /// Numbers are all doubles (since we are Lua 5.2)
         /// </summary>
-        public static DynValue NewNil()
-        {
-            return new DynValue();
-        }
+        [FieldOffset(0)]
+        public double Number;
+
+        /// <summary>
+        /// Used for copying
+        /// </summary>
+        [FieldOffset(8)]
+        private object Object;
+
+        /// <summary>
+        /// Is just a "ptr" or object reference.
+        /// 
+        /// I may change this to dynamic just to allow for easier function calls.
+        /// </summary>
+        [FieldOffset(8)]
+        public object LightUserData;
+
+        /// <summary>
+        /// Avoid the cast to string by having a direct ref to it.
+        /// </summary>
+        [FieldOffset(8)]
+        public string String;
+
+        /// <summary>
+        /// Standard lua table
+        /// </summary>
+        [FieldOffset(8)]
+        public Table Table;
+
+        /// <summary>
+        /// A lua function!  This doesn't cover a CLR function
+        /// (for now) since I'll probably use a different type
+        /// just for more performant calls.
+        /// </summary>
+        [FieldOffset(8)]
+        public Closure Function;
+
+        /// <summary>
+        /// User data.
+        /// </summary>
+        [FieldOffset(8)]
+        public UserData UserData;
+
+        /// <summary>
+        /// A coroutine
+        /// </summary>
+        [FieldOffset(8)]
+        public Coroutine Coroutine;
+
+        [FieldOffset(8)]
+        public YieldRequest YieldRequest;
+
+        [FieldOffset(8)]
+        public TailCallData TailCallData;
+
+        [FieldOffset(8)]
+        public DynValue[] Tuple;
+
+        [FieldOffset(8)]
+        public CallbackFunction Callback;
+
+        /// <summary>
+        /// The type of lua value
+        /// 
+        /// In future I'm planning on using a NaN tagged value (potentially) to get better performance
+        /// </summary>
+        [FieldOffset(16)]
+        public DataType Type;
 
         /// <summary>
         /// Creates a new writable value initialized to the specified boolean.
@@ -94,8 +111,8 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Number = v ? 1 : 0,
-                m_Type = DataType.Boolean,
+                Number = v ? 1 : 0,
+                Type = DataType.Boolean,
             };
         }
 
@@ -106,8 +123,8 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Number = num,
-                m_Type = DataType.Number,
+                Number = num,
+                Type = DataType.Number,
             };
         }
 
@@ -118,8 +135,8 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Object = str,
-                m_Type = DataType.String,
+                String = str,
+                Type = DataType.String,
             };
         }
 
@@ -130,8 +147,8 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Object = sb.ToString(),
-                m_Type = DataType.String,
+                String = sb.ToString(),
+                Type = DataType.String,
             };
         }
 
@@ -142,8 +159,8 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Object = string.Format(format, args),
-                m_Type = DataType.String,
+                String = string.Format(format, args),
+                Type = DataType.String,
             };
         }
 
@@ -157,8 +174,8 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Object = coroutine,
-                m_Type = DataType.Thread
+                Coroutine = coroutine,
+                Type = DataType.Thread
             };
         }
 
@@ -169,8 +186,8 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Object = function,
-                m_Type = DataType.Function,
+                Function = function,
+                Type = DataType.Function,
             };
         }
 
@@ -181,8 +198,8 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Object = new CallbackFunction(callBack, name),
-                m_Type = DataType.ClrFunction,
+                Callback = new CallbackFunction(callBack, name),
+                Type = DataType.ClrFunction,
             };
         }
 
@@ -194,8 +211,8 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Object = function,
-                m_Type = DataType.ClrFunction,
+                Callback = function,
+                Type = DataType.ClrFunction,
             };
         }
 
@@ -206,8 +223,8 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Object = table,
-                m_Type = DataType.Table,
+                Table = table,
+                Type = DataType.Table,
             };
         }
 
@@ -251,12 +268,12 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Object = new TailCallData()
+                Object = new TailCallData()
                 {
                     Args = args,
                     Function = tailFn,
                 },
-                m_Type = DataType.TailCallRequest,
+                Type = DataType.TailCallRequest,
             };
         }
 
@@ -273,12 +290,10 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Object = tailCallData,
-                m_Type = DataType.TailCallRequest,
+                Object = tailCallData,
+                Type = DataType.TailCallRequest,
             };
         }
-
-
 
         /// <summary>
         /// Creates a new request for a yield of the current coroutine.
@@ -289,8 +304,8 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Object = new YieldRequest() { ReturnValues = args },
-                m_Type = DataType.YieldRequest,
+                Object = new YieldRequest() { ReturnValues = args },
+                Type = DataType.YieldRequest,
             };
         }
 
@@ -300,15 +315,15 @@ namespace SolarSharp.Interpreter.DataTypes
         public static DynValue NewTuple(params DynValue[] values)
         {
             if (values.Length == 0)
-                return NewNil();
+                return Nil;
 
             if (values.Length == 1)
                 return values[0];
 
             return new DynValue()
             {
-                m_Object = values,
-                m_Type = DataType.Tuple,
+                Object = values,
+                Type = DataType.Tuple,
             };
         }
 
@@ -335,8 +350,8 @@ namespace SolarSharp.Interpreter.DataTypes
 
             return new DynValue()
             {
-                m_Object = vals.ToArray(),
-                m_Type = DataType.Tuple,
+                Object = vals.ToArray(),
+                Type = DataType.Tuple,
             };
         }
 
@@ -348,68 +363,29 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return new DynValue()
             {
-                m_Object = userData,
-                m_Type = DataType.UserData,
+                Object = userData,
+                Type = DataType.UserData,
             };
         }
 
         /// <summary>
-        /// Returns this value as readonly - eventually cloning it in the process if it isn't readonly to start with.
-        /// </summary>
-        public DynValue AsReadOnly()
-        {
-            return Clone();
-        }
-
-        /// <summary>
-        /// Clones this instance, overriding the "readonly" status.
-        /// </summary>
-        /// <param name="readOnly">if set to <c>true</c> the new instance is set as readonly, or writeable otherwise.</param>
-        /// <returns></returns>
-        public DynValue Clone()
-        {
-            DynValue v = new()
-            {
-                m_Object = m_Object,
-                m_Number = m_Number,
-                m_HashCode = m_HashCode,
-                m_Type = m_Type,
-            };
-            return v;
-        }
-
-        /// <summary>
-        /// Clones this instance, returning a writable copy.
-        /// </summary>
-        /// <exception cref="ArgumentException">Can't clone Symbol values</exception>
-        public DynValue CloneAsWritable()
-        {
-            return Clone();
-        }
-
-        /// <summary>
-        /// A preinitialized, readonly instance, equaling Void
-        /// </summary>
-        public static DynValue Void { get; private set; }
-        /// <summary>
-        /// A preinitialized, readonly instance, equaling Nil
+        /// A preinitialized, instance, equaling Nil
         /// </summary>
         public static DynValue Nil { get; private set; }
         /// <summary>
-        /// A preinitialized, readonly instance, equaling True
+        /// A preinitialized, instance, equaling True
         /// </summary>
         public static DynValue True { get; private set; }
         /// <summary>
-        /// A preinitialized, readonly instance, equaling False
+        /// A preinitialized, instance, equaling False
         /// </summary>
         public static DynValue False { get; private set; }
 
         static DynValue()
         {
-            Nil = new DynValue() { m_Type = DataType.Nil }.AsReadOnly();
-            Void = new DynValue() { m_Type = DataType.Void }.AsReadOnly();
-            True = NewBoolean(true).AsReadOnly();
-            False = NewBoolean(false).AsReadOnly();
+            Nil = new DynValue() { Type = DataType.Nil };
+            True = NewBoolean(true);
+            False = NewBoolean(false);
         }
 
         /// <summary>
@@ -417,15 +393,15 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public string ToPrintString()
         {
-            if (m_Object != null && m_Object is RefIdObject)
+            if (Object != null && Object is RefIdObject)
             {
-                RefIdObject refid = (RefIdObject)m_Object;
+                RefIdObject refid = (RefIdObject)Object;
 
                 string typeString = Type.ToLuaTypeString();
 
-                if (m_Object is UserData)
+                if (Object is UserData)
                 {
-                    UserData ud = (UserData)m_Object;
+                    UserData ud = (UserData)Object;
                     string str = ud.Descriptor.AsString(ud.Object);
                     if (str != null)
                         return str;
@@ -454,15 +430,15 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public string ToDebugPrintString()
         {
-            if (m_Object != null && m_Object is RefIdObject)
+            if (Object != null && Object is RefIdObject)
             {
-                RefIdObject refid = (RefIdObject)m_Object;
+                RefIdObject refid = (RefIdObject)Object;
 
                 string typeString = Type.ToLuaTypeString();
 
-                if (m_Object is UserData)
+                if (Object is UserData)
                 {
-                    UserData ud = (UserData)m_Object;
+                    UserData ud = (UserData)Object;
                     string str = ud.Descriptor.AsString(ud.Object);
                     if (str != null)
                         return str;
@@ -495,7 +471,6 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return Type switch
             {
-                DataType.Void => "void",
                 DataType.Nil => "nil",
                 DataType.Boolean => Boolean.ToString().ToLower(),
                 DataType.Number => Number.ToString(CultureInfo.InvariantCulture),
@@ -519,14 +494,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </returns>
         public override int GetHashCode()
         {
-            if (m_HashCode != -1)
-                return m_HashCode;
-
             int baseValue = (int)Type << 27;
 
-            m_HashCode = Type switch
+            return Type switch
             {
-                DataType.Void or DataType.Nil => 0,
+                DataType.Nil or DataType.Nil => 0,
                 DataType.Boolean => Boolean ? 1 : 2,
                 DataType.Number => baseValue ^ Number.GetHashCode(),
                 DataType.String => baseValue ^ String.GetHashCode(),
@@ -536,7 +508,6 @@ namespace SolarSharp.Interpreter.DataTypes
                 DataType.Tuple or DataType.TailCallRequest => baseValue ^ Tuple.GetHashCode(),
                 _ => 999,
             };
-            return m_HashCode;
         }
 
         /// <summary>
@@ -552,7 +523,6 @@ namespace SolarSharp.Interpreter.DataTypes
             {
                 switch (Type)
                 {
-                    case DataType.Void:
                     case DataType.Nil:
                         return obj == null;
                     case DataType.Boolean:
@@ -560,19 +530,18 @@ namespace SolarSharp.Interpreter.DataTypes
                     case DataType.Number:
                         return Number == (double)obj;
                     default:
-                        return m_Object == obj;
+                        return Object == obj;
                 }
             }
 
-            if (other.Type == DataType.Nil && Type == DataType.Void
-                || other.Type == DataType.Void && Type == DataType.Nil)
+            if (other.Type == DataType.Nil && Type == DataType.Nil
+                || other.Type == DataType.Nil && Type == DataType.Nil)
                 return true;
 
             if (other.Type != Type) return false;
 
             switch (Type)
             {
-                case DataType.Void:
                 case DataType.Nil:
                     return true;
                 case DataType.Boolean:
@@ -621,6 +590,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Casts this DynValue to string, using coercion if the type is number.
         /// </summary>
         /// <returns>The string representation, or null if not number, not string.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string CastToString()
         {
             DynValue rv = ToScalar();
@@ -639,6 +609,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Casts this DynValue to a double, using coercion if the type is string.
         /// </summary>
         /// <returns>The string representation, or null if not number, not string or non-convertible-string.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double? CastToNumber()
         {
             DynValue rv = ToScalar();
@@ -659,12 +630,13 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Casts this DynValue to a bool
         /// </summary>
         /// <returns>False if value is false or nil, true otherwise.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool CastToBool()
         {
             DynValue rv = ToScalar();
             if (rv.Type == DataType.Boolean)
                 return rv.Boolean;
-            else return rv.Type != DataType.Nil && rv.Type != DataType.Void;
+            else return rv.Type != DataType.Nil && rv.Type != DataType.Nil;
         }
 
         /// <summary>
@@ -672,39 +644,25 @@ namespace SolarSharp.Interpreter.DataTypes
         /// null otherwise
         /// </summary>
         /// <returns>False if value is false or nil, true otherwise.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IScriptPrivateResource GetAsPrivateResource()
         {
-            return m_Object as IScriptPrivateResource;
+            return Object as IScriptPrivateResource;
         }
 
         /// <summary>
         /// Converts a tuple to a scalar value. If it's already a scalar value, this function returns "this".
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DynValue ToScalar()
         {
             if (Type != DataType.Tuple)
                 return this;
 
             if (Tuple.Length == 0)
-                return Void;
+                return Nil;
 
             return Tuple[0].ToScalar();
-        }
-
-        /// <summary>
-        /// Performs an assignment, overwriting the value with the specified one.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <exception cref="ScriptRuntimeException">If the value is readonly.</exception>
-        public void Assign(DynValue value)
-        {
-            m_Number = value.m_Number;
-            m_Object = value.m_Object;
-            m_Type = value.Type;
-            // TODO: I'm not certain this is correct, this seems very odd
-            //       hashcodes should be preservable and we should be able to just
-            //       take the dyn value's hash code.
-            m_HashCode = -1;
         }
 
         /// <summary>
@@ -712,6 +670,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <returns></returns>
         /// <exception cref="ScriptRuntimeException">Value is not a table or string.</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DynValue GetLength()
         {
             if (Type == DataType.Table)
@@ -725,52 +684,40 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Determines whether this instance is nil or void
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsNil()
         {
-            return Type == DataType.Nil || Type == DataType.Void;
+            return Type == DataType.Nil;
         }
 
         /// <summary>
         /// Determines whether this instance is not nil or void
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsNotNil()
         {
-            return Type != DataType.Nil && Type != DataType.Void;
-        }
-
-        /// <summary>
-        /// Determines whether this instance is void
-        /// </summary>
-        public bool IsVoid()
-        {
-            return Type == DataType.Void;
-        }
-
-        /// <summary>
-        /// Determines whether this instance is not void
-        /// </summary>
-        public bool IsNotVoid()
-        {
-            return Type != DataType.Void;
+            return Type != DataType.Nil;
         }
 
         /// <summary>
         /// Determines whether is nil, void or NaN (and thus unsuitable for using as a table key).
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsNilOrNan()
         {
-            return Type == DataType.Nil || Type == DataType.Void || Type == DataType.Number && double.IsNaN(Number);
+            return Type == DataType.Nil || Type == DataType.Nil || Type == DataType.Number && double.IsNaN(Number);
         }
 
         /// <summary>
         /// Changes the numeric value of a number DynValue.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void AssignNumber(double num)
         {
             if (Type != DataType.Number)
                 throw new InternalErrorException("Can't assign number to type {0}", Type);
 
-            m_Number = num;
+            Number = num;
         }
 
         /// <summary>
@@ -868,7 +815,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 }
             }
 
-            if (IsVoid())
+            if (IsNil())
                 throw ScriptRuntimeException.BadArgumentNoValue(argNum, funcName, desiredType);
 
             throw ScriptRuntimeException.BadArgument(argNum, funcName, desiredType, Type, allowNil);

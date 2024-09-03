@@ -638,7 +638,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Add(((int)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -654,7 +654,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).AddRange(((System.Collections.Generic.IEnumerable<int>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -668,7 +668,7 @@ namespace MyNamespace
 
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return ((System.Collections.Generic.List<int>)(obj)).AsReadOnly();
+					return ((System.Collections.Generic.List<int>)(obj));
 				}
 			}
 
@@ -732,7 +732,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Clear();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -763,7 +763,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).CopyTo(((int[])(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -782,7 +782,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).CopyTo(((int)(pars[0])), ((int[])(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -799,7 +799,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).CopyTo(((int[])(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -971,7 +971,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).ForEach(((System.Action<int>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1066,7 +1066,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Insert(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1083,7 +1083,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).InsertRange(((int)(pars[0])), ((System.Collections.Generic.IEnumerable<int>)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1177,7 +1177,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).RemoveAt(((int)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1194,7 +1194,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).RemoveRange(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1209,7 +1209,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Reverse();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1226,7 +1226,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Reverse(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1241,7 +1241,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Sort();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1257,7 +1257,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Sort(((System.Collections.Generic.IComparer<int>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1275,7 +1275,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Sort(((int)(pars[0])), ((int)(pars[1])), ((System.Collections.Generic.IComparer<int>)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1291,7 +1291,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Sort(((System.Comparison<int>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1320,7 +1320,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).TrimExcess();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1670,7 +1670,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1688,7 +1688,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1707,7 +1707,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1724,7 +1724,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int[])(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1741,7 +1741,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1759,7 +1759,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])), ((long)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1778,7 +1778,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])), ((long)(pars[2])), ((long)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1795,7 +1795,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long[])(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1984,7 +1984,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).CopyTo(((System.Array)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2001,7 +2001,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).CopyTo(((System.Array)(pars[0])), ((long)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2030,7 +2030,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).Initialize();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2454,7 +2454,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Add(((RegCollItem)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2470,7 +2470,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).AddRange(((System.Collections.Generic.IEnumerable<RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2484,7 +2484,7 @@ namespace MyNamespace
 
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return ((System.Collections.Generic.List<RegCollItem>)(obj)).AsReadOnly();
+					return ((System.Collections.Generic.List<RegCollItem>)(obj));
 				}
 			}
 
@@ -2548,7 +2548,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Clear();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2579,7 +2579,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).CopyTo(((RegCollItem[])(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2598,7 +2598,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).CopyTo(((int)(pars[0])), ((RegCollItem[])(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2615,7 +2615,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).CopyTo(((RegCollItem[])(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2787,7 +2787,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).ForEach(((System.Action<RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2882,7 +2882,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Insert(((int)(pars[0])), ((RegCollItem)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2899,7 +2899,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).InsertRange(((int)(pars[0])), ((System.Collections.Generic.IEnumerable<RegCollItem>)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2993,7 +2993,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).RemoveAt(((int)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3010,7 +3010,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).RemoveRange(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3025,7 +3025,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Reverse();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3042,7 +3042,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Reverse(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3057,7 +3057,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Sort();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3073,7 +3073,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Sort(((System.Collections.Generic.IComparer<RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3091,7 +3091,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Sort(((int)(pars[0])), ((int)(pars[1])), ((System.Collections.Generic.IComparer<RegCollItem>)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3107,7 +3107,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Sort(((System.Comparison<RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3136,7 +3136,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).TrimExcess();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3769,7 +3769,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Copy(((System.Array)(pars[0])), ((System.Array)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3789,7 +3789,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Copy(((System.Array)(pars[0])), ((int)(pars[1])), ((System.Array)(pars[2])), ((int)(pars[3])), ((int)(pars[4])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3807,7 +3807,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Copy(((System.Array)(pars[0])), ((System.Array)(pars[1])), ((long)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3827,7 +3827,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Copy(((System.Array)(pars[0])), ((long)(pars[1])), ((System.Array)(pars[2])), ((long)(pars[3])), ((long)(pars[4])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3847,7 +3847,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.ConstrainedCopy(((System.Array)(pars[0])), ((int)(pars[1])), ((System.Array)(pars[2])), ((int)(pars[3])), ((int)(pars[4])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3865,7 +3865,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Clear(((System.Array)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4008,7 +4008,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4026,7 +4026,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4045,7 +4045,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4062,7 +4062,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int[])(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4079,7 +4079,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4097,7 +4097,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])), ((long)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4116,7 +4116,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])), ((long)(pars[2])), ((long)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4133,7 +4133,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long[])(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4392,7 +4392,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).CopyTo(((System.Array)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4409,7 +4409,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).CopyTo(((System.Array)(pars[0])), ((long)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4541,7 +4541,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Reverse(((System.Array)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4559,7 +4559,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Reverse(((System.Array)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4575,7 +4575,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4592,7 +4592,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((System.Array)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4610,7 +4610,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4629,7 +4629,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((System.Array)(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4646,7 +4646,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((System.Collections.IComparer)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4664,7 +4664,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((System.Array)(pars[1])), ((System.Collections.IComparer)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4683,7 +4683,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((int)(pars[1])), ((int)(pars[2])), ((System.Collections.IComparer)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4703,7 +4703,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((System.Array)(pars[1])), ((int)(pars[2])), ((int)(pars[3])), ((System.Collections.IComparer)(pars[4])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4718,7 +4718,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).Initialize();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5139,7 +5139,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Add(((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5155,7 +5155,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).AddRange(((System.Collections.Generic.IEnumerable<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5169,7 +5169,7 @@ namespace MyNamespace
 
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).AsReadOnly();
+					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj));
 				}
 			}
 
@@ -5233,7 +5233,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Clear();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5264,7 +5264,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).CopyTo(((CollectionsBaseGenRegisteredTests.RegCollItem[])(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5283,7 +5283,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).CopyTo(((int)(pars[0])), ((CollectionsBaseGenRegisteredTests.RegCollItem[])(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5300,7 +5300,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).CopyTo(((CollectionsBaseGenRegisteredTests.RegCollItem[])(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5472,7 +5472,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).ForEach(((System.Action<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5567,7 +5567,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Insert(((int)(pars[0])), ((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5584,7 +5584,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).InsertRange(((int)(pars[0])), ((System.Collections.Generic.IEnumerable<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5678,7 +5678,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).RemoveAt(((int)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5695,7 +5695,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).RemoveRange(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5710,7 +5710,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Reverse();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5727,7 +5727,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Reverse(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5742,7 +5742,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Sort();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5758,7 +5758,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Sort(((System.Collections.Generic.IComparer<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5776,7 +5776,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Sort(((int)(pars[0])), ((int)(pars[1])), ((System.Collections.Generic.IComparer<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5792,7 +5792,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Sort(((System.Comparison<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5821,7 +5821,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).TrimExcess();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6463,7 +6463,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Add(((CollectionsRegisteredTests.RegCollItem)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6479,7 +6479,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).AddRange(((System.Collections.Generic.IEnumerable<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6493,7 +6493,7 @@ namespace MyNamespace
 
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
-					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).AsReadOnly();
+					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj));
 				}
 			}
 
@@ -6557,7 +6557,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Clear();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6588,7 +6588,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).CopyTo(((CollectionsRegisteredTests.RegCollItem[])(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6607,7 +6607,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).CopyTo(((int)(pars[0])), ((CollectionsRegisteredTests.RegCollItem[])(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6624,7 +6624,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).CopyTo(((CollectionsRegisteredTests.RegCollItem[])(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6796,7 +6796,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).ForEach(((System.Action<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6891,7 +6891,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Insert(((int)(pars[0])), ((CollectionsRegisteredTests.RegCollItem)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6908,7 +6908,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).InsertRange(((int)(pars[0])), ((System.Collections.Generic.IEnumerable<CollectionsRegisteredTests.RegCollItem>)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7002,7 +7002,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).RemoveAt(((int)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7019,7 +7019,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).RemoveRange(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7034,7 +7034,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Reverse();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7051,7 +7051,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Reverse(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7066,7 +7066,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Sort();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7082,7 +7082,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Sort(((System.Collections.Generic.IComparer<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7100,7 +7100,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Sort(((int)(pars[0])), ((int)(pars[1])), ((System.Collections.Generic.IComparer<CollectionsRegisteredTests.RegCollItem>)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7116,7 +7116,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Sort(((System.Comparison<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7145,7 +7145,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).TrimExcess();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7516,7 +7516,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7534,7 +7534,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7553,7 +7553,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7570,7 +7570,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int[])(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7587,7 +7587,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7605,7 +7605,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])), ((long)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7624,7 +7624,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])), ((long)(pars[2])), ((long)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7641,7 +7641,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long[])(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7830,7 +7830,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).CopyTo(((System.Array)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7847,7 +7847,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).CopyTo(((System.Array)(pars[0])), ((long)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7876,7 +7876,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).Initialize();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -10090,7 +10090,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
                     VtUserDataOverloadsTests.OverloadsTestClass.UnCalled();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -13948,7 +13948,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.Dictionary<int, int>)(obj)).Add(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -13963,7 +13963,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.Dictionary<int, int>)(obj)).Clear();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -14026,7 +14026,7 @@ namespace MyNamespace
 #pragma warning disable SYSLIB0051 // Type or member is obsolete
                     ((System.Collections.Generic.Dictionary<int, int>)(obj)).GetObjectData(((System.Runtime.Serialization.SerializationInfo)(pars[0])), ((System.Runtime.Serialization.StreamingContext)(pars[1])));
 #pragma warning restore SYSLIB0051 // Type or member is obsolete
-                    return DynValue.Void;
+                    return DynValue.Nil;
 				}
 			}
 
@@ -14042,7 +14042,7 @@ namespace MyNamespace
 				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.Dictionary<int, int>)(obj)).OnDeserialization(((object)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 

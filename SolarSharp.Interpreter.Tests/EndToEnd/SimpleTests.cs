@@ -44,7 +44,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.Multiple(() =>
             {
-                Assert.That(res.Type, Is.EqualTo(DataType.Void));
+                Assert.That(res.Type, Is.EqualTo(DataType.Nil));
                 Assert.That(args.Count, Is.EqualTo(2));
             });
             Assert.Multiple(() =>
@@ -75,7 +75,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(args[0].String, Is.EqualTo("hello"));
                 Assert.That(args[1].Type, Is.EqualTo(DataType.String));
                 Assert.That(args[1].String, Is.EqualTo("world"));
-                Assert.That(res.Type, Is.EqualTo(DataType.Void));
+                Assert.That(res.Type, Is.EqualTo(DataType.Nil));
             });
         }
 

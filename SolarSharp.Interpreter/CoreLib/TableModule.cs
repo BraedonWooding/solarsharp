@@ -75,10 +75,10 @@ namespace SolarSharp.Interpreter.CoreLib
 
             public int Compare(DynValue a, DynValue b)
             {
-                if (_comparer == null || _comparer.IsNil())
+                if (_comparer.IsNil() || _comparer.IsNil())
                 {
                     var comparer = _executionContext.GetBinaryMetamethod(a, b, "__lt");
-                    if (comparer == null || comparer.IsNil())
+                    if (comparer.IsNil() || comparer.IsNil())
                     {
                         if (a.Type == DataType.Number && b.Type == DataType.Number)
                             return a.Number.CompareTo(b.Number);
@@ -225,7 +225,7 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             DynValue __len = executionContext.GetMetamethod(vlist, "__len");
 
-            if (__len != null)
+            if (__len.IsNotNil())
             {
                 DynValue lenv = executionContext.GetScript().Call(__len, vlist);
                 double? len = lenv.CastToNumber();

@@ -108,7 +108,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                             {
                                 DynValue v = m_ValueStack.Pop().ToScalar();
 
-                                if (v.Type == DataType.Nil || v.Type == DataType.Void)
+                                if (v.Type == DataType.Nil || v.Type == DataType.Nil)
                                     instructionPtr = i.NumVal;
                             }
                             break;
@@ -167,10 +167,10 @@ namespace SolarSharp.Interpreter.Execution.VM
                         case OpCode.Local:
                             var scope = m_ExecutionStack.Peek().LocalScope;
                             var index = i.Symbol.i_Index;
-                            m_ValueStack.Push(scope[index].AsReadOnly());
+                            m_ValueStack.Push(scope[index]);
                             break;
                         case OpCode.Upvalue:
-                            m_ValueStack.Push(m_ExecutionStack.Peek().ClosureScope[i.Symbol.i_Index].AsReadOnly());
+                            m_ValueStack.Push(m_ExecutionStack.Peek().ClosureScope[i.Symbol.i_Index]);
                             break;
                         case OpCode.StoreUpv:
                             ExecStoreUpv(i);
@@ -244,7 +244,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 {
                     var c = m_ExecutionStack.Peek(i);
 
-                    if (c.ErrorHandlerBeforeUnwind != null)
+                    if (c.ErrorHandlerBeforeUnwind.IsNotNil())
                         ex.DecoratedMessage = PerformMessageDecorationBeforeUnwind(c.ErrorHandlerBeforeUnwind, ex.DecoratedMessage, GetCurrentSourceRef(instructionPtr));
                 }
 
@@ -321,12 +321,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         private void AssignLocal(SymbolRef symref, DynValue value)
         {
             var stackframe = m_ExecutionStack.Peek();
-
-            DynValue v = stackframe.LocalScope[symref.i_Index];
-            if (v == null)
-                stackframe.LocalScope[symref.i_Index] = v = DynValue.NewNil();
-
-            v.Assign(value);
+            stackframe.LocalScope[symref.i_Index] = value;
         }
 
         private void ExecStoreLcl(Instruction i)
@@ -341,14 +336,8 @@ namespace SolarSharp.Interpreter.Execution.VM
         {
             DynValue value = GetStoreValue(i);
             SymbolRef symref = i.Symbol;
-
             var stackframe = m_ExecutionStack.Peek();
-
-            DynValue v = stackframe.ClosureScope[symref.i_Index];
-            if (v == null)
-                stackframe.ClosureScope[symref.i_Index] = v = DynValue.NewNil();
-
-            v.Assign(value);
+            stackframe.ClosureScope[symref.i_Index] = value;
         }
 
         private void ExecSwap(Instruction i)
@@ -369,11 +358,11 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             if (v.Type == DataType.Tuple)
             {
-                return (tupleidx < v.Tuple.Length) ? v.Tuple[tupleidx] : DynValue.NewNil();
+                return (tupleidx < v.Tuple.Length) ? v.Tuple[tupleidx] : DynValue.Nil;
             }
             else
             {
-                return (tupleidx == 0) ? v : DynValue.NewNil();
+                return (tupleidx == 0) ? v : DynValue.Nil;
             }
         }
 
@@ -458,7 +447,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 DynValue meta = GetMetamethod(f, "__iterator");
 
-                if (meta != null && !meta.IsNil())
+                if (meta.IsNotNil())
                 {
                     v = meta.Type != DataType.Tuple ? GetScript().Call(meta, f, s, var) : meta;
 
@@ -473,7 +462,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 {
                     DynValue callmeta = GetMetamethod(f, "__call");
 
-                    if (callmeta == null || callmeta.IsNil())
+                    if (callmeta.IsNil())
                     {
                         m_ValueStack.Push(EnumerableWrapper.ConvertTable(f.Table));
                         return;
@@ -504,10 +493,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             DynValue btm = m_ValueStack.Peek(i.NumVal);
 
             m_ValueStack.Pop();
-            top = top.CloneAsWritable();
-            m_ValueStack.Push(top);
-
-            top.AssignNumber(top.Number + btm.Number);
+            m_ValueStack.Push(DynValue.NewNumber(top.Number + btm.Number));
         }
 
         private void ExecCNot()
@@ -583,7 +569,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 if (i >= argsList.Count)
                 {
-                    AssignLocal(I.SymbolList[i], DynValue.NewNil());
+                    AssignLocal(I.SymbolList[i], DynValue.Nil);
                 }
                 else if ((i == I.SymbolList.Length - 1) && (I.SymbolList[i].i_Name == WellKnownSymbols.VARARGS))
                 {
@@ -592,20 +578,20 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                     for (int ii = 0; ii < len; ii++, i++)
                     {
-                        varargs[ii] = argsList[i].ToScalar().CloneAsWritable();
+                        varargs[ii] = argsList[i].ToScalar();
                     }
 
                     AssignLocal(I.SymbolList[^1], DynValue.NewTuple(Internal_AdjustTuple(varargs)));
                 }
                 else
                 {
-                    AssignLocal(I.SymbolList[i], argsList[i].ToScalar().CloneAsWritable());
+                    AssignLocal(I.SymbolList[i], argsList[i].ToScalar());
                 }
             }
         }
 
         private int Internal_ExecCall(int argsCount, int instructionPtr, CallbackFunction handler = null,
-            CallbackFunction continuation = null, bool thisCall = false, string debugText = null, DynValue unwindHandler = null)
+            CallbackFunction continuation = null, bool thisCall = false, string debugText = null, DynValue unwindHandler = default)
         {
             DynValue fn = m_ValueStack.Peek(argsCount);
             CallStackItemFlags flags = (thisCall ? CallStackItemFlags.MethodCall : CallStackItemFlags.None);
@@ -627,7 +613,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                         // if the current stack item has no "odd" things pending and neither has the new coming one..
                         if (csi.ClrFunction == null && csi.Continuation == null && csi.ErrorHandler == null
-                            && csi.ErrorHandlerBeforeUnwind == null && continuation == null && unwindHandler == null && handler == null)
+                            && csi.ErrorHandlerBeforeUnwind.IsNil() && continuation == null && unwindHandler.IsNil() && handler == null)
                         {
                             instructionPtr = PerformTCO(argsCount);
                             flags |= CallStackItemFlags.TailCall;
@@ -688,7 +674,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             // fallback to __call metamethod
             var m = GetMetamethod(fn, "__call");
 
-            if (m != null && m.IsNotNil())
+            if (m.IsNotNil())
             {
                 DynValue[] tmp = new DynValue[argsCount + 1];
                 for (int i = 0; i < argsCount + 1; i++)
@@ -736,7 +722,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 retpoint = csi.ReturnAddress;
                 var argscnt = (int)(m_ValueStack.Pop().Number);
                 m_ValueStack.RemoveLast(argscnt + 1);
-                m_ValueStack.Push(DynValue.Void);
+                m_ValueStack.Push(DynValue.Nil);
             }
             else if (i.NumVal == 1)
             {
@@ -983,7 +969,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             // then if types are different, ret false
             if (r.Type != l.Type)
             {
-                if ((l.Type == DataType.Nil && r.Type == DataType.Void) || (l.Type == DataType.Void && r.Type == DataType.Nil))
+                if ((l.Type == DataType.Nil && r.Type == DataType.Nil) || (l.Type == DataType.Nil && r.Type == DataType.Nil))
                     m_ValueStack.Push(DynValue.True);
                 else
                     m_ValueStack.Push(DynValue.False);
@@ -1130,7 +1116,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private int ExecIndexSetSingleIdx(Instruction i, int instructionPtr)
         {
-            DynValue originalIdx = i.Value ?? m_ValueStack.Pop();
+            DynValue originalIdx = i.Value.IsNil() ? m_ValueStack.Pop() : i.Value;
             DynValue idx = originalIdx.ToScalar();
             DynValue obj = m_ValueStack.Pop().ToScalar();
             var value = GetStoreValue(i);
@@ -1144,7 +1130,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                     // if the meta method was invoked it returns the value of it for us to actually invoke
                     // if there is no meta method it will just perform the set, so we are pretty safe here.
                     newIndexMethod = obj.Table.Set(idx, value, invokeMetaMethods: true);
-                    if (newIndexMethod == null || newIndexMethod.IsNil()) return instructionPtr;
+                    if (newIndexMethod.IsNil()) return instructionPtr;
                 }
                 else if (obj.Type == DataType.UserData)
                 {
@@ -1161,7 +1147,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 {
                     newIndexMethod = GetMetamethodRaw(obj, "__newindex");
 
-                    if (newIndexMethod == null || newIndexMethod.IsNil()) throw ScriptRuntimeException.IndexType(obj);
+                    if (newIndexMethod.IsNil()) throw ScriptRuntimeException.IndexType(obj);
                 }
 
                 if (newIndexMethod.Type == DataType.Function || newIndexMethod.Type == DataType.ClrFunction)
@@ -1186,7 +1172,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private int ExecIndexSetMultiIdx(Instruction i, int instructionPtr)
         {
-            DynValue originalIdx = i.Value ?? m_ValueStack.Pop();
+            DynValue originalIdx = i.Value.IsNil() ? m_ValueStack.Pop() : i.Value;
             DynValue idx = originalIdx.ToScalar();
             DynValue obj = m_ValueStack.Pop().ToScalar();
             var value = GetStoreValue(i);
@@ -1210,7 +1196,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 {
                     newIndexMethod = GetMetamethodRaw(obj, "__newindex");
 
-                    if (newIndexMethod == null || newIndexMethod.IsNil())
+                    if (newIndexMethod.IsNil())
                     {
                         if (obj.Type == DataType.Table) throw new ScriptRuntimeException("cannot multi-index a table. userdata expected");
                         throw ScriptRuntimeException.IndexType(obj);
@@ -1230,7 +1216,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private int ExecIndexGetSingleIdx(Instruction i, int instructionPtr)
         {
-            DynValue originalIdx = i.Value ?? m_ValueStack.Pop();
+            DynValue originalIdx = i.Value.IsNil() ? m_ValueStack.Pop() : i.Value;
             DynValue idx = originalIdx.ToScalar();
             DynValue obj = m_ValueStack.Pop().ToScalar();
 
@@ -1253,7 +1239,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                     }
 
                     indexMethod = GetMetamethodRaw(obj, "__index");
-                    if (indexMethod == null || indexMethod.IsNil())
+                    if (indexMethod.IsNil())
                     {
                         m_ValueStack.Push(DynValue.Nil);
                         return instructionPtr;
@@ -1263,14 +1249,15 @@ namespace SolarSharp.Interpreter.Execution.VM
                 {
                     UserData ud = obj.UserData;
 
-                    var v = ud.Descriptor.Index(GetScript(), ud.Object, originalIdx, isDirectIndexing: i.OpCode == OpCode.IndexN) ?? throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
-                    m_ValueStack.Push(v.AsReadOnly());
+                    var v = ud.Descriptor.Index(GetScript(), ud.Object, originalIdx, isDirectIndexing: i.OpCode == OpCode.IndexN);
+                    if (v.IsNil()) throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
+                    m_ValueStack.Push(v);
                     return instructionPtr;
                 }
                 else
                 {
                     indexMethod = GetMetamethodRaw(obj, "__index");
-                    if (indexMethod == null || indexMethod.IsNil()) throw ScriptRuntimeException.IndexType(obj);
+                    if (indexMethod.IsNil()) throw ScriptRuntimeException.IndexType(obj);
                 }
 
                 if (indexMethod.Type == DataType.Function || indexMethod.Type == DataType.ClrFunction)
@@ -1290,7 +1277,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private int ExecIndexGetMultiIdx(Instruction i, int instructionPtr)
         {
-            DynValue originalIdx = i.Value ?? m_ValueStack.Pop();
+            DynValue originalIdx = i.Value.IsNil() ? m_ValueStack.Pop() : i.Value;
             DynValue idx = originalIdx.ToScalar();
             DynValue obj = m_ValueStack.Pop().ToScalar();
 
@@ -1302,14 +1289,15 @@ namespace SolarSharp.Interpreter.Execution.VM
                 {
                     UserData ud = obj.UserData;
 
-                    var v = ud.Descriptor.Index(GetScript(), ud.Object, originalIdx, isDirectIndexing: false) ?? throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
-                    m_ValueStack.Push(v.AsReadOnly());
+                    var v = ud.Descriptor.Index(GetScript(), ud.Object, originalIdx, isDirectIndexing: false);
+                    if (v.IsNil()) throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
+                    m_ValueStack.Push(v);
                     return instructionPtr;
                 }
                 else
                 {
                     indexMethod = GetMetamethodRaw(obj, "__index");
-                    if (indexMethod == null || indexMethod.IsNil())
+                    if (indexMethod.IsNil())
                     {
                         if (obj.Type == DataType.Table)
                         {

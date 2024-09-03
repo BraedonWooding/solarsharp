@@ -229,27 +229,27 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
                     .WithAccessOrNull(MemberDescriptorAccess.CanExecute);
 
                 if (mdesc != null)
-                    return ExecuteIndexer(mdesc, script, obj, index, null);
+                    return ExecuteIndexer(mdesc, script, obj, index, DynValue.Nil);
             }
 
             index = index.ToScalar();
 
             if (index.Type != DataType.String)
-                return null;
+                return DynValue.Nil;
 
             DynValue v = TryIndex(script, obj, index.String);
-            if (v == null && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TryIndex(script, obj, UpperFirstLetter(index.String));
-            if (v == null && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TryIndex(script, obj, Camelify(index.String));
-            if (v == null && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TryIndex(script, obj, UpperFirstLetter(Camelify(index.String)));
+            if (v.IsNil() && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TryIndex(script, obj, UpperFirstLetter(index.String));
+            if (v.IsNil() && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TryIndex(script, obj, Camelify(index.String));
+            if (v.IsNil() && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TryIndex(script, obj, UpperFirstLetter(Camelify(index.String)));
 
-            if (v == null && m_ExtMethodsVersion < UserData.GetExtensionMethodsChangeVersion())
+            if (v.IsNil() && m_ExtMethodsVersion < UserData.GetExtensionMethodsChangeVersion())
             {
                 m_ExtMethodsVersion = UserData.GetExtensionMethodsChangeVersion();
 
                 v = TryIndexOnExtMethod(script, obj, index.String);
-                if (v == null && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TryIndexOnExtMethod(script, obj, UpperFirstLetter(index.String));
-                if (v == null && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TryIndexOnExtMethod(script, obj, Camelify(index.String));
-                if (v == null && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TryIndexOnExtMethod(script, obj, UpperFirstLetter(Camelify(index.String)));
+                if (v.IsNil() && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TryIndexOnExtMethod(script, obj, UpperFirstLetter(index.String));
+                if (v.IsNil() && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TryIndexOnExtMethod(script, obj, Camelify(index.String));
+                if (v.IsNil() && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TryIndexOnExtMethod(script, obj, UpperFirstLetter(Camelify(index.String)));
             }
 
             return v;
@@ -276,7 +276,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
                 return DynValue.NewCallback(ext.GetCallback(script, obj));
             }
 
-            return null;
+            return DynValue.Nil;
         }
 
         /// <summary>
@@ -309,13 +309,12 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <returns></returns>
         protected virtual DynValue TryIndex(Script script, object obj, string indexName)
         {
-
             if (m_Members.TryGetValue(indexName, out IMemberDescriptor desc))
             {
                 return desc.GetValue(script, obj);
             }
 
-            return null;
+            return DynValue.Nil;
         }
 
         /// <summary>
@@ -437,7 +436,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
 
             if (index.Type == DataType.Tuple)
             {
-                values = value == null
+                values = value.IsNil()
                     ? index.Tuple
                     : new List<DynValue>(index.Tuple)
                     {
@@ -446,7 +445,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             }
             else
             {
-                values = value == null ? (new DynValue[] { index }) : (IList<DynValue>)(new DynValue[] { index, value });
+                values = value.IsNil() ? (new DynValue[] { index }) : (IList<DynValue>)(new DynValue[] { index, value });
             }
 
             CallbackArguments args = new(values, false);
@@ -508,7 +507,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
                 "__tonumber" => TryDispatchToNumber(script, obj),
                 "__tobool" => TryDispatchToBool(script, obj),
                 "__iterator" => ClrToScriptConversions.EnumerationToDynValue(script, obj),
-                _ => null,
+                _ => DynValue.Nil,
             };
         }
 
@@ -540,7 +539,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
                         DynValue.NewBoolean(PerformComparison(obj, args[0].ToObject(), args[1].ToObject()) <= 0));
             }
 
-            return null;
+            return DynValue.Nil;
         }
 
         private DynValue MultiDispatchLessThan(Script _, object obj)
@@ -552,12 +551,12 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
                         DynValue.NewBoolean(PerformComparison(obj, args[0].ToObject(), args[1].ToObject()) < 0));
             }
 
-            return null;
+            return DynValue.Nil;
         }
 
         private DynValue TryDispatchLength(Script script, object obj)
         {
-            if (obj == null) return null;
+            if (obj == null) return DynValue.Nil;
 
             var lenprop = m_Members.GetOrDefault("Length");
             if (lenprop != null && lenprop.CanRead() && !lenprop.CanExecute()) return lenprop.GetGetterCallbackAsDynValue(script, obj);
@@ -565,7 +564,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             var countprop = m_Members.GetOrDefault("Count");
             if (countprop != null && countprop.CanRead() && !countprop.CanExecute()) return countprop.GetGetterCallbackAsDynValue(script, obj);
 
-            return null;
+            return DynValue.Nil;
         }
 
         private DynValue MultiDispatchEqual(Script _, object obj)
@@ -598,7 +597,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
                 return desc.GetValue(script, obj);
             }
             else
-                return null;
+                return DynValue.Nil;
         }
 
         private DynValue TryDispatchToNumber(Script script, object obj)
@@ -607,9 +606,9 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             {
                 var name = t.GetConversionMethodName();
                 var v = DispatchMetaOnMethod(script, obj, name);
-                if (v != null) return v;
+                if (v.IsNotNil()) return v;
             }
-            return null;
+            return DynValue.Nil;
         }
 
 
@@ -617,7 +616,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         {
             var name = typeof(bool).GetConversionMethodName();
             var v = DispatchMetaOnMethod(script, obj, name);
-            if (v != null) return v;
+            if (v.IsNotNil()) return v;
             return DispatchMetaOnMethod(script, obj, "op_True");
         }
 

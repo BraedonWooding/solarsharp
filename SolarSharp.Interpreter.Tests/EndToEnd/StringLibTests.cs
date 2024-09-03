@@ -218,7 +218,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return tostring(t), a;
 			";
             DynValue res = Script.RunString(script);
-            Utils.DynAssert(res, DataType.Void, "yup");
+            Utils.DynAssert(res, DataType.Nil, "yup");
         }
 
         [Test]

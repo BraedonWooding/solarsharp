@@ -17,7 +17,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
         {
             List<DynValue> readLines = new();
 
-            DynValue readValue = null;
+            DynValue readValue = DynValue.Nil;
 
             do
             {

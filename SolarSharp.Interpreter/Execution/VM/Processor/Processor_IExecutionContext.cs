@@ -43,7 +43,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 DynValue meta = op1.UserData.Descriptor.MetaIndex(m_Script,
                     op1.UserData.Object, eventName);
 
-                if (meta != null)
+                if (meta.IsNotNil())
                     return meta;
             }
 
@@ -52,11 +52,11 @@ namespace SolarSharp.Interpreter.Execution.VM
                 DynValue meta = op2.UserData.Descriptor.MetaIndex(m_Script,
                     op2.UserData.Object, eventName);
 
-                if (meta != null)
+                if (meta.IsNotNil())
                     return meta;
             }
 
-            return null;
+            return DynValue.Nil;
         }
 
         internal DynValue GetMetamethod(DynValue value, string metamethod)
@@ -64,7 +64,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             if (value.Type == DataType.UserData)
             {
                 DynValue v = value.UserData.Descriptor.MetaIndex(m_Script, value.UserData.Object, metamethod);
-                if (v != null)
+                if (v.IsNotNil())
                     return v;
             }
 
@@ -77,12 +77,12 @@ namespace SolarSharp.Interpreter.Execution.VM
             var metatable = GetMetatable(value);
 
             if (metatable == null)
-                return null;
+                return DynValue.Nil;
 
             var metameth = metatable.Get(metamethod);
 
             if (metameth.IsNil())
-                return null;
+                return DynValue.Nil;
 
             return metameth;
         }

@@ -34,7 +34,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         protected DynValueMemberDescriptor(string name)
         {
             MemberAccess = MemberDescriptorAccess.CanRead;
-            m_Value = null;
+            m_Value = DynValue.Nil;
             Name = name;
         }
 
@@ -117,7 +117,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
             switch (Value.Type)
             {
                 case DataType.Nil:
-                case DataType.Void:
                 case DataType.Boolean:
                 case DataType.Number:
                 case DataType.String:

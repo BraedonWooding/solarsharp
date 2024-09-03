@@ -325,16 +325,15 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 if (i == method.Parameters.Length - 1 && method.VarArgsArrayType != null)
                 {
                     int varargCnt = 0;
-                    DynValue firstArg = null;
+                    DynValue firstArg = DynValue.Nil;
                     int scoreBeforeVargars = totalScore;
 
                     // update score for varargs
                     while (true)
                     {
                         var arg = args.RawGet(argsCnt, false);
-                        if (arg == null) break;
-
-                        firstArg ??= arg;
+                        if (arg.IsNil()) break;
+                        if (firstArg.IsNil()) firstArg = arg;
 
                         argsCnt += 1;
 
@@ -365,10 +364,8 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 }
                 else
                 {
-                    var arg = args.RawGet(argsCnt, false) ?? DynValue.Void;
-
+                    var arg = args.RawGet(argsCnt, false);
                     int score = CalcScoreForSingleArgument(method.Parameters[i], parameterType, arg, method.Parameters[i].HasDefaultValue);
-
                     totalScore = Math.Min(totalScore, score);
 
                     argsCnt += 1;

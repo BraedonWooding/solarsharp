@@ -61,7 +61,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// or
         /// The event handler type doesn't implement a public Invoke method
         /// or
-        /// The event handler has a return type which is not System.Void
+        /// The event handler has a return type which is not System.Nil
         /// or
         /// The event handler has more than MAX_ARGS_IN_DELEGATE parameters
         /// or
@@ -180,7 +180,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 if (m_Callbacks.Add(o, closure))
                     RegisterCallback(o);
 
-                return DynValue.Void;
+                return DynValue.Nil;
             }
         }
 
@@ -194,7 +194,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 if (m_Callbacks.RemoveValue(o, closure))
                     UnregisterCallback(o);
 
-                return DynValue.Void;
+                return DynValue.Nil;
             }
         }
 

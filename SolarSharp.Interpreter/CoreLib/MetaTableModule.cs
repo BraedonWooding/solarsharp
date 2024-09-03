@@ -25,7 +25,7 @@ namespace SolarSharp.Interpreter.CoreLib
 
             DynValue curmeta = executionContext.GetMetamethod(table, "__metatable");
 
-            if (curmeta != null)
+            if (curmeta.IsNotNil())
             {
                 throw new ScriptRuntimeException("cannot change a protected metatable");
             }

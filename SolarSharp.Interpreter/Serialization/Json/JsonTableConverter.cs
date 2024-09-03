@@ -102,7 +102,6 @@ namespace SolarSharp.Interpreter.Serialization.Json
                     TableToJson(sb, value.Table);
                     break;
                 case DataType.Nil:
-                case DataType.Void:
                 case DataType.UserData:
                 default:
                     sb.Append("null");
@@ -257,7 +256,7 @@ namespace SolarSharp.Interpreter.Serialization.Json
             {
                 numberValue = -numberValue;
             }
-            return DynValue.NewNumber(numberValue).AsReadOnly();
+            return DynValue.NewNumber(numberValue);
         }
     }
 }

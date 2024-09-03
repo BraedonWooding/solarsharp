@@ -55,7 +55,7 @@ namespace SolarSharp.Interpreter.Execution
         public DynValue GetMetamethodTailCall(DynValue value, string metamethod, params DynValue[] args)
         {
             DynValue meta = GetMetamethod(value, metamethod);
-            if (meta == null) return null;
+            if (meta.IsNil()) return meta;
             return DynValue.NewTailCallReq(meta, args);
         }
 
@@ -153,7 +153,7 @@ namespace SolarSharp.Interpreter.Execution
                 {
                     DynValue v = GetMetamethod(func, "__call");
 
-                    if (v == null && v.IsNil())
+                    if (v.IsNil())
                     {
                         throw ScriptRuntimeException.AttemptToCallNonFunc(func.Type);
                     }
@@ -206,7 +206,7 @@ namespace SolarSharp.Interpreter.Execution
             {
                 DynValue env = EvaluateSymbolByName(WellKnownSymbols.ENV);
 
-                if (env == null || env.Type != DataType.Table)
+                if (env.IsNil() || env.Type != DataType.Table)
                     return null;
                 else return env.Table;
             }
@@ -219,7 +219,7 @@ namespace SolarSharp.Interpreter.Execution
         /// <param name="exception">The exception.</param>
         public void PerformMessageDecorationBeforeUnwind(DynValue messageHandler, ScriptRuntimeException exception)
         {
-            exception.DecoratedMessage = messageHandler != null
+            exception.DecoratedMessage = messageHandler.IsNotNil()
                 ? m_Processor.PerformMessageDecorationBeforeUnwind(messageHandler, exception.Message, CallingLocation)
                 : exception.Message;
         }

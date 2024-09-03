@@ -44,7 +44,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             if (dynValue.Type != DataType.Table)
                 throw new InvalidOperationException(string.Format("_ENV is not a table but a {0}", dynValue.Type));
 
-            dynValue.Table.Set(name, value ?? DynValue.Nil);
+            dynValue.Table.Set(name, value);
         }
 
         public void AssignGenericSymbol(SymbolRef symref, DynValue value)
@@ -57,23 +57,13 @@ namespace SolarSharp.Interpreter.Execution.VM
                 case SymbolRefType.Local:
                     {
                         var stackframe = GetTopNonClrFunction();
-
-                        DynValue v = stackframe.LocalScope[symref.i_Index];
-                        if (v == null)
-                            stackframe.LocalScope[symref.i_Index] = v = DynValue.NewNil();
-
-                        v.Assign(value);
+                        stackframe.LocalScope[symref.i_Index] = value;
                     }
                     break;
                 case SymbolRefType.Upvalue:
                     {
                         var stackframe = GetTopNonClrFunction();
-
-                        DynValue v = stackframe.ClosureScope[symref.i_Index];
-                        if (v == null)
-                            stackframe.ClosureScope[symref.i_Index] = v = DynValue.NewNil();
-
-                        v.Assign(value);
+                        stackframe.ClosureScope[symref.i_Index] = value;
                     }
                     break;
                 case SymbolRefType.DefaultEnv:
@@ -114,7 +104,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                         {
                             var l = stackframe.Debug_Symbols[i];
 
-                            if (l.i_Name == name && stackframe.LocalScope[i] != null)
+                            if (l.i_Name == name && stackframe.LocalScope[i].IsNotNil())
                                 return l;
                         }
                     }

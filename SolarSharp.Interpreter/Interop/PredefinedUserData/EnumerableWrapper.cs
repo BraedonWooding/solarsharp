@@ -81,7 +81,7 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
                     return DynValue.NewCallback((ctx, args) => { Reset(); return DynValue.Nil; });
                 }
             }
-            return null;
+            return DynValue.Nil;
         }
 
         public bool SetIndex(Script script, DynValue index, DynValue value, bool isDirectIndexing)
@@ -94,7 +94,7 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
             if (metaname == "__call")
                 return DynValue.NewCallback(LuaIteratorCallback);
             else
-                return null;
+                return DynValue.Nil;
         }
     }
 }

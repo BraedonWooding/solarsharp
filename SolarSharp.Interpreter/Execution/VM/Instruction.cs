@@ -65,7 +65,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private string PurifyFromNewLines(DynValue Value)
         {
-            if (Value == null)
+            if (Value.IsNil())
                 return "";
 
             return Value.ToString().Replace('\n', ' ').Replace('\r', ' ');
@@ -165,16 +165,14 @@ namespace SolarSharp.Interpreter.Execution.VM
         {
             bool isnull = !rd.ReadBoolean();
 
-            if (isnull) return null;
+            if (isnull) return DynValue.Nil;
 
             DataType dt = (DataType)rd.ReadByte();
 
             switch (dt)
             {
                 case DataType.Nil:
-                    return DynValue.NewNil();
-                case DataType.Void:
-                    return DynValue.Void;
+                    return DynValue.Nil;
                 case DataType.Boolean:
                     return DynValue.NewBoolean(rd.ReadBoolean());
                 case DataType.Number:
@@ -191,7 +189,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private void DumpValue(BinaryWriter wr, DynValue value)
         {
-            if (value == null)
+            if (value.IsNil())
             {
                 wr.Write(false);
                 return;
@@ -203,7 +201,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             switch (value.Type)
             {
                 case DataType.Nil:
-                case DataType.Void:
                 case DataType.Table:
                     break;
                 case DataType.Boolean:

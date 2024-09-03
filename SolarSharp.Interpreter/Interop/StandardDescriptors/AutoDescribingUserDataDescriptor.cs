@@ -52,7 +52,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             if (obj is IUserDataType u)
                 return u.Index(script, index, isDirectIndexing);
 
-            return null;
+            return DynValue.Nil;
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             if (obj is IUserDataType u)
                 return u.MetaIndex(script, metaname);
 
-            return null;
+            return DynValue.Nil;
         }
 
 

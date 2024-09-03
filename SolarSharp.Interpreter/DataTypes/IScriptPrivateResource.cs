@@ -27,7 +27,7 @@ namespace SolarSharp.Interpreter.DataTypes
 
         public static void CheckScriptOwnership(this IScriptPrivateResource containingResource, DynValue value)
         {
-            if (value != null)
+            if (value.IsNotNil())
             {
                 var otherResource = value.GetAsPrivateResource();
 

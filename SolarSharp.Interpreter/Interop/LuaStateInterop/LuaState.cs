@@ -39,7 +39,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                 pos = m_Stack.Count + pos + 1;
 
             if (pos > m_Stack.Count)
-                return DynValue.Void;
+                return DynValue.Nil;
 
             return m_Stack[pos - 1];
         }

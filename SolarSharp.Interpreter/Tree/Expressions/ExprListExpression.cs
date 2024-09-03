@@ -35,7 +35,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             if (expressions.Count >= 1)
                 return expressions[0].Eval(context);
 
-            return DynValue.Void;
+            return DynValue.Nil;
         }
     }
 }

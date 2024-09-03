@@ -65,7 +65,7 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// Enumeration of possible data types in MoonSharp
     /// </summary>
-    public enum DataType
+    public enum DataType : byte
     {
         // DO NOT MODIFY ORDER - IT'S SIGNIFICANT
 
@@ -154,7 +154,6 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return type switch
             {
-                DataType.Void => "no value",
                 DataType.Nil => "nil",
                 DataType.Boolean => "boolean",
                 DataType.Number => "number",
@@ -191,7 +190,7 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return type switch
             {
-                DataType.Void or DataType.Nil => "nil",
+                DataType.Nil or DataType.Nil => "nil",
                 DataType.Boolean => "boolean",
                 DataType.Number => "number",
                 DataType.String => "string",

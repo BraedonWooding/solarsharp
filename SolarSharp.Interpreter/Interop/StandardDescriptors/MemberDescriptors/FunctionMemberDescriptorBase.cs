@@ -183,7 +183,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
                     {
                         DynValue arg = args.RawGet(j, false);
                         j += 1;
-                        if (arg != null)
+                        if (arg.IsNotNil())
                             extraArgs.Add(arg);
                         else
                             break;
@@ -221,7 +221,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
                 // else, convert it
                 else
                 {
-                    var arg = args.RawGet(j, false) ?? DynValue.Void;
+                    var arg = args.RawGet(j, false);
                     pars[i] = ScriptToClrConversions.DynValueToObjectOfType(arg, parameters[i].Type,
                         parameters[i].DefaultValue, parameters[i].HasDefaultValue);
                     j += 1;
@@ -237,7 +237,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="script">The script.</param>
         /// <param name="outParams">The out parameters indices, or null. See <see cref="BuildArgumentList" />.</param>
         /// <param name="pars">The parameters passed to the function.</param>
-        /// <param name="retv">The return value from the function. Use DynValue.Void if the function returned no value.</param>
+        /// <param name="retv">The return value from the function. Use DynValue.Nil if the function returned no value.</param>
         /// <returns>A DynValue to be returned to scripts</returns>
         protected static DynValue BuildReturnValue(Script script, List<int> outParams, object[] pars, object retv)
         {
@@ -249,7 +249,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
             {
                 DynValue[] rets = new DynValue[outParams.Count + 1];
 
-                rets[0] = retv is DynValue value && value.IsVoid() ? DynValue.Nil : ClrToScriptConversions.ObjectToDynValue(script, retv);
+                rets[0] = retv is DynValue value && value.IsNil() ? DynValue.Nil : ClrToScriptConversions.ObjectToDynValue(script, retv);
 
                 for (int i = 0; i < outParams.Count; i++)
                     rets[i + 1] = ClrToScriptConversions.ObjectToDynValue(script, pars[outParams[i]]);

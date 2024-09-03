@@ -8,14 +8,14 @@ namespace SolarSharp.Interpreter.Serialization
 {
     public static class ObjectValueConverter
     {
-        public static DynValue SerializeObjectToDynValue(Script script, object o, DynValue valueForNulls = null)
+        public static DynValue SerializeObjectToDynValue(Script script, object o, DynValue valueForNulls = default)
         {
             if (o == null)
-                return valueForNulls ?? DynValue.Nil;
+                return valueForNulls;
 
             DynValue v = ClrToScriptConversions.TryObjectToTrivialDynValue(script, o);
 
-            if (v != null)
+            if (v.IsNotNil())
                 return v;
 
             if (o is Enum)

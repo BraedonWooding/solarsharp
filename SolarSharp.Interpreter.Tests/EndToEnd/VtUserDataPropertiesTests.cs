@@ -841,7 +841,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Script s = new();
             long big = long.MaxValue;
             var v = DynValue.FromObject(s, big);
-            Assert.That(v, Is.Not.Null);
+            Assert.That(v, Is.Not.EqualTo(DynValue.Nil));
         }
     }
 }

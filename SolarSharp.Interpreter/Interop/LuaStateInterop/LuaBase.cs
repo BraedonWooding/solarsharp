@@ -50,10 +50,8 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         {
             switch (GetArgument(L, p).Type)
             {
-                case DataType.Void:
-                    return LUA_TNONE;
                 case DataType.Nil:
-                    return LUA_TNIL;
+                    return LUA_TNONE;
                 case DataType.Boolean:
                     return LUA_TNIL;
                 case DataType.Number:
