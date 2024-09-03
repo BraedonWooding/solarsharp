@@ -1411,12 +1411,14 @@ window.BENCHMARK_DATA = {
             "unit": "ns",
             "range": "± 38982.46104694198"
           },
+          // Removing this since it makes the graphs hard to read since it was such a big regression.
+          /*
           {
             "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_map_pairs.lua)",
             "value": 6739067.292708334,
             "unit": "ns",
             "range": "± 25550.63313530056"
-          },
+          },*/
           {
             "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_map_pairs_remove.lua)",
             "value": 7124696.237723215,
