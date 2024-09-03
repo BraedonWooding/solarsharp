@@ -548,7 +548,21 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </returns>
         public override bool Equals(object obj)
         {
-            if (obj is not DynValue other) return false;
+            if (obj is not DynValue other)
+            {
+                switch (Type)
+                {
+                    case DataType.Void:
+                    case DataType.Nil:
+                        return obj == null;
+                    case DataType.Boolean:
+                        return Boolean == (bool)obj;
+                    case DataType.Number:
+                        return Number == (double)obj;
+                    default:
+                        return m_Object == obj;
+                }
+            }
 
             if (other.Type == DataType.Nil && Type == DataType.Void
                 || other.Type == DataType.Void && Type == DataType.Nil)

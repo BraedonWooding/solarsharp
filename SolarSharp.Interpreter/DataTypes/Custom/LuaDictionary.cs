@@ -30,8 +30,6 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
     }
 
     [DebuggerDisplay("Count = {Count}")]
-    [Serializable]
-    [TypeForwardedFrom("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")]
     internal class LuaDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDictionary, IReadOnlyDictionary<TKey, TValue> where TKey : notnull
     {
         private int[] _buckets;
@@ -461,7 +459,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
         public IEnumerator<KeyValuePair<TKey, TValue>>? TryGetEnumeratorFrom(TKey key)
         {
-            ref var valRef = ref CollectionsMarshalHelper.GetValueRef(this, key, out var index);
+            ref var valRef = ref GetValueRef(key, allowDeadKeys: true, out var index);
             if (index == null)
             {
                 return null;
@@ -472,7 +470,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
         public IEnumerator<TKey>? TryGetKeysEnumeratorFrom(TKey key)
         {
-            ref var valRef = ref CollectionsMarshalHelper.GetValueRef(this, key, out var index);
+            ref var valRef = ref GetValueRef(key, allowDeadKeys: true, out var index);
             if (index == null)
             {
                 return null;
@@ -483,7 +481,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
         public IEnumerator<TValue>? TryGetValuesEnumeratorFrom(TKey key)
         {
-            ref var valRef = ref CollectionsMarshalHelper.GetValueRef(this, key, out var index);
+            ref var valRef = ref GetValueRef(key, allowDeadKeys: true, out var index);
             if (index == null)
             {
                 return null;
@@ -617,11 +615,6 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             return true;
         }
 
-        public ref Entry GetValueRef(TKey key, out int? indexIfExists)
-        {
-            return ref CollectionsMarshalHelper.GetValueRef(this, key, out indexIfExists);
-        }
-
         public bool DictionaryConditionalSet(TKey key, TValue value, bool setIfAbsent)
         {
             // NOTE: this method is mirrored by Dictionary<TKey, TValue>.TryInsert above.
@@ -731,215 +724,214 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             return true;
         }
 
-        /// <summary>
-        /// A helper class containing APIs exposed through <see cref="CollectionsMarshal"/> or <see cref="CollectionExtensions"/>.
-        /// These methods are relatively niche and only used in specific scenarios, so adding them in a separate type avoids
-        /// the additional overhead on each <see cref="LuaDictionary{TKey, TValue}"/> instantiation, especially in AOT scenarios.
-        /// </summary>
-        internal static class CollectionsMarshalHelper
+        internal ref Entry GetValueRef(TKey key, bool allowDeadKeys, out int? indexIfExists)
         {
-            internal static ref Entry GetValueRef(LuaDictionary<TKey, TValue> dictionary, TKey key, out int? indexIfExists)
+            // NOTE: this method is mirrored by this<TKey, TValue>.TryInsert above.
+            // If you make any changes here, make sure to keep that version in sync as well.
+
+            if (key == null)
             {
-                // NOTE: this method is mirrored by Dictionary<TKey, TValue>.TryInsert above.
-                // If you make any changes here, make sure to keep that version in sync as well.
-
-                if (key == null)
-                {
-                    throw new ArgumentNullException(nameof(key));
-                }
-
-                if (dictionary._buckets == null)
-                {
-                    dictionary.Initialize(0);
-                }
-                Debug.Assert(dictionary._buckets != null);
-
-                Entry[] entries = dictionary._entries;
-                Debug.Assert(entries != null, "expected entries to be non-null");
-
-                IEqualityComparer<TKey> comparer = dictionary._comparer;
-                Debug.Assert(comparer is not null || typeof(TKey).IsValueType);
-                uint hashCode = (uint)(typeof(TKey).IsValueType && comparer == null ? key.GetHashCode() : comparer!.GetHashCode(key));
-
-                uint collisionCount = 0;
-                ref int bucket = ref dictionary.GetBucket(hashCode);
-                int i = bucket - 1; // Value in _buckets is 1-based
-
-                if (typeof(TKey).IsValueType && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
-                    comparer == null)
-                {
-                    // ValueType: Devirtualize with EqualityComparer<TKey>.Default intrinsic
-                    while ((uint)i < (uint)entries.Length)
-                    {
-                        if (entries[i].hashCode == hashCode && EqualityComparer<TKey>.Default.Equals(entries[i].key, key))
-                        {
-                            indexIfExists = i;
-                            return ref entries[i];
-                        }
-
-                        i = entries[i].next;
-
-                        collisionCount++;
-                        if (collisionCount > (uint)entries.Length)
-                        {
-                            // The chain of entries forms a loop; which means a concurrent update has happened.
-                            // Break out of the loop and throw, rather than looping forever.
-                            throw new InvalidOperationException("Concurrent operations not supported");
-                        }
-                    }
-                }
-                else
-                {
-                    Debug.Assert(comparer is not null);
-                    while ((uint)i < (uint)entries.Length)
-                    {
-                        if (entries[i].hashCode == hashCode && comparer.Equals(entries[i].key, key))
-                        {
-                            indexIfExists = i;
-                            return ref entries[i];
-                        }
-
-                        i = entries[i].next;
-
-                        collisionCount++;
-                        if (collisionCount > (uint)entries.Length)
-                        {
-                            // The chain of entries forms a loop; which means a concurrent update has happened.
-                            // Break out of the loop and throw, rather than looping forever.
-                            throw new InvalidOperationException("Concurrent operations not supported");
-                        }
-                    }
-                }
-
-                int index;
-                if (dictionary._freeCount > 0)
-                {
-                    index = dictionary._freeList;
-                    Debug.Assert(StartOfFreeList - entries[dictionary._freeList].next >= -1, "shouldn't overflow because `next` cannot underflow");
-                    dictionary._freeList = StartOfFreeList - entries[dictionary._freeList].next;
-                    dictionary._freeCount--;
-                }
-                else
-                {
-                    int count = dictionary._count;
-                    if (count == entries.Length)
-                    {
-                        dictionary.Resize();
-                        bucket = ref dictionary.GetBucket(hashCode);
-                    }
-                    index = count;
-                    dictionary._count = count + 1;
-                    entries = dictionary._entries;
-                }
-
-                indexIfExists = null;
-                return ref Unsafe.NullRef<Entry>();
+                throw new ArgumentNullException(nameof(key));
             }
 
-            internal static ref Entry GetValueRefOrAddDefault(LuaDictionary<TKey, TValue> dictionary, TKey key, out (int entryIndex, bool exists) info)
+            if (_buckets == null)
             {
-                // NOTE: this method is mirrored by Dictionary<TKey, TValue>.TryInsert above.
-                // If you make any changes here, make sure to keep that version in sync as well.
-
-                if (key == null)
-                {
-                    throw new ArgumentNullException(nameof(key));
-                }
-
-                if (dictionary._buckets == null)
-                {
-                    dictionary.Initialize(0);
-                }
-                Debug.Assert(dictionary._buckets != null);
-
-                Entry[] entries = dictionary._entries;
-                Debug.Assert(entries != null, "expected entries to be non-null");
-
-                IEqualityComparer<TKey> comparer = dictionary._comparer;
-                Debug.Assert(comparer is not null || typeof(TKey).IsValueType);
-                uint hashCode = (uint)(typeof(TKey).IsValueType && comparer == null ? key.GetHashCode() : comparer!.GetHashCode(key));
-
-                uint collisionCount = 0;
-                ref int bucket = ref dictionary.GetBucket(hashCode);
-                int i = bucket - 1; // Value in _buckets is 1-based
-
-                if (typeof(TKey).IsValueType && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
-                    comparer == null)
-                {
-                    // ValueType: Devirtualize with EqualityComparer<TKey>.Default intrinsic
-                    while ((uint)i < (uint)entries.Length)
-                    {
-                        if (entries[i].hashCode == hashCode && EqualityComparer<TKey>.Default.Equals(entries[i].key, key))
-                        {
-                            info = (i, true);
-                            return ref entries[i];
-                        }
-
-                        i = entries[i].next;
-
-                        collisionCount++;
-                        if (collisionCount > (uint)entries.Length)
-                        {
-                            // The chain of entries forms a loop; which means a concurrent update has happened.
-                            // Break out of the loop and throw, rather than looping forever.
-                            throw new InvalidOperationException("Concurrent operations not supported");
-                        }
-                    }
-                }
-                else
-                {
-                    Debug.Assert(comparer is not null);
-                    while ((uint)i < (uint)entries.Length)
-                    {
-                        if (entries[i].hashCode == hashCode && comparer.Equals(entries[i].key, key))
-                        {
-                            info = (i, true);
-                            return ref entries[i];
-                        }
-
-                        i = entries[i].next;
-
-                        collisionCount++;
-                        if (collisionCount > (uint)entries.Length)
-                        {
-                            // The chain of entries forms a loop; which means a concurrent update has happened.
-                            // Break out of the loop and throw, rather than looping forever.
-                            throw new InvalidOperationException("Concurrent operations not supported");
-                        }
-                    }
-                }
-
-                int index;
-                if (dictionary._freeCount > 0)
-                {
-                    index = dictionary._freeList;
-                    Debug.Assert(StartOfFreeList - entries[dictionary._freeList].next >= -1, "shouldn't overflow because `next` cannot underflow");
-                    dictionary._freeList = StartOfFreeList - entries[dictionary._freeList].next;
-                    dictionary._freeCount--;
-                }
-                else
-                {
-                    int count = dictionary._count;
-                    if (count == entries.Length)
-                    {
-                        dictionary.Resize();
-                        bucket = ref dictionary.GetBucket(hashCode);
-                    }
-                    index = count;
-                    dictionary._count = count + 1;
-                    entries = dictionary._entries;
-                }
-
-                ref Entry entry = ref entries![index];
-                entry.hashCode = hashCode;
-                entry.next = bucket - 1; // Value in _buckets is 1-based
-                entry.key = key;
-                entry.value = default!;
-                bucket = index + 1; // Value in _buckets is 1-based
-                dictionary._version++;
-                info = (index, false);
-                return ref entry;
+                Initialize(0);
             }
+            Debug.Assert(_buckets != null);
+
+            Entry[] entries = _entries;
+            Debug.Assert(entries != null, "expected entries to be non-null");
+
+            IEqualityComparer<TKey> comparer = _comparer;
+            Debug.Assert(comparer is not null || typeof(TKey).IsValueType);
+            uint hashCode = (uint)(typeof(TKey).IsValueType && comparer == null ? key.GetHashCode() : comparer!.GetHashCode(key));
+
+            uint collisionCount = 0;
+            ref int bucket = ref GetBucket(hashCode);
+            int i = bucket - 1; // Value in _buckets is 1-based
+
+            if (typeof(TKey).IsValueType && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
+                comparer == null)
+            {
+                // ValueType: Devirtualize with EqualityComparer<TKey>.Default intrinsic
+                while ((uint)i < (uint)entries.Length)
+                {
+                    if (entries[i].hashCode == hashCode && EqualityComparer<TKey>.Default.Equals(entries[i].key, key))
+                    {
+                        indexIfExists = i;
+                        return ref entries[i];
+                    }
+
+                    i = entries[i].next;
+
+                    collisionCount++;
+                    if (collisionCount > (uint)entries.Length)
+                    {
+                        // The chain of entries forms a loop; which means a concurrent update has happened.
+                        // Break out of the loop and throw, rather than looping forever.
+                        throw new InvalidOperationException("Concurrent operations not supported");
+                    }
+                }
+            }
+            else
+            {
+                Debug.Assert(comparer is not null);
+                while ((uint)i < (uint)entries.Length)
+                {
+                    if (entries[i].hashCode == hashCode && comparer.Equals(entries[i].key, key))
+                    {
+                        indexIfExists = i;
+                        return ref entries[i];
+                    }
+
+                    i = entries[i].next;
+
+                    collisionCount++;
+                    if (collisionCount > (uint)entries.Length)
+                    {
+                        // The chain of entries forms a loop; which means a concurrent update has happened.
+                        // Break out of the loop and throw, rather than looping forever.
+                        throw new InvalidOperationException("Concurrent operations not supported");
+                    }
+                }
+            }
+
+            if (allowDeadKeys)
+            {
+                // scan the free list for the key we want, given the follow the rules of the iterator
+                // it is safe for them to remove keys then try to iterate *from that key* given they don't add new keys after
+                // of course semi-likely people will break this but :shrug: maybe we can add a detector for common cases
+                i = _freeList;
+                collisionCount = 0;
+                while (i >= 0)
+                {
+                    if (entries[i].hashCode == hashCode && comparer.Equals(entries[i].key, key))
+                    {
+                        indexIfExists = i;
+                        return ref entries[i];
+                    }
+
+                    i = StartOfFreeList - entries[_freeCount].next;
+                    
+                    // collision loops should be impossible outside of concurrent updates
+                    collisionCount++;
+                    if (collisionCount > (uint)entries.Length)
+                    {
+                        // The chain of entries forms a loop; which means a concurrent update has happened.
+                        // Break out of the loop and throw, rather than looping forever.
+                        throw new InvalidOperationException("Concurrent operations not supported");
+                    }
+                }
+            }
+
+            indexIfExists = null;
+            return ref Unsafe.NullRef<Entry>();
+        }
+
+        internal ref Entry GetValueRefOrAddDefault(TKey key, out (int entryIndex, bool exists) info)
+        {
+            // NOTE: this method is mirrored by this<TKey, TValue>.TryInsert above.
+            // If you make any changes here, make sure to keep that version in sync as well.
+
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            if (_buckets == null)
+            {
+                Initialize(0);
+            }
+            Debug.Assert(_buckets != null);
+
+            Entry[] entries = _entries;
+            Debug.Assert(entries != null, "expected entries to be non-null");
+
+            IEqualityComparer<TKey> comparer = _comparer;
+            Debug.Assert(comparer is not null || typeof(TKey).IsValueType);
+            uint hashCode = (uint)(typeof(TKey).IsValueType && comparer == null ? key.GetHashCode() : comparer!.GetHashCode(key));
+
+            uint collisionCount = 0;
+            ref int bucket = ref GetBucket(hashCode);
+            int i = bucket - 1; // Value in _buckets is 1-based
+
+            if (typeof(TKey).IsValueType && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
+                comparer == null)
+            {
+                // ValueType: Devirtualize with EqualityComparer<TKey>.Default intrinsic
+                while ((uint)i < (uint)entries.Length)
+                {
+                    if (entries[i].hashCode == hashCode && EqualityComparer<TKey>.Default.Equals(entries[i].key, key))
+                    {
+                        info = (i, true);
+                        return ref entries[i];
+                    }
+
+                    i = entries[i].next;
+
+                    collisionCount++;
+                    if (collisionCount > (uint)entries.Length)
+                    {
+                        // The chain of entries forms a loop; which means a concurrent update has happened.
+                        // Break out of the loop and throw, rather than looping forever.
+                        throw new InvalidOperationException("Concurrent operations not supported");
+                    }
+                }
+            }
+            else
+            {
+                Debug.Assert(comparer is not null);
+                while ((uint)i < (uint)entries.Length)
+                {
+                    if (entries[i].hashCode == hashCode && comparer.Equals(entries[i].key, key))
+                    {
+                        info = (i, true);
+                        return ref entries[i];
+                    }
+
+                    i = entries[i].next;
+
+                    collisionCount++;
+                    if (collisionCount > (uint)entries.Length)
+                    {
+                        // The chain of entries forms a loop; which means a concurrent update has happened.
+                        // Break out of the loop and throw, rather than looping forever.
+                        throw new InvalidOperationException("Concurrent operations not supported");
+                    }
+                }
+            }
+
+            int index;
+            if (_freeCount > 0)
+            {
+                index = _freeList;
+                Debug.Assert(StartOfFreeList - entries[_freeList].next >= -1, "shouldn't overflow because `next` cannot underflow");
+                _freeList = StartOfFreeList - entries[_freeList].next;
+                _freeCount--;
+            }
+            else
+            {
+                int count = _count;
+                if (count == entries.Length)
+                {
+                    Resize();
+                    bucket = ref GetBucket(hashCode);
+                }
+                index = count;
+                _count = count + 1;
+                entries = _entries;
+            }
+
+            ref Entry entry = ref entries![index];
+            entry.hashCode = hashCode;
+            entry.next = bucket - 1; // Value in _buckets is 1-based
+            entry.key = key;
+            entry.value = default!;
+            bucket = index + 1; // Value in _buckets is 1-based
+            _version++;
+            info = (index, false);
+            return ref entry;
         }
 
         private void Resize() => Resize(HashHelpers.ExpandPrime(_count));
@@ -1015,11 +1007,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                         Debug.Assert(StartOfFreeList - _freeList < 0, "shouldn't underflow because max hashtable length is MaxPrimeArrayLength = 0x7FEFFFFD(2146435069) _freelist underflow threshold 2147483646");
                         entry.next = StartOfFreeList - _freeList;
 
-                        if (RuntimeHelpers.IsReferenceOrContainsReferences<TKey>())
-                        {
-                            entry.key = default!;
-                        }
-
+                        // we don't clear out entry.key for a few specific reasons;
+                        // 1. we want iterators to still be able to get reference to a "freed" key
+                        // 2. we should really only have strings as keys
                         if (RuntimeHelpers.IsReferenceOrContainsReferences<TValue>())
                         {
                             entry.value = default!;

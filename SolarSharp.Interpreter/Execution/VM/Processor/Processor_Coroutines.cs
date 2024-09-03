@@ -24,8 +24,8 @@ namespace SolarSharp.Interpreter.Execution.VM
         public DynValue Coroutine_Recycle(Processor mainProcessor, Closure closure)
         {
             // Clear the used parts of the stacks to prep for reuse
-            this.m_ValueStack.ClearUsed();
-            this.m_ExecutionStack.ClearUsed();
+            m_ValueStack.ClearUsed();
+            m_ExecutionStack.ClearUsed();
 
             // Create a new processor instance, recycling this one
             Processor P = new(mainProcessor, this);
