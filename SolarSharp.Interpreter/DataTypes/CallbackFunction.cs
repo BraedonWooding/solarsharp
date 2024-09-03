@@ -118,14 +118,6 @@ namespace SolarSharp.Interpreter.DataTypes
             return descr.GetCallbackFunction(script, obj);
         }
 
-
-
-        /// <summary>
-        /// Gets or sets an object used as additional data to the callback function (available in the execution context).
-        /// </summary>
-        public object AdditionalData { get; set; }
-
-
         /// <summary>
         /// Checks the callback signature of a method is compatible for callbacks
         /// </summary>
@@ -136,8 +128,5 @@ namespace SolarSharp.Interpreter.DataTypes
             return pi.Length == 2 && pi[0].ParameterType == typeof(ScriptExecutionContext)
                 && pi[1].ParameterType == typeof(CallbackArguments) && mi.ReturnType == typeof(DynValue) && (requirePublicVisibility || mi.IsPublic);
         }
-
-
-
     }
 }

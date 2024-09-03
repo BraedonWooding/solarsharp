@@ -446,7 +446,7 @@ namespace SolarSharp.Interpreter
             }
             else if (function.Type == DataType.ClrFunction)
             {
-                return function.Callback.ClrCallback(CreateDynamicExecutionContext(function.Callback), new CallbackArguments(args, false));
+                return function.Callback.ClrCallback(CreateDynamicExecutionContext(), new CallbackArguments(args, false));
             }
 
             return m_MainProcessor.Call(function, args);
@@ -693,9 +693,9 @@ namespace SolarSharp.Interpreter
         /// those cases where the execution engine is not really running - for example for dynamic expression
         /// or calls from CLR to CLR callbacks
         /// </summary>
-        internal ScriptExecutionContext CreateDynamicExecutionContext(CallbackFunction func = null)
+        internal ScriptExecutionContext CreateDynamicExecutionContext()
         {
-            return new ScriptExecutionContext(m_MainProcessor, func, null, isDynamic: true);
+            return new ScriptExecutionContext(m_MainProcessor, null);
         }
 
         /// <summary>

@@ -35,16 +35,16 @@ namespace SolarSharp.Interpreter.Execution
         /// </summary>
         /// <param name="context">The context.</param>
         /// <returns></returns>
-        public DynValue Evaluate(ScriptExecutionContext context = null)
+        public DynValue Evaluate(ScriptExecutionContext? context = null)
         {
             context ??= OwnerScript.CreateDynamicExecutionContext();
 
-            this.CheckScriptOwnership(context.GetScript());
+            this.CheckScriptOwnership(context.Value.GetScript());
 
             if (m_Constant != null)
                 return m_Constant;
 
-            return m_Exp.Eval(context);
+            return m_Exp.Eval(context.Value);
         }
 
         /// <summary>

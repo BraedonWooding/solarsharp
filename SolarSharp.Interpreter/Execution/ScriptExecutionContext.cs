@@ -9,53 +9,24 @@ namespace SolarSharp.Interpreter.Execution
 {
     /// <summary>
     /// Class giving access to details of the environment where the script is executing
+    /// 
+    /// TODO: We can probably remove this class since we only need it for calling location right now...
+    ///       but I think in the majority of cases we can probably handle calling location in processor...
     /// </summary>
-    public class ScriptExecutionContext : IScriptPrivateResource
+    public struct ScriptExecutionContext : IScriptPrivateResource
     {
         private readonly Processor m_Processor;
-        private readonly CallbackFunction m_Callback;
 
-        internal ScriptExecutionContext(Processor p, CallbackFunction callBackFunction, SourceRef sourceRef, bool isDynamic = false)
+        internal ScriptExecutionContext(Processor p, SourceRef sourceRef)
         {
-            IsDynamicExecution = isDynamic;
             m_Processor = p;
-            m_Callback = callBackFunction;
             CallingLocation = sourceRef;
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether this instance is running a dynamic execution.
-        /// Under a dynamic execution, most methods of ScriptExecutionContext are not reliable as the
-        /// processing engine of the script is not "really" running or is not available.
-        /// </summary>
-        public bool IsDynamicExecution
-        {
-            get;
-            private set;
         }
 
         /// <summary>
         /// Gets the location of the code calling back 
         /// </summary>
-        public SourceRef CallingLocation
-        {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// Gets or sets the additional data associated to this CLR function call.
-        /// </summary>
-        public object AdditionalData
-        {
-            get { return m_Callback?.AdditionalData; }
-            set
-            {
-                if (m_Callback == null) throw new InvalidOperationException("Cannot set additional data on a context which has no callback");
-                m_Callback.AdditionalData = value;
-            }
-        }
-
+        public SourceRef CallingLocation { get; private set; }
 
         /// <summary>
         /// Gets the metatable associated with the given value.
@@ -66,7 +37,6 @@ namespace SolarSharp.Interpreter.Execution
         {
             return m_Processor.GetMetatable(value);
         }
-
 
         /// <summary>
         /// Gets the specified metamethod associated with the given value.
@@ -254,7 +224,6 @@ namespace SolarSharp.Interpreter.Execution
                 : exception.Message;
         }
 
-
         /// <summary>
         /// Gets the script owning this resource.
         /// </summary>
@@ -265,6 +234,5 @@ namespace SolarSharp.Interpreter.Execution
         {
             get { return GetScript(); }
         }
-
     }
 }
