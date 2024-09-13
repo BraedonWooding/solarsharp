@@ -35,7 +35,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 }
                 else
                 {
-                    m_Count = last.Type == DataType.Nil ? m_Args.Count - 1 : m_Args.Count;
+                    m_Count = m_Args.Count;
                 }
             }
             else

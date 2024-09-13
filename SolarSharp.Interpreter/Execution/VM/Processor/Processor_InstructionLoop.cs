@@ -108,7 +108,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                             {
                                 DynValue v = m_ValueStack.Pop().ToScalar();
 
-                                if (v.Type == DataType.Nil || v.Type == DataType.Nil)
+                                if (v.Type == DataType.Nil)
                                     instructionPtr = i.NumVal;
                             }
                             break;
@@ -170,7 +170,11 @@ namespace SolarSharp.Interpreter.Execution.VM
                             m_ValueStack.Push(scope[index]);
                             break;
                         case OpCode.Upvalue:
-                            m_ValueStack.Push(m_ExecutionStack.Peek().ClosureScope[i.Symbol.i_Index]);
+                            // Grab the upvalue
+                            var upvalue = m_ExecutionStack.Peek().ClosureScope.UpValues[i.Symbol.i_Index];
+                            if (upvalue.Value.HasValue) m_ValueStack.Push(upvalue.Value.Value);
+                            else if (upvalue.Index >= 0) m_ValueStack.Push(m_ExecutionStack.Peek().LocalScope[upvalue.Index]);
+                            else m_ValueStack.Push(m_ExecutionStack.Peek(1).LocalScope[upvalue.Index]);
                             break;
                         case OpCode.StoreUpv:
                             ExecStoreUpv(i);
@@ -337,7 +341,10 @@ namespace SolarSharp.Interpreter.Execution.VM
             DynValue value = GetStoreValue(i);
             SymbolRef symref = i.Symbol;
             var stackframe = m_ExecutionStack.Peek();
-            stackframe.ClosureScope[symref.i_Index] = value;
+            var upvalue = stackframe.ClosureScope.UpValues[symref.i_Index];
+            if (upvalue.Value != null) upvalue.Value = value;
+            else if (upvalue.Index >= 0) stackframe.LocalScope[upvalue.Index] = value;
+            else m_ExecutionStack.Peek(1).LocalScope[-upvalue.Index] = value;
         }
 
         private void ExecSwap(Instruction i)
@@ -374,15 +381,15 @@ namespace SolarSharp.Interpreter.Execution.VM
             m_ValueStack.Push(DynValue.NewClosure(c));
         }
 
-        private DynValue GetUpvalueSymbol(SymbolRef s)
-        {
-            if (s.Type == SymbolRefType.Local)
-                return m_ExecutionStack.Peek().LocalScope[s.i_Index];
-            else if (s.Type == SymbolRefType.Upvalue)
-                return m_ExecutionStack.Peek().ClosureScope[s.i_Index];
-            else
-                throw new Exception("unsupported symbol type");
-        }
+        // private DynValue GetUpvalueSymbol(SymbolRef s)
+        // {
+        //     if (s.Type == SymbolRefType.Local)
+        //         return m_ExecutionStack.Peek().LocalScope[s.i_Index];
+        //     else if (s.Type == SymbolRefType.Upvalue)
+        //         return m_ExecutionStack.Peek().ClosureScope[s.i_Index];
+        //     else
+        //         throw new Exception("unsupported symbol type");
+        // }
 
         private void ExecMkTuple(Instruction i)
         {

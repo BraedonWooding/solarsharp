@@ -93,7 +93,7 @@ namespace SolarSharp.Hardwire.Generators
             m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(int), "argscount"));
 
             // get some meta about the method
-            bool IsNil = table.Get("ret").String == "System.Nil";
+            bool IsNil = table.Get("ret").String == "System.Void";
             bool isCtor = table.Get("ctor").Boolean;
             bool isStatic = table.Get("static").Boolean;
             bool isExtension = table.Get("extension").Boolean;

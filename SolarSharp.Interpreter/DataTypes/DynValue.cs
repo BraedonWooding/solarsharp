@@ -705,7 +705,7 @@ namespace SolarSharp.Interpreter.DataTypes
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsNilOrNan()
         {
-            return Type == DataType.Nil || Type == DataType.Nil || Type == DataType.Number && double.IsNaN(Number);
+            return Type == DataType.Nil || Type == DataType.Number && double.IsNaN(Number);
         }
 
         /// <summary>

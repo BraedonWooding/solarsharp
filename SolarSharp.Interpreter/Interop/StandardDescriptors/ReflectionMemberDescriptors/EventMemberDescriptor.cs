@@ -61,7 +61,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// or
         /// The event handler type doesn't implement a public Invoke method
         /// or
-        /// The event handler has a return type which is not System.Nil
+        /// The event handler has a return type which is not System.Void
         /// or
         /// The event handler has more than MAX_ARGS_IN_DELEGATE parameters
         /// or
