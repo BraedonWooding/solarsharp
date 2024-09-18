@@ -303,9 +303,5 @@ namespace SolarSharp.Interpreter.Interop.Converters
             else
                 return WEIGHT_NUMBER_DOWNCAST;
         }
-
-
-
-
     }
 }

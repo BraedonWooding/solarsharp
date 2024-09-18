@@ -6,6 +6,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
+#nullable enable
+
 namespace SolarSharp.Interpreter.DataTypes.Custom
 {
     /// <summary>
@@ -50,9 +52,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
         public LuaDictionary(int capacity) : this(capacity, null) { }
 
-        public LuaDictionary(IEqualityComparer<TKey> comparer) : this(0, comparer) { }
+        public LuaDictionary(IEqualityComparer<TKey>? comparer) : this(0, comparer) { }
 
-        public LuaDictionary(int capacity, IEqualityComparer<TKey> comparer)
+        public LuaDictionary(int capacity, IEqualityComparer<TKey>? comparer)
         {
             if (capacity < 0)
             {
@@ -79,6 +81,10 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                      comparer != EqualityComparer<TKey>.Default)
             {
                 _comparer = comparer;
+            }
+            else
+            {
+                _comparer = EqualityComparer<TKey>.Default;
             }
         }
 
@@ -1309,7 +1315,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
         ICollection IDictionary.Values => Values;
 
-        object IDictionary.this[object key]
+        object? IDictionary.this[object key]
         {
             get
             {
@@ -1545,7 +1551,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
             }
 
-            object IDictionaryEnumerator.Value
+            object? IDictionaryEnumerator.Value
             {
                 get
                 {
@@ -1653,12 +1659,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
                 else
                 {
-                    object[] objects = array as object[];
-                    if (objects == null)
-                    {
-                        throw new ArgumentException(nameof(array));
-                    }
-
+                    var objects = array as object[] ?? throw new ArgumentException(nameof(array));
                     int count = _dictionary._count;
                     Entry[] entries = _dictionary._entries;
                     try
@@ -1727,9 +1728,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     return false;
                 }
 
-                public TKey Current => _currentKey!;
+                public readonly TKey Current => _currentKey!;
 
-                object IEnumerator.Current
+                object? IEnumerator.Current
                 {
                     get
                     {
@@ -1945,3 +1946,5 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
         }
     }
 }
+
+#nullable disable

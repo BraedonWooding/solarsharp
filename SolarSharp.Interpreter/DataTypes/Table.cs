@@ -11,7 +11,7 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// A class representing a Lua table.
     /// </summary>
-    public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePair<DynValue, DynValue>>
+    public class Table : RefIdObject, IEnumerable<KeyValuePair<DynValue, DynValue>>
     {
         private readonly Script m_Owner;
         private int m_CachedLength = -1;

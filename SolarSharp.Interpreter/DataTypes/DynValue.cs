@@ -640,17 +640,6 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Returns this DynValue as an instance of <see cref="IScriptPrivateResource"/>, if possible,
-        /// null otherwise
-        /// </summary>
-        /// <returns>False if value is false or nil, true otherwise.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IScriptPrivateResource GetAsPrivateResource()
-        {
-            return Object as IScriptPrivateResource;
-        }
-
-        /// <summary>
         /// Converts a tuple to a scalar value. If it's already a scalar value, this function returns "this".
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

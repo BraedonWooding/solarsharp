@@ -20,6 +20,7 @@
     <Company>http://www.SolarSharp.org</Company>
     <Product>SolarSharp.Interpreter</Product>
     <Copyright>Copyright © 2014-2015, Marco Mastropaolo</Copyright>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <NoWarn>3021, 1591</NoWarn>

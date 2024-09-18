@@ -6,7 +6,7 @@ namespace SolarSharp.Interpreter.Execution
     /// <summary>
     /// Represents a dynamic expression in the script
     /// </summary>
-    public class DynamicExpression : IScriptPrivateResource
+    public class DynamicExpression
     {
         private readonly DynamicExprExpression m_Exp;
         private readonly DynValue m_Constant;
@@ -16,17 +16,15 @@ namespace SolarSharp.Interpreter.Execution
         /// </summary>
         public readonly string ExpressionCode;
 
-        internal DynamicExpression(Script S, string strExpr, DynamicExprExpression expr)
+        internal DynamicExpression(string strExpr, DynamicExprExpression expr)
         {
             ExpressionCode = strExpr;
-            OwnerScript = S;
             m_Exp = expr;
         }
 
-        internal DynamicExpression(Script S, string strExpr, DynValue constant)
+        internal DynamicExpression(string strExpr, DynValue constant)
         {
             ExpressionCode = strExpr;
-            OwnerScript = S;
             m_Constant = constant;
         }
 
@@ -37,9 +35,8 @@ namespace SolarSharp.Interpreter.Execution
         /// <returns></returns>
         public DynValue Evaluate(ScriptExecutionContext? context = null)
         {
-            context ??= OwnerScript.CreateDynamicExecutionContext();
-
-            this.CheckScriptOwnership(context.Value.GetScript());
+            // TODO:
+            //context ??= OwnerScript.CreateDynamicExecutionContext();
 
             if (m_Constant.IsNotNil())
                 return m_Constant;
@@ -54,24 +51,10 @@ namespace SolarSharp.Interpreter.Execution
         /// <returns></returns>
         public SymbolRef FindSymbol(ScriptExecutionContext context)
         {
-            this.CheckScriptOwnership(context.GetScript());
-
             if (m_Exp != null)
                 return m_Exp.FindDynamic(context);
             else
                 return null;
-        }
-
-        /// <summary>
-        /// Gets the script owning this resource.
-        /// </summary>
-        /// <value>
-        /// The script owning this resource.
-        /// </value>
-        public Script OwnerScript
-        {
-            get;
-            private set;
         }
 
         /// <summary>

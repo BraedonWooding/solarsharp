@@ -11,7 +11,7 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// A class representing a script coroutine
     /// </summary>
-    public class Coroutine : RefIdObject, IScriptPrivateResource
+    public class Coroutine : RefIdObject
     {
         /// <summary>
         /// Possible types of coroutine
@@ -147,8 +147,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
         public DynValue Resume(params DynValue[] args)
         {
-            this.CheckScriptOwnership(args);
-
             if (Type == CoroutineType.Coroutine)
                 return m_Processor.Coroutine_Resume(args);
             else
@@ -164,9 +162,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public DynValue Resume(ScriptExecutionContext context, params DynValue[] args)
         {
-            this.CheckScriptOwnership(context);
-            this.CheckScriptOwnership(args);
-
             if (Type == CoroutineType.Coroutine)
                 return m_Processor.Coroutine_Resume(args);
             else if (Type == CoroutineType.ClrCallback)
