@@ -106,23 +106,6 @@ namespace SolarSharp.Interpreter
         }
 
         /// <summary>
-        /// Loads a string containing a Lua/MoonSharp function.
-        /// </summary>
-        /// <param name="code">The code.</param>
-        /// <param name="globalTable">The global table to bind to this chunk.</param>
-        /// <param name="funcFriendlyName">Name of the function used to report errors, etc.</param>
-        /// <returns>
-        /// A DynValue containing a function which will execute the loaded code.
-        /// </returns>
-        public DynValue LoadFunction(string code, Table globalTable = null, string funcFriendlyName = null)
-        {
-            string chunkName = string.Format("libfunc_{0}", funcFriendlyName ?? m_Sources.Count.ToString());
-            int address = Loader_Fast.LoadFunction(this, source, m_ByteCode, globalTable != null || m_GlobalTable != null);
-
-            return MakeClosure(address, globalTable ?? m_GlobalTable);
-        }
-
-        /// <summary>
         /// Loads a string containing a Lua/MoonSharp script.
         /// </summary>
         /// <param name="code">The code.</param>

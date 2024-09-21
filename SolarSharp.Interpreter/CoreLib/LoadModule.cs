@@ -2,6 +2,7 @@
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Serialization;
 
 namespace SolarSharp.Interpreter.CoreLib
 {
@@ -131,8 +132,6 @@ namespace SolarSharp.Interpreter.CoreLib
             return loadfile_impl(executionContext, args, GetSafeDefaultEnv(executionContext));
         }
 
-
-
         private static DynValue loadfile_impl(ScriptExecutionContext executionContext, CallbackArguments args, Table defaultEnv)
         {
             try
@@ -150,7 +149,6 @@ namespace SolarSharp.Interpreter.CoreLib
                 return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(ex.DecoratedMessage ?? ex.Message));
             }
         }
-
 
         private static Table GetSafeDefaultEnv(ScriptExecutionContext executionContext)
         {
@@ -206,6 +204,7 @@ namespace SolarSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue require(ScriptExecutionContext executionContext, CallbackArguments args)
         {
+            // TODO: Error handling
             Script S = executionContext.GetScript();
             DynValue v = args.AsType(0, "require", DataType.String, false);
             
@@ -222,32 +221,14 @@ namespace SolarSharp.Interpreter.CoreLib
             if (module.IsNotNil()) return module;
 
             var fn = S.RequireModule(v.String);
-            
+            var result = executionContext.Call(fn);
+            if (result.IsNil()) result = DynValue.True;
+
+            // TODO: Don't re-query table when we can preserve hash (maybe?)
+            // TODO: This doesn't technically match original code which instead re-queries the table
+            //       I presume this is because the loader could directly set the loaded table?  It's odd behaviour though.
+            loadedTable.Set(v.String, result);
+            return result;
         }
-
-        [MoonSharpModuleMethod]
-        public const string require = @"
-function(modulename)
-	if (package == nil) then package = { }; end
-	if (package.loaded == nil) then package.loaded = { }; end
-
-	local m = package.loaded[modulename];
-
-	if (m ~= nil) then
-		return m;
-	end
-
-	local func = __require_clr_impl(modulename);
-
-	local res = func(modulename);
-
-	if (res == nil) then
-		res = true;
-	end
-
-	package.loaded[modulename] = res;
-
-	return res;
-end";
     }
 }

@@ -50,38 +50,5 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
                 throw;
             }
         }
-
-        internal static int LoadFunction(Script script, SourceCode source, ByteCode bytecode, bool usesGlobalEnv)
-        {
-            ScriptLoadingContext lcontext = CreateLoadingContext(script, source);
-
-            try
-            {
-                FunctionDefinitionExpression fnx;
-
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
-                    fnx = new FunctionDefinitionExpression(lcontext, usesGlobalEnv);
-
-                int beginIp = -1;
-
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
-                using (bytecode.EnterSource(null))
-                {
-                    bytecode.Emit_Nop(string.Format("Begin function {0}", source.Name));
-                    beginIp = fnx.CompileBody(bytecode, source.Name);
-                    bytecode.Emit_Nop(string.Format("End function {0}", source.Name));
-                }
-
-                return beginIp;
-            }
-            catch (SyntaxErrorException ex)
-            {
-                ex.DecorateMessage(script);
-                ex.Rethrow();
-                throw;
-            }
-
-        }
-
     }
 }
