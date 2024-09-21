@@ -36,7 +36,6 @@ namespace SolarSharp.Interpreter.Modules
             if (modules.Has(CoreModules.Math)) table.RegisterModuleType<MathModule>();
             if (modules.Has(CoreModules.Coroutine)) table.RegisterModuleType<CoroutineModule>();
             if (modules.Has(CoreModules.Bit32)) table.RegisterModuleType<Bit32Module>();
-            if (modules.Has(CoreModules.Dynamic)) table.RegisterModuleType<DynamicModule>();
             if (modules.Has(CoreModules.OS_System)) table.RegisterModuleType<OsSystemModule>();
             if (modules.Has(CoreModules.OS_Time)) table.RegisterModuleType<OsTimeModule>();
             if (modules.Has(CoreModules.IO)) table.RegisterModuleType<IoModule>();

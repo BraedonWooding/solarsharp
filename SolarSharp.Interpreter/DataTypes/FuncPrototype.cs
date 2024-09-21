@@ -1,5 +1,4 @@
-﻿using SolarSharp.Interpreter.Debugging;
-using SolarSharp.Interpreter.Execution.VM;
+﻿using SolarSharp.Interpreter.Execution.VM;
 using System.Collections.Generic;
 
 namespace SolarSharp.Interpreter.DataTypes
@@ -18,7 +17,12 @@ namespace SolarSharp.Interpreter.DataTypes
         public List<DynValue> Constants { get; set; }
         public List<UpValuePrototype> Upvalues { get; set; }
         public List<Instruction> Instructions { get; set; }
-        public SourceCode Source { get; set; }
+        public Source Source { get; set; }
+    }
+
+    internal class Source
+    {
+        public string FileName { get; set; }
     }
 
     internal class UpValuePrototype

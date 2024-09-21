@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using SolarSharp.Interpreter.IO;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.DataTypes.Custom;
 using System.Runtime.CompilerServices;
 

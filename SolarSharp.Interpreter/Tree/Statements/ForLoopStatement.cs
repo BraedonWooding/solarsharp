@@ -1,6 +1,5 @@
 ﻿using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Execution.Scopes;
 using SolarSharp.Interpreter.Execution.VM;

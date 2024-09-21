@@ -1,5 +1,4 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Execution.Scopes;
 
 namespace SolarSharp.Interpreter.Execution.VM

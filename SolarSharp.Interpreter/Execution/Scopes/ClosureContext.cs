@@ -1,5 +1,4 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace SolarSharp.Interpreter.Execution.Scopes

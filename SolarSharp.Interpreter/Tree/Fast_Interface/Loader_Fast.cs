@@ -1,5 +1,4 @@
 ﻿using SolarSharp.Interpreter.Tree.Statements;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Diagnostics;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
@@ -11,29 +10,6 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
 {
     internal static class Loader_Fast
     {
-        internal static DynamicExprExpression LoadDynamicExpr(Script script, SourceCode source)
-        {
-            ScriptLoadingContext lcontext = CreateLoadingContext(script, source);
-
-            try
-            {
-                lcontext.IsDynamicExpression = true;
-                lcontext.Anonymous = true;
-
-                Expression exp;
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
-                    exp = Expression.Expr(lcontext);
-
-                return new DynamicExprExpression(exp, lcontext);
-            }
-            catch (SyntaxErrorException ex)
-            {
-                ex.DecorateMessage(script);
-                ex.Rethrow();
-                throw;
-            }
-        }
-
         private static ScriptLoadingContext CreateLoadingContext(Script script, SourceCode source)
         {
             return new ScriptLoadingContext(script)
@@ -56,8 +32,6 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
 
                 int beginIp = -1;
 
-                //var srcref = new SourceRef(source.SourceID);
-
                 using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
                 using (bytecode.EnterSource(null))
                 {
@@ -66,8 +40,6 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
                     stat.Compile(bytecode);
                     bytecode.Emit_Nop(string.Format("End chunk {0}", source.Name));
                 }
-
-                //Debug_DumpByteCode(bytecode, source.SourceID);
 
                 return beginIp;
             }
@@ -92,8 +64,6 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
 
                 int beginIp = -1;
 
-                //var srcref = new SourceRef(source.SourceID);
-
                 using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
                 using (bytecode.EnterSource(null))
                 {
@@ -101,8 +71,6 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
                     beginIp = fnx.CompileBody(bytecode, source.Name);
                     bytecode.Emit_Nop(string.Format("End function {0}", source.Name));
                 }
-
-                //Debug_DumpByteCode(bytecode, source.SourceID);
 
                 return beginIp;
             }

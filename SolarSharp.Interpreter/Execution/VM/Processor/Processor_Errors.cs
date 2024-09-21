@@ -1,5 +1,4 @@
-﻿using SolarSharp.Interpreter.Debugging;
-using SolarSharp.Interpreter.Errors;
+﻿using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Execution.VM
 {

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using SolarSharp.Interpreter.Execution.VM;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 
@@ -250,23 +248,6 @@ namespace SolarSharp.Interpreter.DataTypes
                 else
                     return m_Processor.State;
             }
-        }
-
-        /// <summary>
-        /// Gets the coroutine stack trace for debug purposes
-        /// </summary>
-        /// <param name="skip">The skip.</param>
-        /// <param name="entrySourceRef">The entry source reference.</param>
-        /// <returns></returns>
-        public WatchItem[] GetStackTrace(int skip, SourceRef entrySourceRef = null)
-        {
-            if (State != CoroutineState.Running)
-            {
-                entrySourceRef = m_Processor.GetCoroutineSuspendedLocation();
-            }
-
-            List<WatchItem> stack = m_Processor.Debugger_GetCallStack(entrySourceRef);
-            return stack.Skip(skip).ToArray();
         }
 
         /// <summary>

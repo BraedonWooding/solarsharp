@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Interop.PredefinedUserData;
 

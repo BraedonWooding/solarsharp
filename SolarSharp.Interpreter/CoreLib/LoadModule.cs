@@ -204,16 +204,26 @@ namespace SolarSharp.Interpreter.CoreLib
         //If there is any error loading or running the module, or if it cannot find any loader for the module, then require 
         //signals an error. 
         [MoonSharpModuleMethod]
-        public static DynValue __require_clr_impl(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue require(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             Script S = executionContext.GetScript();
-            DynValue v = args.AsType(0, "__require_clr_impl", DataType.String, false);
+            DynValue v = args.AsType(0, "require", DataType.String, false);
+            
+            var package = S.Globals.Get("package");
+            if (package.IsNil()) S.Globals.Set("package", package = DynValue.NewTable(new Table(S, arraySizeHint: 0, associativeSizeHint: 1)));
+            var table = package.CheckType("require", DataType.Table).Table;
 
-            DynValue fn = S.RequireModule(v.String);
+            var loaded = table.Get("loaded");
+            if (loaded.IsNil()) table.Set("loaded", loaded = DynValue.NewTable(new Table(S, arraySizeHint: 0, associativeSizeHint: 1)));
+            var loadedTable = loaded.CheckType("require", DataType.Table).Table;
 
-            return fn; // tail call to dofile
+            // TODO: We also should return loader data
+            var module = loadedTable.Get(v.String);
+            if (module.IsNotNil()) return module;
+
+            var fn = S.RequireModule(v.String);
+            
         }
-
 
         [MoonSharpModuleMethod]
         public const string require = @"
@@ -239,8 +249,5 @@ function(modulename)
 
 	return res;
 end";
-
-
-
     }
 }

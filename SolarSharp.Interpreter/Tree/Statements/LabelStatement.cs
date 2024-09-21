@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Execution.Scopes;
 using SolarSharp.Interpreter.Execution.VM;

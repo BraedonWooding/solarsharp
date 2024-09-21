@@ -1,5 +1,4 @@
-﻿using SolarSharp.Interpreter.Debugging;
-using SolarSharp.Interpreter.Execution.Scopes;
+﻿using SolarSharp.Interpreter.Execution.Scopes;
 using SolarSharp.Interpreter.Tree.Lexer;
 
 namespace SolarSharp.Interpreter.Execution

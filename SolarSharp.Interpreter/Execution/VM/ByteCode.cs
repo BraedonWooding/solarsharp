@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution.Scopes;
 
@@ -26,12 +25,10 @@ namespace SolarSharp.Interpreter.Execution.VM
             Script = script;
         }
 
-
         public IDisposable EnterSource(SourceRef sref)
         {
             return new SourceCodeStackGuard(sref, this);
         }
-
 
         private class SourceCodeStackGuard : IDisposable
         {
@@ -48,7 +45,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                 m_Bc.PopSourceRef();
             }
         }
-
 
         public void PushSourceRef(SourceRef sref)
         {
@@ -327,6 +323,5 @@ namespace SolarSharp.Interpreter.Execution.VM
         {
             return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.Swap, NumVal = p1, NumVal2 = p2 });
         }
-
     }
 }

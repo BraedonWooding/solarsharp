@@ -145,21 +145,5 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                     return false;
             }
         }
-
-
-        internal Debugging.SourceRef GetSourceRef(bool isStepStop = true)
-        {
-            return new Debugging.SourceRef(SourceId, FromCol, ToCol, FromLine, ToLine, isStepStop);
-        }
-
-        internal Debugging.SourceRef GetSourceRef(Token to, bool isStepStop = true)
-        {
-            return new Debugging.SourceRef(SourceId, FromCol, to.ToCol, FromLine, to.ToLine, isStepStop);
-        }
-
-        internal Debugging.SourceRef GetSourceRefUpTo(Token to, bool isStepStop = true)
-        {
-            return new Debugging.SourceRef(SourceId, FromCol, to.PrevCol, FromLine, to.PrevLine, isStepStop);
-        }
     }
 }

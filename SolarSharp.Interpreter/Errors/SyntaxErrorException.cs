@@ -1,5 +1,4 @@
 ﻿using System;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Tree.Lexer;
 
 namespace SolarSharp.Interpreter.Errors

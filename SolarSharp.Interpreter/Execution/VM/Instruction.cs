@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.DataTypes.Custom;
-using SolarSharp.Interpreter.Debugging;
 
 namespace SolarSharp.Interpreter.Execution.VM
 {

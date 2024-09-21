@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using SolarSharp.Interpreter.Debugging;
 
 namespace SolarSharp.Interpreter.Errors
 {
@@ -59,11 +57,6 @@ namespace SolarSharp.Interpreter.Errors
         public int InstructionPtr { get; internal set; }
 
         /// <summary>
-        /// Gets the interpreter call stack.
-        /// </summary>
-        public IList<WatchItem> CallStack { get; internal set; }
-
-        /// <summary>
         /// Gets the decorated message (error message plus error location in script) if possible.
         /// </summary>
         public string DecoratedMessage { get; internal set; }
@@ -74,26 +67,6 @@ namespace SolarSharp.Interpreter.Errors
         /// </summary>
         public bool DoNotDecorateMessage { get; set; }
 
-
-        internal void DecorateMessage(Script script, SourceRef sref, int ip = -1)
-        {
-            if (string.IsNullOrEmpty(DecoratedMessage))
-            {
-                if (DoNotDecorateMessage)
-                {
-                    DecoratedMessage = Message;
-                    return;
-                }
-                else
-                {
-                    DecoratedMessage = sref != null
-                        ? string.Format("{0}: {1}", sref.FormatLocation(script), Message)
-                        : string.Format("bytecode:{0}: {1}", ip, Message);
-                }
-            }
-        }
-
-
         /// <summary>
         /// Rethrows this instance if 
         /// </summary>
@@ -101,8 +74,5 @@ namespace SolarSharp.Interpreter.Errors
         public virtual void Rethrow()
         {
         }
-
-
-
     }
 }

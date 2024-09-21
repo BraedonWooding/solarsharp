@@ -1,19 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.CoreLib;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Diagnostics;
 using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.IO;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Platforms;
-using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.Tree.Fast_Interface;
 
 namespace SolarSharp.Interpreter
@@ -35,9 +31,7 @@ namespace SolarSharp.Interpreter
         public const string LUA_VERSION = "5.2";
         private readonly Processor m_MainProcessor = null;
         private readonly ByteCode m_ByteCode;
-        private readonly List<SourceCode> m_Sources = new();
         private readonly Table m_GlobalTable;
-        private IDebugger m_Debugger;
         private readonly Table[] m_TypeMetatables = new Table[(int)LuaTypeExtensions.MaxMetaTypes];
 
         /// <summary>
@@ -123,27 +117,9 @@ namespace SolarSharp.Interpreter
         public DynValue LoadFunction(string code, Table globalTable = null, string funcFriendlyName = null)
         {
             string chunkName = string.Format("libfunc_{0}", funcFriendlyName ?? m_Sources.Count.ToString());
-
-            SourceCode source = new(chunkName, code, m_Sources.Count);
-
-            m_Sources.Add(source);
-
             int address = Loader_Fast.LoadFunction(this, source, m_ByteCode, globalTable != null || m_GlobalTable != null);
 
-            SignalSourceCodeChange(source);
-            SignalByteCodeChange();
-
             return MakeClosure(address, globalTable ?? m_GlobalTable);
-        }
-
-        private void SignalByteCodeChange()
-        {
-            m_Debugger?.SetByteCode(m_ByteCode.Code.Select(s => s.ToString()).ToArray());
-        }
-
-        private void SignalSourceCodeChange(SourceCode source)
-        {
-            m_Debugger?.SetSourceCode(source);
         }
 
         /// <summary>
@@ -174,9 +150,6 @@ namespace SolarSharp.Interpreter
             int address = Loader_Fast.LoadChunk(this,
                 source,
                 m_ByteCode);
-
-            SignalSourceCodeChange(source);
-            SignalByteCodeChange();
 
             return MakeClosure(address, globalTable ?? m_GlobalTable);
         }
@@ -211,9 +184,6 @@ namespace SolarSharp.Interpreter
                 m_Sources.Add(source);
 
                 int address = m_MainProcessor.Undump(codeStream, m_Sources.Count - 1, globalTable ?? m_GlobalTable, out bool hasUpvalues);
-
-                SignalSourceCodeChange(source);
-                SignalByteCodeChange();
 
                 if (hasUpvalues)
                     return MakeClosure(address, globalTable ?? m_GlobalTable);
@@ -356,7 +326,8 @@ namespace SolarSharp.Interpreter
 
             if (envTable == null)
             {
-                Instruction meta = m_MainProcessor.FindMeta(ref address);
+                // TODO:
+                Instruction meta = null;// m_MainProcessor.FindMeta(ref address);
 
                 // if we find the meta for a new chunk, we use the value in the meta for the _ENV upvalue
                 c = meta != null && meta.NumVal2 == (int)OpCodeMetadataType.ChunkEntrypoint
@@ -525,46 +496,6 @@ namespace SolarSharp.Interpreter
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the debugger is enabled.
-        /// Note that unless a debugger attached, this property returns a 
-        /// value which might not reflect the real status of the debugger.
-        /// Use this property if you want to disable the debugger for some 
-        /// executions.
-        /// </summary>
-        public bool DebuggerEnabled
-        {
-            get { return m_MainProcessor.DebuggerEnabled; }
-            set { m_MainProcessor.DebuggerEnabled = value; }
-        }
-
-
-        /// <summary>
-        /// Attaches a debugger. This usually should be called by the debugger itself and not by user code.
-        /// </summary>
-        /// <param name="debugger">The debugger object.</param>
-        public void AttachDebugger(IDebugger debugger)
-        {
-            DebuggerEnabled = true;
-            m_Debugger = debugger;
-            m_MainProcessor.AttachDebugger(debugger);
-
-            foreach (SourceCode src in m_Sources)
-                SignalSourceCodeChange(src);
-
-            SignalByteCodeChange();
-        }
-
-        /// <summary>
-        /// Gets the source code.
-        /// </summary>
-        /// <param name="sourceCodeID">The source code identifier.</param>
-        /// <returns></returns>
-        public SourceCode GetSourceCode(int sourceCodeID)
-        {
-            return m_Sources[sourceCodeID];
-        }
-
-        /// <summary>
         /// Gets the source code count.
         /// </summary>
         /// <value>
@@ -628,39 +559,6 @@ namespace SolarSharp.Interpreter
         {
             Script s = new(CoreModules.Basic);
             s.LoadString("return 1;");
-        }
-
-
-        /// <summary>
-        /// Creates a new dynamic expression.
-        /// </summary>
-        /// <param name="code">The code of the expression.</param>
-        /// <returns></returns>
-        public DynamicExpression CreateDynamicExpression(string code)
-        {
-            DynamicExprExpression dee = Loader_Fast.LoadDynamicExpr(this, new SourceCode("__dynamic", code, -1));
-            return new DynamicExpression(code, dee);
-        }
-
-        /// <summary>
-        /// Creates a new dynamic expression which is actually quite static, returning always the same constant value.
-        /// </summary>
-        /// <param name="code">The code of the not-so-dynamic expression.</param>
-        /// <param name="constant">The constant to return.</param>
-        /// <returns></returns>
-        public DynamicExpression CreateConstantDynamicExpression(string code, DynValue constant)
-        {
-            return new DynamicExpression(code, constant);
-        }
-
-        /// <summary>
-        /// Gets an execution context exposing only partial functionality, which should be used for
-        /// those cases where the execution engine is not really running - for example for dynamic expression
-        /// or calls from CLR to CLR callbacks
-        /// </summary>
-        internal ScriptExecutionContext CreateDynamicExecutionContext()
-        {
-            return new ScriptExecutionContext(m_MainProcessor, null);
         }
 
         /// <summary>

@@ -42,6 +42,5 @@ namespace SolarSharp.Interpreter
         /// <c>someuserdata.SomeMethod()</c> will also be tried.
         /// </summary>
         public FuzzySymbolMatchingBehavior FuzzySymbolMatching { get; set; }
-
     }
 }
