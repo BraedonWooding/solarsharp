@@ -15,7 +15,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             expressions = exps;
         }
 
-
         public Expression[] GetExpressions()
         {
             return expressions.ToArray();
@@ -28,14 +27,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
             if (expressions.Count > 1)
                 bc.Emit_MkTuple(expressions.Count);
-        }
-
-        public override DynValue Eval(ScriptExecutionContext context)
-        {
-            if (expressions.Count >= 1)
-                return expressions[0].Eval(context);
-
-            return DynValue.Nil;
         }
     }
 }

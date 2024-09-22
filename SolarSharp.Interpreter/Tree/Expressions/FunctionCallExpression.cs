@@ -13,9 +13,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions
         private readonly Expression m_Function;
         private readonly string m_Name;
         private readonly string m_DebugErr;
-
         internal SourceRef SourceRef { get; private set; }
-
 
         public FunctionCallExpression(ScriptLoadingContext lcontext, Expression function, Token thisCallName)
             : base(lcontext)
@@ -96,11 +94,5 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                 bc.Emit_Call(argslen, m_DebugErr);
             }
         }
-
-        public override DynValue Eval(ScriptExecutionContext context)
-        {
-            throw new DynamicExpressionException("Dynamic Expressions cannot call functions.");
-        }
-
     }
 }

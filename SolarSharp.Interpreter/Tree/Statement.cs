@@ -11,7 +11,6 @@ namespace SolarSharp.Interpreter.Tree
             : base(lcontext)
         { }
 
-
         protected static Statement CreateStatement(ScriptLoadingContext lcontext, out bool forceLast)
         {
             Token tkn = lcontext.Lexer.Current;
@@ -78,12 +77,5 @@ namespace SolarSharp.Interpreter.Tree
             else
                 return new ForEachLoopStatement(lcontext, name, forTkn);
         }
-
-
-
-
     }
-
-
-
 }

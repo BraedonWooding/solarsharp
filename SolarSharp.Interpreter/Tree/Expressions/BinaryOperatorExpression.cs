@@ -7,9 +7,6 @@ using SolarSharp.Interpreter.Tree.Lexer;
 
 namespace SolarSharp.Interpreter.Tree.Expressions
 {
-    /// <summary>
-    /// 
-    /// </summary>
     internal class BinaryOperatorExpression : Expression
     {
         [Flags]
@@ -58,7 +55,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
         private const Operator LOGIC_AND = Operator.And;
         private const Operator LOGIC_OR = Operator.Or;
 
-
         public static object BeginOperatorChain()
         {
             return new LinkedList();
@@ -70,7 +66,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             Node node = new() { Expr = exp };
             AddNode(list, node);
         }
-
 
         public static void AddOperatorToChain(object chain, Token op)
         {
@@ -89,7 +84,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             return new BinaryOperatorExpression(op1, op2, Operator.Power, lcontext);
         }
 
-
         private static void AddNode(LinkedList list, Node node)
         {
             list.OperatorMask |= node.Op;
@@ -105,7 +99,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                 list.Last = node;
             }
         }
-
 
         /// <summary>
         /// Creates a sub tree of binary expressions
@@ -203,7 +196,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             return nodes;
         }
 
-
         private static Operator ParseBinaryOperator(Token token)
         {
             return token.Type switch
@@ -229,8 +221,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
         private readonly Expression m_Exp1, m_Exp2;
         private readonly Operator m_Operator;
-
-
 
         private BinaryOperatorExpression(Expression exp1, Expression exp2, Operator op, ScriptLoadingContext lcontext)
             : base(lcontext)
@@ -265,7 +255,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             };
         }
 
-
         public override void Compile(ByteCode bc)
         {
             m_Exp1.Compile(bc);
@@ -293,138 +282,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
             if (ShouldInvertBoolean(m_Operator))
                 bc.Emit_Operator(OpCode.Not);
-        }
-
-        public override DynValue Eval(ScriptExecutionContext context)
-        {
-            DynValue v1 = m_Exp1.Eval(context).ToScalar();
-
-            if (m_Operator == Operator.Or)
-            {
-                if (v1.CastToBool())
-                    return v1;
-                else
-                    return m_Exp2.Eval(context).ToScalar();
-            }
-
-            if (m_Operator == Operator.And)
-            {
-                if (!v1.CastToBool())
-                    return v1;
-                else
-                    return m_Exp2.Eval(context).ToScalar();
-            }
-
-            DynValue v2 = m_Exp2.Eval(context).ToScalar();
-
-            if ((m_Operator & COMPARES) != 0)
-            {
-                return DynValue.NewBoolean(EvalComparison(v1, v2, m_Operator));
-            }
-            else if (m_Operator == Operator.StrConcat)
-            {
-                string s1 = v1.CastToString();
-                string s2 = v2.CastToString();
-
-                if (s1 == null || s2 == null)
-                    throw new DynamicExpressionException("Attempt to perform concatenation on non-strings.");
-
-                return DynValue.NewString(s1 + s2);
-            }
-            else
-            {
-                return DynValue.NewNumber(EvalArithmetic(v1, v2));
-            }
-        }
-
-        private double EvalArithmetic(DynValue v1, DynValue v2)
-        {
-            double? nd1 = v1.CastToNumber();
-            double? nd2 = v2.CastToNumber();
-
-            if (nd1 == null || nd2 == null)
-                throw new DynamicExpressionException("Attempt to perform arithmetic on non-numbers.");
-
-            double d1 = nd1.Value;
-            double d2 = nd2.Value;
-
-            switch (m_Operator)
-            {
-                case Operator.Add:
-                    return d1 + d2;
-                case Operator.Sub:
-                    return d1 - d2;
-                case Operator.Mul:
-                    return d1 * d2;
-                case Operator.Div:
-                    return d1 / d2;
-                case Operator.Mod:
-                    {
-                        double mod = Math.IEEERemainder(d1, d2);
-                        if (mod < 0) mod += d2;
-                        return mod;
-                    }
-                default:
-                    throw new DynamicExpressionException("Unsupported operator {0}", m_Operator);
-            }
-        }
-
-        private bool EvalComparison(DynValue l, DynValue r, Operator op)
-        {
-            switch (op)
-            {
-                case Operator.Less:
-                    if (l.Type == DataType.Number && r.Type == DataType.Number)
-                    {
-                        return l.Number < r.Number;
-                    }
-                    else if (l.Type == DataType.String && r.Type == DataType.String)
-                    {
-                        return l.String.CompareTo(r.String) < 0;
-                    }
-                    else
-                    {
-                        throw new DynamicExpressionException("Attempt to compare non-numbers, non-strings.");
-                    }
-                case Operator.LessOrEqual:
-                    if (l.Type == DataType.Number && r.Type == DataType.Number)
-                    {
-                        return l.Number <= r.Number;
-                    }
-                    else if (l.Type == DataType.String && r.Type == DataType.String)
-                    {
-                        return l.String.CompareTo(r.String) <= 0;
-                    }
-                    else
-                    {
-                        throw new DynamicExpressionException("Attempt to compare non-numbers, non-strings.");
-                    }
-                case Operator.Equal:
-                    if (ReferenceEquals(r, l))
-                    {
-                        return true;
-                    }
-                    else if (r.Type != l.Type)
-                    {
-                        if (l.Type == DataType.Nil && r.Type == DataType.Nil
-                            || l.Type == DataType.Nil && r.Type == DataType.Nil)
-                            return true;
-                        else
-                            return false;
-                    }
-                    else
-                    {
-                        return r.Equals(l);
-                    }
-                case Operator.Greater:
-                    return !EvalComparison(l, r, Operator.LessOrEqual);
-                case Operator.GreaterOrEqual:
-                    return !EvalComparison(l, r, Operator.Less);
-                case Operator.NotEqual:
-                    return !EvalComparison(l, r, Operator.Equal);
-                default:
-                    throw new DynamicExpressionException("Unsupported operator {0}", op);
-            }
         }
     }
 }

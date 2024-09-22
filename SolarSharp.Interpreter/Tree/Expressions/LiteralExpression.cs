@@ -15,13 +15,11 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             get { return m_Value; }
         }
 
-
         public LiteralExpression(ScriptLoadingContext lcontext, DynValue value)
             : base(lcontext)
         {
             m_Value = value;
         }
-
 
         public LiteralExpression(ScriptLoadingContext lcontext, Token t)
             : base(lcontext)
@@ -42,11 +40,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
         public override void Compile(ByteCode bc)
         {
             bc.Emit_Literal(m_Value);
-        }
-
-        public override DynValue Eval(ScriptExecutionContext context)
-        {
-            return m_Value;
         }
     }
 }

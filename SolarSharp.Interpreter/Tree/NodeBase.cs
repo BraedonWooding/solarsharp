@@ -15,9 +15,7 @@ namespace SolarSharp.Interpreter.Tree
             Script = lcontext.Script;
         }
 
-
         public abstract void Compile(ByteCode bc);
-
 
         protected static Token UnexpectedTokenType(Token t)
         {
@@ -38,8 +36,6 @@ namespace SolarSharp.Interpreter.Tree
             return t;
         }
 
-
-
         protected static Token CheckTokenType(ScriptLoadingContext lcontext, TokenType tokenType1, TokenType tokenType2)
         {
             Token t = lcontext.Lexer.Current;
@@ -50,6 +46,7 @@ namespace SolarSharp.Interpreter.Tree
 
             return t;
         }
+
         protected static Token CheckTokenType(ScriptLoadingContext lcontext, TokenType tokenType1, TokenType tokenType2, TokenType tokenType3)
         {
             Token t = lcontext.Lexer.Current;
@@ -82,7 +79,6 @@ namespace SolarSharp.Interpreter.Tree
             }
 
             lcontext.Lexer.Next();
-
             return t;
         }
     }

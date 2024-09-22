@@ -18,10 +18,5 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             expression.Compile(bc);
             bc.Emit_Scalar();
         }
-
-        public override DynValue Eval(ScriptExecutionContext context)
-        {
-            return expression.Eval(context).ToScalar();
-        }
     }
 }
