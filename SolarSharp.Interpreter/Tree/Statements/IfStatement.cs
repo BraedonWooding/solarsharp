@@ -4,7 +4,6 @@ using SolarSharp.Interpreter.Execution.Scopes;
 using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Lexer;
 
-
 namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class IfStatement : Statement
@@ -116,8 +115,5 @@ namespace SolarSharp.Interpreter.Tree.Statements
             foreach (var endjmp in endJumps)
                 endjmp.NumVal = bc.GetJumpPointForNextInstruction();
         }
-
-
-
     }
 }

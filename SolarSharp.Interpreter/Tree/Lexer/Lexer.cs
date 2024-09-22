@@ -74,7 +74,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             return t;
         }
 
-
         private void CursorNext()
         {
             if (CursorNotEof())
@@ -137,7 +136,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             {
             }
         }
-
 
         private Token ReadToken()
         {
@@ -298,7 +296,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 end_pattern = startpattern.Replace('[', ']');
             }
 
-
             for (char c = CursorCharNext(); ; c = CursorCharNext())
             {
                 if (c == '\r') // XXI century and we still debate on how a newline is made. throw new DeveloperExtremelyAngryException.
@@ -434,7 +431,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             return CreateToken(TokenType.HashBang, fromLine, fromCol, text.ToString());
         }
 
-
         private Token ReadComment(int fromLine, int fromCol)
         {
             StringBuilder text = new(32);
@@ -543,8 +539,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 return CreateToken(singleCharToken, fromLine, fromCol, op);
         }
 
-
-
         private Token CreateNameToken(string name, int fromLine, int fromCol)
         {
             TokenType? reservedType = Token.GetReservedTokenType(name);
@@ -558,7 +552,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 return CreateToken(TokenType.Name, fromLine, fromCol, name);
             }
         }
-
 
         private Token CreateToken(TokenType tokenType, int fromLine, int fromCol, string text = null)
         {
@@ -585,9 +578,5 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
             return name.ToString();
         }
-
-
-
-
     }
 }
