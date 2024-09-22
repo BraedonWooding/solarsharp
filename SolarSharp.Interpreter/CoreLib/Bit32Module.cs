@@ -79,7 +79,6 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewNumber(res);
         }
 
-
         [MoonSharpModuleMethod]
         public static DynValue replace(ScriptExecutionContext _, CallbackArguments args)
         {

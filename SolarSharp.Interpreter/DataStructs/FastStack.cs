@@ -13,7 +13,6 @@ namespace SolarSharp.Interpreter.DataStructs
     {
         private readonly T[] m_Storage;
         private int m_HeadIdx = 0;
-
         public T[] Storage => m_Storage;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

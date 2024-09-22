@@ -6,35 +6,30 @@ A complete Lua solution written entirely in C# for the .NET, Mono, and Unity3D p
 > Is a modernized version of [MoonSharp](https://github.com/moonsharp-devs/moonsharp)
 > Performance stats are here: https://braedonwooding.github.io/solarsharp/dev/bench/
 
-Changes from MoonSharp:
+Key changes from MoonSharp:
 * Built on .net standard 2.1 to take advantage of more modern C# features
-* Performance improvements across the interpreter & parser
+* Large performance improvements across the interpreter & parser
+* Some less useful features removed to simplify codebase
+* 
 * Bug fixes
+Look [here for differences from moonsharp](#differences-from-moonsharp).
 
 Features:
-* High compatibility with Lua 5.2 (with the only unsupported feature being weak tables support) 
-* Support for metalua style anonymous functions (lambda-style)
+* High compatibility with Lua 5.2 (with the only unsupported feature being weak tables support)
+* A few key syntax extensions to make Lua code easier to write (lambdas)
 * Easy to use API
-* Runs on .netcore, Unity3D, and many other platforms
-* Runs on Ahead-of-time platforms like iOS
-* Runs on IL2CPP converted code
-* No external dependencies, implemented in as few targets as possible
-* Easy and performant interop with CLR objects, with runtime code generation where supported
-* Interop with methods, extension methods, overloads, fields, properties and indexers supported
-* Support for the complete Lua standard library with very few exceptions (mostly located on the 'debug' module) and a few extensions (in the string library, mostly)
-* Async methods for .NET 4.x targets
+* Runs on a lot of various platforms; AOT like iOS, Unity3D (including IL2CPP), Mono, ...
+* Very easy interop with CLR objects & methods, supporting both just in time & ahead of time code generation
 * Supports dumping/loading bytecode for obfuscation and quicker parsing at runtime
-* An embedded JSON parser (with no dependencies) to convert between JSON and Lua tables
-* Easy opt-out of Lua standard library modules to sandbox what scripts can access
-* Easy to use error handling (script errors are exceptions)
+* Very strong sandboxing support
 * Support for coroutines, including invocation of coroutines as C# iterators 
-* REPL interpreter, plus facilities to easily implement your own REPL in few lines of code
+Look [here for differences from Lua](#differences-from-lua)
 
-**License**
+# License
 
 The program and libraries are released under a 3-clause BSD license - see the license section.
 
-**Usage**
+# Usage
 
 Use of the library is easy as:
 
@@ -50,10 +45,41 @@ double Factorial()
 				return n*fact(n - 1)
 			end
 		end
-
 	return fact(5)";
 
-	DynValue res = Script.RunString(script);
+	// Note: Ideally don't create a unique state for each run, cache them!
+	var state = new LuaState();
+	var res = state.DoString(script);
 	return res.Number;
 }
 ```
+
+# Differences from Lua
+
+# Differences from MoonSharp
+
+Most of these changes were done because:
+- Smaller codebases are easier to iterate on, faster, and have less bugs
+- Performance!!  There were a few critical changes made for performance that resulted in heavy refactoring.
+  - DynValue, OpCodes, Instructions, Coroutines, and Processors were all *significantly* changed which made up a pretty big chunk of the codebase.
+
+- Script class was mostly removed & it was merged with "Processor" to become "LuaState"
+- Script ownership have been removed (it was preventing the sharing of tables/objects between states)
+	- This wasn't a very useful security feature (since if you are sharing tables between states you have larger issues) and introduced quite a bit of complexity (and lots of checks/extra memory).
+- Prime tables have been removed (since there is no need to have a "shareable" table anymore)
+- DynValue -> LuaValue and is a completely different type structure now
+	- It's a 16 byte struct now rather than a 32 byte class.  It's much cheaper to copy / carry around *but* you can't update a `LuaValue` and expect it's "slot" to update (since it's a value type not a reference type)
+	- We use NaN boxing to store the type in the number portion
+	- This also removes readonly since structs are readonly by default
+- DataType -> LuaValueType and there have been some changes in what types are available
+	- Void is no longer a type
+- Dynamic Expressions were removed
+	- They are harder to keep in sync with standard Lua processor and are ripe for bugs
+	- We instead support much stronger sandboxing and introduce dynamic "like" expressions (for debugging/other use cases) through that.
+- Debugger was removed, instead we (ideally) will support native Lua debuggers!  (though we will have to see how good this support will be).
+
+## Why use MoonSharp if so much of it was modified?
+
+- To be honest I didn't expect this much to have to be modified!
+  - DynValues being a class and code being reliant on it being a reference type (i.e. closures using the dynvalues to write to upvalues rather than just writing to parent slots) was a significantly larger refactor than originally thought.
+  - Tables are another really good example, the old implementation 

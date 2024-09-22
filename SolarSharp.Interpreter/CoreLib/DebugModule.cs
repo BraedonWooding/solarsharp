@@ -190,7 +190,6 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.Nil;
         }
 
-
         [MoonSharpModuleMethod]
         public static DynValue traceback(ScriptExecutionContext executionContext, CallbackArguments args)
         {
