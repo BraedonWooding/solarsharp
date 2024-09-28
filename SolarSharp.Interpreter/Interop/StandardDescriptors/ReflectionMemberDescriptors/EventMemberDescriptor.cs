@@ -159,7 +159,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="script">The script.</param>
         /// <param name="obj">The object for which the facade should be written.</param>
         /// <returns></returns>
-        public DynValue GetValue(Script script, object obj)
+        public DynValue GetValue(LuaState script, object obj)
         {
             this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
 
@@ -305,7 +305,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="script">The script.</param>
         /// <param name="obj">The object.</param>
         /// <param name="v">The v.</param>
-        public void SetValue(Script script, object obj, DynValue v)
+        public void SetValue(LuaState script, object obj, DynValue v)
         {
             this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
         }

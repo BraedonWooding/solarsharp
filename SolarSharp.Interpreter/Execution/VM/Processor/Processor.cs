@@ -12,19 +12,19 @@ namespace SolarSharp.Interpreter.Execution.VM
         private const int STACK_SIZE = 131072;
         private readonly ByteCode m_RootChunk;
         private readonly FastStack<DynValue> m_ValueStack;
-        private readonly FastStack<CallStackItem> m_ExecutionStack;
+        private readonly FastStack<CallInfo> m_ExecutionStack;
         private readonly List<Processor> m_CoroutinesStack;
         private readonly Table m_GlobalTable;
-        private readonly Script m_Script;
+        private readonly LuaState m_Script;
         private readonly Processor m_Parent = null;
         private CoroutineState m_State;
         private bool m_CanYield = true;
         private int m_SavedInstructionPtr = -1;
 
-        public Processor(Script script, Table globalContext, ByteCode byteCode)
+        public Processor(LuaState script, Table globalContext, ByteCode byteCode)
         {
             m_ValueStack = new FastStack<DynValue>(STACK_SIZE);
-            m_ExecutionStack = new FastStack<CallStackItem>(STACK_SIZE);
+            m_ExecutionStack = new FastStack<CallInfo>(STACK_SIZE);
             m_CoroutinesStack = new List<Processor>();
             m_RootChunk = byteCode;
             m_GlobalTable = globalContext;
@@ -36,7 +36,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         private Processor(Processor parentProcessor)
         {
             m_ValueStack = new FastStack<DynValue>(STACK_SIZE);
-            m_ExecutionStack = new FastStack<CallStackItem>(STACK_SIZE);
+            m_ExecutionStack = new FastStack<CallInfo>(STACK_SIZE);
             m_RootChunk = parentProcessor.m_RootChunk;
             m_GlobalTable = parentProcessor.m_GlobalTable;
             m_Script = parentProcessor.m_Script;
@@ -105,7 +105,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             m_ValueStack.Push(DynValue.NewNumber(args.Length));  // func args count
 
-            m_ExecutionStack.Push(new CallStackItem()
+            m_ExecutionStack.Push(new CallInfo()
             {
                 BasePointer = m_ValueStack.Count,
                 Debug_EntryPoint = function.Function.EntryPointByteCodeLocation,

@@ -81,7 +81,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             Initialize(methodBase.Name, isStatic, parameters, isExtensionMethod);
 
             // adjust access mode
-            if (Script.GlobalOptions.Platform.IsRunningOnAOT())
+            if (LuaState.GlobalOptions.Platform.IsRunningOnAOT())
                 accessMode = InteropAccessMode.Reflection;
 
             if (accessMode == InteropAccessMode.Default)
@@ -175,7 +175,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="context">The context.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        public override DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
+        public override DynValue Execute(LuaState script, object obj, ScriptExecutionContext context, CallbackArguments args)
         {
             this.CheckAccess(MemberDescriptorAccess.CanExecute, obj);
 

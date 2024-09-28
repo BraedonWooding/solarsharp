@@ -16,7 +16,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             HashSet<string> failedTests = new();
             int i = 0;
 
-            Script S = new();
+            LuaState S = new();
 
             var globalCtx = S.Globals;
             globalCtx.Set(DynValue.NewString("xassert"), DynValue.NewCallback(new CallbackFunction(

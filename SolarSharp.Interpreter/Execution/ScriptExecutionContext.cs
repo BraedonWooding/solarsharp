@@ -70,7 +70,7 @@ namespace SolarSharp.Interpreter.Execution
         /// Gets the script object associated with this request
         /// </summary>
         /// <returns></returns>
-        public Script GetScript()
+        public LuaState GetScript()
         {
             return m_Processor.GetScript();
         }
@@ -94,9 +94,9 @@ namespace SolarSharp.Interpreter.Execution
         /// <param name="functionName">Name of the function - for error messages.</param>
         /// <param name="callback">The callback.</param>
         /// <returns></returns>
-        public DynValue EmulateClassicCall(CallbackArguments args, string functionName, Func<LuaState, int> callback)
+        public DynValue EmulateClassicCall(CallbackArguments args, string functionName, Func<Interop.LuaStateInterop.LuaState, int> callback)
         {
-            LuaState L = new(this, args, functionName);
+            Interop.LuaStateInterop.LuaState L = new(this, args, functionName);
             int retvals = callback(L);
             return L.GetReturnValue(retvals);
         }

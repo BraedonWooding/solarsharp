@@ -13,7 +13,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return dynamic.eval('5+1');		
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -30,7 +30,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return dynamic.eval(x);
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -55,7 +55,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return f();
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -83,7 +83,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return f();
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.That(res.Type, Is.EqualTo(DataType.Nil));
             //Assert.AreEqual(6, res.Number);
@@ -96,7 +96,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				t = { ciao = { 'hello' } }
 				";
 
-            Script script = new();
+            LuaState script = new();
             script.DoString(code);
 
             DynValue v = script.CreateDynamicExpression("t.ciao[1] .. ' world'").Evaluate();

@@ -37,7 +37,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// </summary>
         internal static object DynValueToObject(DynValue value)
         {
-            var converter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, typeof(object));
+            var converter = LuaState.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, typeof(object));
             if (converter != null)
             {
                 var v = converter(value);
@@ -83,7 +83,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (desiredType.IsByRef)
                 desiredType = desiredType.GetElementType();
 
-            var converter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, desiredType);
+            var converter = LuaState.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, desiredType);
             if (converter != null)
             {
                 var v = converter(value);
@@ -201,7 +201,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (desiredType.IsByRef)
                 desiredType = desiredType.GetElementType();
 
-            var customConverter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, desiredType);
+            var customConverter = LuaState.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, desiredType);
             if (customConverter != null)
                 return WEIGHT_CUSTOM_CONVERTER_MATCH;
 

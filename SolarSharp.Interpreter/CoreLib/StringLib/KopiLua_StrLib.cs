@@ -87,7 +87,7 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
             public int matchdepth; /* control for recursive depth (to avoid C stack overflow) */
             public CharPtr src_init;  /* init of source string */
             public CharPtr src_end;  /* end (`\0') of source string */
-            public LuaState L;
+            public Interop.LuaStateInterop.LuaState L;
             public int level;  /* total number of captures (finished or unfinished) */
 
             public class capture_
@@ -512,7 +512,7 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
         }
 
 
-        private static int str_find_aux(LuaState L, int find)
+        private static int str_find_aux(Interop.LuaStateInterop.LuaState L, int find)
         {
             CharPtr s = LuaLCheckLString(L, 1, out uint l1);
             CharPtr p = PatchPattern(LuaLCheckLString(L, 2, out uint l2));
@@ -570,13 +570,13 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
         }
 
 
-        public static int str_find(LuaState L)
+        public static int str_find(Interop.LuaStateInterop.LuaState L)
         {
             return str_find_aux(L, 1);
         }
 
 
-        public static int str_match(LuaState L)
+        public static int str_match(Interop.LuaStateInterop.LuaState L)
         {
             return str_find_aux(L, 0);
         }
@@ -589,7 +589,7 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
             public uint POS;
         }
 
-        private static int gmatch_aux(LuaState L, GMatchAuxData auxdata)
+        private static int gmatch_aux(Interop.LuaStateInterop.LuaState L, GMatchAuxData auxdata)
         {
             MatchState ms = new();
             uint ls = auxdata.LS;
@@ -620,7 +620,7 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
             return 0;  /* not found */
         }
 
-        public static int str_gmatch(LuaState L)
+        public static int str_gmatch(Interop.LuaStateInterop.LuaState L)
         {
             // TODO: Sorry what is this?? Surely we can write this faster...
             string s = ArgAsType(L, 1, DataType.String, false).String;
@@ -640,7 +640,7 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
         }
 
 #pragma warning disable IDE0051 // Remove unused private members
-        private static int gfind_nodef(LuaState L)
+        private static int gfind_nodef(Interop.LuaStateInterop.LuaState L)
 #pragma warning restore IDE0051 // Remove unused private members
         {
             return LuaLError(L, LUA_QL("string.gfind") + " was renamed to " +
@@ -683,7 +683,7 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
         private static void add_value(MatchState ms, LuaLBuffer b, CharPtr s,
                                                                CharPtr e)
         {
-            LuaState L = ms.L;
+            Interop.LuaStateInterop.LuaState L = ms.L;
             switch (LuaType(L, 3))
             {
                 case LUA_TNUMBER:
@@ -720,7 +720,7 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
         }
 
 
-        public static int str_gsub(LuaState L)
+        public static int str_gsub(Interop.LuaStateInterop.LuaState L)
         {
             CharPtr src = LuaLCheckLString(L, 1, out uint srcl);
             CharPtr p = PatchPattern(LuaLCheckStringStr(L, 2));
@@ -788,7 +788,7 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
         public static readonly int MAX_FORMAT = FLAGS.Length + 1 + LUA_INTFRMLEN.Length + 1 + 10;
 
 
-        private static void addquoted(LuaState L, LuaLBuffer b, int arg)
+        private static void addquoted(Interop.LuaStateInterop.LuaState L, LuaLBuffer b, int arg)
         {
             CharPtr s = LuaLCheckLString(L, arg, out uint l);
             LuaLAddChar(b, '"');
@@ -838,7 +838,7 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
             LuaLAddChar(b, '"');
         }
 
-        private static CharPtr scanformat(LuaState L, CharPtr strfrmt, CharPtr form)
+        private static CharPtr scanformat(Interop.LuaStateInterop.LuaState L, CharPtr strfrmt, CharPtr form)
         {
             CharPtr p = strfrmt;
             while (p[0] != '\0' && strchr(FLAGS, p[0]) != null) p = p.next();  /* skip flags */
@@ -873,7 +873,7 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
         }
 
 
-        public static int str_format(LuaState L)
+        public static int str_format(Interop.LuaStateInterop.LuaState L)
         {
             int top = LuaGetTop(L);
             int arg = 1;

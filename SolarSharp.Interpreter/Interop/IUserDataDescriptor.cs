@@ -24,7 +24,7 @@ namespace SolarSharp.Interpreter.Interop
         /// <param name="index">The index.</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        DynValue Index(Script script, object obj, DynValue index, bool isDirectIndexing);
+        DynValue Index(LuaState script, object obj, DynValue index, bool isDirectIndexing);
         /// <summary>
         /// Performs an "index" "set" operation.
         /// </summary>
@@ -34,7 +34,7 @@ namespace SolarSharp.Interpreter.Interop
         /// <param name="value">The value to be set</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing);
+        bool SetIndex(LuaState script, object obj, DynValue index, DynValue value, bool isDirectIndexing);
         /// <summary>
         /// Converts this userdata to string
         /// </summary>
@@ -59,7 +59,7 @@ namespace SolarSharp.Interpreter.Interop
         /// <param name="obj">The object (null if a static request is done)</param>
         /// <param name="metaname">The name of the metamember.</param>
         /// <returns></returns>
-        DynValue MetaIndex(Script script, object obj, string metaname);
+        DynValue MetaIndex(LuaState script, object obj, string metaname);
         /// <summary>
         /// Determines whether the specified object is compatible with the specified type.
         /// Unless a very specific behaviour is needed, the correct implementation is a 

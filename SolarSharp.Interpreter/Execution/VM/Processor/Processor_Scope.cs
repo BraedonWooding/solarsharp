@@ -75,9 +75,9 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-        private CallStackItem GetTopNonClrFunction()
+        private CallInfo GetTopNonClrFunction()
         {
-            CallStackItem stackframe = null;
+            CallInfo stackframe = null;
 
             for (int i = 0; i < m_ExecutionStack.Count; i++)
             {
@@ -94,7 +94,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         {
             if (m_ExecutionStack.Count > 0)
             {
-                CallStackItem stackframe = GetTopNonClrFunction();
+                CallInfo stackframe = GetTopNonClrFunction();
 
                 if (stackframe != null)
                 {

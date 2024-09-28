@@ -31,13 +31,13 @@ namespace SolarSharp.Interpreter.Errors
             Token = t;
         }
 
-        internal SyntaxErrorException(Script script, SourceRef sref, string format, params object[] args)
+        internal SyntaxErrorException(LuaState script, SourceRef sref, string format, params object[] args)
             : base(format, args)
         {
             DecorateMessage(script, sref);
         }
 
-        internal SyntaxErrorException(Script script, SourceRef sref, string message)
+        internal SyntaxErrorException(LuaState script, SourceRef sref, string message)
             : base(message)
         {
             DecorateMessage(script, sref);
@@ -50,7 +50,7 @@ namespace SolarSharp.Interpreter.Errors
             DecoratedMessage = Message;
         }
 
-        internal void DecorateMessage(Script script)
+        internal void DecorateMessage(LuaState script)
         {
             if (Token != null)
             {
@@ -64,7 +64,7 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns></returns>
         public override void Rethrow()
         {
-            if (Script.GlobalOptions.RethrowExceptionNested)
+            if (LuaState.GlobalOptions.RethrowExceptionNested)
                 throw new SyntaxErrorException(this);
         }
 

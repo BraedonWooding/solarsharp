@@ -9,14 +9,14 @@ namespace SolarSharp.Interpreter.REPL
     /// </summary>
     public class ReplInterpreter
     {
-        private readonly Script m_Script;
+        private readonly LuaState m_Script;
         private string m_CurrentCommand = string.Empty;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ReplInterpreter"/> class.
         /// </summary>
         /// <param name="script">The script.</param>
-        public ReplInterpreter(Script script)
+        public ReplInterpreter(LuaState script)
         {
             m_Script = script;
         }

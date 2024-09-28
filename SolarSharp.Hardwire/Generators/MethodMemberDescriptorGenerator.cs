@@ -87,7 +87,7 @@ namespace SolarSharp.Hardwire.Generators
                 Attributes = MemberAttributes.Override | MemberAttributes.Family,
                 ReturnType = new CodeTypeReference(typeof(object))
             };
-            m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(Script), "script"));
+            m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(LuaState), "script"));
             m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(object), "obj"));
             m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(object[]), "pars"));
             m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(int), "argscount"));

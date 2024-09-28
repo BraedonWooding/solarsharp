@@ -11,11 +11,11 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
     internal class EnumerableWrapper : IUserDataType
     {
         private readonly IEnumerator m_Enumerator;
-        private readonly Script m_Script;
+        private readonly LuaState m_Script;
         private DynValue m_Prev = DynValue.Nil;
         private bool m_HasTurnOnce = false;
 
-        private EnumerableWrapper(Script script, IEnumerator enumerator)
+        private EnumerableWrapper(LuaState script, IEnumerator enumerator)
         {
             m_Script = script;
             m_Enumerator = enumerator;
@@ -51,7 +51,7 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
             return m_Prev;
         }
 
-        internal static DynValue ConvertIterator(Script script, IEnumerator enumerator)
+        internal static DynValue ConvertIterator(LuaState script, IEnumerator enumerator)
         {
             EnumerableWrapper ei = new(script, enumerator);
             return DynValue.NewTuple(UserData.Create(ei), DynValue.Nil, DynValue.Nil);
@@ -62,7 +62,7 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
             return ConvertIterator(table.OwnerScript, table.Values.GetEnumerator());
         }
 
-        public DynValue Index(Script script, DynValue index, bool isDirectIndexing)
+        public DynValue Index(LuaState script, DynValue index, bool isDirectIndexing)
         {
             if (index.Type == DataType.String)
             {
@@ -84,12 +84,12 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
             return DynValue.Nil;
         }
 
-        public bool SetIndex(Script script, DynValue index, DynValue value, bool isDirectIndexing)
+        public bool SetIndex(LuaState script, DynValue index, DynValue value, bool isDirectIndexing)
         {
             return false;
         }
 
-        public DynValue MetaIndex(Script script, string metaname)
+        public DynValue MetaIndex(LuaState script, string metaname)
         {
             if (metaname == "__call")
                 return DynValue.NewCallback(LuaIteratorCallback);

@@ -11,7 +11,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// <summary>
         /// Converts an IList to a Lua table.
         /// </summary>
-        internal static Table ConvertIListToTable(Script script, System.Collections.IList list)
+        internal static Table ConvertIListToTable(LuaState script, System.Collections.IList list)
         {
             Table t = new(script);
             for (int i = 0; i < list.Count; i++)
@@ -24,7 +24,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// <summary>
         /// Converts an IDictionary to a Lua table.
         /// </summary>
-        internal static Table ConvertIDictionaryToTable(Script script, System.Collections.IDictionary dict)
+        internal static Table ConvertIDictionaryToTable(LuaState script, System.Collections.IDictionary dict)
         {
             Table t = new(script);
 

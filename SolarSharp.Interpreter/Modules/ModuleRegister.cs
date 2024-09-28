@@ -22,7 +22,7 @@ namespace SolarSharp.Interpreter.Modules
         /// <returns></returns>
         public static Table RegisterCoreModules(this Table table, CoreModules modules)
         {
-            modules = Script.GlobalOptions.Platform.FilterSupportedCoreModules(modules);
+            modules = LuaState.GlobalOptions.Platform.FilterSupportedCoreModules(modules);
 
             if (modules.Has(CoreModules.GlobalConsts)) table.RegisterConstants();
             if (modules.Has(CoreModules.TableIterators)) table.RegisterModuleType<TableIteratorsModule>();
@@ -58,18 +58,18 @@ namespace SolarSharp.Interpreter.Modules
             Table m = moonsharp_table.Table;
 
             table.Set("_G", DynValue.NewTable(table));
-            table.Set("_VERSION", DynValue.NewString(string.Format("MoonSharp {0}", Script.VERSION)));
+            table.Set("_VERSION", DynValue.NewString(string.Format("MoonSharp {0}", LuaState.VERSION)));
             table.Set("_MOONSHARP", moonsharp_table);
 
-            m.Set("version", DynValue.NewString(Script.VERSION));
-            m.Set("luacompat", DynValue.NewString(Script.LUA_VERSION));
-            m.Set("platform", DynValue.NewString(Script.GlobalOptions.Platform.GetPlatformName()));
-            m.Set("is_aot", DynValue.NewBoolean(Script.GlobalOptions.Platform.IsRunningOnAOT()));
+            m.Set("version", DynValue.NewString(LuaState.VERSION));
+            m.Set("luacompat", DynValue.NewString(LuaState.LUA_VERSION));
+            m.Set("platform", DynValue.NewString(LuaState.GlobalOptions.Platform.GetPlatformName()));
+            m.Set("is_aot", DynValue.NewBoolean(LuaState.GlobalOptions.Platform.IsRunningOnAOT()));
             m.Set("is_unity", DynValue.NewBoolean(PlatformAutoDetector.IsRunningOnUnity));
             m.Set("is_mono", DynValue.NewBoolean(PlatformAutoDetector.IsRunningOnMono));
             m.Set("is_clr4", DynValue.NewBoolean(PlatformAutoDetector.IsRunningOnClr4));
             m.Set("is_pcl", DynValue.NewBoolean(PlatformAutoDetector.IsPortableFramework));
-            m.Set("banner", DynValue.NewString(Script.GetBanner()));
+            m.Set("banner", DynValue.NewString(LuaState.GetBanner()));
 
             return table;
         }

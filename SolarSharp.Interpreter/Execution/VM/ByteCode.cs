@@ -14,13 +14,13 @@ namespace SolarSharp.Interpreter.Execution.VM
     internal class ByteCode : RefIdObject
     {
         public List<Instruction> Code = new();
-        public Script Script { get; private set; }
+        public LuaState Script { get; private set; }
         private readonly List<SourceRef> m_SourceRefStack = new();
         private SourceRef m_CurrentSourceRef = null;
 
         internal LoopTracker LoopTracker = new();
 
-        public ByteCode(Script script)
+        public ByteCode(LuaState script)
         {
             Script = script;
         }

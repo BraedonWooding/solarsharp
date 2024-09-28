@@ -1,16 +1,15 @@
-﻿using SolarSharp.Interpreter.Tree.Statements;
-using SolarSharp.Interpreter.Diagnostics;
+﻿using SolarSharp.Interpreter.Diagnostics;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
-using SolarSharp.Interpreter.Execution.VM;
-using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.Execution.Scopes;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Statements;
 
 namespace SolarSharp.Interpreter.Tree.Fast_Interface
 {
     internal static class Loader_Fast
     {
-        private static ScriptLoadingContext CreateLoadingContext(Script script, SourceCode source)
+        private static ScriptLoadingContext CreateLoadingContext(LuaState script, string source)
         {
             return new ScriptLoadingContext(script)
             {
@@ -20,7 +19,7 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
             };
         }
 
-        internal static int LoadChunk(Script script, SourceCode source, ByteCode bytecode)
+        internal static int LoadChunk(LuaState script, string source, ByteCode bytecode)
         {
             ScriptLoadingContext lcontext = CreateLoadingContext(script, source);
             try

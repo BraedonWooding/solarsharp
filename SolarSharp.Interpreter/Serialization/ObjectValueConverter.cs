@@ -8,7 +8,7 @@ namespace SolarSharp.Interpreter.Serialization
 {
     public static class ObjectValueConverter
     {
-        public static DynValue SerializeObjectToDynValue(Script script, object o, DynValue valueForNulls = default)
+        public static DynValue SerializeObjectToDynValue(LuaState script, object o, DynValue valueForNulls = default)
         {
             if (o == null)
                 return valueForNulls;

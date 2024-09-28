@@ -26,7 +26,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             m_RemoveCallback = removeCallback;
         }
 
-        public DynValue Index(Script script, DynValue index, bool isDirectIndexing)
+        public DynValue Index(LuaState script, DynValue index, bool isDirectIndexing)
         {
             if (index.Type == DataType.String)
             {
@@ -39,12 +39,12 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             throw new ScriptRuntimeException("Events only support add and remove methods");
         }
 
-        public bool SetIndex(Script script, DynValue index, DynValue value, bool isDirectIndexing)
+        public bool SetIndex(LuaState script, DynValue index, DynValue value, bool isDirectIndexing)
         {
             throw new ScriptRuntimeException("Events do not have settable fields");
         }
 
-        public DynValue MetaIndex(Script script, string metaname)
+        public DynValue MetaIndex(LuaState script, string metaname)
         {
             return DynValue.Nil;
         }

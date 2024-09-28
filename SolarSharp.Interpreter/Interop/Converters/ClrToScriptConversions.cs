@@ -15,7 +15,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// Skips on custom conversions, etc.
         /// Does NOT throw on failure.
         /// </summary>
-        internal static DynValue TryObjectToTrivialDynValue(Script script, object obj)
+        internal static DynValue TryObjectToTrivialDynValue(LuaState script, object obj)
         {
             if (obj == null)
                 return DynValue.Nil;
@@ -45,7 +45,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// Tries to convert a CLR object to a MoonSharp value, using "simple" logic.
         /// Does NOT throw on failure.
         /// </summary>
-        internal static DynValue TryObjectToSimpleDynValue(Script script, object obj)
+        internal static DynValue TryObjectToSimpleDynValue(LuaState script, object obj)
         {
             if (obj == null)
                 return DynValue.Nil;
@@ -53,7 +53,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (obj is DynValue)
                 return (DynValue)obj;
 
-            var converter = Script.GlobalOptions.CustomConverters.GetClrToScriptCustomConversion(obj.GetType());
+            var converter = LuaState.GlobalOptions.CustomConverters.GetClrToScriptCustomConversion(obj.GetType());
             if (converter != null)
             {
                 var v = converter(script, obj);
@@ -102,7 +102,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// <summary>
         /// Tries to convert a CLR object to a MoonSharp value, using more in-depth analysis
         /// </summary>
-        internal static DynValue ObjectToDynValue(Script script, object obj)
+        internal static DynValue ObjectToDynValue(LuaState script, object obj)
         {
             if (obj is DynValue value)
                 return value;
@@ -160,7 +160,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// <param name="script">The script.</param>
         /// <param name="obj">The object.</param>
         /// <returns></returns>
-        public static DynValue EnumerationToDynValue(Script script, object obj)
+        public static DynValue EnumerationToDynValue(LuaState script, object obj)
         {
             if (obj is System.Collections.IEnumerable)
             {

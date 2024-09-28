@@ -71,7 +71,7 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             try
             {
-                Script S = executionContext.GetScript();
+                LuaState S = executionContext.GetScript();
                 DynValue ld = args[0];
                 string script = "";
 
@@ -136,7 +136,7 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             try
             {
-                Script S = executionContext.GetScript();
+                LuaState S = executionContext.GetScript();
                 DynValue filename = args.AsType(0, "loadfile", DataType.String, false);
                 DynValue env = args.AsType(2, "loadfile", DataType.Table, true);
 
@@ -167,7 +167,7 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             try
             {
-                Script S = executionContext.GetScript();
+                LuaState S = executionContext.GetScript();
                 DynValue v = args.AsType(0, "dofile", DataType.String, false);
 
                 DynValue fn = S.LoadFile(v.String);
@@ -205,7 +205,7 @@ namespace SolarSharp.Interpreter.CoreLib
         public static DynValue require(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             // TODO: Error handling
-            Script S = executionContext.GetScript();
+            LuaState S = executionContext.GetScript();
             DynValue v = args.AsType(0, "require", DataType.String, false);
             
             var package = S.Globals.Get("package");

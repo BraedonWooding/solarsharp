@@ -257,7 +257,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// The script owning this resource.
         /// </value>
         /// <exception cref="NotImplementedException"></exception>
-        public Script OwnerScript
+        public LuaState OwnerScript
         {
             get;
             private set;

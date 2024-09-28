@@ -87,7 +87,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             return metameth;
         }
 
-        internal Script GetScript()
+        internal LuaState GetScript()
         {
             return m_Script;
         }

@@ -30,7 +30,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="script">The script.</param>
         /// <param name="obj">The object owning this member, or null if static.</param>
         /// <returns>The value of this member as a <see cref="DynValue"/>.</returns>
-        DynValue GetValue(Script script, object obj);
+        DynValue GetValue(LuaState script, object obj);
         /// <summary>
         /// Sets the value of this member from a <see cref="DynValue"/>.
         /// Implementors should raise exceptions if the value cannot be read or if access to an
@@ -39,7 +39,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="script">The script.</param>
         /// <param name="obj">The object owning this member, or null if static.</param>
         /// <param name="value">The value to be set.</param>
-        void SetValue(Script script, object obj, DynValue value);
+        void SetValue(LuaState script, object obj, DynValue value);
     }
 
 
@@ -96,7 +96,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="script">The script.</param>
         /// <param name="obj">The object.</param>
         /// <returns></returns>
-        public static DynValue GetGetterCallbackAsDynValue(this IMemberDescriptor desc, Script script, object obj)
+        public static DynValue GetGetterCallbackAsDynValue(this IMemberDescriptor desc, LuaState script, object obj)
         {
             return DynValue.NewCallback((p1, p2) => desc.GetValue(script, obj));
         }

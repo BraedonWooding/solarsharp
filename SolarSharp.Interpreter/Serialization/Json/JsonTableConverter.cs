@@ -136,7 +136,7 @@ namespace SolarSharp.Interpreter.Serialization.Json
         /// <param name="json">The json.</param>
         /// <param name="script">The script to which the table is assigned (null for prime tables).</param>
         /// <returns>A table containing the representation of the given json.</returns>
-        public static Table JsonToTable(string json, Script script = null)
+        public static Table JsonToTable(string json, LuaState script = null)
         {
             Lexer L = new(0, json, false);
 
@@ -153,7 +153,7 @@ namespace SolarSharp.Interpreter.Serialization.Json
             if (L.Current.Type != type)
                 throw new SyntaxErrorException(L.Current, "Unexpected token : '{0}'", L.Current.Text);
         }
-        private static Table ParseJsonArray(Lexer L, Script script)
+        private static Table ParseJsonArray(Lexer L, LuaState script)
         {
             Table t = new(script);
 
@@ -172,7 +172,7 @@ namespace SolarSharp.Interpreter.Serialization.Json
             return t;
         }
 
-        private static Table ParseJsonObject(Lexer L, Script script)
+        private static Table ParseJsonObject(Lexer L, LuaState script)
         {
             Table t = new(script);
 
@@ -196,7 +196,7 @@ namespace SolarSharp.Interpreter.Serialization.Json
             return t;
         }
 
-        private static DynValue ParseJsonValue(Lexer L, Script script)
+        private static DynValue ParseJsonValue(Lexer L, LuaState script)
         {
             if (L.Current.Type == TokenType.Brk_Open_Curly)
             {
@@ -234,7 +234,7 @@ namespace SolarSharp.Interpreter.Serialization.Json
             }
         }
 
-        private static DynValue ParseJsonNumberValue(Lexer L, Script _)
+        private static DynValue ParseJsonNumberValue(Lexer L, LuaState _)
         {
             bool negative;
             if (L.Current.Type == TokenType.Op_MinusOrSub)

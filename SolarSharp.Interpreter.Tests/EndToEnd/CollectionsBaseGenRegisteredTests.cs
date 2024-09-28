@@ -74,7 +74,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 UserData.RegisterType(typeof(List<>));
                 UserData.RegisterExtensionType(typeof(Enumerable));
 
-                Script s = new();
+                LuaState s = new();
 
                 var obj = new RegCollMethods();
                 s.Globals["o"] = obj;

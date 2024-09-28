@@ -241,7 +241,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Creates a new writable value initialized to an empty table.
         /// </summary>
-        public static DynValue NewTable(Script script, int arraySizeHint = 0, int associativeSizeHint = 0)
+        public static DynValue NewTable(LuaState script, int arraySizeHint = 0, int associativeSizeHint = 0)
         {
             return NewTable(new Table(script, arraySizeHint, associativeSizeHint));
         }
@@ -249,7 +249,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Creates a new writable value initialized to with array contents.
         /// </summary>
-        public static DynValue NewTable(Script script, params DynValue[] arrayValues)
+        public static DynValue NewTable(LuaState script, params DynValue[] arrayValues)
         {
             return NewTable(new Table(script, arrayValues));
         }
@@ -715,7 +715,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="script">The script.</param>
         /// <param name="obj">The object.</param>
         /// <returns></returns>
-        public static DynValue FromObject(Script script, object obj)
+        public static DynValue FromObject(LuaState script, object obj)
         {
             return ClrToScriptConversions.ObjectToDynValue(script, obj);
         }

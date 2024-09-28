@@ -17,9 +17,9 @@ namespace SolarSharp
         {
             CommandManager.Initialize();
 
-            Script.DefaultOptions.ScriptLoader = new ReplInterpreterScriptLoader();
+            LuaState.DefaultOptions.ScriptLoader = new ReplInterpreterScriptLoader();
 
-            Script script = new(CoreModules.Preset_Complete);
+            LuaState script = new(CoreModules.Preset_Complete);
 
             script.Globals["makestatic"] = (Func<string, DynValue>)MakeStatic;
 
@@ -83,7 +83,7 @@ namespace SolarSharp
 
         private static void Banner()
         {
-            Console.WriteLine(Script.GetBanner("Console"));
+            Console.WriteLine(LuaState.GetBanner("Console"));
             Console.WriteLine();
             Console.WriteLine("Type Lua code to execute it or type !help to see help on commands.\n");
             Console.WriteLine("Welcome.\n");
@@ -97,7 +97,7 @@ namespace SolarSharp
 
             if (args.Length == 1 && args[0].Length > 0 && args[0][0] != '-')
             {
-                Script script = new();
+                LuaState script = new();
                 script.DoFile(args[0]);
             }
 

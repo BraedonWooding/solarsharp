@@ -7,7 +7,7 @@ namespace SolarSharp.Interpreter.Tree
 {
     internal abstract class NodeBase
     {
-        public Script Script { get; private set; }
+        public LuaState Script { get; private set; }
         protected ScriptLoadingContext LoadingContext { get; private set; }
 
         public NodeBase(ScriptLoadingContext lcontext)

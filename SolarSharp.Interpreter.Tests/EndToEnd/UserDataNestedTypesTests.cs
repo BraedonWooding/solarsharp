@@ -79,7 +79,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_NestedTypes_Public_Enum()
         {
-            Script S = new();
+            LuaState S = new();
 
             UserData.RegisterType<SomeType>();
 
@@ -94,7 +94,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_NestedTypes_Public_Ref()
         {
-            Script S = new();
+            LuaState S = new();
 
             UserData.RegisterType<SomeType>();
 
@@ -113,7 +113,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_NestedTypes_Private_Ref()
         {
-            Script S = new();
+            LuaState S = new();
 
             UserData.RegisterType<SomeType>();
 
@@ -131,7 +131,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_NestedTypes_Private_Ref_2()
         {
-            Script S = new();
+            LuaState S = new();
 
             UserData.RegisterType<SomeType>();
 
@@ -143,7 +143,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_NestedTypes_Public_Val()
         {
-            Script S = new();
+            LuaState S = new();
 
             UserData.RegisterType<VSomeType>();
 
@@ -161,7 +161,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_NestedTypes_Private_Val()
         {
-            Script S = new();
+            LuaState S = new();
 
             UserData.RegisterType<VSomeType>();
 
@@ -179,7 +179,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_NestedTypes_Private_Val_2()
         {
-            Script S = new();
+            LuaState S = new();
 
             UserData.RegisterType<VSomeType>();
 

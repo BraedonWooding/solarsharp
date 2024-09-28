@@ -220,7 +220,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="index">The index.</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        public virtual DynValue Index(Script script, object obj, DynValue index, bool isDirectIndexing)
+        public virtual DynValue Index(LuaState script, object obj, DynValue index, bool isDirectIndexing)
         {
             if (!isDirectIndexing)
             {
@@ -238,18 +238,18 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
                 return DynValue.Nil;
 
             DynValue v = TryIndex(script, obj, index.String);
-            if (v.IsNil() && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TryIndex(script, obj, UpperFirstLetter(index.String));
-            if (v.IsNil() && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TryIndex(script, obj, Camelify(index.String));
-            if (v.IsNil() && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TryIndex(script, obj, UpperFirstLetter(Camelify(index.String)));
+            if (v.IsNil() && (LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TryIndex(script, obj, UpperFirstLetter(index.String));
+            if (v.IsNil() && (LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TryIndex(script, obj, Camelify(index.String));
+            if (v.IsNil() && (LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TryIndex(script, obj, UpperFirstLetter(Camelify(index.String)));
 
             if (v.IsNil() && m_ExtMethodsVersion < UserData.GetExtensionMethodsChangeVersion())
             {
                 m_ExtMethodsVersion = UserData.GetExtensionMethodsChangeVersion();
 
                 v = TryIndexOnExtMethod(script, obj, index.String);
-                if (v.IsNil() && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TryIndexOnExtMethod(script, obj, UpperFirstLetter(index.String));
-                if (v.IsNil() && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TryIndexOnExtMethod(script, obj, Camelify(index.String));
-                if (v.IsNil() && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TryIndexOnExtMethod(script, obj, UpperFirstLetter(Camelify(index.String)));
+                if (v.IsNil() && (LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TryIndexOnExtMethod(script, obj, UpperFirstLetter(index.String));
+                if (v.IsNil() && (LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TryIndexOnExtMethod(script, obj, Camelify(index.String));
+                if (v.IsNil() && (LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TryIndexOnExtMethod(script, obj, UpperFirstLetter(Camelify(index.String)));
             }
 
             return v;
@@ -264,7 +264,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="indexName">Member name to be indexed.</param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        private DynValue TryIndexOnExtMethod(Script script, object obj, string indexName)
+        private DynValue TryIndexOnExtMethod(LuaState script, object obj, string indexName)
         {
             List<IOverloadableMemberDescriptor> methods = UserData.GetExtensionMethodsByNameAndType(indexName, Type);
 
@@ -307,7 +307,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="obj">The object.</param>
         /// <param name="indexName">Member name to be indexed.</param>
         /// <returns></returns>
-        protected virtual DynValue TryIndex(Script script, object obj, string indexName)
+        protected virtual DynValue TryIndex(LuaState script, object obj, string indexName)
         {
             if (m_Members.TryGetValue(indexName, out IMemberDescriptor desc))
             {
@@ -326,7 +326,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="value">The value to be set</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        public virtual bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
+        public virtual bool SetIndex(LuaState script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
         {
             if (!isDirectIndexing)
             {
@@ -347,9 +347,9 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
                 return false;
 
             bool v = TrySetIndex(script, obj, index.String, value);
-            if (!v && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TrySetIndex(script, obj, UpperFirstLetter(index.String), value);
-            if (!v && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TrySetIndex(script, obj, Camelify(index.String), value);
-            if (!v && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TrySetIndex(script, obj, UpperFirstLetter(Camelify(index.String)), value);
+            if (!v && (LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TrySetIndex(script, obj, UpperFirstLetter(index.String), value);
+            if (!v && (LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TrySetIndex(script, obj, Camelify(index.String), value);
+            if (!v && (LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TrySetIndex(script, obj, UpperFirstLetter(Camelify(index.String)), value);
 
             return v;
         }
@@ -362,7 +362,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="indexName">Member name to be indexed.</param>
         /// <param name="value">The value.</param>
         /// <returns></returns>
-        protected virtual bool TrySetIndex(Script script, object obj, string indexName, DynValue value)
+        protected virtual bool TrySetIndex(LuaState script, object obj, string indexName, DynValue value)
         {
             IMemberDescriptor descr = m_Members.GetOrDefault(indexName);
 
@@ -430,7 +430,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="value">The dynvalue to set on a setter, or null.</param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        protected virtual DynValue ExecuteIndexer(IMemberDescriptor mdesc, Script script, object obj, DynValue index, DynValue value)
+        protected virtual DynValue ExecuteIndexer(IMemberDescriptor mdesc, LuaState script, object obj, DynValue index, DynValue value)
         {
             IList<DynValue> values;
 
@@ -483,7 +483,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="metaname">The name of the metamember.</param>
         /// </summary>
         /// <returns></returns>
-        public virtual DynValue MetaIndex(Script script, object obj, string metaname)
+        public virtual DynValue MetaIndex(LuaState script, object obj, string metaname)
         {
             IMemberDescriptor desc = m_MetaMembers.GetOrDefault(metaname);
 
@@ -530,7 +530,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         }
 
 
-        private DynValue MultiDispatchLessThanOrEqual(Script _, object obj)
+        private DynValue MultiDispatchLessThanOrEqual(LuaState _, object obj)
         {
             if (obj is IComparable comp)
             {
@@ -542,7 +542,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             return DynValue.Nil;
         }
 
-        private DynValue MultiDispatchLessThan(Script _, object obj)
+        private DynValue MultiDispatchLessThan(LuaState _, object obj)
         {
             if (obj is IComparable comp)
             {
@@ -554,7 +554,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             return DynValue.Nil;
         }
 
-        private DynValue TryDispatchLength(Script script, object obj)
+        private DynValue TryDispatchLength(LuaState script, object obj)
         {
             if (obj == null) return DynValue.Nil;
 
@@ -567,7 +567,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             return DynValue.Nil;
         }
 
-        private DynValue MultiDispatchEqual(Script _, object obj)
+        private DynValue MultiDispatchEqual(LuaState _, object obj)
         {
             return DynValue.NewCallback(
                 (context, args) => DynValue.NewBoolean(CheckEquality(obj, args[0].ToObject(), args[1].ToObject())));
@@ -588,7 +588,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             else return true;
         }
 
-        private DynValue DispatchMetaOnMethod(Script script, object obj, string methodName)
+        private DynValue DispatchMetaOnMethod(LuaState script, object obj, string methodName)
         {
             IMemberDescriptor desc = m_Members.GetOrDefault(methodName);
 
@@ -600,7 +600,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
                 return DynValue.Nil;
         }
 
-        private DynValue TryDispatchToNumber(Script script, object obj)
+        private DynValue TryDispatchToNumber(LuaState script, object obj)
         {
             foreach (Type t in NumericConversions.NumericTypesOrdered)
             {
@@ -612,7 +612,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         }
 
 
-        private DynValue TryDispatchToBool(Script script, object obj)
+        private DynValue TryDispatchToBool(LuaState script, object obj)
         {
             var name = typeof(bool).GetConversionMethodName();
             var v = DispatchMetaOnMethod(script, obj, name);

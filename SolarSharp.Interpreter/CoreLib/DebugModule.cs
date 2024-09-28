@@ -17,7 +17,7 @@ namespace SolarSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue debug(ScriptExecutionContext executionContext, CallbackArguments _)
         {
-            Script script = executionContext.GetScript();
+            LuaState script = executionContext.GetScript();
 
             if (script.Options.DebugInput == null)
                 throw new ScriptRuntimeException("debug.debug not supported on this platform/configuration");
@@ -80,7 +80,7 @@ namespace SolarSharp.Interpreter.CoreLib
         public static DynValue getmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue v = args[0];
-            Script S = executionContext.GetScript();
+            LuaState S = executionContext.GetScript();
 
             if (v.Type.CanHaveTypeMetatables())
                 return DynValue.NewTable(S.GetTypeMetatable(v.Type));
@@ -96,7 +96,7 @@ namespace SolarSharp.Interpreter.CoreLib
             DynValue v = args[0];
             DynValue t = args.AsType(1, "setmetatable", DataType.Table, true);
             Table m = t.IsNil() ? null : t.Table;
-            Script S = executionContext.GetScript();
+            LuaState S = executionContext.GetScript();
 
             if (v.Type.CanHaveTypeMetatables())
                 S.SetTypeMetatable(v.Type, m);

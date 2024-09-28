@@ -104,7 +104,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return string.Format(s, args);
             }
 
-            public StringBuilder ConcatI(Script s, int p1, string p2, IComparable p3, bool p4, List<object> p5, IEnumerable<object> p6,
+            public StringBuilder ConcatI(LuaState s, int p1, string p2, IComparable p3, bool p4, List<object> p5, IEnumerable<object> p6,
                 StringBuilder p7, Dictionary<object, object> p8, SomeClass_NoRegister p9, int p10 = 1912)
             {
                 Assert.That(s, Is.Not.Null);
@@ -225,7 +225,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return string.Format(s, args);
             }
 
-            public StringBuilder ConcatI(Script s, int p1, string p2, IComparable p3, bool p4, List<object> p5, IEnumerable<object> p6,
+            public StringBuilder ConcatI(LuaState s, int p1, string p2, IComparable p3, bool p4, List<object> p5, IEnumerable<object> p6,
                 StringBuilder p7, Dictionary<object, object> p8, SomeClass p9, int p10 = 1912)
             {
                 Assert.That(s, Is.Not.Null);
@@ -292,12 +292,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 get { return typeof(SomeOtherClassCustomDescriptor); }
             }
 
-            public DynValue Index(Script script, object obj, DynValue index, bool dummy)
+            public DynValue Index(LuaState script, object obj, DynValue index, bool dummy)
             {
                 return DynValue.NewNumber(index.Number * 4);
             }
 
-            public bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool dummy)
+            public bool SetIndex(LuaState script, object obj, DynValue index, DynValue value, bool dummy)
             {
                 throw new NotImplementedException();
             }
@@ -307,7 +307,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return null;
             }
 
-            public DynValue MetaIndex(Script script, object obj, string metaname)
+            public DynValue MetaIndex(LuaState script, object obj, string metaname)
             {
                 return DynValue.Nil;
             }
@@ -320,17 +320,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         public class SelfDescribingClass : IUserDataType
         {
-            public DynValue Index(Script script, DynValue index, bool isNameIndex)
+            public DynValue Index(LuaState script, DynValue index, bool isNameIndex)
             {
                 return DynValue.NewNumber(index.Number * 3);
             }
 
-            public bool SetIndex(Script script, DynValue index, DynValue value, bool isNameIndex)
+            public bool SetIndex(LuaState script, DynValue index, DynValue value, bool isNameIndex)
             {
                 throw new NotImplementedException();
             }
 
-            public DynValue MetaIndex(Script script, string metaname)
+            public DynValue MetaIndex(LuaState script, string metaname)
             {
                 throw new NotImplementedException();
             }
@@ -356,7 +356,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             string script = @"    
 			return myobj.format('{0}.{1}@{2}:{3}', 1, 2, 'ciao', true);";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -390,25 +390,25 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return x;";
 
-                Script S = new();
+                LuaState S = new();
 
                 SomeClass obj = new();
 
                 UserData.UnregisterType<SomeClass>();
                 UserData.RegisterType<SomeClass>(opt);
 
-                Script.GlobalOptions.CustomConverters.Clear();
+                LuaState.GlobalOptions.CustomConverters.Clear();
 
-                Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(List<string>),
+                LuaState.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(List<string>),
                     v => null);
 
-                Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(IList<int>),
+                LuaState.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(IList<int>),
                     v => new List<int>() { 42, 77, 125, 13 });
 
-                Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(int[]),
+                LuaState.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(int[]),
                     v => new int[] { 43, 78, 126, 14 });
 
-                Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<StringBuilder>(
+                LuaState.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<StringBuilder>(
                     (_s, v) => DynValue.NewString(v.ToString().ToUpper()));
 
 
@@ -425,7 +425,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
             finally
             {
-                Script.GlobalOptions.CustomConverters.Clear();
+                LuaState.GlobalOptions.CustomConverters.Clear();
             }
         }
 
@@ -443,7 +443,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return x;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -473,7 +473,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return x;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -501,7 +501,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x, y, z = myobj:manipulateString('CiAo', 'hello');
 				return x, y, z;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -541,7 +541,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = static.ConcatS(1, 'ciao', myobj, true, t, t, 'eheh', t, myobj);
 				return x;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -569,7 +569,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = myobj.ConcatI(1, 'ciao', myobj, true, t, t, 'eheh', t, myobj);
 				return x;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -596,7 +596,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = myobj:ConcatI(1, 'ciao', myobj, true, t, t, 'eheh', t, myobj);
 				return x;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -624,7 +624,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = myobj:ConcatI(1, 'ciao', myobj, true, t, t, 'eheh', t, myobj);
 				return x;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -653,7 +653,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = static.ConcatS(1, 'ciao', myobj, true, t, t, 'eheh', t, myobj);
 				return x;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -680,7 +680,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = concat(1, 2);
 				return x;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -709,7 +709,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return sum;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass_NoRegister obj = new();
 
@@ -955,7 +955,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 UserData.RegistrationPolicy = InteropRegistrationPolicy.Automatic;
 
-                Script S = new();
+                LuaState S = new();
 
                 SomeOtherClass obj = new();
 
@@ -980,7 +980,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             string script = @"return myobj:Test1() .. myobj:Test2()";
 
-            Script S = new();
+            LuaState S = new();
 
             UserData.UnregisterType<Interface1>();
             UserData.UnregisterType<Interface2>();
@@ -1014,7 +1014,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return a + b + c + d;
 			";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -1046,7 +1046,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return a + b + c;
 			";
 
-            Script S = new();
+            LuaState S = new();
 
             SelfDescribingClass obj = new();
 
@@ -1077,7 +1077,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return a + b + c;
 			";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeOtherClassCustomDescriptor obj = new();
 
@@ -1107,7 +1107,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = mystatic.ConcatI(1, 'ciao', myobj, true, t, t, 'eheh', t, myobj);
 				return x;";
 
-                Script S = new();
+                LuaState S = new();
 
                 SomeClass obj = new();
 

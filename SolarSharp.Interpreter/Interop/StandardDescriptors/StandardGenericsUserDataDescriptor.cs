@@ -38,13 +38,13 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         public Type Type { get; private set; }
 
         /// <inheritdoc/>
-        public DynValue Index(Script script, object obj, DynValue index, bool isDirectIndexing)
+        public DynValue Index(LuaState script, object obj, DynValue index, bool isDirectIndexing)
         {
             return DynValue.Nil;
         }
 
         /// <inheritdoc/>
-        public bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
+        public bool SetIndex(LuaState script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
         {
             return false;
         }
@@ -56,7 +56,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         }
 
         /// <inheritdoc/>
-        public DynValue MetaIndex(Script script, object obj, string metaname)
+        public DynValue MetaIndex(LuaState script, object obj, string metaname)
         {
             return DynValue.Nil;
         }

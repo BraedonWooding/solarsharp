@@ -13,7 +13,7 @@ namespace SolarSharp.Interpreter.DataTypes
     /// </summary>
     public class Table : RefIdObject, IEnumerable<KeyValuePair<DynValue, DynValue>>
     {
-        private readonly Script m_Owner;
+        private readonly LuaState m_Owner;
         private int m_CachedLength = -1;
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="owner">The owner script.</param>
         /// <param name="arraySizeHint">A hint for the length of the array component</param>
         /// <param name="associativeSizeHint">A hint for thet length of the map component</param>
-        public Table(Script owner, int arraySizeHint = 0, int associativeSizeHint = 0)
+        public Table(LuaState owner, int arraySizeHint = 0, int associativeSizeHint = 0)
         {
             m_Owner = owner;
             ArraySegment = new DynValue[arraySizeHint + 1];
@@ -48,7 +48,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <param name="owner">The owner.</param>
         /// <param name="arrayValues">The values for the "array-like" part of the table.</param>
-        public Table(Script owner, params DynValue[] arrayValues)
+        public Table(LuaState owner, params DynValue[] arrayValues)
             : this(owner)
         {
             for (int i = 0; i < arrayValues.Length; i++)
@@ -60,7 +60,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Gets the script owning this resource.
         /// </summary>
-        public Script OwnerScript
+        public LuaState OwnerScript
         {
             get { return m_Owner; }
         }

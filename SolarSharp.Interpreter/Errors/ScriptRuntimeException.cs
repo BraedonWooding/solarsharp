@@ -511,7 +511,7 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns></returns>
         public override void Rethrow()
         {
-            if (Script.GlobalOptions.RethrowExceptionNested)
+            if (LuaState.GlobalOptions.RethrowExceptionNested)
                 throw new ScriptRuntimeException(this);
         }
 

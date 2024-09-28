@@ -187,9 +187,9 @@ namespace SolarSharp.Interpreter.Interop
         private void AssignProperty(object obj, string name, DynValue value)
         {
             if (TryAssignProperty(obj, name, value)) return;
-            if ((Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter && TryAssignProperty(obj, DescriptorHelpers.UpperFirstLetter(name), value)) return;
-            if ((Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify && TryAssignProperty(obj, DescriptorHelpers.Camelify(name), value)) return;
-            if ((Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase && TryAssignProperty(obj, DescriptorHelpers.UpperFirstLetter(DescriptorHelpers.Camelify(name)), value)) return;
+            if ((LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter && TryAssignProperty(obj, DescriptorHelpers.UpperFirstLetter(name), value)) return;
+            if ((LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify && TryAssignProperty(obj, DescriptorHelpers.Camelify(name), value)) return;
+            if ((LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase && TryAssignProperty(obj, DescriptorHelpers.UpperFirstLetter(DescriptorHelpers.Camelify(name)), value)) return;
 
             throw new ScriptRuntimeException("Invalid property {0}", name);
         }

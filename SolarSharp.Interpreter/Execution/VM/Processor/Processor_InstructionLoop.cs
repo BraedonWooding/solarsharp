@@ -232,17 +232,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                     throw;
                 }
 
-                if (m_Debug.DebuggerAttached != null)
-                {
-                    if (m_Debug.DebuggerAttached.SignalRuntimeException((ScriptRuntimeException)ex))
-                    {
-                        if (instructionPtr >= 0 && instructionPtr < m_RootChunk.Code.Count)
-                        {
-                            ListenDebugger(m_RootChunk.Code[instructionPtr], instructionPtr);
-                        }
-                    }
-                }
-
                 for (int i = 0; i < m_ExecutionStack.Count; i++)
                 {
                     var c = m_ExecutionStack.Peek(i);
@@ -253,7 +242,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                 while (m_ExecutionStack.Count > 0)
                 {
-                    CallStackItem csi = PopToBasePointer();
+                    CallInfo csi = PopToBasePointer();
 
                     if (csi.ErrorHandler != null)
                     {
@@ -524,7 +513,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private void ExecBeginFn(Instruction i)
         {
-            CallStackItem cur = m_ExecutionStack.Peek();
+            CallInfo cur = m_ExecutionStack.Peek();
 
             cur.Debug_Symbols = i.SymbolList;
             cur.LocalScope = new DynValue[i.NumVal];
@@ -532,7 +521,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             ClearBlockData(i);
         }
 
-        private CallStackItem PopToBasePointer()
+        private CallInfo PopToBasePointer()
         {
             var csi = m_ExecutionStack.Pop();
             if (csi.BasePointer >= 0)
@@ -615,7 +604,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                     // and we are followed *exactly* by a RET 1
                     if (I.OpCode == OpCode.Ret && I.NumVal == 1)
                     {
-                        CallStackItem csi = m_ExecutionStack.Peek();
+                        CallInfo csi = m_ExecutionStack.Peek();
 
                         // if the current stack item has no "odd" things pending and neither has the new coming one..
                         if (csi.ClrFunction == null && csi.Continuation == null && csi.ErrorHandler == null
@@ -639,7 +628,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 // but we need the current instruction here
                 SourceRef sref = GetCurrentSourceRef(instructionPtr - 1);
 
-                m_ExecutionStack.Push(new CallStackItem()
+                m_ExecutionStack.Push(new CallInfo()
                 {
                     ClrFunction = fn.Callback,
                     ReturnAddress = instructionPtr,
@@ -662,7 +651,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             else if (fn.Type == DataType.Function)
             {
                 m_ValueStack.Push(DynValue.NewNumber(argsCount));
-                m_ExecutionStack.Push(new CallStackItem()
+                m_ExecutionStack.Push(new CallInfo()
                 {
                     BasePointer = m_ValueStack.Count,
                     ReturnAddress = instructionPtr,
@@ -706,7 +695,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 args[i] = m_ValueStack.Pop();
 
             // perform a fake RET
-            CallStackItem csi = PopToBasePointer();
+            CallInfo csi = PopToBasePointer();
             int retpoint = csi.ReturnAddress;
             var argscnt = (int)(m_ValueStack.Pop().Number);
             m_ValueStack.RemoveLast(argscnt + 1);
@@ -720,7 +709,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private int ExecRet(Instruction i)
         {
-            CallStackItem csi;
+            CallInfo csi;
             int retpoint;
             if (i.NumVal == 0)
             {

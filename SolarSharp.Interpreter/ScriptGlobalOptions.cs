@@ -6,7 +6,7 @@ namespace SolarSharp.Interpreter
 {
     /// <summary>
     /// Class containing script global options, that is options which cannot be customized per-script.
-    /// <see cref="Script.GlobalOptions"/>
+    /// <see cref="LuaState.GlobalOptions"/>
     /// </summary>
     public class ScriptGlobalOptions
     {

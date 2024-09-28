@@ -69,7 +69,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 UserData.RegisterType<int[]>();
                 UserData.RegisterType<int[,]>();
 
-                Script s = new();
+                LuaState s = new();
 
                 var obj = new RegCollMethods();
                 s.Globals["o"] = obj;

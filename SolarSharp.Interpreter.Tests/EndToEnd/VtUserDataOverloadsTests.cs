@@ -89,7 +89,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void RunTestOverload(string code, string expected, bool tupleExpected = false)
         {
-            Script S = new();
+            LuaState S = new();
 
             OverloadsTestClass obj = new();
 

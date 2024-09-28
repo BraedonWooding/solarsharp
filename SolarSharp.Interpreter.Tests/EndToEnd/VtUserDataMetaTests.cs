@@ -202,7 +202,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void VInterop_Meta_Pairs()
         {
-            Script S = new();
+            LuaState S = new();
             UserData.RegisterType<ArithmOperatorsTestClass>();
             S.Globals.Set("o", UserData.Create(new ArithmOperatorsTestClass(-5)));
 
@@ -221,7 +221,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void VInterop_Meta_IPairs()
         {
-            Script S = new();
+            LuaState S = new();
             UserData.RegisterType<ArithmOperatorsTestClass>();
             S.Globals.Set("o", UserData.Create(new ArithmOperatorsTestClass(-5)));
 
@@ -242,7 +242,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void VInterop_Meta_Iterator()
         {
-            Script S = new();
+            LuaState S = new();
             UserData.RegisterType<ArithmOperatorsTestClass>();
             S.Globals.Set("o", UserData.Create(new ArithmOperatorsTestClass(-5)));
 
@@ -267,7 +267,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void VInterop_Meta_Op_Len()
         {
-            Script S = new();
+            LuaState S = new();
             UserData.RegisterType<ArithmOperatorsTestClass>();
             UserData.RegisterType<ClassWithCount>();
             UserData.RegisterType<ClassWithLength>();
@@ -290,7 +290,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void VInterop_Meta_Equality()
         {
-            Script S = new();
+            LuaState S = new();
             UserData.RegisterType<ArithmOperatorsTestClass>();
 
             S.Globals.Set("o1", UserData.Create(new ArithmOperatorsTestClass(5)));
@@ -315,7 +315,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void VInterop_Meta_Comparisons()
         {
-            Script S = new();
+            LuaState S = new();
             UserData.RegisterType<ArithmOperatorsTestClass>();
 
             S.Globals.Set("o1", UserData.Create(new ArithmOperatorsTestClass(1)));
@@ -348,7 +348,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void OperatorTest(string code, int input, int output)
         {
-            Script S = new();
+            LuaState S = new();
 
             ArithmOperatorsTestClass obj = new(input);
 

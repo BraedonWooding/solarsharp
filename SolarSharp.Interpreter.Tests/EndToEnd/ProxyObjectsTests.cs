@@ -27,7 +27,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             UserData.RegisterProxyType<Proxy, Random>(r => new Proxy(r));
 
-            Script S = new();
+            LuaState S = new();
 
             S.Globals["R"] = new Random();
             S.Globals["func"] = (Action<Random>)(r => { Assert.That(r, Is.Not.Null); Assert.That(r, Is.Not.EqualTo(null)); });

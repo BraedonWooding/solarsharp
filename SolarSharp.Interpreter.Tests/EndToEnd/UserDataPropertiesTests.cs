@@ -54,7 +54,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = myobj.IntProp;
 				return x;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new() { IntProp = 321 };
 
@@ -79,7 +79,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				y = myobj2.NIntProp;
 				return x,y;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj1 = new() { NIntProp = 321 };
             SomeClass obj2 = new() { NIntProp = null };
@@ -109,7 +109,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				z = myobj2.ObjProp.ObjProp;
 				return x,y,z;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj1 = new() { ObjProp = "ciao" };
             SomeClass obj2 = new() { ObjProp = obj1 };
@@ -139,7 +139,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             string script = @"    
 				myobj.IntProp = 19;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new() { IntProp = 321 };
 
@@ -161,7 +161,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj1.NIntProp = nil;
 				myobj2.NIntProp = 19;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj1 = new() { NIntProp = 321 };
             SomeClass obj2 = new() { NIntProp = null };
@@ -193,7 +193,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj1.ObjProp = myobj2;
 				myobj2.ObjProp = 'hello';";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj1 = new() { ObjProp = "ciao" };
             SomeClass obj2 = new() { ObjProp = obj1 };
@@ -224,7 +224,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             string script = @"    
 				myobj.IntProp = '19';";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new() { IntProp = 321 };
 
@@ -243,7 +243,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             string script = @"    
 				static.StaticProp = 'asdasd' .. static.StaticProp;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass.StaticProp = "qweqwe";
 
@@ -269,7 +269,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return x;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -293,7 +293,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = myobj.RoIntProp;
 				return x;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -317,7 +317,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = myobj.RoIntProp2;
 				return x;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -344,7 +344,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return myobj.RoIntProp;
 			";
 
-                Script S = new();
+                LuaState S = new();
 
                 SomeClass obj = new();
 
@@ -372,7 +372,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return myobj.RoIntProp2;
 			";
 
-                Script S = new();
+                LuaState S = new();
 
                 SomeClass obj = new();
 
@@ -398,7 +398,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj.WoIntProp = 19;
 			";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -418,7 +418,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj.WoIntProp2 = 19;
 			";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new();
 
@@ -441,7 +441,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = myobj.WoIntProp;
 				return x;";
 
-                Script S = new();
+                LuaState S = new();
 
                 SomeClass obj = new();
 
@@ -474,7 +474,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = myobj.WoIntProp2;
 				return x;";
 
-                Script S = new();
+                LuaState S = new();
 
                 SomeClass obj = new();
 
@@ -511,7 +511,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return myobj.AccessOverrProp;
 			";
 
-                Script S = new();
+                LuaState S = new();
 
                 obj.AccessOverrProp = 13;
 
@@ -867,7 +867,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             string script = @"    
 				myobj.IntProp = 19;";
 
-            Script S = new();
+            LuaState S = new();
 
             SomeClass obj = new() { IntProp = 321 };
 
@@ -890,7 +890,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_OutOfRangeNumber()
         {
-            Script s = new();
+            LuaState s = new();
             long big = long.MaxValue;
             var v = DynValue.FromObject(s, big);
             Assert.That(v, Is.Not.EqualTo(DynValue.Nil));
