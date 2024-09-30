@@ -1016,10 +1016,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                         // we don't clear out entry.key for a few specific reasons;
                         // 1. we want iterators to still be able to get reference to a "freed" key
                         // 2. we should really only have strings as keys
-                        if (RuntimeHelpers.IsReferenceOrContainsReferences<TValue>())
-                        {
-                            entry.value = default!;
-                        }
+                        entry.value = default!;
 
                         _freeList = i;
                         _freeCount++;
@@ -1041,7 +1038,11 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             return false;
         }
 
-        public bool Remove(TKey key, [MaybeNullWhen(false)] out TValue value)
+        public bool Remove(TKey key,
+#if NETSTANDARD2_1_OR_GREATER
+            [MaybeNullWhen(false)]
+#endif
+            out TValue value)
         {
             // This overload is a copy of the overload Remove(TKey key) with one additional
             // statement to copy the value for entry being removed into the output parameter.
@@ -1086,15 +1087,10 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                         Debug.Assert(StartOfFreeList - _freeList < 0, "shouldn't underflow because max hashtable length is MaxPrimeArrayLength = 0x7FEFFFFD(2146435069) _freelist underflow threshold 2147483646");
                         entry.next = StartOfFreeList - _freeList;
 
-                        if (RuntimeHelpers.IsReferenceOrContainsReferences<TKey>())
-                        {
-                            entry.key = default!;
-                        }
-
-                        if (RuntimeHelpers.IsReferenceOrContainsReferences<TValue>())
-                        {
-                            entry.value = default!;
-                        }
+                        // we don't clear out entry.key for a few specific reasons;
+                        // 1. we want iterators to still be able to get reference to a "freed" key
+                        // 2. we should really only have strings as keys
+                        entry.value = default!;
 
                         _freeList = i;
                         _freeCount++;
@@ -1118,7 +1114,11 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             return false;
         }
 
-        public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
+        public bool TryGetValue(TKey key,
+#if NETSTANDARD2_1_OR_GREATER
+            [MaybeNullWhen(false)]
+#endif 
+            out TValue value)
         {
             ref TValue valRef = ref FindValue(key);
             if (!Unsafe.IsNullRef(ref valRef))

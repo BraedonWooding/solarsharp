@@ -7,7 +7,6 @@ using SolarSharp.Interpreter.CoreLib;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Diagnostics;
 using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.IO;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Platforms;
 using SolarSharp.Interpreter.Tree.Fast_Interface;
@@ -124,7 +123,7 @@ namespace SolarSharp.Interpreter
         {
             if (code.StartsWith(StringModule.BASE64_DUMP_HEADER))
             {
-                code = code[StringModule.BASE64_DUMP_HEADER.Length..];
+                code = code.Substring(StringModule.BASE64_DUMP_HEADER.Length);
                 byte[] data = Convert.FromBase64String(code);
                 using MemoryStream ms = new(data);
                 return LoadStream(ms, globalTable, codeFriendlyName);
