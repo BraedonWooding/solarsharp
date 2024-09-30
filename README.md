@@ -77,9 +77,18 @@ Most of these changes were done because:
 	- They are harder to keep in sync with standard Lua processor and are ripe for bugs
 	- We instead support much stronger sandboxing and introduce dynamic "like" expressions (for debugging/other use cases) through that.
 - Debugger was removed, instead we (ideally) will support native Lua debuggers!  (though we will have to see how good this support will be).
+- Solarp/MoonSharpModuleMethodAttribute can not be applied to static fields anymore, it can only be applied to methods.
 
 ## Why use MoonSharp if so much of it was modified?
 
 - To be honest I didn't expect this much to have to be modified!
   - DynValues being a class and code being reliant on it being a reference type (i.e. closures using the dynvalues to write to upvalues rather than just writing to parent slots) was a significantly larger refactor than originally thought.
-  - Tables are another really good example, the old implementation 
+  - Tables are another really good example, the old implementation used linked lists and had major performance problems.  However, simply using a C# Dictionary faces performance issues of it's own due to specific implementation requirements of tables (requiring a custom dictionary type).
+- Tests!  This is a really important aspect, having a full set of tests already in the project saves hours upon hours.
+- Theseus Ship.  Building a large project like this from scratch requires a lot of time investment before you get a result, this way I can slowly transition the codebase across to my desired result while (ideally) at each point having a complete ship.
+
+## API compatibility with MoonSharp?
+
+Originally the intention was to maintain a very high API compatibility (outside of namespace/some type renames) this however turned out to not be very practical due to multiple architectural changes.  In the end I decided to instead have an API that more accurately represents Lua's API (though it is different to that as well).
+
+In saying that I have a guide here [MoonSharp Migration Guide](./MoonSharpMigrationGuide.md) that you can follow which should (ideally) only take a few hours (often less) to adjust *most* MoonSharp projects across.
