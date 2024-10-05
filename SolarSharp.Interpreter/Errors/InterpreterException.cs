@@ -17,7 +17,6 @@ namespace SolarSharp.Interpreter.Errors
         protected InterpreterException(Exception ex, string message)
             : base(message, ex)
         {
-
         }
 
         /// <summary>
@@ -27,7 +26,6 @@ namespace SolarSharp.Interpreter.Errors
         protected InterpreterException(Exception ex)
             : base(ex.Message, ex)
         {
-
         }
 
         /// <summary>
@@ -37,7 +35,6 @@ namespace SolarSharp.Interpreter.Errors
         protected InterpreterException(string message)
             : base(message)
         {
-
         }
 
         /// <summary>
@@ -48,7 +45,6 @@ namespace SolarSharp.Interpreter.Errors
         protected InterpreterException(string format, params object[] args)
             : base(string.Format(format, args))
         {
-
         }
 
         /// <summary>
@@ -61,18 +57,29 @@ namespace SolarSharp.Interpreter.Errors
         /// </summary>
         public string DecoratedMessage { get; internal set; }
 
-
         /// <summary>
         /// Gets or sets a value indicating whether the message should not be decorated
         /// </summary>
         public bool DoNotDecorateMessage { get; set; }
 
-        /// <summary>
-        /// Rethrows this instance if 
-        /// </summary>
-        /// <returns></returns>
-        public virtual void Rethrow()
+        internal void DecorateMessage(LuaState script, SourceRef sref, int ip = -1)
         {
+            if (string.IsNullOrEmpty(this.DecoratedMessage))
+            {
+                if (DoNotDecorateMessage)
+                {
+                    this.DecoratedMessage = this.Message;
+                    return;
+                }
+                else if (sref != null)
+                {
+                    this.DecoratedMessage = string.Format("{0}: {1}", sref.FormatLocation(script), this.Message);
+                }
+                else
+                {
+                    this.DecoratedMessage = string.Format("bytecode:{0}: {1}", ip, this.Message);
+                }
+            }
         }
     }
 }

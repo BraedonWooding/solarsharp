@@ -226,12 +226,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 FillDebugData(ex, instructionPtr);
 
-                if (ex is not ScriptRuntimeException)
-                {
-                    ex.Rethrow();
-                    throw;
-                }
-
                 for (int i = 0; i < m_ExecutionStack.Count; i++)
                 {
                     var c = m_ExecutionStack.Peek(i);

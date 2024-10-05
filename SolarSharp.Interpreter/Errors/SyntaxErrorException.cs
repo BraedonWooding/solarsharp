@@ -57,16 +57,5 @@ namespace SolarSharp.Interpreter.Errors
                 DecorateMessage(script, Token.GetSourceRef(false));
             }
         }
-
-        /// <summary>
-        /// Rethrows this instance if 
-        /// </summary>
-        /// <returns></returns>
-        public override void Rethrow()
-        {
-            if (LuaState.GlobalOptions.RethrowExceptionNested)
-                throw new SyntaxErrorException(this);
-        }
-
     }
 }

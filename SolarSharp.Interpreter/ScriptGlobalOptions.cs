@@ -31,12 +31,6 @@ namespace SolarSharp.Interpreter
         public IPlatformAccessor Platform { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether interpreter exceptions should be 
-        /// re-thrown as nested exceptions.
-        /// </summary>
-        public bool RethrowExceptionNested { get; set; }
-
-        /// <summary>
         /// Gets or sets an enum that controls behaviour when a symbol (method, property, userdata) is not found in a userdata's descriptor. For instance,
         /// when this value is <see cref="FuzzySymbolMatchingBehavior.UpperFirstLetter"/> and Lua code calls the non-existent method <c>someuserdata.someMethod()</c>,
         /// <c>someuserdata.SomeMethod()</c> will also be tried.

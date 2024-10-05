@@ -23,7 +23,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             PrevLine = prevLine;
         }
 
-
         public override string ToString()
         {
             string tokenTypeString = (Type.ToString() + "                                                      ")[..16];
@@ -99,7 +98,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             else
                 throw new NotSupportedException("GetNumberValue is supported only on numeric tokens");
         }
-
 
         public bool IsEndOfBlock()
         {

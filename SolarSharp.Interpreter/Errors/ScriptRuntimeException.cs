@@ -504,16 +504,5 @@ namespace SolarSharp.Interpreter.Errors
         {
             return new ScriptRuntimeException("attempt to access instance member {0}.{1} from a static userdata", typeDescr.Name, desc.Name);
         }
-
-        /// <summary>
-        /// Rethrows this instance if 
-        /// </summary>
-        /// <returns></returns>
-        public override void Rethrow()
-        {
-            if (LuaState.GlobalOptions.RethrowExceptionNested)
-                throw new ScriptRuntimeException(this);
-        }
-
     }
 }

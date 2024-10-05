@@ -16,13 +16,7 @@ namespace SolarSharp.Interpreter.DataTypes
         public List<FuncPrototype> InnerPrototypes { get; set; }
         public List<DynValue> Constants { get; set; }
         public List<UpValuePrototype> Upvalues { get; set; }
-        public List<Instruction> Instructions { get; set; }
-        public Source Source { get; set; }
-    }
-
-    internal class Source
-    {
-        public string FileName { get; set; }
+        public uint InstructionOffset { get; set; }
     }
 
     internal class UpValuePrototype

@@ -15,9 +15,6 @@ namespace SolarSharp.Interpreter.Execution.VM
     {
         public List<Instruction> Code = new();
         public LuaState Script { get; private set; }
-        private readonly List<SourceRef> m_SourceRefStack = new();
-        private SourceRef m_CurrentSourceRef = null;
-
         internal LoopTracker LoopTracker = new();
 
         public ByteCode(LuaState script)
@@ -25,60 +22,11 @@ namespace SolarSharp.Interpreter.Execution.VM
             Script = script;
         }
 
-        public IDisposable EnterSource(SourceRef sref)
-        {
-            return new SourceCodeStackGuard(sref, this);
-        }
-
-        private class SourceCodeStackGuard : IDisposable
-        {
-            private readonly ByteCode m_Bc;
-
-            public SourceCodeStackGuard(SourceRef sref, ByteCode bc)
-            {
-                m_Bc = bc;
-                m_Bc.PushSourceRef(sref);
-            }
-
-            public void Dispose()
-            {
-                m_Bc.PopSourceRef();
-            }
-        }
-
-        public void PushSourceRef(SourceRef sref)
-        {
-            m_SourceRefStack.Add(sref);
-            m_CurrentSourceRef = sref;
-        }
-
-        public void PopSourceRef()
-        {
-            m_SourceRefStack.RemoveAt(m_SourceRefStack.Count - 1);
-            m_CurrentSourceRef = m_SourceRefStack.Count > 0 ? m_SourceRefStack[^1] : null;
-        }
-
-#if (!PCL) && ((!UNITY_5) || UNITY_STANDALONE) && (!(NETFX_CORE))
-        public void Dump(string file)
-        {
-            StringBuilder sb = new();
-
-            for (int i = 0; i < Code.Count; i++)
-            {
-                if (Code[i].OpCode == OpCode.Debug)
-                    sb.AppendFormat("    {0}\n", Code[i]);
-                else
-                    sb.AppendFormat("{0:X8}  {1}\n", i, Code[i]);
-            }
-
-            File.WriteAllText(file, sb.ToString());
-        }
-#endif
-
         public int GetJumpPointForNextInstruction()
         {
             return Code.Count;
         }
+        
         public int GetJumpPointForLastInstruction()
         {
             return Code.Count - 1;
@@ -86,7 +34,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         public Instruction GetLastInstruction()
         {
-            return Code[^1];
+            return Code[Code.Count - 1];
         }
 
         private Instruction AppendInstruction(Instruction c)
@@ -146,13 +94,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                 AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.ToBool });
 
             return i;
-        }
-
-
-        [Conditional("EMIT_DEBUG_OPS")]
-        public void Emit_Debug(string str)
-        {
-            AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.Debug, Name = str[..Math.Min(32, str.Length)] });
         }
 
         public Instruction Emit_Enter(RuntimeScopeBlock runtimeScopeBlock)
@@ -230,7 +171,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                 Value = value
             });
         }
-
 
         public Instruction Emit_BeginFn(RuntimeScopeFrame stackFrame)
         {
