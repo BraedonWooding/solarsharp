@@ -4,7 +4,7 @@ namespace SolarSharp.Interpreter
 {
     /// <summary>
     /// Namespace containing all the most commonly used classes for MoonSharp operation.
-    /// When in doubt, refer to <see cref="Script" /> and <see cref="DynValue" /> classes as starting points.
+    /// When in doubt, refer to <see cref="LuaState" /> and <see cref="DynValue" /> classes as starting points.
     /// </summary>
     internal static class NamespaceDoc { }
 }
@@ -88,9 +88,3 @@ namespace SolarSharp.Interpreter.REPL
     /// </summary>
     internal static class NamespaceDoc { }
 }
-
-
-
-
-
-

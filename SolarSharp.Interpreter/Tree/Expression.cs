@@ -18,13 +18,6 @@ namespace SolarSharp.Interpreter.Tree
             return null;
         }
 
-        public abstract DynValue Eval(ScriptExecutionContext context);
-
-        public virtual SymbolRef FindDynamic(ScriptExecutionContext context)
-        {
-            return null;
-        }
-
         internal static List<Expression> ExprListAfterFirstExpr(ScriptLoadingContext lcontext, Expression expr1)
         {
             List<Expression> exps = new()
@@ -40,7 +33,6 @@ namespace SolarSharp.Interpreter.Tree
 
             return exps;
         }
-
 
         internal static List<Expression> ExprList(ScriptLoadingContext lcontext)
         {

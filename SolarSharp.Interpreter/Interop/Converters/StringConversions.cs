@@ -45,7 +45,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
                     break;
             }
 
-            throw ScriptRuntimeException.ConvertObjectFailed(dataType, desiredType);
+            throw ErrorException.ConvertObjectFailed(dataType, desiredType);
         }
     }
 }

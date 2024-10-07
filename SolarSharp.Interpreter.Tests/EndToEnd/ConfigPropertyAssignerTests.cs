@@ -39,7 +39,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static MyClass Test(string tableDef)
         {
-            Script s = new(CoreModules.None);
+            LuaState s = new(CoreModules.None);
 
             DynValue table = s.DoString("return " + tableDef);
 
@@ -84,7 +84,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void ConfigProp_ThrowsOnInvalid()
         {
-            Assert.Throws<ScriptRuntimeException>(() => Test(@"
+            Assert.Throws<ErrorException>(() => Test(@"
 				{
 				class = 'oohoh',
 				myString = 'ciao',

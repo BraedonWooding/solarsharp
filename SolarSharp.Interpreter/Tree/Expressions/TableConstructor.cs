@@ -109,27 +109,5 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                 bc.Emit_TblInitN();
             }
         }
-
-        public override DynValue Eval(ScriptExecutionContext context)
-        {
-            // TODO: Not sure what eval is but we can probably safely remove it.
-            throw new DynamicExpressionException("Dynamic Expressions cannot define new non-prime tables.");
-
-            // DynValue tval = DynValue.NewPrimeTable();
-            // Table t = tval.Table;
-
-            // int idx = 0;
-            // foreach (Expression e in m_PositionalValues)
-            // {
-            //     t.Set(++idx, e.Eval(context));
-            // }
-
-            // foreach (KeyValuePair<Expression, Expression> kvp in m_CtorArgs)
-            // {
-            //     t.Set(kvp.Key.Eval(context), kvp.Value.Eval(context));
-            // }
-
-            // return tval;
-        }
     }
 }

@@ -48,6 +48,5 @@ namespace SolarSharp.Interpreter
         {
             return enumerable.Select(v => v.ToObject<T>());
         }
-
     }
 }

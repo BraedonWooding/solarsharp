@@ -69,7 +69,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 UserData.RegisterType<int[]>();
                 UserData.RegisterType<int[,]>();
 
-                Script s = new();
+                LuaState s = new();
 
                 var obj = new RegCollMethods();
                 s.Globals["o"] = obj;
@@ -78,12 +78,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 DynValue res = s.DoString(code);
 
                 asserts(res, obj);
-            }
-            catch (ScriptRuntimeException ex)
-            {
-                Debug.WriteLine(ex.DecoratedMessage);
-                ex.Rethrow();
-                throw;
             }
             finally
             {
@@ -95,10 +89,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 UserData.UnregisterType<int[,]>();
             }
         }
-
-
-
-
 
         [Test]
         public void RegColl_IteratorOnList_Auto()
@@ -262,10 +252,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
              });
         }
 
-
-
-
-
         [Test]
         public void RegColl_IteratorOnObjList_Auto()
         {
@@ -347,8 +333,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                  });
              });
         }
-
-
-
     }
 }

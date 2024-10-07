@@ -87,13 +87,13 @@ namespace SolarSharp.Hardwire.Generators
                 Attributes = MemberAttributes.Override | MemberAttributes.Family,
                 ReturnType = new CodeTypeReference(typeof(object))
             };
-            m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(Script), "script"));
+            m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(LuaState), "script"));
             m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(object), "obj"));
             m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(object[]), "pars"));
             m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(int), "argscount"));
 
             // get some meta about the method
-            bool isVoid = table.Get("ret").String == "System.Void";
+            bool IsNil = table.Get("ret").String == "System.Void";
             bool isCtor = table.Get("ctor").Boolean;
             bool isStatic = table.Get("static").Boolean;
             bool isExtension = table.Get("extension").Boolean;
@@ -160,12 +160,12 @@ namespace SolarSharp.Hardwire.Generators
                 CodeExpression condition = new CodeBinaryOperatorExpression(paramArgsCount,
                         CodeBinaryOperatorType.LessThanOrEqual, new CodePrimitiveExpression(argcnt));
 
-                var ifs = new CodeConditionStatement(condition, GenerateCall(table, generator, isVoid, isCtor, isStatic, isExtension, calls[i], paramThis, declType, specialName, refparCount).OfType<CodeStatement>().ToArray());
+                var ifs = new CodeConditionStatement(condition, GenerateCall(table, generator, IsNil, isCtor, isStatic, isExtension, calls[i], paramThis, declType, specialName, refparCount).OfType<CodeStatement>().ToArray());
 
                 m.Statements.Add(ifs);
             }
 
-            m.Statements.AddRange(GenerateCall(table, generator, isVoid, isCtor, isStatic, isExtension, calls[calls.Count - 1], paramThis, declType, specialName, refparCount));
+            m.Statements.AddRange(GenerateCall(table, generator, IsNil, isCtor, isStatic, isExtension, calls[calls.Count - 1], paramThis, declType, specialName, refparCount));
 
 
             // close
@@ -180,7 +180,7 @@ namespace SolarSharp.Hardwire.Generators
         }
 
 
-        private CodeStatementCollection GenerateCall(Table table, HardwireCodeGenerationContext generator, bool isVoid, bool isCtor, bool isStatic, bool isExtension, CodeExpression[] arguments, CodeExpression paramThis, string declaringType, bool specialName, int refparCount)
+        private CodeStatementCollection GenerateCall(Table table, HardwireCodeGenerationContext generator, bool IsNil, bool isCtor, bool isStatic, bool isExtension, CodeExpression[] arguments, CodeExpression paramThis, string declaringType, bool specialName, int refparCount)
         {
             string arrayCtorType = table.Get("arraytype").IsNil() ? null : table.Get("arraytype").String;
 
@@ -203,7 +203,7 @@ namespace SolarSharp.Hardwire.Generators
             }
             else if (specialName)
             {
-                GenerateSpecialNameCall(table, generator, isVoid, isCtor, isStatic, isExtension,
+                GenerateSpecialNameCall(table, generator, IsNil, isCtor, isStatic, isExtension,
                     arguments, paramThis, declaringType, table.Get("name").String, coll);
             }
             else
@@ -213,7 +213,7 @@ namespace SolarSharp.Hardwire.Generators
 
             if (retVal != null)
             {
-                if (isVoid)
+                if (IsNil)
                 {
                     coll.Add(new CodeExpressionStatement(retVal));
                     retVal = new CodePropertyReferenceExpression(new CodeTypeReferenceExpression(typeof(DynValue)), refparCount == 0 ? "Void" : "Nil");
@@ -254,7 +254,7 @@ namespace SolarSharp.Hardwire.Generators
 
 
 
-        private void GenerateSpecialNameCall(Table table, HardwireCodeGenerationContext generator, bool isVoid, bool isCtor, bool isStatic, bool isExtension, CodeExpression[] arguments, CodeExpression paramThis, string declaringType, string specialName, CodeStatementCollection coll)
+        private void GenerateSpecialNameCall(Table table, HardwireCodeGenerationContext generator, bool IsNil, bool isCtor, bool isStatic, bool isExtension, CodeExpression[] arguments, CodeExpression paramThis, string declaringType, string specialName, CodeStatementCollection coll)
         {
             ReflectionSpecialName special = new(specialName);
             CodeExpression exp = null;

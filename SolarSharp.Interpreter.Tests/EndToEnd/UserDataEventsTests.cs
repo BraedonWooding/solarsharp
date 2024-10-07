@@ -44,11 +44,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            LuaState s = new(CoreModules.None);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)
@@ -70,13 +70,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            LuaState s = new(CoreModules.None);
 
             var obj = new SomeClass();
             var obj2 = new SomeClass();
             s.Globals["myobj"] = obj;
             s.Globals["myobj2"] = obj2;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)
@@ -100,11 +100,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            LuaState s = new(CoreModules.None);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)
@@ -127,11 +127,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            LuaState s = new(CoreModules.None);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)
@@ -155,11 +155,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            LuaState s = new(CoreModules.None);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)
@@ -186,10 +186,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            LuaState s = new(CoreModules.None);
 
             s.Globals["myobj"] = typeof(SomeClass);
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)
@@ -215,10 +215,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            LuaState s = new(CoreModules.None);
 
             s.Globals["myobj"] = typeof(SomeClass);
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Nil; });
 
             s.DoString(@"
 				function handler(o, a)

@@ -16,12 +16,11 @@ namespace SolarSharp.Interpreter.REPL
         /// </summary>
         /// <param name="script">The script.</param>
         /// <param name="historySize">Size of the history.</param>
-        public ReplHistoryInterpreter(Script script, int historySize)
+        public ReplHistoryInterpreter(LuaState script, int historySize)
             : base(script)
         {
             m_History = new string[historySize];
         }
-
 
         /// <summary>
         /// Evaluate a REPL command.
@@ -64,8 +63,5 @@ namespace SolarSharp.Interpreter.REPL
             if (m_Navi >= 0) return m_History[m_Navi];
             return null;
         }
-
-
-
     }
 }

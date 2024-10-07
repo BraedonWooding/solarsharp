@@ -89,7 +89,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void RunTestOverload(string code, string expected, bool tupleExpected = false)
         {
-            Script S = new();
+            LuaState S = new();
 
             OverloadsTestClass obj = new();
 
@@ -182,7 +182,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void VInterop_Overloads_ExtMethods2()
         {
             UserData.RegisterExtensionType(typeof(VtOverloadsExtMethods));
-            Assert.Throws<ScriptRuntimeException>(() => RunTestOverload("s:method3()", "X3"));
+            Assert.Throws<ErrorException>(() => RunTestOverload("s:method3()", "X3"));
         }
 
         [Test]
@@ -191,7 +191,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             // pollute cache
             RunTestOverload("o:method1(5)", "3");
             // exec non static on static
-            Assert.Throws<ScriptRuntimeException>(() => RunTestOverload("s:method1(5)", "s"));
+            Assert.Throws<ErrorException>(() => RunTestOverload("s:method1(5)", "s"));
         }
 
         [Test]

@@ -118,7 +118,7 @@ namespace SolarSharp.Commands.Implementations
             var logger = new ConsoleLogger();
             try
             {
-                Script s = new(CoreModules.None);
+                LuaState s = new(CoreModules.None);
                 var eee = s.CreateDynamicExpression(File.ReadAllText(luafile));
 
                 Table t = eee.Evaluate(null).Table;

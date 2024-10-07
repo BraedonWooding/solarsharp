@@ -232,7 +232,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 if (o is Type type)
                     return CreateStatic(type);
 
-                return null;
+                return DynValue.Nil;
             }
 
             return Create(o, descr);
@@ -245,7 +245,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public static DynValue CreateStatic(IUserDataDescriptor descr)
         {
-            if (descr == null) return null;
+            if (descr == null) return DynValue.Nil;
 
             return DynValue.NewUserData(new UserData()
             {

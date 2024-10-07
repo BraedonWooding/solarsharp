@@ -96,6 +96,5 @@ namespace SolarSharp.Interpreter
         /// you are not calling MoonSharp execution concurrently as it is not supported.
         /// </summary>
         public bool CheckThreadAccess { get; set; }
-
     }
 }

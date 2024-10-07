@@ -35,7 +35,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 }
                 else
                 {
-                    m_Count = last.Type == DataType.Void ? m_Args.Count - 1 : m_Args.Count;
+                    m_Count = m_Args.Count;
                 }
             }
             else
@@ -67,7 +67,7 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             get
             {
-                return RawGet(index, true) ?? DynValue.Void;
+                return RawGet(index, true);
             }
         }
 
@@ -82,7 +82,7 @@ namespace SolarSharp.Interpreter.DataTypes
             DynValue v;
 
             if (index >= m_Count)
-                return null;
+                return DynValue.Nil;
 
             v = !m_LastIsTuple || index < m_Args.Count - 1 ? m_Args[index] : m_Args[m_Args.Count - 1].Tuple[index - (m_Args.Count - 1)];
 
@@ -91,7 +91,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 v = v.Tuple.Length > 0 ? v.Tuple[0] : DynValue.Nil;
             }
 
-            if (translateVoids && v.Type == DataType.Void)
+            if (translateVoids && v.Type == DataType.Nil)
             {
                 v = DynValue.Nil;
             }
@@ -184,7 +184,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="argNum">The argument number.</param>
         /// <param name="funcName">Name of the function.</param>
         /// <returns></returns>
-        /// <exception cref="ScriptRuntimeException">'tostring' must return a string to '{0}'</exception>
+        /// <exception cref="ErrorException">'tostring' must return a string to '{0}'</exception>
         public string AsStringUsingMeta(ScriptExecutionContext executionContext, int argNum, string funcName)
         {
             if (this[argNum].Type == DataType.Table && this[argNum].Table.MetaTable != null &&
@@ -193,7 +193,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 var v = executionContext.GetScript().Call(method, this[argNum]);
 
                 if (v.Type != DataType.String)
-                    throw new ScriptRuntimeException("'tostring' must return a string to '{0}'", funcName);
+                    throw new ErrorException("'tostring' must return a string to '{0}'", funcName);
 
                 return v.ToPrintString();
             }

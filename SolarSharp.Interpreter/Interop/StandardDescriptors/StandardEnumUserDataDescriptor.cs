@@ -111,7 +111,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
                 return (long)dv.Number;
 
             if (dv.Type != DataType.UserData || dv.UserData.Descriptor != this || dv.UserData.Object == null)
-                throw new ScriptRuntimeException("Enum userdata or number expected, or enum is not of the correct type.");
+                throw new ErrorException("Enum userdata or number expected, or enum is not of the correct type.");
 
             return m_EnumToLong(dv.UserData.Object);
         }
@@ -127,7 +127,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
                 return (ulong)dv.Number;
 
             if (dv.Type != DataType.UserData || dv.UserData.Descriptor != this || dv.UserData.Object == null)
-                throw new ScriptRuntimeException("Enum userdata or number expected, or enum is not of the correct type.");
+                throw new ErrorException("Enum userdata or number expected, or enum is not of the correct type.");
 
             return m_EnumToULong(dv.UserData.Object);
         }
@@ -177,7 +177,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
                     m_EnumToLong = o => (long)o;
                     m_LongToEnum = o => o;
                 }
-                else throw new ScriptRuntimeException("Unexpected enum underlying type : {0}", UnderlyingType.FullName);
+                else throw new ErrorException("Unexpected enum underlying type : {0}", UnderlyingType.FullName);
             }
         }
 
@@ -208,14 +208,14 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
                     m_EnumToULong = o => (ulong)o;
                     m_ULongToEnum = o => o;
                 }
-                else throw new ScriptRuntimeException("Unexpected enum underlying type : {0}", UnderlyingType.FullName);
+                else throw new ErrorException("Unexpected enum underlying type : {0}", UnderlyingType.FullName);
             }
         }
 
         private DynValue PerformBinaryOperationS(string funcName, ScriptExecutionContext _, CallbackArguments args, Func<long, long, DynValue> operation)
         {
             if (args.Count != 2)
-                throw new ScriptRuntimeException("Enum.{0} expects two arguments", funcName);
+                throw new ErrorException("Enum.{0} expects two arguments", funcName);
 
             long v1 = GetValueSigned(args[0]);
             long v2 = GetValueSigned(args[1]);
@@ -225,7 +225,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         private DynValue PerformBinaryOperationU(string funcName, ScriptExecutionContext _, CallbackArguments args, Func<ulong, ulong, DynValue> operation)
         {
             if (args.Count != 2)
-                throw new ScriptRuntimeException("Enum.{0} expects two arguments", funcName);
+                throw new ErrorException("Enum.{0} expects two arguments", funcName);
 
             ulong v1 = GetValueUnsigned(args[0]);
             ulong v2 = GetValueUnsigned(args[1]);
@@ -245,7 +245,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         private DynValue PerformUnaryOperationS(string funcName, ScriptExecutionContext _, CallbackArguments args, Func<long, long> operation)
         {
             if (args.Count != 1)
-                throw new ScriptRuntimeException("Enum.{0} expects one argument.", funcName);
+                throw new ErrorException("Enum.{0} expects one argument.", funcName);
 
             long v1 = GetValueSigned(args[0]);
             long r = operation(v1);
@@ -255,7 +255,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         private DynValue PerformUnaryOperationU(string funcName, ScriptExecutionContext _, CallbackArguments args, Func<ulong, ulong> operation)
         {
             if (args.Count != 1)
-                throw new ScriptRuntimeException("Enum.{0} expects one argument.", funcName);
+                throw new ErrorException("Enum.{0} expects one argument.", funcName);
 
             ulong v1 = GetValueUnsigned(args[0]);
             ulong r = operation(v1);
@@ -333,12 +333,12 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <param name="obj"></param>
         /// <param name="metaname"></param>
         /// <returns></returns>
-        public override DynValue MetaIndex(Script script, object obj, string metaname)
+        public override DynValue MetaIndex(LuaState script, object obj, string metaname)
         {
             if (metaname == "__concat" && IsFlags)
                 return DynValue.NewCallback(Callback_Or);
 
-            return null;
+            return DynValue.Nil;
         }
     }
 }

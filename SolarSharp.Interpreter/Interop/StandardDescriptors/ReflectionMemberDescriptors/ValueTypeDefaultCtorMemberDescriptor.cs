@@ -88,7 +88,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="context">The context.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        public DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
+        public DynValue Execute(LuaState script, object obj, ScriptExecutionContext context, CallbackArguments args)
         {
             this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
 
@@ -125,7 +125,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <returns>
         /// The value of this member as a <see cref="DynValue" />.
         /// </returns>
-        public DynValue GetValue(Script script, object obj)
+        public DynValue GetValue(LuaState script, object obj)
         {
             this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
 
@@ -142,7 +142,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="script">The script.</param>
         /// <param name="obj">The object owning this member, or null if static.</param>
         /// <param name="value">The value to be set.</param>
-        public void SetValue(Script script, object obj, DynValue value)
+        public void SetValue(LuaState script, object obj, DynValue value)
         {
             this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
         }

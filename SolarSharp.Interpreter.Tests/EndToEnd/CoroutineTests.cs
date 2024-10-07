@@ -40,7 +40,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return s;
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -82,7 +82,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return s;
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -109,7 +109,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				";
 
             // Load the code and get the returned function
-            Script script = new();
+            LuaState script = new();
 
             script.Globals["callback"] = DynValue.NewCallback(
                 (ctx, args) => args[0].Function.Call()
@@ -169,7 +169,7 @@ checkresume(6, false, 'cannot resume dead coroutine');
 				";
 
             // Load the code and get the returned function
-            Script script = new();
+            LuaState script = new();
 
             script.Options.DebugPrint = (s) => last = s;
 
@@ -195,7 +195,7 @@ checkresume(6, false, 'cannot resume dead coroutine');
 				";
 
             // Load the code and get the returned function
-            Script script = new();
+            LuaState script = new();
             DynValue function = script.DoString(code);
 
             // Create the coroutine in C#
@@ -230,7 +230,7 @@ checkresume(6, false, 'cannot resume dead coroutine');
 				";
 
             // Load the code and get the returned function
-            Script script = new();
+            LuaState script = new();
             DynValue function = script.DoString(code);
 
             // Create the coroutine in C#

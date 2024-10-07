@@ -65,7 +65,7 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// Enumeration of possible data types in MoonSharp
     /// </summary>
-    public enum DataType
+    public enum DataType : byte
     {
         // DO NOT MODIFY ORDER - IT'S SIGNIFICANT
 
@@ -149,12 +149,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <param name="type">The type.</param>
         /// <returns></returns>
-        /// <exception cref="ScriptRuntimeException">The DataType is not a Lua type</exception>
+        /// <exception cref="ErrorException">The DataType is not a Lua type</exception>
         public static string ToErrorTypeString(this DataType type)
         {
             return type switch
             {
-                DataType.Void => "no value",
                 DataType.Nil => "nil",
                 DataType.Boolean => "boolean",
                 DataType.Number => "number",
@@ -174,7 +173,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <param name="type">The type.</param>
         /// <returns></returns>
-        /// <exception cref="ScriptRuntimeException">The DataType is not a Lua type</exception>
+        /// <exception cref="ErrorException">The DataType is not a Lua type</exception>
         public static string ToLuaDebuggerString(this DataType type)
         {
             return type.ToString().ToLowerInvariant();
@@ -186,12 +185,12 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <param name="type">The type.</param>
         /// <returns></returns>
-        /// <exception cref="ScriptRuntimeException">The DataType is not a Lua type</exception>
+        /// <exception cref="ErrorException">The DataType is not a Lua type</exception>
         public static string ToLuaTypeString(this DataType type)
         {
             return type switch
             {
-                DataType.Void or DataType.Nil => "nil",
+                DataType.Nil or DataType.Nil => "nil",
                 DataType.Boolean => "boolean",
                 DataType.Number => "number",
                 DataType.String => "string",
@@ -200,7 +199,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 DataType.Table => "table",
                 DataType.UserData => "userdata",
                 DataType.Thread => "thread",
-                _ => throw new ScriptRuntimeException("Unexpected LuaType {0}", type),
+                _ => throw new ErrorException("Unexpected LuaType {0}", type),
             };
         }
     }

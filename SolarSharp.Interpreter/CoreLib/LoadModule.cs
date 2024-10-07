@@ -2,6 +2,7 @@
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Serialization;
 
 namespace SolarSharp.Interpreter.CoreLib
 {
@@ -33,8 +34,6 @@ namespace SolarSharp.Interpreter.CoreLib
 
             package.Table.Set("config", DynValue.NewString(cfg));
         }
-
-
 
         // load (ld [, source [, mode [, env]]])
         // ----------------------------------------------------------------
@@ -70,7 +69,7 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             try
             {
-                Script S = executionContext.GetScript();
+                LuaState S = executionContext.GetScript();
                 DynValue ld = args[0];
                 string script = "";
 
@@ -131,13 +130,11 @@ namespace SolarSharp.Interpreter.CoreLib
             return loadfile_impl(executionContext, args, GetSafeDefaultEnv(executionContext));
         }
 
-
-
         private static DynValue loadfile_impl(ScriptExecutionContext executionContext, CallbackArguments args, Table defaultEnv)
         {
             try
             {
-                Script S = executionContext.GetScript();
+                LuaState S = executionContext.GetScript();
                 DynValue filename = args.AsType(0, "loadfile", DataType.String, false);
                 DynValue env = args.AsType(2, "loadfile", DataType.Table, true);
 
@@ -151,12 +148,11 @@ namespace SolarSharp.Interpreter.CoreLib
             }
         }
 
-
         private static Table GetSafeDefaultEnv(ScriptExecutionContext executionContext)
         {
             Table env = executionContext.CurrentGlobalEnv;
 
-            return env ?? throw new ScriptRuntimeException("current environment cannot be backtracked.");
+            return env ?? throw new ErrorException("current environment cannot be backtracked.");
         }
 
         //dofile ([filename])
@@ -169,7 +165,7 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             try
             {
-                Script S = executionContext.GetScript();
+                LuaState S = executionContext.GetScript();
                 DynValue v = args.AsType(0, "dofile", DataType.String, false);
 
                 DynValue fn = S.LoadFile(v.String);
@@ -178,7 +174,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
             catch (SyntaxErrorException ex)
             {
-                throw new ScriptRuntimeException(ex);
+                throw new ErrorException((System.Exception)ex);
             }
         }
 
@@ -204,43 +200,33 @@ namespace SolarSharp.Interpreter.CoreLib
         //If there is any error loading or running the module, or if it cannot find any loader for the module, then require 
         //signals an error. 
         [MoonSharpModuleMethod]
-        public static DynValue __require_clr_impl(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue require(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            Script S = executionContext.GetScript();
-            DynValue v = args.AsType(0, "__require_clr_impl", DataType.String, false);
+            // TODO: Error handling
+            LuaState S = executionContext.GetScript();
+            DynValue v = args.AsType(0, "require", DataType.String, false);
+            
+            var package = S.Globals.Get("package");
+            if (package.IsNil()) S.Globals.Set("package", package = DynValue.NewTable(new Table(S, arraySizeHint: 0, associativeSizeHint: 1)));
+            var table = package.CheckType("require", DataType.Table).Table;
 
-            DynValue fn = S.RequireModule(v.String);
+            var loaded = table.Get("loaded");
+            if (loaded.IsNil()) table.Set("loaded", loaded = DynValue.NewTable(new Table(S, arraySizeHint: 0, associativeSizeHint: 1)));
+            var loadedTable = loaded.CheckType("require", DataType.Table).Table;
 
-            return fn; // tail call to dofile
+            // TODO: We also should return loader data
+            var module = loadedTable.Get(v.String);
+            if (module.IsNotNil()) return module;
+
+            var fn = S.RequireModule(v.String);
+            var result = executionContext.Call(fn);
+            if (result.IsNil()) result = DynValue.True;
+
+            // TODO: Don't re-query table when we can preserve hash (maybe?)
+            // TODO: This doesn't technically match original code which instead re-queries the table
+            //       I presume this is because the loader could directly set the loaded table?  It's odd behaviour though.
+            loadedTable.Set(v.String, result);
+            return result;
         }
-
-
-        [MoonSharpModuleMethod]
-        public const string require = @"
-function(modulename)
-	if (package == nil) then package = { }; end
-	if (package.loaded == nil) then package.loaded = { }; end
-
-	local m = package.loaded[modulename];
-
-	if (m ~= nil) then
-		return m;
-	end
-
-	local func = __require_clr_impl(modulename);
-
-	local res = func(modulename);
-
-	if (res == nil) then
-		res = true;
-	end
-
-	package.loaded[modulename] = res;
-
-	return res;
-end";
-
-
-
     }
 }

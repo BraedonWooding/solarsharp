@@ -12,7 +12,7 @@ namespace SolarSharp.Interpreter.Interop
     public class CustomConvertersCollection
     {
         private readonly Dictionary<Type, Func<DynValue, object>>[] m_Script2Clr = new Dictionary<Type, Func<DynValue, object>>[(int)LuaTypeExtensions.MaxConvertibleTypes + 1];
-        private readonly Dictionary<Type, Func<Script, object, DynValue>> m_Clr2Script = new();
+        private readonly Dictionary<Type, Func<LuaState, object, DynValue>> m_Clr2Script = new();
 
 
 
@@ -120,7 +120,7 @@ namespace SolarSharp.Interpreter.Interop
         /// </summary>
         /// <param name="clrDataType">The CLR data type.</param>
         /// <param name="converter">The converter, or null.</param>
-        public void SetClrToScriptCustomConversion(Type clrDataType, Func<Script, object, DynValue> converter = null)
+        public void SetClrToScriptCustomConversion(Type clrDataType, Func<LuaState, object, DynValue> converter = null)
         {
             if (converter == null)
             {
@@ -138,7 +138,7 @@ namespace SolarSharp.Interpreter.Interop
         /// </summary>
         /// <typeparam name="T">The CLR data type.</typeparam>
         /// <param name="converter">The converter, or null.</param>
-        public void SetClrToScriptCustomConversion<T>(Func<Script, T, DynValue> converter = null)
+        public void SetClrToScriptCustomConversion<T>(Func<LuaState, T, DynValue> converter = null)
         {
             SetClrToScriptCustomConversion(typeof(T), (s, o) => converter(s, (T)o));
         }
@@ -149,7 +149,7 @@ namespace SolarSharp.Interpreter.Interop
         /// </summary>
         /// <param name="clrDataType">Type of the color data.</param>
         /// <returns>The converter function, or null if not found</returns>
-        public Func<Script, object, DynValue> GetClrToScriptCustomConversion(Type clrDataType)
+        public Func<LuaState, object, DynValue> GetClrToScriptCustomConversion(Type clrDataType)
         {
             return m_Clr2Script.GetOrDefault(clrDataType);
         }

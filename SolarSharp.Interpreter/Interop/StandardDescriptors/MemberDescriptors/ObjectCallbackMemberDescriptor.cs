@@ -20,7 +20,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// </summary>
         /// <param name="funcName">Name of the function.</param>
         public ObjectCallbackMemberDescriptor(string funcName)
-            : this(funcName, (o, c, a) => DynValue.Void, new ParameterDescriptor[0])
+            : this(funcName, (o, c, a) => DynValue.Nil, new ParameterDescriptor[0])
         { }
 
 
@@ -58,7 +58,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="context">The context.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        public override DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
+        public override DynValue Execute(LuaState script, object obj, ScriptExecutionContext context, CallbackArguments args)
         {
             if (m_CallbackFunc != null)
             {
@@ -67,7 +67,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
             }
             else
             {
-                return DynValue.Void;
+                return DynValue.Nil;
             }
         }
     }

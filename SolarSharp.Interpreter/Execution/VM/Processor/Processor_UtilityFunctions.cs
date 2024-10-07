@@ -45,14 +45,14 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private int Internal_InvokeUnaryMetaMethod(DynValue op1, string eventName, int instructionPtr)
         {
-            DynValue m = null;
+            DynValue m = DynValue.Nil;
 
             if (op1.Type == DataType.UserData)
             {
                 m = op1.UserData.Descriptor.MetaIndex(m_Script, op1.UserData.Object, eventName);
             }
 
-            if (m == null)
+            if (m.IsNil())
             {
                 var op1_MetaTable = GetMetatable(op1);
 
@@ -64,7 +64,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
             }
 
-            if (m != null)
+            if (m.IsNotNil())
             {
                 m_ValueStack.Push(m);
                 m_ValueStack.Push(op1);
@@ -76,13 +76,13 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-        private int Internal_InvokeBinaryMetaMethod(DynValue l, DynValue r, string eventName, int instructionPtr, DynValue extraPush = null)
+        private int Internal_InvokeBinaryMetaMethod(DynValue l, DynValue r, string eventName, int instructionPtr, DynValue extraPush = default)
         {
             var m = GetBinaryMetamethod(l, r, eventName);
 
-            if (m != null)
+            if (m.IsNotNil())
             {
-                if (extraPush != null)
+                if (extraPush.IsNilOrNan())
                     m_ValueStack.Push(extraPush);
 
                 m_ValueStack.Push(m);

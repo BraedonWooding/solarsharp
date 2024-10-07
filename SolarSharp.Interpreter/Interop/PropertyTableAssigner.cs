@@ -45,7 +45,7 @@ namespace SolarSharp.Interpreter.Interop
         /// <param name="obj">The object.</param>
         /// <param name="data">The table.</param>
         /// <exception cref="ArgumentNullException">Object is null</exception>
-        /// <exception cref="ScriptRuntimeException">A field does not correspond to any property and that property is not one of the expected missing ones.</exception>
+        /// <exception cref="ErrorException">A field does not correspond to any property and that property is not one of the expected missing ones.</exception>
         public void AssignObject(T obj, Table data)
         {
             m_InternalAssigner.AssignObject(obj, data);
@@ -187,11 +187,11 @@ namespace SolarSharp.Interpreter.Interop
         private void AssignProperty(object obj, string name, DynValue value)
         {
             if (TryAssignProperty(obj, name, value)) return;
-            if ((Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter && TryAssignProperty(obj, DescriptorHelpers.UpperFirstLetter(name), value)) return;
-            if ((Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify && TryAssignProperty(obj, DescriptorHelpers.Camelify(name), value)) return;
-            if ((Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase && TryAssignProperty(obj, DescriptorHelpers.UpperFirstLetter(DescriptorHelpers.Camelify(name)), value)) return;
+            if ((LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter && TryAssignProperty(obj, DescriptorHelpers.UpperFirstLetter(name), value)) return;
+            if ((LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify && TryAssignProperty(obj, DescriptorHelpers.Camelify(name), value)) return;
+            if ((LuaState.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase && TryAssignProperty(obj, DescriptorHelpers.UpperFirstLetter(DescriptorHelpers.Camelify(name)), value)) return;
 
-            throw new ScriptRuntimeException("Invalid property {0}", name);
+            throw new ErrorException("Invalid property {0}", name);
         }
 
         /// <summary>
@@ -201,7 +201,7 @@ namespace SolarSharp.Interpreter.Interop
         /// <param name="data">The table.</param>
         /// <exception cref="ArgumentNullException">Object is null</exception>
         /// <exception cref="ArgumentException">The object is of an incompatible type.</exception>
-        /// <exception cref="ScriptRuntimeException">A field does not correspond to any property and that property is not one of the expected missing ones.</exception>
+        /// <exception cref="ErrorException">A field does not correspond to any property and that property is not one of the expected missing ones.</exception>
         public void AssignObject(object obj, Table data)
         {
             if (obj == null)
@@ -214,7 +214,7 @@ namespace SolarSharp.Interpreter.Interop
             {
                 if (pair.Key.Type != DataType.String)
                 {
-                    throw new ScriptRuntimeException("Invalid property of type {0}", pair.Key.Type.ToErrorTypeString());
+                    throw new ErrorException("Invalid property of type {0}", pair.Key.Type.ToErrorTypeString());
                 }
 
                 AssignProperty(obj, pair.Key.String, pair.Value);

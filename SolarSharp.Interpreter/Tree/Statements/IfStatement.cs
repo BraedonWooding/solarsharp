@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Execution.Scopes;
 using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Lexer;
-
 
 namespace SolarSharp.Interpreter.Tree.Statements
 {
@@ -48,7 +46,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
             var ifblock = new IfBlock
             {
                 Exp = Expression.Expr(lcontext),
-                Source = type.GetSourceRef(CheckTokenType(lcontext, TokenType.Then)),
+                Source = type.GetSourceRef(),
                 Block = new CompositeStatement(lcontext),
                 StackFrame = lcontext.Scope.PopBlock()
             };
@@ -117,8 +115,5 @@ namespace SolarSharp.Interpreter.Tree.Statements
             foreach (var endjmp in endJumps)
                 endjmp.NumVal = bc.GetJumpPointForNextInstruction();
         }
-
-
-
     }
 }

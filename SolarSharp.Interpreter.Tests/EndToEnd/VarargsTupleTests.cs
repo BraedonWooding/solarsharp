@@ -10,7 +10,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void DoTest(string code, string expectedResult)
         {
-            Script S = new();
+            LuaState S = new();
 
             S.DoString(@"
 function f(a,b)
@@ -100,7 +100,7 @@ end
 				Obj(1)
 			";
 
-            Script S = new(CoreModules.None);
+            LuaState S = new(CoreModules.None);
 
             S.DoString(script);
 

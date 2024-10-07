@@ -18,7 +18,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="serializedTableValue">A string containing a table whose first member is the dynvalue to be deserialized (convoluted...).</param>
         protected DynValueMemberDescriptor(string name, string serializedTableValue)
         {
-            Script s = new();
+            LuaState s = new();
             var exp = s.CreateDynamicExpression(serializedTableValue);
             DynValue val = exp.Evaluate(null);
 
@@ -34,7 +34,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         protected DynValueMemberDescriptor(string name)
         {
             MemberAccess = MemberDescriptorAccess.CanRead;
-            m_Value = null;
+            m_Value = DynValue.Nil;
             Name = name;
         }
 
@@ -87,7 +87,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <returns>
         /// The value of this member as a <see cref="DynValue" />.
         /// </returns>
-        public DynValue GetValue(Script script, object obj)
+        public DynValue GetValue(LuaState script, object obj)
         {
             return Value;
         }
@@ -98,10 +98,10 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="script">The script.</param>
         /// <param name="obj">The object owning this member, or null if static.</param>
         /// <param name="value">The value to be set.</param>
-        /// <exception cref="ScriptRuntimeException">userdata '{0}' cannot be written to.</exception>
-        public void SetValue(Script script, object obj, DynValue value)
+        /// <exception cref="ErrorException">userdata '{0}' cannot be written to.</exception>
+        public void SetValue(LuaState script, object obj, DynValue value)
         {
-            throw new ScriptRuntimeException("userdata '{0}' cannot be written to.", Name);
+            throw new ErrorException("userdata '{0}' cannot be written to.", Name);
         }
 
         /// <summary>
@@ -117,7 +117,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
             switch (Value.Type)
             {
                 case DataType.Nil:
-                case DataType.Void:
                 case DataType.Boolean:
                 case DataType.Number:
                 case DataType.String:

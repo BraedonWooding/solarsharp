@@ -86,7 +86,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="del">The delegate.</param>
         /// <param name="accessMode">The access mode.</param>
         /// <returns></returns>
-        public static CallbackFunction FromDelegate(Script script, Delegate del, InteropAccessMode accessMode = InteropAccessMode.Default)
+        public static CallbackFunction FromDelegate(LuaState script, Delegate del, InteropAccessMode accessMode = InteropAccessMode.Default)
         {
             if (accessMode == InteropAccessMode.Default)
                 accessMode = m_DefaultAccessMode;
@@ -109,7 +109,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="accessMode">The access mode.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">The method is not static.</exception>
-        public static CallbackFunction FromMethodInfo(Script script, System.Reflection.MethodInfo mi, object obj = null, InteropAccessMode accessMode = InteropAccessMode.Default)
+        public static CallbackFunction FromMethodInfo(LuaState script, System.Reflection.MethodInfo mi, object obj = null, InteropAccessMode accessMode = InteropAccessMode.Default)
         {
             if (accessMode == InteropAccessMode.Default)
                 accessMode = m_DefaultAccessMode;

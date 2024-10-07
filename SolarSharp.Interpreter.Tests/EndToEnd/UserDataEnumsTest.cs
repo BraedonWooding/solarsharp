@@ -65,7 +65,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void RunTestOverload(string code, string expected)
         {
-            Script S = new();
+            LuaState S = new();
 
             EnumOverloadsTestClass obj = new();
 

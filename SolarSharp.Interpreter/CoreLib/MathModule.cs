@@ -20,13 +20,13 @@ namespace SolarSharp.Interpreter.CoreLib
         [MoonSharpModuleConstant]
         public const double huge = double.MaxValue;
 
-        private static Random GetRandom(Script s)
+        private static Random GetRandom(LuaState s)
         {
             DynValue rr = s.Registry.Get("F61E3AA7247D4D1EB7A45430B0C8C9BB_MATH_RANDOM");
             return (rr.UserData.Object as AnonWrapper<Random>).Value;
         }
 
-        private static void SetRandom(Script s, Random random)
+        private static void SetRandom(LuaState s, Random random)
         {
             DynValue rr = UserData.Create(new AnonWrapper<Random>(random));
             s.Registry.Set("F61E3AA7247D4D1EB7A45430B0C8C9BB_MATH_RANDOM", rr);
@@ -65,7 +65,7 @@ namespace SolarSharp.Interpreter.CoreLib
 
             if (args.Count == 0)
             {
-                throw new ScriptRuntimeException("bad argument #1 to '{0}' (number expected, got no value)", funcName);
+                throw new ErrorException("bad argument #1 to '{0}' (number expected, got no value)", funcName);
             }
 
             for (int i = 0; i < args.Count; i++)

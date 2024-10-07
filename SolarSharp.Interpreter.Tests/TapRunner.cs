@@ -43,7 +43,7 @@ namespace SolarSharp.Interpreter.Tests
 
         public void Run()
         {
-            Script S = new(CoreModules.Preset_Complete);
+            LuaState S = new(CoreModules.Preset_Complete);
 
             S.Options.DebugPrint = Print;
 

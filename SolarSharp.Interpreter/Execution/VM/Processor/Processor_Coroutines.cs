@@ -49,13 +49,13 @@ namespace SolarSharp.Interpreter.Execution.VM
                 int entrypoint = 0;
 
                 if (m_State != CoroutineState.NotStarted && m_State != CoroutineState.Suspended)
-                    throw ScriptRuntimeException.CannotResumeNotSuspended(m_State);
+                    throw ErrorException.CannotResumeNotSuspended(m_State);
 
                 if (m_State == CoroutineState.NotStarted)
                 {
                     // TODO: I feel like this should just be m_SavedInstructionPtr = PushClr...
                     //       then we just get rid of the argument to this function
-                    entrypoint = PushClrToScriptStackFrame(CallStackItemFlags.ResumeEntryPoint, null, args);
+                    entrypoint = PushClrToScriptStackFrame(CallStackItemFlags.ResumeEntryPoint, DynValue.Nil, args);
                 }
                 else if (m_State == CoroutineState.Suspended)
                 {

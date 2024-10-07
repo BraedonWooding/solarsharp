@@ -2,7 +2,6 @@
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
-using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -75,17 +74,17 @@ namespace SolarSharp.Interpreter.CoreLib
 
             public int Compare(DynValue a, DynValue b)
             {
-                if (_comparer == null || _comparer.IsNil())
+                if (_comparer.IsNil())
                 {
                     var comparer = _executionContext.GetBinaryMetamethod(a, b, "__lt");
-                    if (comparer == null || comparer.IsNil())
+                    if (comparer.IsNil())
                     {
                         if (a.Type == DataType.Number && b.Type == DataType.Number)
                             return a.Number.CompareTo(b.Number);
                         if (a.Type == DataType.String && b.Type == DataType.String)
                             return a.String.CompareTo(b.String);
 
-                        throw ScriptRuntimeException.CompareInvalidType(a, b);
+                        throw ErrorException.CompareInvalidType(a, b);
                     }
                     else
                     {
@@ -125,7 +124,7 @@ namespace SolarSharp.Interpreter.CoreLib
             DynValue vvalue;
 
             if (args.Count > 3)
-                throw new ScriptRuntimeException("wrong number of arguments to 'insert'");
+                throw new ErrorException("wrong number of arguments to 'insert'");
 
             int len = GetTableLength(executionContext, vlist);
             int pos;
@@ -140,12 +139,12 @@ namespace SolarSharp.Interpreter.CoreLib
                 DynValue vpos = args[1];
                 vvalue = args[2];
                 if (vpos.Type != DataType.Number)
-                    throw ScriptRuntimeException.BadArgument(1, "table.insert", DataType.Number, vpos.Type, false);
+                    throw ErrorException.BadArgument(1, "table.insert", DataType.Number, vpos.Type, false);
                 pos = (int)vpos.Number;
             }
 
             if (pos > len + 1 || pos < 1)
-                throw new ScriptRuntimeException("bad argument #2 to 'insert' (position out of bounds)");
+                throw new ErrorException("bad argument #2 to 'insert' (position out of bounds)");
 
             table.Insert(pos, vvalue);
 
@@ -160,7 +159,7 @@ namespace SolarSharp.Interpreter.CoreLib
             DynValue ret = DynValue.Nil;
 
             if (args.Count > 2)
-                throw new ScriptRuntimeException("wrong number of arguments to 'remove'");
+                throw new ErrorException("wrong number of arguments to 'remove'");
 
             int len = GetTableLength(executionContext, vlist);
             Table list = vlist.Table;
@@ -168,7 +167,7 @@ namespace SolarSharp.Interpreter.CoreLib
             int pos = vpos.IsNil() ? len : (int)vpos.Number;
 
             if (pos >= len + 1 || pos < 1 && len > 0)
-                throw new ScriptRuntimeException("bad argument #1 to 'remove' (position out of bounds)");
+                throw new ErrorException("bad argument #1 to 'remove' (position out of bounds)");
 
             for (int i = pos; i <= len; i++)
             {
@@ -207,7 +206,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 DynValue v = list.Get(i);
 
                 if (v.Type != DataType.Number && v.Type != DataType.String)
-                    throw new ScriptRuntimeException("invalid value ({1}) at index {0} in table for 'concat'", i, v.Type.ToLuaTypeString());
+                    throw new ErrorException("invalid value ({1}) at index {0} in table for 'concat'", i, v.Type.ToLuaTypeString());
 
                 string s = v.ToPrintString();
 
@@ -225,11 +224,11 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             DynValue __len = executionContext.GetMetamethod(vlist, "__len");
 
-            if (__len != null)
+            if (__len.IsNotNil())
             {
                 DynValue lenv = executionContext.GetScript().Call(__len, vlist);
                 double? len = lenv.CastToNumber();
-                return len == null ? throw new ScriptRuntimeException("object length is not a number") : (int)len;
+                return len == null ? throw new ErrorException("object length is not a number") : (int)len;
             }
             else
             {

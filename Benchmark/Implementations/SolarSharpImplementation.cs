@@ -4,12 +4,12 @@ namespace Benchmark.Implementations
 {
     public class SolarSharpImplementation : AImplementation
     {
-        public readonly Script script;
+        public readonly LuaState script;
 
         public SolarSharpImplementation()
         {
-            Script.WarmUp();
-            script = new Script();
+            LuaState.WarmUp();
+            script = new LuaState();
         }
 
         public override object Run(string file)

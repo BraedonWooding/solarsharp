@@ -34,5 +34,4 @@ namespace SolarSharp.Interpreter.Tree
             return true;
         }
     }
-
 }

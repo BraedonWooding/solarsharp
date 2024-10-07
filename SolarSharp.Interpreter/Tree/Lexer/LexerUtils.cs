@@ -288,6 +288,5 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             return char.ConvertFromUtf32(i);
 #endif
         }
-
     }
 }

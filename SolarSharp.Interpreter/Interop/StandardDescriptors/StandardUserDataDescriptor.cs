@@ -33,7 +33,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             if (accessMode == InteropAccessMode.NoReflectionAllowed)
                 throw new ArgumentException("Can't create a StandardUserDataDescriptor under a NoReflectionAllowed access mode");
 
-            if (Script.GlobalOptions.Platform.IsRunningOnAOT())
+            if (LuaState.GlobalOptions.Platform.IsRunningOnAOT())
                 accessMode = InteropAccessMode.Reflection;
 
             if (accessMode == InteropAccessMode.Default)

@@ -4,9 +4,9 @@ namespace SolarSharp
 {
     public class ShellContext
     {
-        public Script Script { get; private set; }
+        public LuaState Script { get; private set; }
 
-        public ShellContext(Script script)
+        public ShellContext(LuaState script)
         {
             Script = script;
         }

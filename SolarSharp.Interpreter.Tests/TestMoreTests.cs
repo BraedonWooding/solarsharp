@@ -253,7 +253,7 @@ namespace SolarSharp.Interpreter.Tests
 
         private static bool AreCoreModulesFullySupported(CoreModules modules)
         {
-            CoreModules supp = Script.GlobalOptions.Platform.FilterSupportedCoreModules(modules);
+            CoreModules supp = LuaState.GlobalOptions.Platform.FilterSupportedCoreModules(modules);
             return supp == modules;
         }
 

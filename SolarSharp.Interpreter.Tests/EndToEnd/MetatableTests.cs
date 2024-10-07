@@ -37,7 +37,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return x;";
 
-            DynValue res = new Script().DoString(script);
+            DynValue res = new LuaState().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -68,7 +68,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return(v1 + v2);";
 
-            var S = new Script();
+            var S = new LuaState();
             Table globalCtx = S.Globals;
 
             globalCtx.RegisterModuleType<TableIteratorsModule>();
@@ -100,7 +100,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return ( t1a == t1b ), ( t1a == t2 ) 
 				";
 
-            DynValue res = new Script().DoString(script);
+            DynValue res = new LuaState().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -130,7 +130,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return t;
 				";
 
-            Script S = new();
+            LuaState S = new();
 
             DynValue tbl = S.DoString(script);
             DynValue res = S.Call(tbl, 3);
@@ -162,7 +162,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return x;
 				";
 
-            DynValue res = new Script().DoString(script);
+            DynValue res = new LuaState().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -204,7 +204,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return(s);
 				";
 
-            DynValue res = new Script().DoString(script);
+            DynValue res = new LuaState().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -236,7 +236,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return(s);
 				";
 
-            DynValue res = new Script().DoString(script);
+            DynValue res = new LuaState().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -275,7 +275,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return myobj.extended() * myobj.getSomething();
 				";
 
-            Script script = new();
+            LuaState script = new();
             UserData.RegisterType<MyObject>();
             script.Globals["o"] = new MyObject();
 
@@ -305,7 +305,7 @@ end
 
 ";
 
-            Script script = new(CoreModules.Basic | CoreModules.Table | CoreModules.TableIterators | CoreModules.Metatables);
+            LuaState script = new(CoreModules.Basic | CoreModules.Table | CoreModules.TableIterators | CoreModules.Metatables);
 
             DynValue res = script.DoString(scriptCode);
         }

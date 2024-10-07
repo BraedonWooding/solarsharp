@@ -17,7 +17,7 @@ namespace SolarSharp.Interpreter.Interop
         /// <param name="index">The index.</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        DynValue Index(Script script, DynValue index, bool isDirectIndexing);
+        DynValue Index(LuaState script, DynValue index, bool isDirectIndexing);
         /// <summary>
         /// Performs an "index" "set" operation.
         /// </summary>
@@ -26,7 +26,7 @@ namespace SolarSharp.Interpreter.Interop
         /// <param name="value">The value to be set</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        bool SetIndex(Script script, DynValue index, DynValue value, bool isDirectIndexing);
+        bool SetIndex(LuaState script, DynValue index, DynValue value, bool isDirectIndexing);
         /// <summary>
         /// 
         /// Gets a "meta" operation on this userdata. If a descriptor does not support this functionality,
@@ -44,6 +44,6 @@ namespace SolarSharp.Interpreter.Interop
         /// <param name="script">The script originating the request</param>
         /// <param name="metaname">The name of the metamember.</param>
         /// <returns></returns>
-        DynValue MetaIndex(Script script, string metaname);
+        DynValue MetaIndex(LuaState script, string metaname);
     }
 }

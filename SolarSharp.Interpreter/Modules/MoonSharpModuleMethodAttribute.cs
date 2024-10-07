@@ -3,13 +3,12 @@
 namespace SolarSharp.Interpreter.Modules
 {
     /// <summary>
-    /// In a module type, mark methods or fields with this attribute to have them exposed as module functions.
+    /// In a module type, mark methods with this attribute to have them exposed as module functions.
     /// Methods must have the signature "public static DynValue ...(ScriptExecutionContextCallbackArguments)".
-    /// Fields must be static or const strings, with an anonymous Lua function inside.
     /// 
     /// See <see cref="MoonSharpModuleAttribute"/> for more information about modules.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
     public sealed class MoonSharpModuleMethodAttribute : Attribute
     {
         /// <summary>

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using SolarSharp.Interpreter.Tree.Statements;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Execution.Scopes;
 using SolarSharp.Interpreter.Execution.VM;
@@ -31,7 +30,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
         public FunctionDefinitionExpression(ScriptLoadingContext lcontext, bool pushSelfParam, bool isLambda)
             : this(lcontext, pushSelfParam, false, isLambda)
         { }
-
 
         private FunctionDefinitionExpression(ScriptLoadingContext lcontext, bool pushSelfParam, bool usesGlobalEnv, bool isLambda)
             : base(lcontext)
@@ -70,7 +68,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
         }
 
-
         private Statement CreateLambdaBody(ScriptLoadingContext lcontext)
         {
             Token start = lcontext.Lexer.Current;
@@ -80,7 +77,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             Statement s = new ReturnStatement(lcontext, e, sref);
             return s;
         }
-
 
         private Statement CreateBody(ScriptLoadingContext lcontext)
         {
@@ -182,11 +178,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             return SymbolRef.Upvalue(symbol.i_Name, m_Closure.Count - 1);
         }
 
-        public override DynValue Eval(ScriptExecutionContext context)
-        {
-            throw new DynamicExpressionException("Dynamic Expressions cannot define new functions.");
-        }
-
         public int CompileBody(ByteCode bc, string friendlyName)
         {
             string funcName = friendlyName ?? "<" + m_Begin.FormatLocation(bc.Script, true) + ">";
@@ -247,7 +238,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
             return CompileBody(bc, friendlyName);
         }
-
 
         public override void Compile(ByteCode bc)
         {

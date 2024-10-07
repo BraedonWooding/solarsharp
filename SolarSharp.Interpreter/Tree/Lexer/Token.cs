@@ -1,20 +1,20 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.Debug;
+using System;
 
 namespace SolarSharp.Interpreter.Tree.Lexer
 {
     internal class Token
     {
-        public readonly int SourceId;
+        public readonly Source Source;
         public readonly int FromCol, ToCol, FromLine, ToLine, PrevCol, PrevLine;
         public readonly TokenType Type;
 
         public string Text { get; set; }
 
-        public Token(TokenType type, int sourceId, int fromLine, int fromCol, int toLine, int toCol, int prevLine, int prevCol)
+        public Token(TokenType type, Source source, int fromLine, int fromCol, int toLine, int toCol, int prevLine, int prevCol)
         {
             Type = type;
-
-            SourceId = sourceId;
+            Source = source;
             FromLine = fromLine;
             FromCol = fromCol;
             ToCol = toCol;
@@ -23,14 +23,13 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             PrevLine = prevLine;
         }
 
-
         public override string ToString()
         {
-            string tokenTypeString = (Type.ToString() + "                                                      ")[..16];
+            string tokenTypeString = (Type.ToString() + "                                                      ").Substring(0, 16);
 
             string location = string.Format("{0}:{1}-{2}:{3}", FromLine, FromCol, ToLine, ToCol);
 
-            location = (location + "                                                      ")[..10];
+            location = (location + "                                                      ").Substring(0, 10);
 
             return string.Format("{0}  - {1} - '{2}'", tokenTypeString, location, Text ?? "");
         }
@@ -100,7 +99,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 throw new NotSupportedException("GetNumberValue is supported only on numeric tokens");
         }
 
-
         public bool IsEndOfBlock()
         {
             switch (Type)
@@ -146,20 +144,14 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             }
         }
 
-
-        internal Debugging.SourceRef GetSourceRef(bool isStepStop = true)
+        internal SourceRef GetSourceRef()
         {
-            return new Debugging.SourceRef(SourceId, FromCol, ToCol, FromLine, ToLine, isStepStop);
-        }
-
-        internal Debugging.SourceRef GetSourceRef(Token to, bool isStepStop = true)
-        {
-            return new Debugging.SourceRef(SourceId, FromCol, to.ToCol, FromLine, to.ToLine, isStepStop);
-        }
-
-        internal Debugging.SourceRef GetSourceRefUpTo(Token to, bool isStepStop = true)
-        {
-            return new Debugging.SourceRef(SourceId, FromCol, to.PrevCol, FromLine, to.PrevLine, isStepStop);
+            return new SourceRef
+            {
+                Source = Source,
+                LineNumber = FromLine,
+                ColumnNumber = FromCol,
+            };
         }
     }
 }

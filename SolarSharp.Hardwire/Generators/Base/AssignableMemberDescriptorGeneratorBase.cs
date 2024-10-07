@@ -74,7 +74,7 @@ namespace SolarSharp.Hardwire.Generators.Base
                 m.Name = "GetValueImpl";
                 m.Attributes = MemberAttributes.Override | MemberAttributes.Family;
                 m.ReturnType = new CodeTypeReference(typeof(object));
-                m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(Script), "script"));
+                m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(LuaState), "script"));
                 m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(object), "obj"));
                 m.Statements.Add(new CodeMethodReturnStatement(memberExp));
             }
@@ -86,7 +86,7 @@ namespace SolarSharp.Hardwire.Generators.Base
                 classCode.Members.Add(m);
                 m.Name = "SetValueImpl";
                 m.Attributes = MemberAttributes.Override | MemberAttributes.Family;
-                m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(Script), "script"));
+                m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(LuaState), "script"));
                 m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(object), "obj"));
                 m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(object), "value"));
 

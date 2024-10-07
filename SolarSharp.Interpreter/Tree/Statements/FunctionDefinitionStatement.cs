@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Expressions;
@@ -33,14 +32,14 @@ namespace SolarSharp.Interpreter.Tree.Statements
                 Token name = CheckTokenType(lcontext, TokenType.Name);
                 m_FuncSymbol = lcontext.Scope.TryDefineLocal(name.Text);
                 m_FriendlyName = string.Format("{0} (local)", name.Text);
-                m_SourceRef = funcKeyword.GetSourceRef(name);
+                m_SourceRef = funcKeyword.GetSourceRef();
             }
             else
             {
                 Token name = CheckTokenType(lcontext, TokenType.Name);
                 string firstName = name.Text;
 
-                m_SourceRef = funcKeyword.GetSourceRef(name);
+                m_SourceRef = funcKeyword.GetSourceRef();
 
                 m_FuncSymbol = lcontext.Scope.Find(firstName);
                 m_FriendlyName = firstName;
@@ -61,7 +60,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
                         Token field = CheckTokenType(lcontext, TokenType.Name);
 
                         m_FriendlyName += separator.Text + field.Text;
-                        m_SourceRef = funcKeyword.GetSourceRef(field);
+                        m_SourceRef = funcKeyword.GetSourceRef();
 
                         if (separator.Type == TokenType.Colon)
                         {

@@ -83,7 +83,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<Transform>();
             UserData.RegisterType<Vector3>();
 
-            Script S = new();
+            LuaState S = new();
 
             Transform T = new();
 

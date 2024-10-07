@@ -145,8 +145,8 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="context">The context.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        /// <exception cref="ScriptRuntimeException">function call doesn't match any overload</exception>
-        private DynValue PerformOverloadedCall(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
+        /// <exception cref="ErrorException">function call doesn't match any overload</exception>
+        private DynValue PerformOverloadedCall(LuaState script, object obj, ScriptExecutionContext context, CallbackArguments args)
         {
             bool extMethodCacheNotExpired = IgnoreExtensionMethods || obj == null || m_ExtensionMethodVersion == UserData.GetExtensionMethodsChangeVersion();
 
@@ -219,7 +219,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 return bestOverload.Execute(script, obj, context, args);
             }
 
-            throw new ScriptRuntimeException($"function call doesn't match any overload");
+            throw new ErrorException($"function call doesn't match any overload");
         }
 
         private void Cache(bool hasObject, CallbackArguments args, IOverloadableMemberDescriptor bestOverload)
@@ -319,22 +319,21 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
 
                 Type parameterType = method.Parameters[i].Type;
 
-                if (parameterType == typeof(Script) || parameterType == typeof(ScriptExecutionContext) || parameterType == typeof(CallbackArguments))
+                if (parameterType == typeof(LuaState) || parameterType == typeof(ScriptExecutionContext) || parameterType == typeof(CallbackArguments))
                     continue;
 
                 if (i == method.Parameters.Length - 1 && method.VarArgsArrayType != null)
                 {
                     int varargCnt = 0;
-                    DynValue firstArg = null;
+                    DynValue firstArg = DynValue.Nil;
                     int scoreBeforeVargars = totalScore;
 
                     // update score for varargs
                     while (true)
                     {
                         var arg = args.RawGet(argsCnt, false);
-                        if (arg == null) break;
-
-                        firstArg ??= arg;
+                        if (arg.IsNil()) break;
+                        if (firstArg.IsNil()) firstArg = arg;
 
                         argsCnt += 1;
 
@@ -365,10 +364,8 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 }
                 else
                 {
-                    var arg = args.RawGet(argsCnt, false) ?? DynValue.Void;
-
+                    var arg = args.RawGet(argsCnt, false);
                     int score = CalcScoreForSingleArgument(method.Parameters[i], parameterType, arg, method.Parameters[i].HasDefaultValue);
-
                     totalScore = Math.Min(totalScore, score);
 
                     argsCnt += 1;
@@ -418,7 +415,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="script">The script for which the callback must be generated.</param>
         /// <param name="obj">The object (null for static).</param>
         /// <returns></returns>
-        public Func<ScriptExecutionContext, CallbackArguments, DynValue> GetCallback(Script script, object obj)
+        public Func<ScriptExecutionContext, CallbackArguments, DynValue> GetCallback(LuaState script, object obj)
         {
             return (context, args) => PerformOverloadedCall(script, obj, context, args);
         }
@@ -435,7 +432,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="script">The script for which the callback must be generated.</param>
         /// <param name="obj">The object (null for static).</param>
         /// <returns></returns>
-        public CallbackFunction GetCallbackFunction(Script script, object obj = null)
+        public CallbackFunction GetCallbackFunction(LuaState script, object obj = null)
         {
             return new CallbackFunction(GetCallback(script, obj), Name);
         }
@@ -465,7 +462,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <returns>
         /// The value of this member as a <see cref="DynValue" />.
         /// </returns>
-        public DynValue GetValue(Script script, object obj)
+        public DynValue GetValue(LuaState script, object obj)
         {
             return DynValue.NewCallback(GetCallbackFunction(script, obj));
         }
@@ -477,7 +474,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="obj">The object owning this member, or null if static.</param>
         /// <param name="value">The value to be set.</param>
         /// <exception cref="NotImplementedException"></exception>
-        public void SetValue(Script script, object obj, DynValue value)
+        public void SetValue(LuaState script, object obj, DynValue value)
         {
             this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
         }

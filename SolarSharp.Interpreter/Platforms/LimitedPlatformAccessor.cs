@@ -47,7 +47,7 @@ namespace SolarSharp.Interpreter.Platforms
         /// <param name="mode">The mode (as per Lua usage - e.g. 'w+', 'rb', etc.).</param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException">The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.</exception>
-        public override System.IO.Stream IO_OpenFile(Script script, string filename, Encoding encoding, string mode)
+        public override System.IO.Stream IO_OpenFile(LuaState script, string filename, Encoding encoding, string mode)
         {
             throw new NotImplementedException("The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.");
         }

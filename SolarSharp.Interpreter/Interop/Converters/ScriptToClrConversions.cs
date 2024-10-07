@@ -37,7 +37,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// </summary>
         internal static object DynValueToObject(DynValue value)
         {
-            var converter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, typeof(object));
+            var converter = LuaState.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, typeof(object));
             if (converter != null)
             {
                 var v = converter(value);
@@ -47,7 +47,6 @@ namespace SolarSharp.Interpreter.Interop.Converters
 
             switch (value.Type)
             {
-                case DataType.Void:
                 case DataType.Nil:
                     return null;
                 case DataType.Boolean:
@@ -72,7 +71,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
                 case DataType.ClrFunction:
                     return value.Callback;
                 default:
-                    throw ScriptRuntimeException.ConvertObjectFailed(value.Type);
+                    throw ErrorException.ConvertObjectFailed(value.Type);
             }
         }
 
@@ -84,7 +83,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (desiredType.IsByRef)
                 desiredType = desiredType.GetElementType();
 
-            var converter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, desiredType);
+            var converter = LuaState.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, desiredType);
             if (converter != null)
             {
                 var v = converter(value);
@@ -111,12 +110,6 @@ namespace SolarSharp.Interpreter.Interop.Converters
 
             switch (value.Type)
             {
-                case DataType.Void:
-                    if (isOptional)
-                        return defaultValue;
-                    else if (!Framework.Do.IsValueType(desiredType) || nullableType != null)
-                        return null;
-                    break;
                 case DataType.Nil:
                     if (Framework.Do.IsValueType(desiredType))
                     {
@@ -195,7 +188,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (stringSubType != StringConversions.StringSubtype.None && str != null)
                 return StringConversions.ConvertString(stringSubType, str, desiredType, value.Type);
 
-            throw ScriptRuntimeException.ConvertObjectFailed(value.Type, desiredType);
+            throw ErrorException.ConvertObjectFailed(value.Type, desiredType);
         }
 
         /// <summary>
@@ -208,7 +201,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (desiredType.IsByRef)
                 desiredType = desiredType.GetElementType();
 
-            var customConverter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, desiredType);
+            var customConverter = LuaState.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, desiredType);
             if (customConverter != null)
                 return WEIGHT_CUSTOM_CONVERTER_MATCH;
 
@@ -231,12 +224,6 @@ namespace SolarSharp.Interpreter.Interop.Converters
 
             switch (value.Type)
             {
-                case DataType.Void:
-                    if (isOptional)
-                        return WEIGHT_VOID_WITH_DEFAULT;
-                    else if (!Framework.Do.IsValueType(desiredType) || nullableType != null)
-                        return WEIGHT_VOID_WITHOUT_DEFAULT;
-                    break;
                 case DataType.Nil:
                     if (Framework.Do.IsValueType(desiredType))
                     {
@@ -316,9 +303,5 @@ namespace SolarSharp.Interpreter.Interop.Converters
             else
                 return WEIGHT_NUMBER_DOWNCAST;
         }
-
-
-
-
     }
 }

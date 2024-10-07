@@ -10,15 +10,27 @@ namespace SolarSharp.Interpreter.DataTypes
     /// but I don't think the vast majority of this will be true.
     /// </summary>
     [StructLayout(LayoutKind.Explicit)]
-    public struct LuaValue
+    public readonly struct LuaValue
     {
         // Both none & nil don't have an explicit value here but they are zeroed out so effectively are "0"
+
+        public LuaValue(LuaDataType type, object obj) : this()
+        {
+            Type = type;
+            LightUserData = obj;
+        }
 
         /// <summary>
         /// Bools are 0/1
         /// </summary>
         [FieldOffset(0)]
-        public bool BoolValue;
+        public readonly bool BoolValue;
+
+        /// <summary>
+        /// Used for copying
+        /// </summary>
+        [FieldOffset(0)]
+        private readonly ulong InternalValue;
 
         /// <summary>
         /// Is just a "ptr" or object reference.
@@ -26,25 +38,25 @@ namespace SolarSharp.Interpreter.DataTypes
         /// I may change this to dynamic just to allow for easier function calls.
         /// </summary>
         [FieldOffset(0)]
-        public object LightUserDataValue;
+        public readonly object LightUserData;
 
         /// <summary>
         /// Numbers are all doubles (since we are Lua 5.2)
         /// </summary>
         [FieldOffset(0)]
-        public double NumberValue;
+        public readonly double Number;
 
         /// <summary>
         /// Avoid the cast to string by having a direct ref to it.
         /// </summary>
         [FieldOffset(0)]
-        public string StringValue;
+        public readonly string String;
 
         /// <summary>
         /// Standard lua table
         /// </summary>
         [FieldOffset(0)]
-        public Table TableValue;
+        public readonly Table Table;
 
         /// <summary>
         /// A lua function!  This doesn't cover a CLR function
@@ -52,19 +64,19 @@ namespace SolarSharp.Interpreter.DataTypes
         /// just for more performant calls.
         /// </summary>
         [FieldOffset(0)]
-        public Closure FunctionValue;
+        public readonly Closure Function;
 
         /// <summary>
         /// User data.
         /// </summary>
         [FieldOffset(0)]
-        public UserData UserDataValue;
+        public readonly UserData UserData;
 
         /// <summary>
         /// A coroutine
         /// </summary>
         [FieldOffset(0)]
-        public Coroutine ThreadValue;
+        public readonly Coroutine Thread;
 
         /// <summary>
         /// The type of lua value
@@ -72,11 +84,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// In future I'm planning on using a NaN tagged value (potentially) to get better performance
         /// </summary>
         [FieldOffset(8)]
-        public LuaDataType Type;
+        public readonly LuaDataType Type;
 
         /// <summary>
         /// Create a new nil value.
         /// </summary>
-        public static readonly LuaValue Nil = new() { Type = LuaDataType.Nil };
+        public static readonly LuaValue Nil = new(LuaDataType.Nil, null);
     }
 }

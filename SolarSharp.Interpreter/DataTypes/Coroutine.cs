@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using SolarSharp.Interpreter.Execution.VM;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 
@@ -11,7 +9,7 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// A class representing a script coroutine
     /// </summary>
-    public class Coroutine : RefIdObject, IScriptPrivateResource
+    public class Coroutine : RefIdObject
     {
         /// <summary>
         /// Possible types of coroutine
@@ -147,8 +145,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
         public DynValue Resume(params DynValue[] args)
         {
-            this.CheckScriptOwnership(args);
-
             if (Type == CoroutineType.Coroutine)
                 return m_Processor.Coroutine_Resume(args);
             else
@@ -164,9 +160,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public DynValue Resume(ScriptExecutionContext context, params DynValue[] args)
         {
-            this.CheckScriptOwnership(context);
-            this.CheckScriptOwnership(args);
-
             if (Type == CoroutineType.Coroutine)
                 return m_Processor.Coroutine_Resume(args);
             else if (Type == CoroutineType.ClrCallback)
@@ -176,7 +169,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 return ret;
             }
             else
-                throw ScriptRuntimeException.CannotResumeNotSuspended(CoroutineState.Dead);
+                throw ErrorException.CannotResumeNotSuspended(CoroutineState.Dead);
         }
 
         /// <summary>
@@ -258,30 +251,13 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Gets the coroutine stack trace for debug purposes
-        /// </summary>
-        /// <param name="skip">The skip.</param>
-        /// <param name="entrySourceRef">The entry source reference.</param>
-        /// <returns></returns>
-        public WatchItem[] GetStackTrace(int skip, SourceRef entrySourceRef = null)
-        {
-            if (State != CoroutineState.Running)
-            {
-                entrySourceRef = m_Processor.GetCoroutineSuspendedLocation();
-            }
-
-            List<WatchItem> stack = m_Processor.Debugger_GetCallStack(entrySourceRef);
-            return stack.Skip(skip).ToArray();
-        }
-
-        /// <summary>
         /// Gets the script owning this resource.
         /// </summary>
         /// <value>
         /// The script owning this resource.
         /// </value>
         /// <exception cref="NotImplementedException"></exception>
-        public Script OwnerScript
+        public LuaState OwnerScript
         {
             get;
             private set;

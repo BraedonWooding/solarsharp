@@ -91,7 +91,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
 
             array.SetValue(objValue, indices);
 
-            return DynValue.Void;
+            return DynValue.Nil;
         }
 
 

@@ -50,8 +50,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
     }
 
-
-
     [TestFixture]
     public class CollectionsBaseInterfGenRegisteredTests
     {
@@ -68,7 +66,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 UserData.RegisterType<RegCollItem>();
                 UserData.RegisterType(typeof(IList<>));
 
-                Script s = new();
+                LuaState s = new();
 
                 var obj = new RegCollMethods();
                 s.Globals["o"] = obj;
@@ -77,12 +75,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 DynValue res = s.DoString(code);
 
                 asserts(res, obj);
-            }
-            catch (ScriptRuntimeException ex)
-            {
-                Debug.WriteLine(ex.DecoratedMessage);
-                ex.Rethrow();
-                throw;
             }
             finally
             {
@@ -95,10 +87,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 //UserData.UnregisterType<IEnumerable>();
             }
         }
-
-
-
-
 
         [Test]
         public void RegCollGenInterf_IteratorOnList_Auto()
@@ -121,7 +109,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                  });
              });
         }
-
 
         [Test]
         public void RegCollGenInterf_IteratorOnList_Manual()
@@ -232,8 +219,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
              });
         }
 
-
-
         [Test]
         public void RegCollGenInterf_IteratorOnObjList_Auto()
         {
@@ -315,8 +300,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                  });
              });
         }
-
-
-
     }
 }

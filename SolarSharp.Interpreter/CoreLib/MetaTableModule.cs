@@ -25,9 +25,9 @@ namespace SolarSharp.Interpreter.CoreLib
 
             DynValue curmeta = executionContext.GetMetamethod(table, "__metatable");
 
-            if (curmeta != null)
+            if (curmeta.IsNotNil())
             {
-                throw new ScriptRuntimeException("cannot change a protected metatable");
+                throw new ErrorException("cannot change a protected metatable");
             }
 
             table.Table.MetaTable = metatable.Table;
@@ -111,7 +111,7 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             if (args[0].Type != DataType.String && args[0].Type != DataType.Table)
             {
-                throw ScriptRuntimeException.BadArgument(0, "rawlen", "table or string", args[0].Type.ToErrorTypeString(), false);
+                throw ErrorException.BadArgument(0, "rawlen", "table or string", args[0].Type.ToErrorTypeString(), false);
             }
 
             return args[0].GetLength();

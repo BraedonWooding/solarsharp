@@ -81,7 +81,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="script">The script for which the callback must be generated.</param>
         /// <param name="obj">The object (null for static).</param>
         /// <returns></returns>
-        public Func<ScriptExecutionContext, CallbackArguments, DynValue> GetCallback(Script script, object obj = null)
+        public Func<ScriptExecutionContext, CallbackArguments, DynValue> GetCallback(LuaState script, object obj = null)
         {
             return (c, a) => Execute(script, obj, c, a);
         }
@@ -92,7 +92,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="script">The script for which the callback must be generated.</param>
         /// <param name="obj">The object (null for static).</param>
         /// <returns></returns>
-        public CallbackFunction GetCallbackFunction(Script script, object obj = null)
+        public CallbackFunction GetCallbackFunction(LuaState script, object obj = null)
         {
             return new CallbackFunction(GetCallback(script, obj), Name);
         }
@@ -103,7 +103,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="script">The script for which the callback must be generated.</param>
         /// <param name="obj">The object (null for static).</param>
         /// <returns></returns>
-        public DynValue GetCallbackAsDynValue(Script script, object obj = null)
+        public DynValue GetCallbackAsDynValue(LuaState script, object obj = null)
         {
             return DynValue.NewCallback(GetCallbackFunction(script, obj));
         }
@@ -115,7 +115,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="mi">The mi.</param>
         /// <param name="obj">The object.</param>
         /// <returns></returns>
-        public static DynValue CreateCallbackDynValue(Script script, MethodInfo mi, object obj = null)
+        public static DynValue CreateCallbackDynValue(LuaState script, MethodInfo mi, object obj = null)
         {
             var desc = new MethodMemberDescriptor(mi);
             return desc.GetCallbackAsDynValue(script, obj);
@@ -131,7 +131,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="args">The arguments.</param>
         /// <param name="outParams">Output: A list containing the indices of all "out" parameters, or null if no out parameters are specified.</param>
         /// <returns>The arguments, appropriately converted.</returns>
-        protected virtual object[] BuildArgumentList(Script script, object obj, ScriptExecutionContext context, CallbackArguments args,
+        protected virtual object[] BuildArgumentList(LuaState script, object obj, ScriptExecutionContext context, CallbackArguments args,
             out List<int> outParams)
         {
             ParameterDescriptor[] parameters = Parameters;
@@ -158,7 +158,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
                     continue;
                 }
                 // else, fill types with a supported type
-                else if (parameters[i].Type == typeof(Script))
+                else if (parameters[i].Type == typeof(LuaState))
                 {
                     pars[i] = script;
                 }
@@ -183,7 +183,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
                     {
                         DynValue arg = args.RawGet(j, false);
                         j += 1;
-                        if (arg != null)
+                        if (arg.IsNotNil())
                             extraArgs.Add(arg);
                         else
                             break;
@@ -221,7 +221,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
                 // else, convert it
                 else
                 {
-                    var arg = args.RawGet(j, false) ?? DynValue.Void;
+                    var arg = args.RawGet(j, false);
                     pars[i] = ScriptToClrConversions.DynValueToObjectOfType(arg, parameters[i].Type,
                         parameters[i].DefaultValue, parameters[i].HasDefaultValue);
                     j += 1;
@@ -237,9 +237,9 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="script">The script.</param>
         /// <param name="outParams">The out parameters indices, or null. See <see cref="BuildArgumentList" />.</param>
         /// <param name="pars">The parameters passed to the function.</param>
-        /// <param name="retv">The return value from the function. Use DynValue.Void if the function returned no value.</param>
+        /// <param name="retv">The return value from the function. Use DynValue.Nil if the function returned no value.</param>
         /// <returns>A DynValue to be returned to scripts</returns>
-        protected static DynValue BuildReturnValue(Script script, List<int> outParams, object[] pars, object retv)
+        protected static DynValue BuildReturnValue(LuaState script, List<int> outParams, object[] pars, object retv)
         {
             if (outParams == null)
             {
@@ -249,7 +249,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
             {
                 DynValue[] rets = new DynValue[outParams.Count + 1];
 
-                rets[0] = retv is DynValue value && value.IsVoid() ? DynValue.Nil : ClrToScriptConversions.ObjectToDynValue(script, retv);
+                rets[0] = retv is DynValue value && value.IsNil() ? DynValue.Nil : ClrToScriptConversions.ObjectToDynValue(script, retv);
 
                 for (int i = 0; i < outParams.Count; i++)
                     rets[i + 1] = ClrToScriptConversions.ObjectToDynValue(script, pars[outParams[i]]);
@@ -266,7 +266,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="context">The context.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        public abstract DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args);
+        public abstract DynValue Execute(LuaState script, object obj, ScriptExecutionContext context, CallbackArguments args);
 
 
         /// <summary>
@@ -285,7 +285,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <returns>
         /// The value of this member as a <see cref="DynValue" />.
         /// </returns>
-        public virtual DynValue GetValue(Script script, object obj)
+        public virtual DynValue GetValue(LuaState script, object obj)
         {
             this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
             return GetCallbackAsDynValue(script, obj);
@@ -298,7 +298,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="obj">The object.</param>
         /// <param name="v">The v.</param>
         /// <exception cref="NotImplementedException"></exception>
-        public virtual void SetValue(Script script, object obj, DynValue v)
+        public virtual void SetValue(LuaState script, object obj, DynValue v)
         {
             this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
         }

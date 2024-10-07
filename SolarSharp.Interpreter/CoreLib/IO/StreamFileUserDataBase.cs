@@ -25,7 +25,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
         private void CheckFileIsNotClosed()
         {
             if (m_Closed)
-                throw new ScriptRuntimeException("attempt to use a closed file");
+                throw new ErrorException("attempt to use a closed file");
         }
 
 
@@ -114,7 +114,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
                 }
                 else
                 {
-                    throw ScriptRuntimeException.BadArgument(0, "seek", "invalid option '" + whence + "'");
+                    throw ErrorException.BadArgument(0, "seek", "invalid option '" + whence + "'");
                 }
             }
 

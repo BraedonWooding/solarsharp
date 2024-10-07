@@ -1,40 +1,41 @@
-﻿using SolarSharp.Interpreter.Errors;
+﻿using SolarSharp.Interpreter.Debug;
+using SolarSharp.Interpreter.Errors;
 using System.Text;
 
 namespace SolarSharp.Interpreter.Tree.Lexer
 {
     internal class Lexer
     {
-        private Token m_Current = null;
-        private readonly string m_Code;
-        private int m_PrevLineTo = 0;
-        private int m_PrevColTo = 1;
-        private int m_Cursor = 0;
-        private int m_Line = 1;
-        private int m_Col = 0;
-        private readonly int m_SourceId;
-        private readonly bool m_AutoSkipComments = false;
+        private Token current = null;
+        private readonly string _code;
+        private readonly Source _source;
+        private int prevLineTo = 0;
+        private int prevColTo = 1;
+        private int cursor = 0;
+        private int line = 1;
+        private int col = 0;
+        private readonly bool autoSkipComments = false;
 
-        public Lexer(int sourceID, string scriptContent, bool autoSkipComments)
+        public Lexer(Source source, string scriptContent, bool autoSkipComments)
         {
-            m_Code = scriptContent;
-            m_SourceId = sourceID;
+            _code = scriptContent;
+            _source = source;
 
             // remove unicode BOM if any
-            if (m_Code.Length > 0 && m_Code[0] == 0xFEFF)
-                m_Code = m_Code[1..];
+            if (_code.Length > 0 && _code[0] == 0xFEFF)
+                _code = _code.Substring(1);
 
-            m_AutoSkipComments = autoSkipComments;
+            this.autoSkipComments = autoSkipComments;
         }
 
         public Token Current
         {
             get
             {
-                if (m_Current == null)
+                if (current == null)
                     Next();
 
-                return m_Current;
+                return current;
             }
         }
 
@@ -44,36 +45,33 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             {
                 Token T = ReadToken();
 
-                //System.Diagnostics.Debug.WriteLine("LEXER : " + T.ToString());
-
-                if (T.Type != TokenType.Comment && T.Type != TokenType.HashBang || !m_AutoSkipComments)
+                if (T.Type != TokenType.Comment && T.Type != TokenType.HashBang || !autoSkipComments)
                     return T;
             }
         }
 
         public void Next()
         {
-            m_Current = FetchNewToken();
+            current = FetchNewToken();
         }
 
         public Token PeekNext()
         {
-            int snapshot = m_Cursor;
-            Token current = m_Current;
-            int line = m_Line;
-            int col = m_Col;
+            int snapshot = cursor;
+            Token currentTok = current;
+            int line = this.line;
+            int col = this.col;
 
             Next();
             Token t = Current;
 
-            m_Cursor = snapshot;
-            m_Current = current;
-            m_Line = line;
-            m_Col = col;
+            cursor = snapshot;
+            current = currentTok;
+            this.line = line;
+            this.col = col;
 
             return t;
         }
-
 
         private void CursorNext()
         {
@@ -81,22 +79,22 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             {
                 if (CursorChar() == '\n')
                 {
-                    m_Col = 0;
-                    m_Line += 1;
+                    col = 0;
+                    line += 1;
                 }
                 else
                 {
-                    m_Col += 1;
+                    col += 1;
                 }
 
-                m_Cursor += 1;
+                cursor += 1;
             }
         }
 
         private char CursorChar()
         {
-            if (m_Cursor < m_Code.Length)
-                return m_Code[m_Cursor];
+            if (cursor < _code.Length)
+                return _code[cursor];
             else
                 return '\0'; //  sentinel
         }
@@ -111,11 +109,11 @@ namespace SolarSharp.Interpreter.Tree.Lexer
         {
             for (int i = 0; i < pattern.Length; i++)
             {
-                int j = m_Cursor + i;
+                int j = cursor + i;
 
-                if (j >= m_Code.Length)
+                if (j >= _code.Length)
                     return false;
-                if (m_Code[j] != pattern[i])
+                if (_code[j] != pattern[i])
                     return false;
             }
             return true;
@@ -123,7 +121,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         private bool CursorNotEof()
         {
-            return m_Cursor < m_Code.Length;
+            return cursor < _code.Length;
         }
 
         private bool IsWhiteSpace(char c)
@@ -138,13 +136,12 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             }
         }
 
-
         private Token ReadToken()
         {
             SkipWhiteSpace();
 
-            int fromLine = m_Line;
-            int fromCol = m_Col;
+            int fromLine = line;
+            int fromCol = col;
 
             if (!CursorNotEof())
                 return CreateToken(TokenType.Eof, fromLine, fromCol, "<eof>");
@@ -205,7 +202,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 case '^':
                     return CreateSingleCharToken(TokenType.Op_Pwr, fromLine, fromCol);
                 case '#':
-                    if (m_Cursor == 0 && m_Code.Length > 1 && m_Code[1] == '!')
+                    if (cursor == 0 && _code.Length > 1 && _code[1] == '!')
                         return ReadHashBang(fromLine, fromCol);
 
                     return CreateSingleCharToken(TokenType.Op_Len, fromLine, fromCol);
@@ -297,7 +294,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             {
                 end_pattern = startpattern.Replace('[', ']');
             }
-
 
             for (char c = CursorCharNext(); ; c = CursorCharNext())
             {
@@ -434,7 +430,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             return CreateToken(TokenType.HashBang, fromLine, fromCol, text.ToString());
         }
 
-
         private Token ReadComment(int fromLine, int fromCol)
         {
             StringBuilder text = new(32);
@@ -446,7 +441,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 if (c == '[' && !extraneousFound && text.Length > 0)
                 {
                     text.Append('[');
-                    //CursorCharNext();
                     string comment = ReadLongString(fromLine, fromCol, text.ToString(), "comment");
                     return CreateToken(TokenType.Comment, fromLine, fromCol, comment);
                 }
@@ -527,7 +521,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             { IsPrematureStreamTermination = true };
         }
 
-
         private Token PotentiallyDoubleCharOperator(char expectedSecondChar, TokenType singleCharToken, TokenType doubleCharToken, int fromLine, int fromCol)
         {
             string op = CursorChar().ToString();
@@ -543,8 +536,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 return CreateToken(singleCharToken, fromLine, fromCol, op);
         }
 
-
-
         private Token CreateNameToken(string name, int fromLine, int fromCol)
         {
             TokenType? reservedType = Token.GetReservedTokenType(name);
@@ -559,15 +550,14 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             }
         }
 
-
         private Token CreateToken(TokenType tokenType, int fromLine, int fromCol, string text = null)
         {
-            Token t = new(tokenType, m_SourceId, fromLine, fromCol, m_Line, m_Col, m_PrevLineTo, m_PrevColTo)
+            Token t = new(tokenType, _source, fromLine, fromCol, line, col, prevLineTo, prevColTo)
             {
                 Text = text
             };
-            m_PrevLineTo = m_Line;
-            m_PrevColTo = m_Col;
+            prevLineTo = line;
+            prevColTo = col;
             return t;
         }
 
@@ -585,9 +575,5 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
             return name.ToString();
         }
-
-
-
-
     }
 }

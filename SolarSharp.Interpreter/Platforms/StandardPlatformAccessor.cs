@@ -139,7 +139,7 @@ namespace SolarSharp.Interpreter.Platforms
         /// <param name="encoding">The encoding.</param>
         /// <param name="mode">The mode (as per Lua usage - e.g. 'w+', 'rb', etc.).</param>
         /// <returns></returns>
-        public override Stream IO_OpenFile(Script script, string filename, Encoding encoding, string mode)
+        public override Stream IO_OpenFile(LuaState script, string filename, Encoding encoding, string mode)
         {
             return new FileStream(filename, ParseFileMode(mode), ParseFileAccess(mode), FileShare.ReadWrite | FileShare.Delete);
         }

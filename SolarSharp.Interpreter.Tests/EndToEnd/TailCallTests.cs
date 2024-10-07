@@ -23,7 +23,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return recsum(10, 0)";
 
 
-            Script S = new();
+            LuaState S = new();
             var res = S.DoString(script);
 
             Assert.Multiple(() =>
@@ -50,7 +50,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return recsum(70000, 0)";
 
 
-            Script S = new();
+            LuaState S = new();
             var res = S.DoString(script);
 
             Assert.Multiple(() =>
@@ -72,7 +72,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return clrtail(9)";
 
 
-            Script S = new();
+            LuaState S = new();
 
             S.Globals.Set("clrtail", DynValue.NewCallback((xc, a) =>
             {
@@ -99,7 +99,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return tostring(9)";
 
 
-            Script S = new(CoreModules.Basic);
+            LuaState S = new(CoreModules.Basic);
             var res = S.DoString(script);
 
             Assert.Multiple(() =>
@@ -126,7 +126,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return (s);";
 
 
-            Script S = new();
+            LuaState S = new();
             var res = S.DoString(script);
 
             Assert.Multiple(() =>
