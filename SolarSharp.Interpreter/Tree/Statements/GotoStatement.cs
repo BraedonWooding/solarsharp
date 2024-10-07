@@ -22,7 +22,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
             GotoToken = CheckTokenType(lcontext, TokenType.Goto);
             Token name = CheckTokenType(lcontext, TokenType.Name);
 
-            SourceRef = GotoToken.GetSourceRef(name);
+            SourceRef = GotoToken.GetSourceRef();
 
             Label = name.Text;
 

@@ -98,10 +98,10 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="script">The script.</param>
         /// <param name="obj">The object owning this member, or null if static.</param>
         /// <param name="value">The value to be set.</param>
-        /// <exception cref="ScriptRuntimeException">userdata '{0}' cannot be written to.</exception>
+        /// <exception cref="ErrorException">userdata '{0}' cannot be written to.</exception>
         public void SetValue(LuaState script, object obj, DynValue value)
         {
-            throw new ScriptRuntimeException("userdata '{0}' cannot be written to.", Name);
+            throw new ErrorException("userdata '{0}' cannot be written to.", Name);
         }
 
         /// <summary>

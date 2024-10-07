@@ -50,7 +50,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
                 .Cast<IVariable>()
                 .ToArray();
 
-            m_RefFor = forToken.GetSourceRef(CheckTokenType(lcontext, TokenType.Do));
+            m_RefFor = forToken.GetSourceRef();
 
             m_Block = new CompositeStatement(lcontext);
 

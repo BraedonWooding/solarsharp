@@ -46,7 +46,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
             var ifblock = new IfBlock
             {
                 Exp = Expression.Expr(lcontext),
-                Source = type.GetSourceRef(CheckTokenType(lcontext, TokenType.Then)),
+                Source = type.GetSourceRef(),
                 Block = new CompositeStatement(lcontext),
                 StackFrame = lcontext.Scope.PopBlock()
             };

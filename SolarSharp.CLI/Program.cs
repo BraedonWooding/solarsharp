@@ -71,7 +71,7 @@ namespace SolarSharp
                 if (result.IsNotNil())
                     Console.WriteLine("{0}", result);
             }
-            catch (InterpreterException ex)
+            catch (ErrorException ex)
             {
                 Console.WriteLine("{0}", ex.DecoratedMessage ?? ex.Message);
             }

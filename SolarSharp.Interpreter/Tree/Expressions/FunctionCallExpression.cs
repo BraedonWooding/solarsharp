@@ -33,13 +33,13 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                     if (t.Type == TokenType.Brk_Close_Round)
                     {
                         m_Arguments = new List<Expression>();
-                        SourceRef = callToken.GetSourceRef(t);
+                        SourceRef = callToken.GetSourceRef();
                         lcontext.Lexer.Next();
                     }
                     else
                     {
                         m_Arguments = ExprList(lcontext);
-                        SourceRef = callToken.GetSourceRef(CheckMatch(lcontext, openBrk, TokenType.Brk_Close_Round, ")"));
+                        SourceRef = callToken.GetSourceRef();
                     }
                     break;
                 case TokenType.String:
@@ -48,7 +48,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                         m_Arguments = new List<Expression>();
                         Expression le = new LiteralExpression(lcontext, lcontext.Lexer.Current);
                         m_Arguments.Add(le);
-                        SourceRef = callToken.GetSourceRef(lcontext.Lexer.Current);
+                        SourceRef = callToken.GetSourceRef();
                     }
                     break;
                 case TokenType.Brk_Open_Curly:

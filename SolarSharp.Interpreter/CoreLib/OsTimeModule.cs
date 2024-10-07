@@ -80,13 +80,13 @@ namespace SolarSharp.Interpreter.CoreLib
             int? year = GetTimeTableField(t, "year");
 
             if (day == null)
-                throw new ScriptRuntimeException("field 'day' missing in date table");
+                throw new ErrorException("field 'day' missing in date table");
 
             if (month == null)
-                throw new ScriptRuntimeException("field 'month' missing in date table");
+                throw new ErrorException("field 'month' missing in date table");
 
             if (year == null)
-                throw new ScriptRuntimeException("field 'year' missing in date table");
+                throw new ErrorException("field 'year' missing in date table");
 
             return new DateTime(year.Value, month.Value, day.Value, hour, min, sec);
         }
@@ -282,7 +282,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 }
                 else
                 {
-                    throw new ScriptRuntimeException("bad argument #1 to 'date' (invalid conversion specifier '{0}')", format);
+                    throw new ErrorException("bad argument #1 to 'date' (invalid conversion specifier '{0}')", format);
                 }
             }
 

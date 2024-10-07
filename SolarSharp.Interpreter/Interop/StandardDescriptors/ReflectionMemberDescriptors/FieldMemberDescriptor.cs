@@ -152,7 +152,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
 
             if (IsReadonly || IsConst)
-                throw new ScriptRuntimeException("userdata field '{0}.{1}' cannot be written to.", FieldInfo.DeclaringType.Name, Name);
+                throw new ErrorException("userdata field '{0}.{1}' cannot be written to.", FieldInfo.DeclaringType.Name, Name);
 
             object value = ScriptToClrConversions.DynValueToObjectOfType(v, FieldInfo.FieldType, null, false);
 
@@ -166,17 +166,17 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             catch (ArgumentException)
             {
                 // non-optimized setters fall here
-                throw ScriptRuntimeException.UserDataArgumentTypeMismatch(v.Type, FieldInfo.FieldType);
+                throw ErrorException.UserDataArgumentTypeMismatch(v.Type, FieldInfo.FieldType);
             }
             catch (InvalidCastException)
             {
                 // optimized setters fall here
-                throw ScriptRuntimeException.UserDataArgumentTypeMismatch(v.Type, FieldInfo.FieldType);
+                throw ErrorException.UserDataArgumentTypeMismatch(v.Type, FieldInfo.FieldType);
             }
 #if !(PCL || ENABLE_DOTNET || NETFX_CORE)
             catch (FieldAccessException ex)
             {
-                throw new ScriptRuntimeException(ex);
+                throw new ErrorException(ex);
             }
 #endif
         }

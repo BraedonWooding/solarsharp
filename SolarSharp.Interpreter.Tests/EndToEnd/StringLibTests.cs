@@ -227,7 +227,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             string script = @"
 				string.gsub('hello world', '%w+', '%e')
 			";
-            Assert.Throws<ScriptRuntimeException>(() => LuaState.RunString(script));
+            Assert.Throws<ErrorException>(() => LuaState.RunString(script));
         }
 
         [Test]

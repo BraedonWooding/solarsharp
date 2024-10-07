@@ -1,4 +1,5 @@
 ﻿using System;
+using SolarSharp.Interpreter.Debug;
 using SolarSharp.Interpreter.Tree.Lexer;
 
 namespace SolarSharp.Interpreter.Errors
@@ -6,11 +7,11 @@ namespace SolarSharp.Interpreter.Errors
     /// <summary>
     /// Exception for all parsing/lexing errors. 
     /// </summary>
-#if !(PCL || ((!UNITY_EDITOR) && (ENABLE_DOTNET)) || NETFX_CORE)
     [Serializable]
-#endif
-    public class SyntaxErrorException : InterpreterException
+    public class SyntaxErrorException : ErrorException
     {
+        // TODO: Maybe add "to" line number rather than just "from" (will need to diverge from SourceRef).
+
         internal Token Token { get; private set; }
 
         /// <summary>
@@ -54,7 +55,7 @@ namespace SolarSharp.Interpreter.Errors
         {
             if (Token != null)
             {
-                DecorateMessage(script, Token.GetSourceRef(false));
+                DecorateMessage(script, Token.GetSourceRef());
             }
         }
     }

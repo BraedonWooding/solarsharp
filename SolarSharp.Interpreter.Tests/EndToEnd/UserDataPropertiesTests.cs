@@ -235,7 +235,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(obj.IntProp, Is.EqualTo(321));
 
-            Assert.Throws<ScriptRuntimeException>(() => S.DoString(script));
+            Assert.Throws<ErrorException>(() => S.DoString(script));
         }
 
         private static void Test_StaticPropertyAccess(InteropAccessMode opt)
@@ -355,7 +355,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 DynValue res = S.DoString(script);
             }
-            catch (ScriptRuntimeException)
+            catch (ErrorException)
             {
                 return;
             }
@@ -383,7 +383,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 DynValue res = S.DoString(script);
             }
-            catch (ScriptRuntimeException)
+            catch (ErrorException)
             {
                 return;
             }
@@ -458,7 +458,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     Assert.That(res.Number, Is.EqualTo(5));
                 });
             }
-            catch (ScriptRuntimeException)
+            catch (ErrorException)
             {
                 return;
             }
@@ -491,7 +491,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     Assert.That(res.Number, Is.EqualTo(1234));
                 });
             }
-            catch (ScriptRuntimeException)
+            catch (ErrorException)
             {
                 return;
             }
@@ -522,7 +522,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 DynValue res = S.DoString(script);
             }
-            catch (ScriptRuntimeException)
+            catch (ErrorException)
             {
                 Assert.That(obj.AccessOverrProp, Is.EqualTo(19));
                 return;

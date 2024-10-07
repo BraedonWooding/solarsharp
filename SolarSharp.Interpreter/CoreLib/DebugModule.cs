@@ -20,7 +20,7 @@ namespace SolarSharp.Interpreter.CoreLib
             LuaState script = executionContext.GetScript();
 
             if (script.Options.DebugInput == null)
-                throw new ScriptRuntimeException("debug.debug not supported on this platform/configuration");
+                throw new ErrorException("debug.debug not supported on this platform/configuration");
 
             ReplInterpreter interpreter = new(script)
             {
@@ -39,7 +39,7 @@ namespace SolarSharp.Interpreter.CoreLib
                     if (result.IsNotNil())
                         script.Options.DebugPrint(string.Format("{0}", result));
                 }
-                catch (InterpreterException ex)
+                catch (ErrorException ex)
                 {
                     script.Options.DebugPrint(string.Format("{0}", ex.DecoratedMessage ?? ex.Message));
                 }
@@ -102,7 +102,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 S.SetTypeMetatable(v.Type, m);
             else v.Table.MetaTable = v.Type == DataType.Table
                 ? m
-                : throw new ScriptRuntimeException("cannot debug.setmetatable on type {0}", v.Type.ToErrorTypeString());
+                : throw new ErrorException("cannot debug.setmetatable on type {0}", v.Type.ToErrorTypeString());
 
             return v;
         }
@@ -180,10 +180,10 @@ namespace SolarSharp.Interpreter.CoreLib
             Closure c2 = f2.Function;
 
             if (n1 < 0 || n1 >= c1.ClosureContext.Count)
-                throw ScriptRuntimeException.BadArgument(1, "upvaluejoin", "invalid upvalue index");
+                throw ErrorException.BadArgument(1, "upvaluejoin", "invalid upvalue index");
 
             if (n2 < 0 || n2 >= c2.ClosureContext.Count)
-                throw ScriptRuntimeException.BadArgument(3, "upvaluejoin", "invalid upvalue index");
+                throw ErrorException.BadArgument(3, "upvaluejoin", "invalid upvalue index");
 
             c2.ClosureContext[n2] = c1.ClosureContext[n1];
 

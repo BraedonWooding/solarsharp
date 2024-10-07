@@ -35,8 +35,6 @@ namespace SolarSharp.Interpreter.CoreLib
             package.Table.Set("config", DynValue.NewString(cfg));
         }
 
-
-
         // load (ld [, source [, mode [, env]]])
         // ----------------------------------------------------------------
         // Loads a chunk.
@@ -154,7 +152,7 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             Table env = executionContext.CurrentGlobalEnv;
 
-            return env ?? throw new ScriptRuntimeException("current environment cannot be backtracked.");
+            return env ?? throw new ErrorException("current environment cannot be backtracked.");
         }
 
         //dofile ([filename])
@@ -176,7 +174,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
             catch (SyntaxErrorException ex)
             {
-                throw new ScriptRuntimeException(ex);
+                throw new ErrorException((System.Exception)ex);
             }
         }
 

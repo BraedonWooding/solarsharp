@@ -65,7 +65,7 @@ namespace SolarSharp.Interpreter.CoreLib
 
             if (args.Count == 0)
             {
-                throw new ScriptRuntimeException("bad argument #1 to '{0}' (number expected, got no value)", funcName);
+                throw new ErrorException("bad argument #1 to '{0}' (number expected, got no value)", funcName);
             }
 
             for (int i = 0; i < args.Count; i++)

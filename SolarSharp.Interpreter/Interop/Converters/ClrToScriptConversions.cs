@@ -151,7 +151,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
             var enumerator = EnumerationToDynValue(script, obj);
             if (enumerator.IsNotNil()) return enumerator;
 
-            throw ScriptRuntimeException.ConvertObjectFailed(obj);
+            throw ErrorException.ConvertObjectFailed(obj);
         }
 
         /// <summary>

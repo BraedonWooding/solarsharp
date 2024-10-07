@@ -72,7 +72,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                 case DataType.YieldRequest:
                 case DataType.Tuple:
                 default:
-                    throw new ScriptRuntimeException("Can't call LuaType on any type");
+                    throw new ErrorException("Can't call LuaType on any type");
             }
         }
 
@@ -153,7 +153,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
         protected static lua_Integer LuaLError(LuaState luaState, string message, params object[] args)
         {
-            throw new ScriptRuntimeException(message, args);
+            throw new ErrorException(message, args);
         }
 
         protected static void LuaLAddChar(LuaLBuffer b, char p)
@@ -253,7 +253,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
         protected static void LuaLArgError(LuaState L, lua_Integer arg, string p)
         {
-            throw ScriptRuntimeException.BadArgument(arg - 1, L.FunctionName, p);
+            throw ErrorException.BadArgument(arg - 1, L.FunctionName, p);
         }
 
         protected static double LuaLCheckNumber(LuaState L, lua_Integer pos)

@@ -79,12 +79,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 asserts(res, obj);
             }
-            catch (ScriptRuntimeException ex)
-            {
-                Debug.WriteLine(ex.DecoratedMessage);
-                ex.Rethrow();
-                throw;
-            }
             finally
             {
                 UserData.UnregisterType<RegCollMethods>();
@@ -95,10 +89,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 UserData.UnregisterType<int[,]>();
             }
         }
-
-
-
-
 
         [Test]
         public void RegColl_IteratorOnList_Auto()
@@ -262,10 +252,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
              });
         }
 
-
-
-
-
         [Test]
         public void RegColl_IteratorOnObjList_Auto()
         {
@@ -347,8 +333,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                  });
              });
         }
-
-
-
     }
 }

@@ -105,7 +105,7 @@ namespace SolarSharp.Interpreter.REPL
                     return DynValue.Nil;
                 }
             }
-            catch (ScriptRuntimeException sre)
+            catch (ErrorException sre)
             {
                 m_CurrentCommand = "";
                 sre.Rethrow();

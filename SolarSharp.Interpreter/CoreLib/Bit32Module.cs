@@ -106,13 +106,13 @@ namespace SolarSharp.Interpreter.CoreLib
         private static void ValidatePosWidth(string func, int argPos, int pos, int width)
         {
             if (pos > 31 || pos + width > 31)
-                throw new ScriptRuntimeException("trying to access non-existent bits");
+                throw new ErrorException("trying to access non-existent bits");
 
             if (pos < 0)
-                throw new ScriptRuntimeException("bad argument #{1} to '{0}' (field cannot be negative)", func, argPos);
+                throw new ErrorException("bad argument #{1} to '{0}' (field cannot be negative)", func, argPos);
 
             if (width <= 0)
-                throw new ScriptRuntimeException("bad argument #{1} to '{0}' (width must be positive)", func, argPos + 1);
+                throw new ErrorException("bad argument #{1} to '{0}' (width must be positive)", func, argPos + 1);
         }
 
         [MoonSharpModuleMethod]

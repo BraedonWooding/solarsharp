@@ -84,7 +84,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void ConfigProp_ThrowsOnInvalid()
         {
-            Assert.Throws<ScriptRuntimeException>(() => Test(@"
+            Assert.Throws<ErrorException>(() => Test(@"
 				{
 				class = 'oohoh',
 				myString = 'ciao',

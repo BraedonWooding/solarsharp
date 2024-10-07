@@ -22,7 +22,7 @@ namespace SolarSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue type(ScriptExecutionContext _, CallbackArguments args)
         {
-            if (args.Count < 1) throw ScriptRuntimeException.BadArgumentValueExpected(0, "type");
+            if (args.Count < 1) throw ErrorException.BadArgumentValueExpected(0, "type");
 
             DynValue v = args[0];
             return DynValue.NewString(v.Type.ToLuaTypeString());
@@ -41,9 +41,9 @@ namespace SolarSharp.Interpreter.CoreLib
             if (!v.CastToBool())
             {
                 if (message.IsNil())
-                    throw new ScriptRuntimeException("assertion failed!"); // { DoNotDecorateMessage = true };
+                    throw new ErrorException("assertion failed!"); // { DoNotDecorateMessage = true };
                 else
-                    throw new ScriptRuntimeException(message.ToPrintString()); // { DoNotDecorateMessage = true };
+                    throw new ErrorException(message.ToPrintString()); // { DoNotDecorateMessage = true };
             }
 
             return DynValue.NewTupleNested(args.GetArray());
@@ -89,7 +89,7 @@ namespace SolarSharp.Interpreter.CoreLib
 
             WatchItem[] stacktrace = cor.GetStackTrace(0, executionContext.CallingLocation);
 
-            var e = new ScriptRuntimeException(message.String);
+            var e = new ErrorException(message.String);
 
             if (level.IsNil())
             {
@@ -123,7 +123,7 @@ namespace SolarSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue tostring(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            if (args.Count < 1) throw ScriptRuntimeException.BadArgumentValueExpected(0, "tostring");
+            if (args.Count < 1) throw ErrorException.BadArgumentValueExpected(0, "tostring");
 
             DynValue v = args[0];
             DynValue tail = executionContext.GetMetamethodTailCall(v, "__tostring", v);
@@ -144,7 +144,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 return b;
 
             if (b.Type != DataType.String)
-                throw new ScriptRuntimeException("'tostring' must return a string");
+                throw new ErrorException("'tostring' must return a string");
 
 
             return b;
@@ -185,14 +185,14 @@ namespace SolarSharp.Interpreter.CoreLib
                 num = args.Count + num;
 
                 if (num < 1)
-                    throw ScriptRuntimeException.BadArgumentIndexOutOfRange("select", 0);
+                    throw ErrorException.BadArgumentIndexOutOfRange("select", 0);
 
                 for (int i = num; i < args.Count; i++)
                     values.Add(args[i]);
             }
             else
             {
-                throw ScriptRuntimeException.BadArgumentIndexOutOfRange("select", 0);
+                throw ErrorException.BadArgumentIndexOutOfRange("select", 0);
             }
 
             return DynValue.NewTupleNested(values.ToArray());
@@ -214,7 +214,7 @@ namespace SolarSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue tonumber(ScriptExecutionContext _, CallbackArguments args)
         {
-            if (args.Count < 1) throw ScriptRuntimeException.BadArgumentValueExpected(0, "tonumber");
+            if (args.Count < 1) throw ErrorException.BadArgumentValueExpected(0, "tonumber");
 
             DynValue e = args[0];
             DynValue b = args.AsType(1, "tonumber", DataType.Number, true);
@@ -256,7 +256,7 @@ namespace SolarSharp.Interpreter.CoreLib
                         int value = digit - 48;
                         if (value < 0 || value >= bb)
                         {
-                            throw new ScriptRuntimeException("bad argument #1 to 'tonumber' (invalid character)");
+                            throw new ErrorException("bad argument #1 to 'tonumber' (invalid character)");
                         }
 
                         uiv = (uint)(uiv * bb) + (uint)value;
@@ -264,7 +264,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 }
                 else
                 {
-                    throw new ScriptRuntimeException("bad argument #2 to 'tonumber' (base out of range)");
+                    throw new ErrorException("bad argument #2 to 'tonumber' (base out of range)");
                 }
 
                 return DynValue.NewNumber(uiv);

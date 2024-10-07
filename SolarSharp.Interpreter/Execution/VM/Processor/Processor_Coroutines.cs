@@ -49,7 +49,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 int entrypoint = 0;
 
                 if (m_State != CoroutineState.NotStarted && m_State != CoroutineState.Suspended)
-                    throw ScriptRuntimeException.CannotResumeNotSuspended(m_State);
+                    throw ErrorException.CannotResumeNotSuspended(m_State);
 
                 if (m_State == CoroutineState.NotStarted)
                 {

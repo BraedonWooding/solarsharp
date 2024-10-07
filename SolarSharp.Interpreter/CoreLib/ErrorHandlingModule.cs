@@ -37,7 +37,7 @@ namespace SolarSharp.Interpreter.CoreLib
                     if (ret.Type == DataType.TailCallRequest)
                     {
                         if (ret.TailCallData.Continuation != null || ret.TailCallData.ErrorHandler != null)
-                            throw new ScriptRuntimeException("the function passed to {0} cannot be called directly by {0}. wrap in a script function instead.", funcName);
+                            throw new ErrorException("the function passed to {0} cannot be called directly by {0}. wrap in a script function instead.", funcName);
 
                         return DynValue.NewTailCallReq(new TailCallData()
                         {
@@ -50,14 +50,14 @@ namespace SolarSharp.Interpreter.CoreLib
                     }
                     else if (ret.Type == DataType.YieldRequest)
                     {
-                        throw new ScriptRuntimeException("the function passed to {0} cannot be called directly by {0}. wrap in a script function instead.", funcName);
+                        throw new ErrorException("the function passed to {0} cannot be called directly by {0}. wrap in a script function instead.", funcName);
                     }
                     else
                     {
                         return DynValue.NewTupleNested(DynValue.True, ret);
                     }
                 }
-                catch (ScriptRuntimeException ex)
+                catch (ErrorException ex)
                 {
                     executionContext.PerformMessageDecorationBeforeUnwind(handlerBeforeUnwind, ex);
                     return DynValue.NewTupleNested(DynValue.False, DynValue.NewString(ex.DecoratedMessage));

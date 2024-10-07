@@ -454,7 +454,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             DynValue v = mdesc.GetValue(script, obj);
 
             if (v.Type != DataType.ClrFunction)
-                throw new ScriptRuntimeException("a clr callback was expected in member {0}, while a {1} was found", mdesc.Name, v.Type);
+                throw new ErrorException("a clr callback was expected in member {0}, while a {1} was found", mdesc.Name, v.Type);
 
             return v.Callback.ClrCallback(execCtx, args);
         }

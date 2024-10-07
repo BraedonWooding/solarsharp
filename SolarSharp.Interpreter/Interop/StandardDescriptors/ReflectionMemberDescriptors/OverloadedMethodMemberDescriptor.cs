@@ -145,7 +145,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="context">The context.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        /// <exception cref="ScriptRuntimeException">function call doesn't match any overload</exception>
+        /// <exception cref="ErrorException">function call doesn't match any overload</exception>
         private DynValue PerformOverloadedCall(LuaState script, object obj, ScriptExecutionContext context, CallbackArguments args)
         {
             bool extMethodCacheNotExpired = IgnoreExtensionMethods || obj == null || m_ExtensionMethodVersion == UserData.GetExtensionMethodsChangeVersion();
@@ -219,7 +219,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 return bestOverload.Execute(script, obj, context, args);
             }
 
-            throw new ScriptRuntimeException($"function call doesn't match any overload");
+            throw new ErrorException($"function call doesn't match any overload");
         }
 
         private void Cache(bool hasObject, CallbackArguments args, IOverloadableMemberDescriptor bestOverload)

@@ -1,58 +1,84 @@
-﻿using System;
-using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Interop;
-using SolarSharp.Interpreter.Interop.BasicDescriptors;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System;
 
 namespace SolarSharp.Interpreter.Errors
 {
     /// <summary>
-    /// Exception for all runtime errors. In addition to constructors, it offers a lot of static methods
-    /// generating more "standard" Lua errors.
+    /// Core lua `error` exception.
     /// </summary>
-#if !(PCL || ((!UNITY_EDITOR) && (ENABLE_DOTNET)) || NETFX_CORE)
     [Serializable]
-#endif
-    public class ScriptRuntimeException : InterpreterException
+    public class ErrorException : Exception
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScriptRuntimeException"/> class.
+        /// Initializes a new instance of the <see cref="ErrorException"/> class.
         /// </summary>
         /// <param name="ex">The ex.</param>
-        public ScriptRuntimeException(Exception ex)
-            : base(ex)
+        protected ErrorException(Exception ex, string message)
+            : base(message, ex)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScriptRuntimeException"/> class.
+        /// Initializes a new instance of the <see cref="ErrorException"/> class.
         /// </summary>
         /// <param name="ex">The ex.</param>
-        public ScriptRuntimeException(ScriptRuntimeException ex)
-            : base(ex, ex.DecoratedMessage)
+        protected ErrorException(Exception ex)
+            : base(ex.Message, ex)
         {
-            DecoratedMessage = Message;
-            DoNotDecorateMessage = true;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScriptRuntimeException"/> class.
+        /// Initializes a new instance of the <see cref="ErrorException"/> class.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
-        public ScriptRuntimeException(string message)
+        protected ErrorException(string message)
             : base(message)
         {
-
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScriptRuntimeException"/> class.
+        /// Initializes a new instance of the <see cref="ErrorException"/> class.
         /// </summary>
         /// <param name="format">The format.</param>
         /// <param name="args">The arguments.</param>
-        public ScriptRuntimeException(string format, params object[] args)
-            : base(format, args)
+        protected ErrorException(string format, params object[] args)
+            : base(string.Format(format, args))
         {
+        }
 
+        /// <summary>
+        /// Gets the instruction pointer of the execution (if it makes sense)
+        /// </summary>
+        public int InstructionPtr { get; internal set; }
+
+        /// <summary>
+        /// Gets the decorated message (error message plus error location in script) if possible.
+        /// </summary>
+        public string DecoratedMessage { get; internal set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the message should not be decorated
+        /// </summary>
+        public bool DoNotDecorateMessage { get; set; }
+
+        internal void DecorateMessage(LuaState script, SourceRef sref, int ip = -1)
+        {
+            if (string.IsNullOrEmpty(this.DecoratedMessage))
+            {
+                if (DoNotDecorateMessage)
+                {
+                    this.DecoratedMessage = this.Message;
+                    return;
+                }
+                else if (sref != null)
+                {
+                    this.DecoratedMessage = string.Format("{0}: {1}", sref.FormatLocation(script), this.Message);
+                }
+                else
+                {
+                    this.DecoratedMessage = string.Format("bytecode:{0}: {1}", ip, this.Message);
+                }
+            }
         }
 
         /// <summary>
@@ -63,14 +89,14 @@ namespace SolarSharp.Interpreter.Errors
         /// <param name="r">The right operand (or null).</param>
         /// <returns>The exception to be raised.</returns>
         /// <exception cref="InternalErrorException">If both are numbers</exception>
-        public static ScriptRuntimeException ArithmeticOnNonNumber(DynValue l, DynValue r = default)
+        public static ErrorException ArithmeticOnNonNumber(DynValue l, DynValue r = default)
         {
             if (l.Type != DataType.Number && l.Type != DataType.String)
-                return new ScriptRuntimeException("attempt to perform arithmetic on a {0} value", l.Type.ToLuaTypeString());
+                return new ErrorException("attempt to perform arithmetic on a {0} value", l.Type.ToLuaTypeString());
             else if (r.IsNotNil() && r.Type != DataType.Number && r.Type != DataType.String)
-                return new ScriptRuntimeException("attempt to perform arithmetic on a {0} value", r.Type.ToLuaTypeString());
+                return new ErrorException("attempt to perform arithmetic on a {0} value", r.Type.ToLuaTypeString());
             else if (l.Type == DataType.String || r.IsNotNil() && r.Type == DataType.String)
-                return new ScriptRuntimeException("attempt to perform arithmetic on a string value");
+                return new ErrorException("attempt to perform arithmetic on a string value");
             else
                 throw new InternalErrorException("ArithmeticOnNonNumber - both are numbers");
         }
@@ -83,12 +109,12 @@ namespace SolarSharp.Interpreter.Errors
         /// <param name="r">The right operand.</param>
         /// <returns>The exception to be raised.</returns>
         /// <exception cref="InternalErrorException">If both are numbers or strings</exception>
-        public static ScriptRuntimeException ConcatOnNonString(DynValue l, DynValue r)
+        public static ErrorException ConcatOnNonString(DynValue l, DynValue r)
         {
             if (l.Type != DataType.Number && l.Type != DataType.String)
-                return new ScriptRuntimeException("attempt to concatenate a {0} value", l.Type.ToLuaTypeString());
+                return new ErrorException("attempt to concatenate a {0} value", l.Type.ToLuaTypeString());
             else if (r.IsNotNil() && r.Type != DataType.Number && r.Type != DataType.String)
-                return new ScriptRuntimeException("attempt to concatenate a {0} value", r.Type.ToLuaTypeString());
+                return new ErrorException("attempt to concatenate a {0} value", r.Type.ToLuaTypeString());
             else
                 throw new InternalErrorException("ConcatOnNonString - both are numbers/strings");
         }
@@ -99,9 +125,9 @@ namespace SolarSharp.Interpreter.Errors
         /// </summary>
         /// <param name="r">The operand.</param>
         /// <returns>The exception to be raised.</returns>
-        public static ScriptRuntimeException LenOnInvalidType(DynValue r)
+        public static ErrorException LenOnInvalidType(DynValue r)
         {
-            return new ScriptRuntimeException("attempt to get length of a {0} value", r.Type.ToLuaTypeString());
+            return new ErrorException("attempt to get length of a {0} value", r.Type.ToLuaTypeString());
         }
 
         /// <summary>
@@ -111,12 +137,12 @@ namespace SolarSharp.Interpreter.Errors
         /// <param name="l">The left operand.</param>
         /// <param name="r">The right operand.</param>
         /// <returns>The exception to be raised.</returns>
-        public static ScriptRuntimeException CompareInvalidType(DynValue l, DynValue r)
+        public static ErrorException CompareInvalidType(DynValue l, DynValue r)
         {
             if (l.Type.ToLuaTypeString() == r.Type.ToLuaTypeString())
-                return new ScriptRuntimeException("attempt to compare two {0} values", l.Type.ToLuaTypeString());
+                return new ErrorException("attempt to compare two {0} values", l.Type.ToLuaTypeString());
             else
-                return new ScriptRuntimeException("attempt to compare {0} with {1}", l.Type.ToLuaTypeString(), r.Type.ToLuaTypeString());
+                return new ErrorException("attempt to compare {0} with {1}", l.Type.ToLuaTypeString(), r.Type.ToLuaTypeString());
         }
 
         /// <summary>
@@ -127,9 +153,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <param name="funcName">Name of the function generating this error.</param>
         /// <param name="message">The error message.</param>
         /// <returns>The exception to be raised.</returns>
-        public static ScriptRuntimeException BadArgument(int argNum, string funcName, string message)
+        public static ErrorException BadArgument(int argNum, string funcName, string message)
         {
-            return new ScriptRuntimeException("bad argument #{0} to '{1}' ({2})", argNum + 1, funcName, message);
+            return new ErrorException("bad argument #{0} to '{1}' ({2})", argNum + 1, funcName, message);
         }
 
         /// <summary>
@@ -144,9 +170,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException BadArgumentUserData(int argNum, string funcName, Type expected, object got, bool allowNil)
+        public static ErrorException BadArgumentUserData(int argNum, string funcName, Type expected, object got, bool allowNil)
         {
-            return new ScriptRuntimeException("bad argument #{0} to '{1}' (userdata<{2}>{3} expected, got {4})",
+            return new ErrorException("bad argument #{0} to '{1}' (userdata<{2}>{3} expected, got {4})",
                 argNum + 1,
                 funcName,
                 expected.Name,
@@ -167,7 +193,7 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException BadArgument(int argNum, string funcName, DataType expected, DataType got, bool allowNil)
+        public static ErrorException BadArgument(int argNum, string funcName, DataType expected, DataType got, bool allowNil)
         {
             return BadArgument(argNum, funcName, expected.ToErrorTypeString(), got.ToErrorTypeString(), allowNil);
         }
@@ -184,9 +210,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException BadArgument(int argNum, string funcName, string expected, string got, bool allowNil)
+        public static ErrorException BadArgument(int argNum, string funcName, string expected, string got, bool allowNil)
         {
-            return new ScriptRuntimeException("bad argument #{0} to '{1}' ({2}{3} expected, got {4})",
+            return new ErrorException("bad argument #{0} to '{1}' ({2}{3} expected, got {4})",
                 argNum + 1, funcName, allowNil ? "nil or " : "", expected, got);
         }
 
@@ -203,9 +229,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException BadArgumentNoValue(int argNum, string funcName, DataType expected)
+        public static ErrorException BadArgumentNoValue(int argNum, string funcName, DataType expected)
         {
-            return new ScriptRuntimeException("bad argument #{0} to '{1}' ({2} expected, got no value)",
+            return new ErrorException("bad argument #{0} to '{1}' ({2} expected, got no value)",
                 argNum + 1, funcName, expected.ToErrorTypeString());
         }
 
@@ -218,9 +244,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException BadArgumentIndexOutOfRange(string funcName, int argNum)
+        public static ErrorException BadArgumentIndexOutOfRange(string funcName, int argNum)
         {
-            return new ScriptRuntimeException("bad argument #{0} to '{1}' (index out of range)", argNum + 1, funcName);
+            return new ErrorException("bad argument #{0} to '{1}' (index out of range)", argNum + 1, funcName);
         }
 
         /// <summary>
@@ -232,9 +258,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException BadArgumentNoNegativeNumbers(int argNum, string funcName)
+        public static ErrorException BadArgumentNoNegativeNumbers(int argNum, string funcName)
         {
-            return new ScriptRuntimeException("bad argument #{0} to '{1}' (not a non-negative number in proper range)",
+            return new ErrorException("bad argument #{0} to '{1}' (not a non-negative number in proper range)",
                 argNum + 1, funcName);
         }
 
@@ -249,9 +275,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException BadArgumentValueExpected(int argNum, string funcName)
+        public static ErrorException BadArgumentValueExpected(int argNum, string funcName)
         {
-            return new ScriptRuntimeException("bad argument #{0} to '{1}' (value expected)",
+            return new ErrorException("bad argument #{0} to '{1}' (value expected)",
                 argNum + 1, funcName);
         }
 
@@ -263,9 +289,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException IndexType(DynValue obj)
+        public static ErrorException IndexType(DynValue obj)
         {
-            return new ScriptRuntimeException("attempt to index a {0} value", obj.Type.ToLuaTypeString());
+            return new ErrorException("attempt to index a {0} value", obj.Type.ToLuaTypeString());
         }
 
         /// <summary>
@@ -275,9 +301,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException LoopInIndex()
+        public static ErrorException LoopInIndex()
         {
-            return new ScriptRuntimeException("loop in gettable");
+            return new ErrorException("loop in gettable");
         }
 
         /// <summary>
@@ -287,9 +313,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException LoopInNewIndex()
+        public static ErrorException LoopInNewIndex()
         {
-            return new ScriptRuntimeException("loop in settable");
+            return new ErrorException("loop in settable");
         }
 
         /// <summary>
@@ -299,9 +325,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException LoopInCall()
+        public static ErrorException LoopInCall()
         {
-            return new ScriptRuntimeException("loop in call");
+            return new ErrorException("loop in call");
         }
 
         /// <summary>
@@ -311,9 +337,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException TableIndexIsNil()
+        public static ErrorException TableIndexIsNil()
         {
-            return new ScriptRuntimeException("table index is nil");
+            return new ErrorException("table index is nil");
         }
 
         /// <summary>
@@ -323,9 +349,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException TableIndexIsNaN()
+        public static ErrorException TableIndexIsNaN()
         {
-            return new ScriptRuntimeException("table index is NaN");
+            return new ErrorException("table index is NaN");
         }
 
         /// <summary>
@@ -342,18 +368,18 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException ConvertToNumberFailed(int stage)
+        public static ErrorException ConvertToNumberFailed(int stage)
         {
             switch (stage)
             {
                 case 1:
-                    return new ScriptRuntimeException("'for' initial value must be a number");
+                    return new ErrorException("'for' initial value must be a number");
                 case 2:
-                    return new ScriptRuntimeException("'for' step must be a number");
+                    return new ErrorException("'for' step must be a number");
                 case 3:
-                    return new ScriptRuntimeException("'for' limit must be a number");
+                    return new ErrorException("'for' limit must be a number");
                 default:
-                    return new ScriptRuntimeException("value must be a number");
+                    return new ErrorException("value must be a number");
             }
         }
 
@@ -365,9 +391,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException ConvertObjectFailed(object obj)
+        public static ErrorException ConvertObjectFailed(object obj)
         {
-            return new ScriptRuntimeException("cannot convert clr type {0}", obj.GetType());
+            return new ErrorException("cannot convert clr type {0}", obj.GetType());
         }
 
         /// <summary>
@@ -378,9 +404,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException ConvertObjectFailed(DataType t)
+        public static ErrorException ConvertObjectFailed(DataType t)
         {
-            return new ScriptRuntimeException("cannot convert a {0} to a clr type", t.ToString().ToLowerInvariant());
+            return new ErrorException("cannot convert a {0} to a clr type", t.ToString().ToLowerInvariant());
         }
 
         /// <summary>
@@ -392,9 +418,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException ConvertObjectFailed(DataType t, Type t2)
+        public static ErrorException ConvertObjectFailed(DataType t, Type t2)
         {
-            return new ScriptRuntimeException("cannot convert a {0} to a clr type {1}", t.ToString().ToLowerInvariant(), t2.FullName);
+            return new ErrorException("cannot convert a {0} to a clr type {1}", t.ToString().ToLowerInvariant(), t2.FullName);
         }
 
         /// <summary>
@@ -406,9 +432,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException UserDataArgumentTypeMismatch(DataType t, Type clrType)
+        public static ErrorException UserDataArgumentTypeMismatch(DataType t, Type clrType)
         {
-            return new ScriptRuntimeException("cannot find a conversion from a MoonSharp {0} to a clr {1}", t.ToString().ToLowerInvariant(), clrType.FullName);
+            return new ErrorException("cannot find a conversion from a MoonSharp {0} to a clr {1}", t.ToString().ToLowerInvariant(), clrType.FullName);
         }
 
         /// <summary>
@@ -420,9 +446,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException UserDataMissingField(string typename, string fieldname)
+        public static ErrorException UserDataMissingField(string typename, string fieldname)
         {
-            return new ScriptRuntimeException("cannot access field {0} of userdata<{1}>", fieldname, typename);
+            return new ErrorException("cannot access field {0} of userdata<{1}>", fieldname, typename);
         }
 
         /// <summary>
@@ -433,12 +459,12 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException CannotResumeNotSuspended(CoroutineState state)
+        public static ErrorException CannotResumeNotSuspended(CoroutineState state)
         {
             if (state == CoroutineState.Dead)
-                return new ScriptRuntimeException("cannot resume dead coroutine");
+                return new ErrorException("cannot resume dead coroutine");
             else
-                return new ScriptRuntimeException("cannot resume non-suspended coroutine");
+                return new ErrorException("cannot resume non-suspended coroutine");
         }
 
         /// <summary>
@@ -448,9 +474,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException CannotYield()
+        public static ErrorException CannotYield()
         {
-            return new ScriptRuntimeException("attempt to yield across a CLR-call boundary");
+            return new ErrorException("attempt to yield across a CLR-call boundary");
         }
 
         /// <summary>
@@ -460,9 +486,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <returns>
         /// The exception to be raised.
         /// </returns>
-        public static ScriptRuntimeException CannotYieldMain()
+        public static ErrorException CannotYieldMain()
         {
-            return new ScriptRuntimeException("attempt to yield from outside a coroutine");
+            return new ErrorException("attempt to yield from outside a coroutine");
         }
 
         /// <summary>
@@ -472,14 +498,14 @@ namespace SolarSharp.Interpreter.Errors
         /// <param name="type">The lua non-function data type.</param>
         /// <param name="debugText">The debug text to aid location (appears as "near 'xxx'").</param>
         /// <returns></returns>
-        public static ScriptRuntimeException AttemptToCallNonFunc(DataType type, string debugText = null)
+        public static ErrorException AttemptToCallNonFunc(DataType type, string debugText = null)
         {
             string functype = type.ToErrorTypeString();
 
             if (debugText != null)
-                return new ScriptRuntimeException("attempt to call a {0} value near '{1}'", functype, debugText);
+                return new ErrorException("attempt to call a {0} value near '{1}'", functype, debugText);
             else
-                return new ScriptRuntimeException("attempt to call a {0} value", functype);
+                return new ErrorException("attempt to call a {0} value", functype);
         }
 
 
@@ -488,9 +514,9 @@ namespace SolarSharp.Interpreter.Errors
         /// an attempt to access a non-static member from a static userdata was made
         /// </summary>
         /// <param name="desc">The member descriptor.</param>
-        public static ScriptRuntimeException AccessInstanceMemberOnStatics(IMemberDescriptor desc)
+        public static ErrorException AccessInstanceMemberOnStatics(IMemberDescriptor desc)
         {
-            return new ScriptRuntimeException("attempt to access instance member {0} from a static userdata", desc.Name);
+            return new ErrorException("attempt to access instance member {0} from a static userdata", desc.Name);
         }
 
         /// <summary>
@@ -500,9 +526,9 @@ namespace SolarSharp.Interpreter.Errors
         /// <param name="typeDescr">The type descriptor.</param>
         /// <param name="desc">The member descriptor.</param>
         /// <returns></returns>
-        public static ScriptRuntimeException AccessInstanceMemberOnStatics(IUserDataDescriptor typeDescr, IMemberDescriptor desc)
+        public static ErrorException AccessInstanceMemberOnStatics(IUserDataDescriptor typeDescr, IMemberDescriptor desc)
         {
-            return new ScriptRuntimeException("attempt to access instance member {0}.{1} from a static userdata", typeDescr.Name, desc.Name);
+            return new ErrorException("attempt to access instance member {0}.{1} from a static userdata", typeDescr.Name, desc.Name);
         }
     }
 }

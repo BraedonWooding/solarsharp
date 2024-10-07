@@ -33,7 +33,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public SymbolRef Environment { get { return i_Env; } }
 
-
+        /// <summary>
         /// <summary>
         /// Gets the default _ENV.
         /// </summary>
@@ -89,46 +89,6 @@ namespace SolarSharp.Interpreter.DataTypes
                 return string.Format("{2} : {0} / {1}", i_Type, i_Env, i_Name);
             else
                 return string.Format("{2} : {0}[{1}]", i_Type, i_Index, i_Name);
-        }
-
-        /// <summary>
-        /// Writes this instance to a binary stream
-        /// </summary>
-        internal void WriteBinary(BinaryWriter bw)
-        {
-            bw.Write((byte)i_Type);
-            bw.Write(i_Index);
-            bw.Write(i_Name);
-        }
-
-        /// <summary>
-        /// Reads a symbolref from a binary stream 
-        /// </summary>
-        internal static SymbolRef ReadBinary(BinaryReader br)
-        {
-            SymbolRef that = new()
-            {
-                i_Type = (SymbolRefType)br.ReadByte(),
-                i_Index = br.ReadInt32(),
-                i_Name = br.ReadString()
-            };
-            return that;
-        }
-
-        internal void WriteBinaryEnv(BinaryWriter bw, LuaDictionary<SymbolRef, int> symbolMap)
-        {
-            if (i_Env != null)
-                bw.Write(symbolMap[i_Env]);
-            else
-                bw.Write(-1);
-        }
-
-        internal void ReadBinaryEnv(BinaryReader br, SymbolRef[] symbolRefs)
-        {
-            int idx = br.ReadInt32();
-
-            if (idx >= 0)
-                i_Env = symbolRefs[idx];
         }
     }
 }

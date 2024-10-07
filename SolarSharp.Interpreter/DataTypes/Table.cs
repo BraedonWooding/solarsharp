@@ -138,9 +138,9 @@ namespace SolarSharp.Interpreter.DataTypes
             for (int i = 1; i < keys.Length; ++i)
             {
                 DynValue vt = t.Get(key);
-                if (vt.IsNil()) throw new ScriptRuntimeException("Key '{0}' did not point to anything");
+                if (vt.IsNil()) throw new ErrorException("Key '{0}' did not point to anything");
                 if (vt.Type != DataType.Table)
-                    throw new ScriptRuntimeException("Key '{0}' did not point to a table");
+                    throw new ErrorException("Key '{0}' did not point to a table");
 
                 t = vt.Table;
                 key = keys[i];
@@ -296,9 +296,9 @@ namespace SolarSharp.Interpreter.DataTypes
             if (key.IsNilOrNan())
             {
                 if (key.IsNil())
-                    throw ScriptRuntimeException.TableIndexIsNil();
+                    throw ErrorException.TableIndexIsNil();
                 else
-                    throw ScriptRuntimeException.TableIndexIsNaN();
+                    throw ErrorException.TableIndexIsNaN();
             }
 
             if (key.Type == DataType.Number)
@@ -368,7 +368,7 @@ namespace SolarSharp.Interpreter.DataTypes
         public void Set(object key, DynValue value)
         {
             if (key == null)
-                throw ScriptRuntimeException.TableIndexIsNil();
+                throw ErrorException.TableIndexIsNil();
 
             Set(DynValue.FromObject(OwnerScript, key), value, invokeMetaMethods: false);
         }
@@ -382,7 +382,7 @@ namespace SolarSharp.Interpreter.DataTypes
         public void Set(object[] keys, DynValue value)
         {
             if (keys == null || keys.Length <= 0)
-                throw ScriptRuntimeException.TableIndexIsNil();
+                throw ErrorException.TableIndexIsNil();
 
             ResolveMultipleKeys(keys, out object key).Set(key, value);
         }
@@ -486,7 +486,7 @@ namespace SolarSharp.Interpreter.DataTypes
             {
                 if (!wasNil && n >= ArraySegment.Length)
                 {
-                    throw new ScriptRuntimeException("invalid key to 'next'");
+                    throw new ErrorException("invalid key to 'next'");
                 }
 
                 skipFinding = true;
@@ -511,7 +511,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 return DynValue.NewTuple(kvp.Key, kvp.Value);
             }
 
-            var it = ValueMap.TryGetEnumeratorFrom(v) ?? throw new ScriptRuntimeException("invalid key to 'next'");
+            var it = ValueMap.TryGetEnumeratorFrom(v) ?? throw new ErrorException("invalid key to 'next'");
             if (!it.MoveNext()) return DynValue.Nil;
             return DynValue.NewTuple(it.Current.Key, it.Current.Value);
         }

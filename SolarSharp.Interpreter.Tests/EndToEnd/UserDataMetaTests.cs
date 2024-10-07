@@ -251,7 +251,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(S.DoString("return #o2").Number, Is.EqualTo(123));
             });
 
-            Assert.Catch<ScriptRuntimeException>(() => S.DoString("return #o1"));
+            Assert.Catch<ErrorException>(() => S.DoString("return #o1"));
         }
 
 

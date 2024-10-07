@@ -107,7 +107,7 @@ namespace SolarSharp.Interpreter.Execution
         /// <param name="func">The function; it must be a Function or ClrFunction or have a call metamethod defined.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        /// <exception cref="ScriptRuntimeException">If the function yields, returns a tail call request with continuations/handlers or, of course, if it encounters errors.</exception>
+        /// <exception cref="ErrorException">If the function yields, returns a tail call request with continuations/handlers or, of course, if it encounters errors.</exception>
         public DynValue Call(DynValue func, params DynValue[] args)
         {
             if (func.Type == DataType.Function)
@@ -122,7 +122,7 @@ namespace SolarSharp.Interpreter.Execution
 
                     if (ret.Type == DataType.YieldRequest)
                     {
-                        throw ScriptRuntimeException.CannotYield();
+                        throw ErrorException.CannotYield();
                     }
                     else if (ret.Type == DataType.TailCallRequest)
                     {
@@ -130,7 +130,7 @@ namespace SolarSharp.Interpreter.Execution
 
                         if (tail.Continuation != null || tail.ErrorHandler != null)
                         {
-                            throw new ScriptRuntimeException("the function passed cannot be called directly. wrap in a script function instead.");
+                            throw new ErrorException("the function passed cannot be called directly. wrap in a script function instead.");
                         }
                         else
                         {
@@ -154,7 +154,7 @@ namespace SolarSharp.Interpreter.Execution
 
                     if (v.IsNil())
                     {
-                        throw ScriptRuntimeException.AttemptToCallNonFunc(func.Type);
+                        throw ErrorException.AttemptToCallNonFunc(func.Type);
                     }
 
                     func = v;
@@ -165,7 +165,7 @@ namespace SolarSharp.Interpreter.Execution
                     }
                 }
 
-                throw ScriptRuntimeException.LoopInCall();
+                throw ErrorException.LoopInCall();
             }
         }
 
@@ -216,7 +216,7 @@ namespace SolarSharp.Interpreter.Execution
         /// </summary>
         /// <param name="messageHandler">The message handler.</param>
         /// <param name="exception">The exception.</param>
-        public void PerformMessageDecorationBeforeUnwind(DynValue messageHandler, ScriptRuntimeException exception)
+        public void PerformMessageDecorationBeforeUnwind(DynValue messageHandler, ErrorException exception)
         {
             exception.DecoratedMessage = messageHandler.IsNotNil()
                 ? m_Processor.PerformMessageDecorationBeforeUnwind(messageHandler, exception.Message, CallingLocation)

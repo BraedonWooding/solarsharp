@@ -445,11 +445,11 @@ namespace SolarSharp.Interpreter
         /// <param name="modname">The module name</param>
         /// <param name="globalContext">The global context.</param>
         /// <returns></returns>
-        /// <exception cref="ScriptRuntimeException">Raised if module is not found</exception>
+        /// <exception cref="ErrorException">Raised if module is not found</exception>
         public DynValue RequireModule(string modname, Table globalContext = null)
         {
             Table globals = globalContext ?? m_GlobalTable;
-            string filename = Options.ScriptLoader.ResolveModuleName(modname, globals) ?? throw new ScriptRuntimeException("module '{0}' not found", modname);
+            string filename = Options.ScriptLoader.ResolveModuleName(modname, globals) ?? throw new ErrorException("module '{0}' not found", modname);
             DynValue func = LoadFile(filename, globalContext, filename);
             return func;
         }

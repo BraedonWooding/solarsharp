@@ -137,7 +137,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("o", UserData.CreateStatic<SomeType>());
 
-            Assert.Throws<ScriptRuntimeException>(() => S.DoString("return o.SomeNestedTypePrivate2:Get()"));
+            Assert.Throws<ErrorException>(() => S.DoString("return o.SomeNestedTypePrivate2:Get()"));
         }
 
         [Test]
@@ -185,7 +185,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("o", UserData.CreateStatic<VSomeType>());
 
-            Assert.Throws<ScriptRuntimeException>(() => S.DoString("return o.SomeNestedTypePrivate2:Get()"));
+            Assert.Throws<ErrorException>(() => S.DoString("return o.SomeNestedTypePrivate2:Get()"));
         }
     }
 }

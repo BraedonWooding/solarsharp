@@ -129,16 +129,16 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         public static void CheckAccess(this IMemberDescriptor desc, MemberDescriptorAccess access, object obj)
         {
             if (!desc.IsStatic && obj == null)
-                throw ScriptRuntimeException.AccessInstanceMemberOnStatics(desc);
+                throw ErrorException.AccessInstanceMemberOnStatics(desc);
 
             if (access.HasAllFlags(MemberDescriptorAccess.CanExecute) && !desc.CanExecute())
-                throw new ScriptRuntimeException("userdata member {0} cannot be called.", desc.Name);
+                throw new ErrorException("userdata member {0} cannot be called.", desc.Name);
 
             if (access.HasAllFlags(MemberDescriptorAccess.CanWrite) && !desc.CanWrite())
-                throw new ScriptRuntimeException("userdata member {0} cannot be assigned to.", desc.Name);
+                throw new ErrorException("userdata member {0} cannot be assigned to.", desc.Name);
 
             if (access.HasAllFlags(MemberDescriptorAccess.CanRead) && !desc.CanRead())
-                throw new ScriptRuntimeException("userdata member {0} cannot be read from.", desc.Name);
+                throw new ErrorException("userdata member {0} cannot be read from.", desc.Name);
         }
 
 

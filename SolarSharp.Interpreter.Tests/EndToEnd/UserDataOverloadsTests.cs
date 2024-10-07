@@ -228,7 +228,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void Interop_Overloads_ExtMethods2()
         {
             UserData.RegisterExtensionType(typeof(OverloadsExtMethods));
-            Assert.Throws<ScriptRuntimeException>(() => RunTestOverload("s:method3()", "X3"));
+            Assert.Throws<ErrorException>(() => RunTestOverload("s:method3()", "X3"));
         }
 
         [Test]
@@ -237,7 +237,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             // pollute cache
             RunTestOverload("o:method1(5)", "3");
             // exec non static on static
-            Assert.Throws<ScriptRuntimeException>(() => RunTestOverload("s:method1(5)", "s"));
+            Assert.Throws<ErrorException>(() => RunTestOverload("s:method1(5)", "s"));
         }
 
         [Test]

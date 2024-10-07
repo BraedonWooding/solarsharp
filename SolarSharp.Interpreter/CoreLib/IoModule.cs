@@ -184,7 +184,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
             catch (Exception ex)
             {
-                throw new ScriptRuntimeException(IoExceptionToLuaMessage(ex, filename));
+                throw new ErrorException(IoExceptionToLuaMessage(ex, filename));
             }
         }
 
@@ -205,7 +205,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 .Replace("t", "");
 
             if (invalidChars.Length > 0)
-                throw ScriptRuntimeException.BadArgument(1, "open", "invalid mode");
+                throw ErrorException.BadArgument(1, "open", "invalid mode");
 
 
             try
@@ -229,7 +229,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 else
                 {
                     if (isBinary)
-                        throw new ScriptRuntimeException("Can't specify encodings other than nil or 'binary' for binary streams.");
+                        throw new ErrorException("Can't specify encodings other than nil or 'binary' for binary streams.");
 
                     e = Encoding.GetEncoding(encoding);
                 }

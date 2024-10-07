@@ -71,7 +71,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
                 case DataType.ClrFunction:
                     return value.Callback;
                 default:
-                    throw ScriptRuntimeException.ConvertObjectFailed(value.Type);
+                    throw ErrorException.ConvertObjectFailed(value.Type);
             }
         }
 
@@ -188,7 +188,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (stringSubType != StringConversions.StringSubtype.None && str != null)
                 return StringConversions.ConvertString(stringSubType, str, desiredType, value.Type);
 
-            throw ScriptRuntimeException.ConvertObjectFailed(value.Type, desiredType);
+            throw ErrorException.ConvertObjectFailed(value.Type, desiredType);
         }
 
         /// <summary>

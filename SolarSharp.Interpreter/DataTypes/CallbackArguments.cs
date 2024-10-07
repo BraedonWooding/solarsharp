@@ -184,7 +184,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="argNum">The argument number.</param>
         /// <param name="funcName">Name of the function.</param>
         /// <returns></returns>
-        /// <exception cref="ScriptRuntimeException">'tostring' must return a string to '{0}'</exception>
+        /// <exception cref="ErrorException">'tostring' must return a string to '{0}'</exception>
         public string AsStringUsingMeta(ScriptExecutionContext executionContext, int argNum, string funcName)
         {
             if (this[argNum].Type == DataType.Table && this[argNum].Table.MetaTable != null &&
@@ -193,7 +193,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 var v = executionContext.GetScript().Call(method, this[argNum]);
 
                 if (v.Type != DataType.String)
-                    throw new ScriptRuntimeException("'tostring' must return a string to '{0}'", funcName);
+                    throw new ErrorException("'tostring' must return a string to '{0}'", funcName);
 
                 return v.ToPrintString();
             }

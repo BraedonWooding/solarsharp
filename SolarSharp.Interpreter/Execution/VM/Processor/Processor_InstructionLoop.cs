@@ -218,11 +218,11 @@ namespace SolarSharp.Interpreter.Execution.VM
                 if (m_CanYield)
                     return yieldRequest;
                 else if (State == CoroutineState.Main)
-                    throw ScriptRuntimeException.CannotYieldMain();
+                    throw ErrorException.CannotYieldMain();
                 else
-                    throw ScriptRuntimeException.CannotYield();
+                    throw ErrorException.CannotYield();
             }
-            catch (InterpreterException ex)
+            catch (ErrorException ex)
             {
                 FillDebugData(ex, instructionPtr);
 
@@ -289,14 +289,14 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
                 else
                 {
-                    throw new ScriptRuntimeException("error handler not set to a function");
+                    throw new ErrorException("error handler not set to a function");
                 }
 
                 string newmsg = ret.ToPrintString();
                 if (newmsg != null)
                     return newmsg;
             }
-            catch (ScriptRuntimeException innerEx)
+            catch (ErrorException innerEx)
             {
                 return innerEx.Message + "\n" + decoratedMessage;
             }
@@ -388,7 +388,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             if (v.HasValue)
                 m_ValueStack.Push(DynValue.NewNumber(v.Value));
             else
-                throw ScriptRuntimeException.ConvertToNumberFailed(i.NumVal);
+                throw ErrorException.ConvertToNumberFailed(i.NumVal);
         }
 
 
@@ -677,7 +677,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 return Internal_ExecCall(argsCount + 1, instructionPtr, handler, continuation);
             }
 
-            throw ScriptRuntimeException.AttemptToCallNonFunc(fn.Type, debugText);
+            throw ErrorException.AttemptToCallNonFunc(fn.Type, debugText);
         }
 
         private int PerformTCO(int argsCount)
@@ -806,7 +806,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 int ip = Internal_InvokeBinaryMetaMethod(l, r, "__add", instructionPtr);
                 if (ip >= 0) return ip;
-                else throw ScriptRuntimeException.ArithmeticOnNonNumber(l, r);
+                else throw ErrorException.ArithmeticOnNonNumber(l, r);
             }
         }
 
@@ -827,7 +827,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 int ip = Internal_InvokeBinaryMetaMethod(l, r, "__sub", instructionPtr);
                 if (ip >= 0) return ip;
-                else throw ScriptRuntimeException.ArithmeticOnNonNumber(l, r);
+                else throw ErrorException.ArithmeticOnNonNumber(l, r);
             }
         }
 
@@ -848,7 +848,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 int ip = Internal_InvokeBinaryMetaMethod(l, r, "__mul", instructionPtr);
                 if (ip >= 0) return ip;
-                else throw ScriptRuntimeException.ArithmeticOnNonNumber(l, r);
+                else throw ErrorException.ArithmeticOnNonNumber(l, r);
             }
         }
 
@@ -871,7 +871,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 int ip = Internal_InvokeBinaryMetaMethod(l, r, "__mod", instructionPtr);
                 if (ip >= 0) return ip;
-                else throw ScriptRuntimeException.ArithmeticOnNonNumber(l, r);
+                else throw ErrorException.ArithmeticOnNonNumber(l, r);
             }
         }
 
@@ -892,7 +892,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 int ip = Internal_InvokeBinaryMetaMethod(l, r, "__div", instructionPtr);
                 if (ip >= 0) return ip;
-                else throw ScriptRuntimeException.ArithmeticOnNonNumber(l, r);
+                else throw ErrorException.ArithmeticOnNonNumber(l, r);
             }
         }
 
@@ -913,7 +913,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 int ip = Internal_InvokeBinaryMetaMethod(l, r, "__pow", instructionPtr);
                 if (ip >= 0) return ip;
-                else throw ScriptRuntimeException.ArithmeticOnNonNumber(l, r);
+                else throw ErrorException.ArithmeticOnNonNumber(l, r);
             }
 
         }
@@ -932,7 +932,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 int ip = Internal_InvokeUnaryMetaMethod(r, "__unm", instructionPtr);
                 if (ip >= 0) return ip;
-                else throw ScriptRuntimeException.ArithmeticOnNonNumber(r);
+                else throw ErrorException.ArithmeticOnNonNumber(r);
             }
         }
 
@@ -995,7 +995,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 int ip = Internal_InvokeBinaryMetaMethod(l, r, "__lt", instructionPtr);
                 if (ip < 0)
-                    throw ScriptRuntimeException.CompareInvalidType(l, r);
+                    throw ErrorException.CompareInvalidType(l, r);
                 else
                     return ip;
             }
@@ -1026,7 +1026,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                     ip = Internal_InvokeBinaryMetaMethod(r, l, "__lt", instructionPtr, DynValue.True);
 
                     if (ip < 0)
-                        throw ScriptRuntimeException.CompareInvalidType(l, r);
+                        throw ErrorException.CompareInvalidType(l, r);
                     else
                         return ip;
                 }
@@ -1050,7 +1050,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                     return ip;
                 else if (r.Type == DataType.Table)
                     m_ValueStack.Push(DynValue.NewNumber(r.Table.Length));
-                else throw ScriptRuntimeException.LenOnInvalidType(r);
+                else throw ErrorException.LenOnInvalidType(r);
             }
 
             return instructionPtr;
@@ -1073,7 +1073,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             {
                 int ip = Internal_InvokeBinaryMetaMethod(l, r, "__concat", instructionPtr);
                 if (ip >= 0) return ip;
-                else throw ScriptRuntimeException.ConcatOnNonString(l, r);
+                else throw ErrorException.ConcatOnNonString(l, r);
             }
         }
 
@@ -1127,7 +1127,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                     if (!ud.Descriptor.SetIndex(GetScript(), ud.Object, originalIdx, value, isDirectIndexing: i.OpCode == OpCode.IndexN))
                     {
-                        throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
+                        throw ErrorException.UserDataMissingField(ud.Descriptor.Name, idx.String);
                     }
 
                     return instructionPtr;
@@ -1136,7 +1136,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 {
                     newIndexMethod = GetMetamethodRaw(obj, "__newindex");
 
-                    if (newIndexMethod.IsNil()) throw ScriptRuntimeException.IndexType(obj);
+                    if (newIndexMethod.IsNil()) throw ErrorException.IndexType(obj);
                 }
 
                 if (newIndexMethod.Type == DataType.Function || newIndexMethod.Type == DataType.ClrFunction)
@@ -1156,7 +1156,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
 
             }
-            throw ScriptRuntimeException.LoopInNewIndex();
+            throw ErrorException.LoopInNewIndex();
         }
 
         private int ExecIndexSetMultiIdx(Instruction i, int instructionPtr)
@@ -1176,7 +1176,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                     if (!ud.Descriptor.SetIndex(GetScript(), ud.Object, originalIdx, value, isDirectIndexing: false))
                     {
-                        throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
+                        throw ErrorException.UserDataMissingField(ud.Descriptor.Name, idx.String);
                     }
 
                     return instructionPtr;
@@ -1187,12 +1187,12 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                     if (newIndexMethod.IsNil())
                     {
-                        if (obj.Type == DataType.Table) throw new ScriptRuntimeException("cannot multi-index a table. userdata expected");
-                        throw ScriptRuntimeException.IndexType(obj);
+                        if (obj.Type == DataType.Table) throw new ErrorException("cannot multi-index a table. userdata expected");
+                        throw ErrorException.IndexType(obj);
                     }
                     else if (newIndexMethod.Type == DataType.Function || newIndexMethod.Type == DataType.ClrFunction)
                     {
-                        throw new ScriptRuntimeException("cannot multi-index through metamethods. userdata expected");
+                        throw new ErrorException("cannot multi-index through metamethods. userdata expected");
                     }
                     else
                     {
@@ -1200,7 +1200,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                     }
                 }
             }
-            throw ScriptRuntimeException.LoopInNewIndex();
+            throw ErrorException.LoopInNewIndex();
         }
 
         private int ExecIndexGetSingleIdx(Instruction i, int instructionPtr)
@@ -1239,14 +1239,14 @@ namespace SolarSharp.Interpreter.Execution.VM
                     UserData ud = obj.UserData;
 
                     var v = ud.Descriptor.Index(GetScript(), ud.Object, originalIdx, isDirectIndexing: i.OpCode == OpCode.IndexN);
-                    if (v.IsNil()) throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
+                    if (v.IsNil()) throw ErrorException.UserDataMissingField(ud.Descriptor.Name, idx.String);
                     m_ValueStack.Push(v);
                     return instructionPtr;
                 }
                 else
                 {
                     indexMethod = GetMetamethodRaw(obj, "__index");
-                    if (indexMethod.IsNil()) throw ScriptRuntimeException.IndexType(obj);
+                    if (indexMethod.IsNil()) throw ErrorException.IndexType(obj);
                 }
 
                 if (indexMethod.Type == DataType.Function || indexMethod.Type == DataType.ClrFunction)
@@ -1261,7 +1261,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                     obj = indexMethod;
                 }
             }
-            throw ScriptRuntimeException.LoopInNewIndex();
+            throw ErrorException.LoopInNewIndex();
         }
 
         private int ExecIndexGetMultiIdx(Instruction i, int instructionPtr)
@@ -1279,7 +1279,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                     UserData ud = obj.UserData;
 
                     var v = ud.Descriptor.Index(GetScript(), ud.Object, originalIdx, isDirectIndexing: false);
-                    if (v.IsNil()) throw ScriptRuntimeException.UserDataMissingField(ud.Descriptor.Name, idx.String);
+                    if (v.IsNil()) throw ErrorException.UserDataMissingField(ud.Descriptor.Name, idx.String);
                     m_ValueStack.Push(v);
                     return instructionPtr;
                 }
@@ -1290,17 +1290,17 @@ namespace SolarSharp.Interpreter.Execution.VM
                     {
                         if (obj.Type == DataType.Table)
                         {
-                            throw new ScriptRuntimeException("cannot multi-index a table. userdata expected");
+                            throw new ErrorException("cannot multi-index a table. userdata expected");
                         }
                         else
                         {
-                            throw ScriptRuntimeException.IndexType(obj);
+                            throw ErrorException.IndexType(obj);
                         }
                     }
 
                     if (indexMethod.Type == DataType.Function || indexMethod.Type == DataType.ClrFunction)
                     {
-                        throw new ScriptRuntimeException("cannot multi-index through metamethods. userdata expected");
+                        throw new ErrorException("cannot multi-index through metamethods. userdata expected");
                     }
                     else
                     {
@@ -1309,7 +1309,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
             }
 
-            throw ScriptRuntimeException.LoopInIndex();
+            throw ErrorException.LoopInIndex();
         }
     }
 }

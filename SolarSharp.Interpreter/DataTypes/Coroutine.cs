@@ -169,7 +169,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 return ret;
             }
             else
-                throw ScriptRuntimeException.CannotResumeNotSuspended(CoroutineState.Dead);
+                throw ErrorException.CannotResumeNotSuspended(CoroutineState.Dead);
         }
 
         /// <summary>

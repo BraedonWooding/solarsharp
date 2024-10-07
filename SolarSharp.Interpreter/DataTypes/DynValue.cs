@@ -658,7 +658,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Gets the length of a string or table value.
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="ScriptRuntimeException">Value is not a table or string.</exception>
+        /// <exception cref="ErrorException">Value is not a table or string.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DynValue GetLength()
         {
@@ -667,7 +667,7 @@ namespace SolarSharp.Interpreter.DataTypes
             if (Type == DataType.String)
                 return NewNumber(String.Length);
 
-            throw new ScriptRuntimeException("Can't get length of type {0}", Type);
+            throw new ErrorException("Can't get length of type {0}", Type);
         }
 
         /// <summary>
@@ -769,7 +769,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="argNum">The argument number, for error message purposes.</param>
         /// <param name="flags">The TypeValidationFlags.</param>
         /// <returns></returns>
-        /// <exception cref="ScriptRuntimeException">Thrown
+        /// <exception cref="ErrorException">Thrown
         /// if the value is not of the specified type or - considering the TypeValidationFlags - is not convertible
         /// to the specified type.</exception>
         public DynValue CheckType(string funcName, DataType desiredType, int argNum = -1, TypeValidationFlags flags = TypeValidationFlags.Default)
@@ -805,9 +805,9 @@ namespace SolarSharp.Interpreter.DataTypes
             }
 
             if (IsNil())
-                throw ScriptRuntimeException.BadArgumentNoValue(argNum, funcName, desiredType);
+                throw ErrorException.BadArgumentNoValue(argNum, funcName, desiredType);
 
-            throw ScriptRuntimeException.BadArgument(argNum, funcName, desiredType, Type, allowNil);
+            throw ErrorException.BadArgument(argNum, funcName, desiredType, Type, allowNil);
         }
 
         /// <summary>
@@ -830,7 +830,7 @@ namespace SolarSharp.Interpreter.DataTypes
             if (o != null && o is T)
                 return (T)o;
 
-            throw ScriptRuntimeException.BadArgumentUserData(argNum, funcName, typeof(T), o, allowNil);
+            throw ErrorException.BadArgumentUserData(argNum, funcName, typeof(T), o, allowNil);
         }
     }
 }

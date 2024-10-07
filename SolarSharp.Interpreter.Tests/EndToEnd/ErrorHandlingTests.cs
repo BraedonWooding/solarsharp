@@ -128,7 +128,7 @@ return a()
                     var v = a[0].Function.Call();
                     return v;
                 }
-                catch (ScriptRuntimeException)
+                catch (ErrorException)
                 {
                     return DynValue.NewString("!");
                 }

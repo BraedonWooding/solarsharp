@@ -98,7 +98,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     Assert.That(res.Number, Is.EqualTo(115));
                 });
             }
-            catch (ScriptRuntimeException)
+            catch (ErrorException)
             {
                 return;
             }
@@ -131,7 +131,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     Assert.That(res.Number, Is.EqualTo(123));
                 });
             }
-            catch (ScriptRuntimeException)
+            catch (ErrorException)
             {
                 return;
             }
@@ -328,7 +328,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             S.Globals.Set("myobj", UserData.Create(obj));
 
             Assert.That(obj.IntProp, Is.EqualTo(321));
-            Assert.Throws<ScriptRuntimeException>(() => S.DoString(script));
+            Assert.Throws<ErrorException>(() => S.DoString(script));
         }
 
         private static void Test_StaticFieldAccess(InteropAccessMode opt)

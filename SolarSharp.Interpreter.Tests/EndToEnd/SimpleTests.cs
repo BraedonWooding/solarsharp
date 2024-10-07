@@ -1740,7 +1740,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 Assert.Fail(); // ScriptRuntimeException should have been thrown, if it doesn't Assert.Fail should execute
             }
-            catch (ScriptRuntimeException e)
+            catch (ErrorException e)
             {
                 Assert.Pass(e.DecoratedMessage);
             }
