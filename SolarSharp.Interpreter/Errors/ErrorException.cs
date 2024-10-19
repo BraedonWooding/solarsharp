@@ -1,4 +1,6 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using System;
 
 namespace SolarSharp.Interpreter.Errors

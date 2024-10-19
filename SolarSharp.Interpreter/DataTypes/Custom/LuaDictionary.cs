@@ -2,6 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+#if NETSTANDARD2_1_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 using System.Linq;
 using System.Runtime.CompilerServices;
 

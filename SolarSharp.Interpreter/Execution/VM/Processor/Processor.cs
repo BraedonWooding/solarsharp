@@ -60,8 +60,8 @@ namespace SolarSharp.Interpreter.Execution.VM
         {
             List<Processor> coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : m_CoroutinesStack;
 
-            if (coroutinesStack.Count > 0 && coroutinesStack[^1] != this)
-                return coroutinesStack[^1].Call(function, args);
+            if (coroutinesStack.Count > 0 && coroutinesStack[coroutinesStack.Count - 1] != this)
+                return coroutinesStack[coroutinesStack.Count - 1].Call(function, args);
 
             EnterProcessor();
 

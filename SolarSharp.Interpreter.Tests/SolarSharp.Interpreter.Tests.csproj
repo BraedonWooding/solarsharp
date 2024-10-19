@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <LangVersion>9.0</LangVersion>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net472;net8.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <RootNamespace>SolarSharp.Interpreter.Tests</RootNamespace>
     <AssemblyName>SolarSharp.Interpreter.Tests</AssemblyName>

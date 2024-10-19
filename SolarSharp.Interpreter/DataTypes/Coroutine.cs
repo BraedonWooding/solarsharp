@@ -128,12 +128,10 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
         public System.Collections.IEnumerator AsUnityCoroutine()
         {
-#pragma warning disable 0219
-            foreach (DynValue v in AsTypedEnumerable())
+            foreach (DynValue _ in AsTypedEnumerable())
             {
                 yield return null;
             }
-#pragma warning restore 0219
         }
 
         /// <summary>
@@ -150,7 +148,6 @@ namespace SolarSharp.Interpreter.DataTypes
             else
                 throw new InvalidOperationException("Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead");
         }
-
 
         /// <summary>
         /// Resumes the coroutine.
@@ -183,7 +180,6 @@ namespace SolarSharp.Interpreter.DataTypes
             return Resume(new DynValue[0]);
         }
 
-
         /// <summary>
         /// Resumes the coroutine.
         /// </summary>
@@ -214,7 +210,6 @@ namespace SolarSharp.Interpreter.DataTypes
             return Resume(dargs);
         }
 
-
         /// <summary>
         /// Resumes the coroutine
         /// </summary>
@@ -230,9 +225,6 @@ namespace SolarSharp.Interpreter.DataTypes
 
             return Resume(context, dargs);
         }
-
-
-
 
         /// <summary>
         /// Gets the coroutine state.
