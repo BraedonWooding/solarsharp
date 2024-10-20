@@ -41,6 +41,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         public Coroutine AssociatedCoroutine { get; set; }
 
         public DynValue Coroutine_Resume(DynValue[] args)
+
         {
             EnterProcessor();
 
