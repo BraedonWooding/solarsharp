@@ -15,7 +15,7 @@ Key changes from MoonSharp:
 Look [here for differences from moonsharp](#differences-from-moonsharp).
 
 Features:
-* High compatibility with Lua 5.2 (with the only unsupported feature being weak tables support)
+* High compatibility with Lua 5.4 (with the only unsupported feature being weak tables support)
 * A few key syntax extensions to make Lua code easier to write (lambdas)
 * Easy to use API
 * Runs on a lot of various platforms; AOT like iOS, Unity3D (including IL2CPP), Mono, ...

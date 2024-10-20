@@ -16,8 +16,6 @@ namespace SolarSharp.Interpreter.Execution.Scopes
 
         private readonly Dictionary<string, SymbolRef> m_DefinedNames = new();
 
-
-
         internal void Rename(string name)
         {
             SymbolRef sref = m_DefinedNames[name];

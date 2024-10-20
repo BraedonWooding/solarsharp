@@ -21,9 +21,6 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
             m_Start = whileTk.GetSourceRefUpTo(lcontext.Lexer.Current);
 
-            //m_Start = BuildSourceRef(context.Start, exp.Stop);
-            //m_End = BuildSourceRef(context.Stop, context.END());
-
             lcontext.Scope.PushBlock();
             CheckTokenType(lcontext, TokenType.Do);
             m_Block = new CompositeStatement(lcontext);
