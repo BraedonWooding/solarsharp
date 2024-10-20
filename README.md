@@ -15,7 +15,7 @@ Key changes from MoonSharp:
 Look [here for differences from moonsharp](#differences-from-moonsharp).
 
 Features:
-* High compatibility with Lua 5.2 (with the only unsupported feature being weak tables support)
+* High compatibility with Lua 5.4 (with the only unsupported feature being weak tables support)
 * A few key syntax extensions to make Lua code easier to write (lambdas)
 * Easy to use API
 * Runs on a lot of various platforms; AOT like iOS, Unity3D (including IL2CPP), Mono, ...
@@ -77,7 +77,9 @@ Most of these changes were done because:
 	- They are harder to keep in sync with standard Lua processor and are ripe for bugs
 	- We instead support much stronger sandboxing and introduce dynamic "like" expressions (for debugging/other use cases) through that.
 - Debugger was removed, instead we (ideally) will support native Lua debuggers!  (though we will have to see how good this support will be).
-- Solarp/MoonSharpModuleMethodAttribute can not be applied to static fields anymore, it can only be applied to methods.
+- SolarSharpModule/MoonSharpModuleMethodAttribute can not be applied to static fields anymore, it can only be applied to methods.
+
+You can refer to [Full List of Differences](./FullListOfDifferences.md) for more details.
 
 ## Why use MoonSharp if so much of it was modified?
 

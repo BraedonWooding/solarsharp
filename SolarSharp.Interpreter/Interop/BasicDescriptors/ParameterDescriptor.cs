@@ -104,7 +104,6 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             }
         }
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ParameterDescriptor"/> class.
         /// </summary>
@@ -113,13 +112,12 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         {
             Name = pi.Name;
             Type = pi.ParameterType;
-            HasDefaultValue = !Framework.Do.IsDbNull(pi.DefaultValue);
+            HasDefaultValue = true;
             DefaultValue = pi.DefaultValue;
             IsOut = pi.IsOut;
             IsRef = pi.ParameterType.IsByRef;
             IsVarArgs = pi.ParameterType.IsArray && pi.GetCustomAttributes(typeof(ParamArrayAttribute), true).Any();
         }
-
 
         /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.
@@ -154,7 +152,6 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             m_OriginalType = Type;
             Type = type;
         }
-
 
         /// <summary>
         /// Prepares the descriptor for hard-wiring.

@@ -4,11 +4,15 @@ The following are a series of extensions to SolarSharp.  There are intended prim
 
 ## Sync Library
 
+This contains locks, threading, and other tools for multi-threading.
 
+## Collections Library
+
+This contains sets, queues, and other utilities that are optimized for this use.
 
 ## Array Library
 
-The array standard library has a series of nice extensions.
+The array standard library has a series of nice extensions for arrays & slices.
 
 ### `array.create(n)`
 

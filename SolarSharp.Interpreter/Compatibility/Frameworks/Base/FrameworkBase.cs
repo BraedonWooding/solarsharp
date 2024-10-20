@@ -65,8 +65,6 @@ namespace SolarSharp.Interpreter.Compatibility.Frameworks.Base
 
         public abstract bool IsAssignableFrom(Type current, Type toCompare);
 
-        public abstract bool IsDbNull(object o);
-
         public abstract MethodInfo GetMethod(Type resourcesType, string v, Type[] type);
     }
 }
