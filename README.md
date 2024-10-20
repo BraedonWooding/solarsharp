@@ -77,7 +77,9 @@ Most of these changes were done because:
 	- They are harder to keep in sync with standard Lua processor and are ripe for bugs
 	- We instead support much stronger sandboxing and introduce dynamic "like" expressions (for debugging/other use cases) through that.
 - Debugger was removed, instead we (ideally) will support native Lua debuggers!  (though we will have to see how good this support will be).
-- Solarp/MoonSharpModuleMethodAttribute can not be applied to static fields anymore, it can only be applied to methods.
+- SolarSharpModule/MoonSharpModuleMethodAttribute can not be applied to static fields anymore, it can only be applied to methods.
+
+You can refer to [Full List of Differences](./FullListOfDifferences.md) for more details.
 
 ## Why use MoonSharp if so much of it was modified?
 

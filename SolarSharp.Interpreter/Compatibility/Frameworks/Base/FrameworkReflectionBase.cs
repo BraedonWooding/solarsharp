@@ -1,14 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-
-#if DOTNET_CORE
-	using TTypeInfo = System.Reflection.TypeInfo;
-#elif NETFX_CORE
-	using TTypeInfo = System.Reflection.TypeInfo;
-#else
 using TTypeInfo = System.Type;
-#endif
 
 namespace SolarSharp.Interpreter.Compatibility.Frameworks.Base
 {
