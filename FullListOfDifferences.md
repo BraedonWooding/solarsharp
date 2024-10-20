@@ -21,6 +21,10 @@ This has some downsides:
 - We **don't** (and won't) support MoonSharp hotwiring.  We **might** (likely will) add a new source generator solution to match the similar behaviour but it'll require regenerating the files.
 - `__iterator` isn't supported and the replacement `__pairs` (added in Lua 5.2) isn't a perfect replacement from a syntax point of view.
 
+## Misc/Minor Changes
+
+- Previously DBNull was supported in parameters (in particular it maps to null property) but this wasn't well documented and it's a very specific hack.  Now it will be supported but it'll just be given as DBNull **not** null.  I doubt this will make a meaningful difference to your application but worth mentioning.
+
 ## Removal of Script Ownership
 
 - Script ownership have been removed (it was preventing the sharing of tables/objects between states)
