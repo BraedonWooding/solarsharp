@@ -29,6 +29,7 @@ namespace SolarSharp.Interpreter
         /// The Lua version being supported
         /// </summary>
         public const string LUA_VERSION = "5.2";
+
         private readonly Processor m_MainProcessor = null;
         private readonly ByteCode m_ByteCode;
         private readonly Table m_GlobalTable;
@@ -130,9 +131,7 @@ namespace SolarSharp.Interpreter
             }
 
             string chunkName = string.Format("{0}", codeFriendlyName ?? "?");
-            int address = Loader_Fast.LoadChunk(this,
-                source,
-                m_ByteCode);
+            int address = Loader_Fast.LoadChunk(this, chunkName, m_ByteCode);
 
             return MakeClosure(address, globalTable ?? m_GlobalTable);
         }
@@ -252,7 +251,6 @@ namespace SolarSharp.Interpreter
         /// </summary>
         /// <param name="address">The address.</param>
         /// <param name="envTable">The env table to create a 0-upvalue</param>
-        /// <returns></returns>
         private DynValue MakeClosure(int address, Table envTable = null)
         {
             Closure c;
@@ -329,7 +327,7 @@ namespace SolarSharp.Interpreter
             }
             else if (function.Type == DataType.ClrFunction)
             {
-                return function.Callback.ClrCallback(CreateDynamicExecutionContext(), new CallbackArguments(args, false));
+                return function.Callback.ClrCallback(new Execution.ScriptExecutionContext(m_MainProcessor, ), new CallbackArguments(args, false));
             }
 
             return m_MainProcessor.Call(function, args);

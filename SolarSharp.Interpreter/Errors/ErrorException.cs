@@ -1,4 +1,5 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debug;
 using SolarSharp.Interpreter.Interop;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using System;
@@ -63,7 +64,7 @@ namespace SolarSharp.Interpreter.Errors
         /// </summary>
         public bool DoNotDecorateMessage { get; set; }
 
-        internal void DecorateMessage(LuaState script, SourceRef sref, int ip = -1)
+        internal void DecorateMessage(SourceRef? sourceRef, int instructionPtr = -1)
         {
             if (string.IsNullOrEmpty(this.DecoratedMessage))
             {
@@ -72,13 +73,13 @@ namespace SolarSharp.Interpreter.Errors
                     this.DecoratedMessage = this.Message;
                     return;
                 }
-                else if (sref != null)
+                else if (sourceRef != null)
                 {
-                    this.DecoratedMessage = string.Format("{0}: {1}", sref.FormatLocation(script), this.Message);
+                    this.DecoratedMessage = sourceRef.Value.FormatMessage(this.Message);
                 }
                 else
                 {
-                    this.DecoratedMessage = string.Format("bytecode:{0}: {1}", ip, this.Message);
+                    this.DecoratedMessage = string.Format("bytecode:{0}: {1}", instructionPtr, this.Message);
                 }
             }
         }

@@ -16,16 +16,10 @@ namespace SolarSharp.Interpreter.Execution
     {
         private readonly Processor m_Processor;
 
-        internal ScriptExecutionContext(Processor p, SourceRef sourceRef)
+        internal ScriptExecutionContext(Processor p)
         {
             m_Processor = p;
-            CallingLocation = sourceRef;
         }
-
-        /// <summary>
-        /// Gets the location of the code calling back 
-        /// </summary>
-        public SourceRef CallingLocation { get; private set; }
 
         /// <summary>
         /// Gets the metatable associated with the given value.
@@ -218,9 +212,10 @@ namespace SolarSharp.Interpreter.Execution
         /// <param name="exception">The exception.</param>
         public void PerformMessageDecorationBeforeUnwind(DynValue messageHandler, ErrorException exception)
         {
-            exception.DecoratedMessage = messageHandler.IsNotNil()
-                ? m_Processor.PerformMessageDecorationBeforeUnwind(messageHandler, exception.Message, CallingLocation)
-                : exception.Message;
+            // TODO:
+            //exception.DecoratedMessage = messageHandler.IsNotNil()
+            //    ? m_Processor.PerformMessageDecorationBeforeUnwind(messageHandler, exception.Message, CallingLocation)
+            //    : exception.Message;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debug;
 
 namespace SolarSharp.Interpreter.Execution.VM
 {

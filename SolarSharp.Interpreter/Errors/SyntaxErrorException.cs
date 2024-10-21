@@ -35,13 +35,13 @@ namespace SolarSharp.Interpreter.Errors
         internal SyntaxErrorException(LuaState script, SourceRef sref, string format, params object[] args)
             : base(format, args)
         {
-            DecorateMessage(script, sref);
+            DecorateMessage(sref);
         }
 
         internal SyntaxErrorException(LuaState script, SourceRef sref, string message)
             : base(message)
         {
-            DecorateMessage(script, sref);
+            DecorateMessage(sref);
         }
 
         private SyntaxErrorException(SyntaxErrorException syntaxErrorException)
@@ -55,7 +55,7 @@ namespace SolarSharp.Interpreter.Errors
         {
             if (Token != null)
             {
-                DecorateMessage(script, Token.GetSourceRef());
+                DecorateMessage(Token.GetSourceRef());
             }
         }
     }

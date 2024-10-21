@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debug;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Interop.PredefinedUserData;
 
@@ -271,6 +272,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             return m_ValueStack.Pop();
         }
 
+        // Why do we have two of these???  We also have one in ScriptExecutionContext, TODO: Fix
         internal string PerformMessageDecorationBeforeUnwind(DynValue messageHandler, string decoratedMessage, SourceRef sourceRef)
         {
             try

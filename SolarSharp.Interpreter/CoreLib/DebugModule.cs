@@ -219,25 +219,26 @@ namespace SolarSharp.Interpreter.CoreLib
 
             int skip = (int)(vlevel.CastToNumber() ?? defaultSkip);
 
-            WatchItem[] stacktrace = cor.GetStackTrace(Math.Max(0, skip));
+            // TODO:
+            //WatchItem[] stacktrace = cor.GetStackTrace(Math.Max(0, skip));
 
-            if (message != null)
-                sb.AppendLine(message);
+            //if (message != null)
+            //    sb.AppendLine(message);
 
-            sb.AppendLine("stack traceback:");
+            //sb.AppendLine("stack traceback:");
 
-            foreach (WatchItem wi in stacktrace)
-            {
-                string name;
+            //foreach (WatchItem wi in stacktrace)
+            //{
+            //    string name;
 
-                if (wi.Name == null)
-                    name = wi.RetAddress < 0 ? "main chunk" : "?";
-                else
-                    name = "function '" + wi.Name + "'";
+            //    if (wi.Name == null)
+            //        name = wi.RetAddress < 0 ? "main chunk" : "?";
+            //    else
+            //        name = "function '" + wi.Name + "'";
 
-                string loc = wi.Location != null ? wi.Location.FormatLocation(executionContext.GetScript()) : "[clr]";
-                sb.AppendFormat("\t{0}: in {1}\n", loc, name);
-            }
+            //    string loc = wi.Location != null ? wi.Location.FormatLocation(executionContext.GetScript()) : "[clr]";
+            //    sb.AppendFormat("\t{0}: in {1}\n", loc, name);
+            //}
 
             return DynValue.NewString(sb);
         }

@@ -49,7 +49,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="idx">The index.</param>
         /// <param name="symbols">The symbols.</param>
         /// <param name="resolvedLocals">The resolved locals.</param>
-        /// 
         internal Closure(int idx, SymbolRef[] symbols, IEnumerable<DynValue> resolvedLocals)
         {
             EntryPointByteCodeLocation = idx;

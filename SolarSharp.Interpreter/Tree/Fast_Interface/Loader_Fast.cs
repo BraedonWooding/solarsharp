@@ -45,7 +45,6 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
             catch (SyntaxErrorException ex)
             {
                 ex.DecorateMessage(script);
-                ex.Rethrow();
                 throw;
             }
         }

@@ -87,27 +87,27 @@ namespace SolarSharp.Interpreter.CoreLib
 
             Coroutine cor = executionContext.GetCallingCoroutine();
 
-            WatchItem[] stacktrace = cor.GetStackTrace(0, executionContext.CallingLocation);
+            //WatchItem[] stacktrace = cor.GetStackTrace(0, executionContext.CallingLocation);
 
-            var e = new ErrorException(message.String);
+            //var e = new ErrorException(message.String);
 
-            if (level.IsNil())
-            {
-                level = DynValue.NewNumber(1); // Default
-            }
+            //if (level.IsNil())
+            //{
+            //    level = DynValue.NewNumber(1); // Default
+            //}
 
-            if (level.Number > 0 && level.Number < stacktrace.Length)
-            {
-                // Lua allows levels up to max. value of a double, while this has to be cast to int
-                // Probably never will be a problem, just leaving this note here
-                WatchItem wi = stacktrace[(int)level.Number];
+            //if (level.Number > 0 && level.Number < stacktrace.Length)
+            //{
+            //    // Lua allows levels up to max. value of a double, while this has to be cast to int
+            //    // Probably never will be a problem, just leaving this note here
+            //    WatchItem wi = stacktrace[(int)level.Number];
 
-                e.DecorateMessage(executionContext.GetScript(), wi.Location);
-            }
-            else
-            {
-                e.DoNotDecorateMessage = true;
-            }
+            //    e.DecorateMessage(executionContext.GetScript(), wi.Location);
+            //}
+            //else
+            //{
+            //    e.DoNotDecorateMessage = true;
+            //}
 
             throw e;
         }
@@ -160,9 +160,9 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             if (args[0].Type == DataType.String && args[0].String == "#")
             {
-                if (args[^1].Type == DataType.Tuple)
+                if (args[args.Count - 1].Type == DataType.Tuple)
                 {
-                    return DynValue.NewNumber(args.Count - 1 + args[^1].Tuple.Length);
+                    return DynValue.NewNumber(args.Count - 1 + args[args.Count - 1].Tuple.Length);
                 }
                 else
                 {
@@ -197,9 +197,6 @@ namespace SolarSharp.Interpreter.CoreLib
 
             return DynValue.NewTupleNested(values.ToArray());
         }
-
-
-
 
         // tonumber (e [, base])
         // ----------------------------------------------------------------------------------------------------------------
