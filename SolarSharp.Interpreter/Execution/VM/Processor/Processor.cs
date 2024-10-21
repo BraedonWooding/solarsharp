@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Diagnostics;
 
 namespace SolarSharp.Interpreter.Execution.VM
@@ -13,24 +12,20 @@ namespace SolarSharp.Interpreter.Execution.VM
         private const int STACK_SIZE = 131072;
         private readonly ByteCode m_RootChunk;
         private readonly FastStack<DynValue> m_ValueStack;
-        private readonly FastStack<CallStackItem> m_ExecutionStack;
+        private readonly FastStack<CallInfo> m_ExecutionStack;
         private readonly List<Processor> m_CoroutinesStack;
         private readonly Table m_GlobalTable;
-        private readonly Script m_Script;
+        private readonly LuaState m_Script;
         private readonly Processor m_Parent = null;
         private CoroutineState m_State;
         private bool m_CanYield = true;
         private int m_SavedInstructionPtr = -1;
-        private readonly DebugContext m_Debug;
 
-
-        public Processor(Script script, Table globalContext, ByteCode byteCode)
+        public Processor(LuaState script, Table globalContext, ByteCode byteCode)
         {
             m_ValueStack = new FastStack<DynValue>(STACK_SIZE);
-            m_ExecutionStack = new FastStack<CallStackItem>(STACK_SIZE);
+            m_ExecutionStack = new FastStack<CallInfo>(STACK_SIZE);
             m_CoroutinesStack = new List<Processor>();
-
-            m_Debug = new DebugContext();
             m_RootChunk = byteCode;
             m_GlobalTable = globalContext;
             m_Script = script;
@@ -41,8 +36,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         private Processor(Processor parentProcessor)
         {
             m_ValueStack = new FastStack<DynValue>(STACK_SIZE);
-            m_ExecutionStack = new FastStack<CallStackItem>(STACK_SIZE);
-            m_Debug = parentProcessor.m_Debug;
+            m_ExecutionStack = new FastStack<CallInfo>(STACK_SIZE);
             m_RootChunk = parentProcessor.m_RootChunk;
             m_GlobalTable = parentProcessor.m_GlobalTable;
             m_Script = parentProcessor.m_Script;
@@ -55,8 +49,6 @@ namespace SolarSharp.Interpreter.Execution.VM
         {
             m_ValueStack = recycleProcessor.m_ValueStack;
             m_ExecutionStack = recycleProcessor.m_ExecutionStack;
-
-            m_Debug = parentProcessor.m_Debug;
             m_RootChunk = parentProcessor.m_RootChunk;
             m_GlobalTable = parentProcessor.m_GlobalTable;
             m_Script = parentProcessor.m_Script;
@@ -68,8 +60,8 @@ namespace SolarSharp.Interpreter.Execution.VM
         {
             List<Processor> coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : m_CoroutinesStack;
 
-            if (coroutinesStack.Count > 0 && coroutinesStack[^1] != this)
-                return coroutinesStack[^1].Call(function, args);
+            if (coroutinesStack.Count > 0 && coroutinesStack[coroutinesStack.Count - 1] != this)
+                return coroutinesStack[coroutinesStack.Count - 1].Call(function, args);
 
             EnterProcessor();
 
@@ -101,7 +93,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         // at vstack top.
         private int PushClrToScriptStackFrame(CallStackItemFlags flags, DynValue function, DynValue[] args)
         {
-            if (function == null)
+            if (function.IsNil())
                 function = m_ValueStack.Peek();
             else
                 m_ValueStack.Push(function);  // func val
@@ -113,7 +105,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             m_ValueStack.Push(DynValue.NewNumber(args.Length));  // func args count
 
-            m_ExecutionStack.Push(new CallStackItem()
+            m_ExecutionStack.Push(new CallInfo()
             {
                 BasePointer = m_ValueStack.Count,
                 Debug_EntryPoint = function.Function.EntryPointByteCodeLocation,
@@ -135,12 +127,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             m_OwningThreadID = -1;
 
             m_Parent?.m_CoroutinesStack.RemoveAt(m_Parent.m_CoroutinesStack.Count - 1);
-
-            if (m_ExecutionNesting == 0 && m_Debug != null && m_Debug.DebuggerEnabled
-                && m_Debug.DebuggerAttached != null)
-            {
-                m_Debug.DebuggerAttached.SignalExecutionEnded();
-            }
         }
 
         private int GetThreadId()
@@ -167,11 +153,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             m_ExecutionNesting += 1;
 
             m_Parent?.m_CoroutinesStack.Add(this);
-        }
-
-        internal SourceRef GetCoroutineSuspendedLocation()
-        {
-            return GetCurrentSourceRef(m_SavedInstructionPtr);
         }
     }
 }

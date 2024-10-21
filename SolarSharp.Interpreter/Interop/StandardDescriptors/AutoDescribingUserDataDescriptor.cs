@@ -47,12 +47,12 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <param name="index">The index.</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        public DynValue Index(Script script, object obj, DynValue index, bool isDirectIndexing)
+        public DynValue Index(LuaState script, object obj, DynValue index, bool isDirectIndexing)
         {
             if (obj is IUserDataType u)
                 return u.Index(script, index, isDirectIndexing);
 
-            return null;
+            return DynValue.Nil;
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <param name="value">The value to be set</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        public bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
+        public bool SetIndex(LuaState script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
         {
             if (obj is IUserDataType u)
                 return u.SetIndex(script, index, value, isDirectIndexing);
@@ -99,12 +99,12 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <param name="obj">The object (null if a static request is done)</param>
         /// <param name="metaname">The name of the metamember.</param>
         /// <returns></returns>
-        public DynValue MetaIndex(Script script, object obj, string metaname)
+        public DynValue MetaIndex(LuaState script, object obj, string metaname)
         {
             if (obj is IUserDataType u)
                 return u.MetaIndex(script, metaname);
 
-            return null;
+            return DynValue.Nil;
         }
 
 

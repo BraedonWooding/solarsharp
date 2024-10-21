@@ -18,7 +18,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return a[1]";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -39,7 +39,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return a[1], a[2], a[3], a['ciao'], a.hello, a.aurevoir, a[false]";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -81,7 +81,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return x";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -109,7 +109,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return x";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -137,7 +137,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return x";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -166,7 +166,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return x";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -197,7 +197,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return x";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -217,7 +217,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 						  return (a:add(10):add(20):add(30).x == 60 and a.y == 20)
 						end";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -265,7 +265,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return s;";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -332,7 +332,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return dump(x)";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -364,7 +364,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return K, V;";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -396,7 +396,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return x, y";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -429,7 +429,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 			return f, msg;
 		";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -455,7 +455,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 			return t;
 		";
 
-            Script s = new();
+            LuaState s = new();
             DynValue t = s.DoString(script);
 
             Assert.That(t.Table["ciao"], Is.EqualTo("hello"));
@@ -472,7 +472,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 			return t;
 		";
 
-            Script s = new();
+            LuaState s = new();
             s.Globals["x"] = "hello";
             DynValue t = s.DoString(script);
 
@@ -489,7 +489,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 			return t;
 		";
 
-            Script s = new();
+            LuaState s = new();
             DynValue t = s.DoString(script);
 
             s.Globals["t", "ciao"] = "hello";
@@ -505,7 +505,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 			}
 		";
 
-            Script s = new();
+            LuaState s = new();
             s.DoString(script);
 
             s.Globals["t", "ciao"] = "hello";
@@ -523,7 +523,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 			}
 		";
 
-            Script s = new();
+            LuaState s = new();
             s.DoString(script);
 
             Assert.That(s.Globals["t", "ciao"], Is.EqualTo("hello"));
@@ -539,7 +539,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 			}
 		";
 
-            Script s = new(CoreModules.None);
+            LuaState s = new(CoreModules.None);
             s.DoString(script);
 
             Assert.That(s.Globals["t", "ciao", 1], Is.EqualTo("hello"));
@@ -571,7 +571,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return str
 			";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -587,7 +587,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return unpack({3,4})
 			";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {

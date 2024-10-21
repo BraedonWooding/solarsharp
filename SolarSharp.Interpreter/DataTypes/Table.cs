@@ -11,9 +11,9 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// A class representing a Lua table.
     /// </summary>
-    public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePair<DynValue, DynValue>>
+    public class Table : RefIdObject, IEnumerable<KeyValuePair<DynValue, DynValue>>
     {
-        private readonly Script m_Owner;
+        private readonly LuaState m_Owner;
         private int m_CachedLength = -1;
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="owner">The owner script.</param>
         /// <param name="arraySizeHint">A hint for the length of the array component</param>
         /// <param name="associativeSizeHint">A hint for thet length of the map component</param>
-        public Table(Script owner, int arraySizeHint = 0, int associativeSizeHint = 0)
+        public Table(LuaState owner, int arraySizeHint = 0, int associativeSizeHint = 0)
         {
             m_Owner = owner;
             ArraySegment = new DynValue[arraySizeHint + 1];
@@ -48,7 +48,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <param name="owner">The owner.</param>
         /// <param name="arrayValues">The values for the "array-like" part of the table.</param>
-        public Table(Script owner, params DynValue[] arrayValues)
+        public Table(LuaState owner, params DynValue[] arrayValues)
             : this(owner)
         {
             for (int i = 0; i < arrayValues.Length; i++)
@@ -60,7 +60,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Gets the script owning this resource.
         /// </summary>
-        public Script OwnerScript
+        public LuaState OwnerScript
         {
             get { return m_Owner; }
         }
@@ -138,9 +138,9 @@ namespace SolarSharp.Interpreter.DataTypes
             for (int i = 1; i < keys.Length; ++i)
             {
                 DynValue vt = t.Get(key);
-                if (vt.IsNil()) throw new ScriptRuntimeException("Key '{0}' did not point to anything");
+                if (vt.IsNil()) throw new ErrorException("Key '{0}' did not point to anything");
                 if (vt.Type != DataType.Table)
-                    throw new ScriptRuntimeException("Key '{0}' did not point to a table");
+                    throw new ErrorException("Key '{0}' did not point to a table");
 
                 t = vt.Table;
                 key = keys[i];
@@ -225,24 +225,24 @@ namespace SolarSharp.Interpreter.DataTypes
             }
 
             DynValue prev = ArraySegment[index];
-            if (prev == null && !setIfAbsent) return false;
+            if (prev.IsNil() && !setIfAbsent) return false;
 
             if (value.IsNil())
             {
                 // no point setting if prev was null
-                if (prev != null)
+                if (prev.IsNotNil())
                 {
-                    ArraySegment[index] = null;
+                    ArraySegment[index] = DynValue.Nil;
                     m_CachedLength = index - 1;
                 }
             }
             else
             {
                 ArraySegment[index] = value;
-                if (prev == null)
+                if (prev.IsNil())
                 {
                     // then we can increment it if we are adding to end
-                    if (m_CachedLength == index - 1 && (m_CachedLength >= ArraySegment.Length || ArraySegment[m_CachedLength] == null))
+                    if (m_CachedLength == index - 1 && (m_CachedLength >= ArraySegment.Length || ArraySegment[m_CachedLength].IsNil()))
                     {
                         m_CachedLength = index;
                     }
@@ -296,9 +296,9 @@ namespace SolarSharp.Interpreter.DataTypes
             if (key.IsNilOrNan())
             {
                 if (key.IsNil())
-                    throw ScriptRuntimeException.TableIndexIsNil();
+                    throw ErrorException.TableIndexIsNil();
                 else
-                    throw ScriptRuntimeException.TableIndexIsNaN();
+                    throw ErrorException.TableIndexIsNaN();
             }
 
             if (key.Type == DataType.Number)
@@ -368,7 +368,7 @@ namespace SolarSharp.Interpreter.DataTypes
         public void Set(object key, DynValue value)
         {
             if (key == null)
-                throw ScriptRuntimeException.TableIndexIsNil();
+                throw ErrorException.TableIndexIsNil();
 
             Set(DynValue.FromObject(OwnerScript, key), value, invokeMetaMethods: false);
         }
@@ -382,7 +382,7 @@ namespace SolarSharp.Interpreter.DataTypes
         public void Set(object[] keys, DynValue value)
         {
             if (keys == null || keys.Length <= 0)
-                throw ScriptRuntimeException.TableIndexIsNil();
+                throw ErrorException.TableIndexIsNil();
 
             ResolveMultipleKeys(keys, out object key).Set(key, value);
         }
@@ -409,7 +409,7 @@ namespace SolarSharp.Interpreter.DataTypes
         public DynValue Get(int key)
         {
             if (key < MAX_INT_KEY_ARRAY && key >= 0)
-                return key < ArraySegment.Length ? (ArraySegment[key] ?? DynValue.Nil) : DynValue.Nil;
+                return key < ArraySegment.Length ? ArraySegment[key] : DynValue.Nil;
             return Get(DynValue.NewNumber(key));
         }
 
@@ -425,7 +425,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 if (idx > 0 && idx < MAX_INT_KEY_ARRAY) return Get(idx);
             }
 
-            return ValueMap.GetValueOrDefault(key) ?? DynValue.Nil;
+            return ValueMap.GetValueOrDefault(key);
         }
 
         /// <summary>
@@ -437,7 +437,7 @@ namespace SolarSharp.Interpreter.DataTypes
         public DynValue Get(object key)
         {
             if (key == null)
-                return null;
+                return DynValue.Nil;
 
             if (key is int v && v < MAX_INT_KEY_ARRAY)
                 return Get(v);
@@ -474,7 +474,7 @@ namespace SolarSharp.Interpreter.DataTypes
             {
                 wasNil = true;
                 v = DynValue.NewNumber(0);
-                if (ArraySegment.Length > 0 && ArraySegment[0] != null)
+                if (ArraySegment.Length > 0 && ArraySegment[0].IsNotNil())
                 {
                     return DynValue.NewTuple(v, ArraySegment[0]);
                 }
@@ -486,7 +486,7 @@ namespace SolarSharp.Interpreter.DataTypes
             {
                 if (!wasNil && n >= ArraySegment.Length)
                 {
-                    throw new ScriptRuntimeException("invalid key to 'next'");
+                    throw new ErrorException("invalid key to 'next'");
                 }
 
                 skipFinding = true;
@@ -495,7 +495,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 {
                     n++;
                 }
-                while (n < ArraySegment.Length && ArraySegment[n] == null);
+                while (n < ArraySegment.Length && ArraySegment[n].IsNil());
 
                 // if we are at the end
                 if (n < ArraySegment.Length)
@@ -511,7 +511,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 return DynValue.NewTuple(kvp.Key, kvp.Value);
             }
 
-            var it = ValueMap.TryGetEnumeratorFrom(v) ?? throw new ScriptRuntimeException("invalid key to 'next'");
+            var it = ValueMap.TryGetEnumeratorFrom(v) ?? throw new ErrorException("invalid key to 'next'");
             if (!it.MoveNext()) return DynValue.Nil;
             return DynValue.NewTuple(it.Current.Key, it.Current.Value);
         }
@@ -527,7 +527,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 {
                     m_CachedLength = 0;
 
-                    for (int i = 1; i < ArraySegment.Length && ArraySegment[i] != null; i++)
+                    for (int i = 1; i < ArraySegment.Length && ArraySegment[i].IsNotNil(); i++)
                         m_CachedLength = i;
                 }
 
@@ -620,7 +620,7 @@ namespace SolarSharp.Interpreter.DataTypes
                     do
                     {
                         _index++;
-                    } while (_index < table.ArraySegment.Length && table.ArraySegment[_index] == null);
+                    } while (_index < table.ArraySegment.Length && table.ArraySegment[_index].IsNil());
 
                     if (_index >= table.ArraySegment.Length)
                     {

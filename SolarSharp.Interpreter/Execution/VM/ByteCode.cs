@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution.Scopes;
 
@@ -15,74 +14,19 @@ namespace SolarSharp.Interpreter.Execution.VM
     internal class ByteCode : RefIdObject
     {
         public List<Instruction> Code = new();
-        public Script Script { get; private set; }
-        private readonly List<SourceRef> m_SourceRefStack = new();
-        private SourceRef m_CurrentSourceRef = null;
-
+        public LuaState Script { get; private set; }
         internal LoopTracker LoopTracker = new();
 
-        public ByteCode(Script script)
+        public ByteCode(LuaState script)
         {
             Script = script;
         }
-
-
-        public IDisposable EnterSource(SourceRef sref)
-        {
-            return new SourceCodeStackGuard(sref, this);
-        }
-
-
-        private class SourceCodeStackGuard : IDisposable
-        {
-            private readonly ByteCode m_Bc;
-
-            public SourceCodeStackGuard(SourceRef sref, ByteCode bc)
-            {
-                m_Bc = bc;
-                m_Bc.PushSourceRef(sref);
-            }
-
-            public void Dispose()
-            {
-                m_Bc.PopSourceRef();
-            }
-        }
-
-
-        public void PushSourceRef(SourceRef sref)
-        {
-            m_SourceRefStack.Add(sref);
-            m_CurrentSourceRef = sref;
-        }
-
-        public void PopSourceRef()
-        {
-            m_SourceRefStack.RemoveAt(m_SourceRefStack.Count - 1);
-            m_CurrentSourceRef = m_SourceRefStack.Count > 0 ? m_SourceRefStack[^1] : null;
-        }
-
-#if (!PCL) && ((!UNITY_5) || UNITY_STANDALONE) && (!(NETFX_CORE))
-        public void Dump(string file)
-        {
-            StringBuilder sb = new();
-
-            for (int i = 0; i < Code.Count; i++)
-            {
-                if (Code[i].OpCode == OpCode.Debug)
-                    sb.AppendFormat("    {0}\n", Code[i]);
-                else
-                    sb.AppendFormat("{0:X8}  {1}\n", i, Code[i]);
-            }
-
-            File.WriteAllText(file, sb.ToString());
-        }
-#endif
 
         public int GetJumpPointForNextInstruction()
         {
             return Code.Count;
         }
+        
         public int GetJumpPointForLastInstruction()
         {
             return Code.Count - 1;
@@ -90,7 +34,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         public Instruction GetLastInstruction()
         {
-            return Code[^1];
+            return Code[Code.Count - 1];
         }
 
         private Instruction AppendInstruction(Instruction c)
@@ -150,13 +94,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                 AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.ToBool });
 
             return i;
-        }
-
-
-        [Conditional("EMIT_DEBUG_OPS")]
-        public void Emit_Debug(string str)
-        {
-            AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.Debug, Name = str[..Math.Min(32, str.Length)] });
         }
 
         public Instruction Emit_Enter(RuntimeScopeBlock runtimeScopeBlock)
@@ -224,7 +161,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.IterUpd });
         }
 
-        public Instruction Emit_Meta(string funcName, OpCodeMetadataType metaType, DynValue value = null)
+        public Instruction Emit_Meta(string funcName, OpCodeMetadataType metaType, DynValue value = default)
         {
             return AppendInstruction(new Instruction(m_CurrentSourceRef)
             {
@@ -234,7 +171,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                 Value = value
             });
         }
-
 
         public Instruction Emit_BeginFn(RuntimeScopeFrame stackFrame)
         {
@@ -300,7 +236,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.TblInitI, NumVal = idx });
         }
 
-        public Instruction Emit_Index(DynValue index = null, bool isNameIndex = false, bool isExpList = false)
+        public Instruction Emit_Index(DynValue index = default, bool isNameIndex = false, bool isExpList = false)
         {
             OpCode o;
             if (isNameIndex) o = OpCode.IndexN;
@@ -309,7 +245,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = o, Value = index });
         }
 
-        public Instruction Emit_IndexSet(int stackofs, int tupleidx, DynValue index = null, bool isNameIndex = false, bool isExpList = false)
+        public Instruction Emit_IndexSet(int stackofs, int tupleidx, DynValue index = default, bool isNameIndex = false, bool isExpList = false)
         {
             OpCode o;
             if (isNameIndex) o = OpCode.IndexSetN;
@@ -327,6 +263,5 @@ namespace SolarSharp.Interpreter.Execution.VM
         {
             return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.Swap, NumVal = p1, NumVal2 = p2 });
         }
-
     }
 }

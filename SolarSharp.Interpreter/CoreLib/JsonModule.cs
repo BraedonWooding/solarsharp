@@ -20,7 +20,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
             catch (SyntaxErrorException ex)
             {
-                throw new ScriptRuntimeException(ex);
+                throw new ErrorException((System.Exception)ex);
             }
         }
 
@@ -35,7 +35,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
             catch (SyntaxErrorException ex)
             {
-                throw new ScriptRuntimeException(ex);
+                throw new ErrorException((System.Exception)ex);
             }
         }
 

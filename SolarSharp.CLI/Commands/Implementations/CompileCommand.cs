@@ -29,7 +29,7 @@ namespace SolarSharp.Commands.Implementations
         {
             string targetFileName = p + "-compiled";
 
-            Script S = new(CoreModules.None);
+            LuaState S = new(CoreModules.None);
 
             DynValue chunk = S.LoadFile(p);
 

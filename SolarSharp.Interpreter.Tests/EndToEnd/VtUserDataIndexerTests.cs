@@ -29,7 +29,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void IndexerTest(string code, int expected)
         {
-            Script S = new();
+            LuaState S = new();
 
             IndexerTestClass obj = new()
             {
@@ -102,7 +102,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				setmetatable(t, m);
 
 				t[10,11,12] = 1234; return t[10,11,12];";
-            Assert.Throws<ScriptRuntimeException>(() => IndexerTest(script, 1234));
+            Assert.Throws<ErrorException>(() => IndexerTest(script, 1234));
         }
 
         [Test]
@@ -120,7 +120,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return x[2,3];
 				";
 
-            Assert.Throws<ScriptRuntimeException>(() => Script.RunString(script));
+            Assert.Throws<ErrorException>(() => LuaState.RunString(script));
         }
 
         [Test]
@@ -131,7 +131,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x[2,3] = 5;
 				";
 
-            Assert.Throws<ScriptRuntimeException>(() => Script.RunString(script));
+            Assert.Throws<ErrorException>(() => LuaState.RunString(script));
         }
     }
 }

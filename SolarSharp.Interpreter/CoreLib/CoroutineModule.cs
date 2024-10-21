@@ -69,7 +69,7 @@ namespace SolarSharp.Interpreter.CoreLib
 
                 return DynValue.NewTuple(retval.ToArray());
             }
-            catch (ScriptRuntimeException ex)
+            catch (ErrorException ex)
             {
                 return DynValue.NewTuple(
                     DynValue.False,

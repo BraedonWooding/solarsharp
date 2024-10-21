@@ -23,9 +23,10 @@ namespace SolarSharp.Interpreter.CoreLib
             var tableVal = table.Table;
 
             DynValue meta = executionContext.GetMetamethodTailCall(table, "__ipairs", args.GetArray());
+            if (meta.IsNotNil()) return meta;
 
             var current = DynValue.NewNumber(0);
-            return meta ?? DynValue.NewTuple(DynValue.NewCallback((ex, args) =>
+            return DynValue.NewTuple(DynValue.NewCallback((ex, args) =>
             {
                 if (args[1].Number == current.Number)
                 {
@@ -54,7 +55,7 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             DynValue table = args[0];
             DynValue meta = executionContext.GetMetamethodTailCall(table, "__pairs", args.GetArray());
-            if (meta != null) return meta;
+            if (meta.IsNotNil()) return meta;
 
             // TODO: Should we check if someone is calling this wrong?  i.e. if they do something like callback = pairs(); callback("BOO")
             //       we could compare the dynvalues to check that the keys are the same (can use ref checks even) and in case they aren't fallback to next

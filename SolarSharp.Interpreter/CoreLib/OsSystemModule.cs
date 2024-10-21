@@ -26,7 +26,7 @@ namespace SolarSharp.Interpreter.CoreLib
             {
                 try
                 {
-                    int exitCode = Script.GlobalOptions.Platform.OS_Execute(v.String);
+                    int exitCode = LuaState.GlobalOptions.Platform.OS_Execute(v.String);
 
                     return DynValue.NewTuple(
                         DynValue.Nil,
@@ -50,7 +50,7 @@ namespace SolarSharp.Interpreter.CoreLib
             if (v_exitCode.IsNotNil())
                 exitCode = (int)v_exitCode.Number;
 
-            Script.GlobalOptions.Platform.OS_ExitFast(exitCode);
+            LuaState.GlobalOptions.Platform.OS_ExitFast(exitCode);
 
             throw new InvalidOperationException("Unreachable code.. reached.");
         }
@@ -60,7 +60,7 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             DynValue varName = args.AsType(0, "getenv", DataType.String, false);
 
-            string val = Script.GlobalOptions.Platform.GetEnvironmentVariable(varName.String);
+            string val = LuaState.GlobalOptions.Platform.GetEnvironmentVariable(varName.String);
 
             if (val == null)
                 return DynValue.Nil;
@@ -75,9 +75,9 @@ namespace SolarSharp.Interpreter.CoreLib
 
             try
             {
-                if (Script.GlobalOptions.Platform.OS_FileExists(fileName))
+                if (LuaState.GlobalOptions.Platform.OS_FileExists(fileName))
                 {
-                    Script.GlobalOptions.Platform.OS_FileDelete(fileName);
+                    LuaState.GlobalOptions.Platform.OS_FileDelete(fileName);
                     return DynValue.True;
                 }
                 else
@@ -102,14 +102,14 @@ namespace SolarSharp.Interpreter.CoreLib
 
             try
             {
-                if (!Script.GlobalOptions.Platform.OS_FileExists(fileNameOld))
+                if (!LuaState.GlobalOptions.Platform.OS_FileExists(fileNameOld))
                 {
                     return DynValue.NewTuple(DynValue.Nil,
                         DynValue.NewString("{0}: No such file or directory.", fileNameOld),
                         DynValue.NewNumber(-1));
                 }
 
-                Script.GlobalOptions.Platform.OS_FileMove(fileNameOld, fileNameNew);
+                LuaState.GlobalOptions.Platform.OS_FileMove(fileNameOld, fileNameNew);
                 return DynValue.True;
             }
             catch (Exception ex)
@@ -128,7 +128,7 @@ namespace SolarSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue tmpname(ScriptExecutionContext _, CallbackArguments _args)
         {
-            return DynValue.NewString(Script.GlobalOptions.Platform.IO_OS_GetTempFilename());
+            return DynValue.NewString(LuaState.GlobalOptions.Platform.IO_OS_GetTempFilename());
         }
     }
 }

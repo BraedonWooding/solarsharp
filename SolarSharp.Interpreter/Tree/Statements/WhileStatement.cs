@@ -1,5 +1,4 @@
-﻿using SolarSharp.Interpreter.Debugging;
-using SolarSharp.Interpreter.Execution;
+﻿using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Execution.Scopes;
 using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Lexer;
@@ -21,9 +20,6 @@ namespace SolarSharp.Interpreter.Tree.Statements
             m_Condition = Expression.Expr(lcontext);
 
             m_Start = whileTk.GetSourceRefUpTo(lcontext.Lexer.Current);
-
-            //m_Start = BuildSourceRef(context.Start, exp.Stop);
-            //m_End = BuildSourceRef(context.Stop, context.END());
 
             lcontext.Scope.PushBlock();
             CheckTokenType(lcontext, TokenType.Do);

@@ -8,7 +8,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public static void DynAssert(DynValue result, params object[] args)
         {
             if (args == null)
-                args = new object[1] { DataType.Void };
+                args = new object[1] { DataType.Nil };
 
 
             if (args.Length == 1)
@@ -30,9 +30,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void DynAssertValue(object reference, DynValue dynValue)
         {
-            if (reference == (object)DataType.Void)
+            if (reference == (object)DataType.Nil)
             {
-                Assert.That(dynValue.Type, Is.EqualTo(DataType.Void));
+                Assert.That(dynValue.Type, Is.EqualTo(DataType.Nil));
             }
             else if (reference == null)
             {

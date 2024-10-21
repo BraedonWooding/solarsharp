@@ -1,10 +1,10 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Debug;
 using SolarSharp.Interpreter.Execution.Scopes;
 
 namespace SolarSharp.Interpreter.Execution.VM
 {
-    internal class CallStackItem
+    internal class CallInfo
     {
         public int Debug_EntryPoint;
         public SymbolRef[] Debug_Symbols;

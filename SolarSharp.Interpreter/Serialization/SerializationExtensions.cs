@@ -19,7 +19,7 @@ namespace SolarSharp.Interpreter.Serialization
         public static string Serialize(this Table table, bool prefixReturn = false, int tabs = 0)
         {
             if (table.OwnerScript != null)
-                throw new ScriptRuntimeException("Table is not a prime table.");
+                throw new ErrorException("Table is not a prime table.");
 
             string tabstr = new('\t', tabs);
             StringBuilder sb = new();
@@ -83,7 +83,7 @@ namespace SolarSharp.Interpreter.Serialization
 
         public static string SerializeValue(this DynValue dynValue, int tabs = 0)
         {
-            if (dynValue.Type == DataType.Nil || dynValue.Type == DataType.Void)
+            if (dynValue.Type == DataType.Nil)
                 return "nil";
             else if (dynValue.Type == DataType.Tuple)
                 return dynValue.Tuple.Any() ? dynValue.Tuple[0].SerializeValue(tabs) : "nil";
@@ -96,7 +96,7 @@ namespace SolarSharp.Interpreter.Serialization
             else if (dynValue.Type == DataType.Table && dynValue.Table.OwnerScript == null)
                 return dynValue.Table.Serialize(false, tabs);
             else
-                throw new ScriptRuntimeException("Value is not a primitive value or a prime table.");
+                throw new ErrorException("Value is not a primitive value or a prime table.");
         }
 
         private static string EscapeString(string s)

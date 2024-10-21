@@ -44,7 +44,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
             catch (Exception ex)
             {
-                throw new ScriptRuntimeException(ex.Message);
+                throw new ErrorException(ex.Message);
             }
         }
 

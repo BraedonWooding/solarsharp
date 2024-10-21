@@ -146,7 +146,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new SolarSharp.Interpreter.Tests.EndToEnd.RegCollMethods();
 				}
@@ -160,7 +160,7 @@ namespace MyNamespace
 					this.Initialize("GetMultiArray", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((RegCollMethods)(obj)).GetMultiArray();
 				}
@@ -174,7 +174,7 @@ namespace MyNamespace
 					this.Initialize("GetArray", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((RegCollMethods)(obj)).GetArray();
 				}
@@ -188,7 +188,7 @@ namespace MyNamespace
 					this.Initialize("GetItems", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((RegCollMethods)(obj)).GetItems();
 				}
@@ -202,7 +202,7 @@ namespace MyNamespace
 					this.Initialize("GetList", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((RegCollMethods)(obj)).GetList();
 				}
@@ -216,7 +216,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((RegCollMethods)(obj)).GetEnumerator();
 				}
@@ -230,7 +230,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -245,7 +245,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -259,7 +259,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -273,7 +273,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -311,7 +311,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new SolarSharp.Interpreter.Tests.EndToEnd.RegCollItem(((int)(pars[0])));
 				}
@@ -325,7 +325,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -340,7 +340,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -354,7 +354,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -368,7 +368,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -382,12 +382,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((RegCollItem)(obj)).Value;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     RegCollItem tmp = ((RegCollItem)(obj));
 					tmp.Value = ((int)(value));
@@ -512,7 +512,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.List<int>();
 				}
@@ -527,7 +527,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("capacity", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.List<int>(((int)(pars[0])));
 				}
@@ -542,7 +542,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("collection", typeof(System.Collections.Generic.IEnumerable<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.List<int>(((System.Collections.Generic.IEnumerable<int>)(pars[0])));
 				}
@@ -556,7 +556,7 @@ namespace MyNamespace
 					this.Initialize("get_Capacity", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).Capacity;
 				}
@@ -571,7 +571,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Collections.Generic.List<int> tmp = ((System.Collections.Generic.List<int>)(obj));
 					tmp.Capacity = ((int)(pars[0]));
@@ -587,7 +587,7 @@ namespace MyNamespace
 					this.Initialize("get_Count", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).Count;
 				}
@@ -602,7 +602,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj))[((int)(pars[0]))];
 				}
@@ -618,7 +618,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Collections.Generic.List<int> tmp = ((System.Collections.Generic.List<int>)(obj));
 					tmp[((int)(pars[0]))] = ((int)(pars[1]));
@@ -635,10 +635,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Add(((int)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -651,10 +651,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("collection", typeof(System.Collections.Generic.IEnumerable<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).AddRange(((System.Collections.Generic.IEnumerable<int>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -666,9 +666,9 @@ namespace MyNamespace
 					this.Initialize("AsReadOnly", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
-					return ((System.Collections.Generic.List<int>)(obj)).AsReadOnly();
+					return ((System.Collections.Generic.List<int>)(obj));
 				}
 			}
 
@@ -684,7 +684,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).BinarySearch(((int)(pars[0])), ((int)(pars[1])), ((int)(pars[2])), ((System.Collections.Generic.IComparer<int>)(pars[3])));
 				}
@@ -699,7 +699,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).BinarySearch(((int)(pars[0])));
 				}
@@ -715,7 +715,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).BinarySearch(((int)(pars[0])), ((System.Collections.Generic.IComparer<int>)(pars[1])));
 				}
@@ -729,10 +729,10 @@ namespace MyNamespace
 					this.Initialize("Clear", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Clear();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -745,7 +745,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).Contains(((int)(pars[0])));
 				}
@@ -760,10 +760,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("array", typeof(int[]), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).CopyTo(((int[])(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -779,10 +779,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).CopyTo(((int)(pars[0])), ((int[])(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -796,10 +796,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("arrayIndex", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).CopyTo(((int[])(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -812,7 +812,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).Exists(((System.Predicate<int>)(pars[0])));
 				}
@@ -827,7 +827,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).Find(((System.Predicate<int>)(pars[0])));
 				}
@@ -842,7 +842,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).FindAll(((System.Predicate<int>)(pars[0])));
 				}
@@ -857,7 +857,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).FindIndex(((System.Predicate<int>)(pars[0])));
 				}
@@ -873,7 +873,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).FindIndex(((int)(pars[0])), ((System.Predicate<int>)(pars[1])));
 				}
@@ -890,7 +890,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).FindIndex(((int)(pars[0])), ((int)(pars[1])), ((System.Predicate<int>)(pars[2])));
 				}
@@ -905,7 +905,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).FindLast(((System.Predicate<int>)(pars[0])));
 				}
@@ -920,7 +920,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).FindLastIndex(((System.Predicate<int>)(pars[0])));
 				}
@@ -936,7 +936,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).FindLastIndex(((int)(pars[0])), ((System.Predicate<int>)(pars[1])));
 				}
@@ -953,7 +953,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).FindLastIndex(((int)(pars[0])), ((int)(pars[1])), ((System.Predicate<int>)(pars[2])));
 				}
@@ -968,10 +968,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("action", typeof(System.Action<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).ForEach(((System.Action<int>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -983,7 +983,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).GetEnumerator();
 				}
@@ -999,7 +999,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).GetRange(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -1014,7 +1014,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).IndexOf(((int)(pars[0])));
 				}
@@ -1030,7 +1030,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).IndexOf(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -1047,7 +1047,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).IndexOf(((int)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
 				}
@@ -1063,10 +1063,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Insert(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1080,10 +1080,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("collection", typeof(System.Collections.Generic.IEnumerable<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).InsertRange(((int)(pars[0])), ((System.Collections.Generic.IEnumerable<int>)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1096,7 +1096,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).LastIndexOf(((int)(pars[0])));
 				}
@@ -1112,7 +1112,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).LastIndexOf(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -1129,7 +1129,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).LastIndexOf(((int)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
 				}
@@ -1144,7 +1144,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).Remove(((int)(pars[0])));
 				}
@@ -1159,7 +1159,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).RemoveAll(((System.Predicate<int>)(pars[0])));
 				}
@@ -1174,10 +1174,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).RemoveAt(((int)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1191,10 +1191,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).RemoveRange(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1206,10 +1206,10 @@ namespace MyNamespace
 					this.Initialize("Reverse", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Reverse();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1223,10 +1223,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Reverse(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1238,10 +1238,10 @@ namespace MyNamespace
 					this.Initialize("Sort", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Sort();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1254,10 +1254,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Sort(((System.Collections.Generic.IComparer<int>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1272,10 +1272,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Sort(((int)(pars[0])), ((int)(pars[1])), ((System.Collections.Generic.IComparer<int>)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1288,10 +1288,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparison", typeof(System.Comparison<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).Sort(((System.Comparison<int>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1303,7 +1303,7 @@ namespace MyNamespace
 					this.Initialize("ToArray", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).ToArray();
 				}
@@ -1317,10 +1317,10 @@ namespace MyNamespace
 					this.Initialize("TrimExcess", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<int>)(obj)).TrimExcess();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1333,7 +1333,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).TrueForAll(((System.Predicate<int>)(pars[0])));
 				}
@@ -1347,7 +1347,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -1362,7 +1362,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -1376,7 +1376,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -1390,7 +1390,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -1404,12 +1404,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).Capacity;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
 					System.Collections.Generic.List<int> tmp = ((System.Collections.Generic.List<int>)(obj));
 					tmp.Capacity = ((int)(value));
@@ -1424,7 +1424,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Collections.Generic.List<int>)(obj)).Count;
 				}
@@ -1524,7 +1524,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("idx0", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new int[] {
                             ((int)(pars[0]))};
@@ -1540,7 +1540,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("indices", typeof(int[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((int[])(pars[0])));
 				}
@@ -1555,7 +1555,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((int)(pars[0])));
 				}
@@ -1571,7 +1571,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index2", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -1588,7 +1588,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index3", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((int)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
 				}
@@ -1603,7 +1603,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((long)(pars[0])));
 				}
@@ -1619,7 +1619,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index2", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((long)(pars[0])), ((long)(pars[1])));
 				}
@@ -1636,7 +1636,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index3", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((long)(pars[0])), ((long)(pars[1])), ((long)(pars[2])));
 				}
@@ -1651,7 +1651,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("indices", typeof(long[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((long[])(pars[0])));
 				}
@@ -1667,10 +1667,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1685,10 +1685,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index2", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1704,10 +1704,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index3", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1721,10 +1721,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("indices", typeof(int[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int[])(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1738,10 +1738,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1756,10 +1756,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index2", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])), ((long)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1775,10 +1775,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index3", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])), ((long)(pars[2])), ((long)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1792,10 +1792,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("indices", typeof(long[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long[])(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1807,7 +1807,7 @@ namespace MyNamespace
 					this.Initialize("get_Length", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).Length;
 				}
@@ -1821,7 +1821,7 @@ namespace MyNamespace
 					this.Initialize("get_LongLength", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).LongLength;
 				}
@@ -1836,7 +1836,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dimension", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetLength(((int)(pars[0])));
 				}
@@ -1851,7 +1851,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dimension", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetLongLength(((int)(pars[0])));
 				}
@@ -1865,7 +1865,7 @@ namespace MyNamespace
 					this.Initialize("get_Rank", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).Rank;
 				}
@@ -1880,7 +1880,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dimension", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetUpperBound(((int)(pars[0])));
 				}
@@ -1895,7 +1895,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dimension", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetLowerBound(((int)(pars[0])));
 				}
@@ -1909,7 +1909,7 @@ namespace MyNamespace
 					this.Initialize("get_SyncRoot", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).SyncRoot;
 				}
@@ -1923,7 +1923,7 @@ namespace MyNamespace
 					this.Initialize("get_IsReadOnly", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).IsReadOnly;
 				}
@@ -1937,7 +1937,7 @@ namespace MyNamespace
 					this.Initialize("get_IsFixedSize", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).IsFixedSize;
 				}
@@ -1951,7 +1951,7 @@ namespace MyNamespace
 					this.Initialize("get_IsSynchronized", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).IsSynchronized;
 				}
@@ -1965,7 +1965,7 @@ namespace MyNamespace
 					this.Initialize("Clone", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).Clone();
 				}
@@ -1981,10 +1981,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).CopyTo(((System.Array)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -1998,10 +1998,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).CopyTo(((System.Array)(pars[0])), ((long)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2013,7 +2013,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetEnumerator();
 				}
@@ -2027,10 +2027,10 @@ namespace MyNamespace
 					this.Initialize("Initialize", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).Initialize();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2042,7 +2042,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -2057,7 +2057,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -2071,7 +2071,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -2085,7 +2085,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -2099,7 +2099,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).Length;
 				}
@@ -2113,7 +2113,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).LongLength;
 				}
@@ -2127,7 +2127,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).Rank;
 				}
@@ -2141,7 +2141,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).SyncRoot;
 				}
@@ -2155,7 +2155,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).IsReadOnly;
 				}
@@ -2169,7 +2169,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).IsFixedSize;
 				}
@@ -2183,7 +2183,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).IsSynchronized;
 				}
@@ -2328,7 +2328,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.List<RegCollItem>();
 				}
@@ -2343,7 +2343,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("capacity", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.List<RegCollItem>(((int)(pars[0])));
 				}
@@ -2358,7 +2358,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("collection", typeof(System.Collections.Generic.IEnumerable<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.List<RegCollItem>(((System.Collections.Generic.IEnumerable<RegCollItem>)(pars[0])));
 				}
@@ -2372,7 +2372,7 @@ namespace MyNamespace
 					this.Initialize("get_Capacity", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).Capacity;
 				}
@@ -2387,7 +2387,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Collections.Generic.List<RegCollItem> tmp = ((System.Collections.Generic.List<RegCollItem>)(obj));
 					tmp.Capacity = ((int)(pars[0]));
@@ -2403,7 +2403,7 @@ namespace MyNamespace
 					this.Initialize("get_Count", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).Count;
 				}
@@ -2418,7 +2418,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj))[((int)(pars[0]))];
 				}
@@ -2434,7 +2434,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Collections.Generic.List<RegCollItem> tmp = ((System.Collections.Generic.List<RegCollItem>)(obj));
 					tmp[((int)(pars[0]))] = ((RegCollItem)(pars[1]));
@@ -2451,10 +2451,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Add(((RegCollItem)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2467,10 +2467,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("collection", typeof(System.Collections.Generic.IEnumerable<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).AddRange(((System.Collections.Generic.IEnumerable<RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2482,9 +2482,9 @@ namespace MyNamespace
 					this.Initialize("AsReadOnly", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
-					return ((System.Collections.Generic.List<RegCollItem>)(obj)).AsReadOnly();
+					return ((System.Collections.Generic.List<RegCollItem>)(obj));
 				}
 			}
 
@@ -2500,7 +2500,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).BinarySearch(((int)(pars[0])), ((int)(pars[1])), ((RegCollItem)(pars[2])), ((System.Collections.Generic.IComparer<RegCollItem>)(pars[3])));
 				}
@@ -2515,7 +2515,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).BinarySearch(((RegCollItem)(pars[0])));
 				}
@@ -2531,7 +2531,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).BinarySearch(((RegCollItem)(pars[0])), ((System.Collections.Generic.IComparer<RegCollItem>)(pars[1])));
 				}
@@ -2545,10 +2545,10 @@ namespace MyNamespace
 					this.Initialize("Clear", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Clear();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2561,7 +2561,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).Contains(((RegCollItem)(pars[0])));
 				}
@@ -2576,10 +2576,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("array", typeof(RegCollItem[]), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).CopyTo(((RegCollItem[])(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2595,10 +2595,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).CopyTo(((int)(pars[0])), ((RegCollItem[])(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2612,10 +2612,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("arrayIndex", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).CopyTo(((RegCollItem[])(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2628,7 +2628,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).Exists(((System.Predicate<RegCollItem>)(pars[0])));
 				}
@@ -2643,7 +2643,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).Find(((System.Predicate<RegCollItem>)(pars[0])));
 				}
@@ -2658,7 +2658,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).FindAll(((System.Predicate<RegCollItem>)(pars[0])));
 				}
@@ -2673,7 +2673,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).FindIndex(((System.Predicate<RegCollItem>)(pars[0])));
 				}
@@ -2689,7 +2689,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).FindIndex(((int)(pars[0])), ((System.Predicate<RegCollItem>)(pars[1])));
 				}
@@ -2706,7 +2706,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).FindIndex(((int)(pars[0])), ((int)(pars[1])), ((System.Predicate<RegCollItem>)(pars[2])));
 				}
@@ -2721,7 +2721,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).FindLast(((System.Predicate<RegCollItem>)(pars[0])));
 				}
@@ -2736,7 +2736,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).FindLastIndex(((System.Predicate<RegCollItem>)(pars[0])));
 				}
@@ -2752,7 +2752,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).FindLastIndex(((int)(pars[0])), ((System.Predicate<RegCollItem>)(pars[1])));
 				}
@@ -2769,7 +2769,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).FindLastIndex(((int)(pars[0])), ((int)(pars[1])), ((System.Predicate<RegCollItem>)(pars[2])));
 				}
@@ -2784,10 +2784,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("action", typeof(System.Action<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).ForEach(((System.Action<RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2799,7 +2799,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).GetEnumerator();
 				}
@@ -2815,7 +2815,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).GetRange(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -2830,7 +2830,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).IndexOf(((RegCollItem)(pars[0])));
 				}
@@ -2846,7 +2846,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).IndexOf(((RegCollItem)(pars[0])), ((int)(pars[1])));
 				}
@@ -2863,7 +2863,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).IndexOf(((RegCollItem)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
 				}
@@ -2879,10 +2879,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Insert(((int)(pars[0])), ((RegCollItem)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2896,10 +2896,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("collection", typeof(System.Collections.Generic.IEnumerable<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).InsertRange(((int)(pars[0])), ((System.Collections.Generic.IEnumerable<RegCollItem>)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -2912,7 +2912,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).LastIndexOf(((RegCollItem)(pars[0])));
 				}
@@ -2928,7 +2928,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).LastIndexOf(((RegCollItem)(pars[0])), ((int)(pars[1])));
 				}
@@ -2945,7 +2945,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).LastIndexOf(((RegCollItem)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
 				}
@@ -2960,7 +2960,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).Remove(((RegCollItem)(pars[0])));
 				}
@@ -2975,7 +2975,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).RemoveAll(((System.Predicate<RegCollItem>)(pars[0])));
 				}
@@ -2990,10 +2990,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).RemoveAt(((int)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3007,10 +3007,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).RemoveRange(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3022,10 +3022,10 @@ namespace MyNamespace
 					this.Initialize("Reverse", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Reverse();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3039,10 +3039,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Reverse(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3054,10 +3054,10 @@ namespace MyNamespace
 					this.Initialize("Sort", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Sort();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3070,10 +3070,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Sort(((System.Collections.Generic.IComparer<RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3088,10 +3088,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Sort(((int)(pars[0])), ((int)(pars[1])), ((System.Collections.Generic.IComparer<RegCollItem>)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3104,10 +3104,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparison", typeof(System.Comparison<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).Sort(((System.Comparison<RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3119,7 +3119,7 @@ namespace MyNamespace
 					this.Initialize("ToArray", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).ToArray();
 				}
@@ -3133,10 +3133,10 @@ namespace MyNamespace
 					this.Initialize("TrimExcess", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<RegCollItem>)(obj)).TrimExcess();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3149,7 +3149,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).TrueForAll(((System.Predicate<RegCollItem>)(pars[0])));
 				}
@@ -3163,7 +3163,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -3178,7 +3178,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -3192,7 +3192,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -3206,7 +3206,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -3220,12 +3220,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).Capacity;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
 					System.Collections.Generic.List<RegCollItem> tmp = ((System.Collections.Generic.List<RegCollItem>)(obj));
 					tmp.Capacity = ((int)(value));
@@ -3240,7 +3240,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Collections.Generic.List<RegCollItem>)(obj)).Count;
 				}
@@ -3286,7 +3286,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new CollectionsBaseGenRegisteredTests.RegCollMethods();
 				}
@@ -3300,7 +3300,7 @@ namespace MyNamespace
 					this.Initialize("GetMultiArray", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((CollectionsBaseGenRegisteredTests.RegCollMethods)(obj)).GetMultiArray();
 				}
@@ -3314,7 +3314,7 @@ namespace MyNamespace
 					this.Initialize("GetArray", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((CollectionsBaseGenRegisteredTests.RegCollMethods)(obj)).GetArray();
 				}
@@ -3328,7 +3328,7 @@ namespace MyNamespace
 					this.Initialize("GetItems", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((CollectionsBaseGenRegisteredTests.RegCollMethods)(obj)).GetItems();
 				}
@@ -3342,7 +3342,7 @@ namespace MyNamespace
 					this.Initialize("GetList", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((CollectionsBaseGenRegisteredTests.RegCollMethods)(obj)).GetList();
 				}
@@ -3356,7 +3356,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((CollectionsBaseGenRegisteredTests.RegCollMethods)(obj)).GetEnumerator();
 				}
@@ -3370,7 +3370,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -3385,7 +3385,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -3399,7 +3399,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -3413,7 +3413,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -3451,7 +3451,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new CollectionsBaseGenRegisteredTests.RegCollItem(((int)(pars[0])));
 				}
@@ -3465,7 +3465,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -3480,7 +3480,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -3494,7 +3494,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -3508,7 +3508,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -3522,12 +3522,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((CollectionsBaseGenRegisteredTests.RegCollItem)(obj)).Value;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     CollectionsBaseGenRegisteredTests.RegCollItem tmp = ((CollectionsBaseGenRegisteredTests.RegCollItem)(obj));
 					tmp.Value = ((int)(value));
@@ -3665,7 +3665,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("length", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.CreateInstance(((System.Type)(pars[0])), ((int)(pars[1])));
 				}
@@ -3682,7 +3682,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("length2", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.CreateInstance(((System.Type)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
 				}
@@ -3700,7 +3700,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("length3", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.CreateInstance(((System.Type)(pars[0])), ((int)(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
 				}
@@ -3716,7 +3716,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("lengths", typeof(int[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.CreateInstance(((System.Type)(pars[0])), ((int[])(pars[1])));
 				}
@@ -3732,7 +3732,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("lengths", typeof(long[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.CreateInstance(((System.Type)(pars[0])), ((long[])(pars[1])));
 				}
@@ -3749,7 +3749,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("lowerBounds", typeof(int[]), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.CreateInstance(((System.Type)(pars[0])), ((int[])(pars[1])), ((int[])(pars[2])));
 				}
@@ -3766,10 +3766,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("length", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Copy(((System.Array)(pars[0])), ((System.Array)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3786,10 +3786,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("length", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Copy(((System.Array)(pars[0])), ((int)(pars[1])), ((System.Array)(pars[2])), ((int)(pars[3])), ((int)(pars[4])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3804,10 +3804,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("length", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Copy(((System.Array)(pars[0])), ((System.Array)(pars[1])), ((long)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3824,10 +3824,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("length", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Copy(((System.Array)(pars[0])), ((long)(pars[1])), ((System.Array)(pars[2])), ((long)(pars[3])), ((long)(pars[4])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3844,10 +3844,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("length", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.ConstrainedCopy(((System.Array)(pars[0])), ((int)(pars[1])), ((System.Array)(pars[2])), ((int)(pars[3])), ((int)(pars[4])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3862,10 +3862,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("length", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Clear(((System.Array)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -3878,7 +3878,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("indices", typeof(int[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((int[])(pars[0])));
 				}
@@ -3893,7 +3893,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((int)(pars[0])));
 				}
@@ -3909,7 +3909,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index2", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -3926,7 +3926,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index3", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((int)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
 				}
@@ -3941,7 +3941,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((long)(pars[0])));
 				}
@@ -3957,7 +3957,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index2", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((long)(pars[0])), ((long)(pars[1])));
 				}
@@ -3974,7 +3974,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index3", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((long)(pars[0])), ((long)(pars[1])), ((long)(pars[2])));
 				}
@@ -3989,7 +3989,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("indices", typeof(long[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((long[])(pars[0])));
 				}
@@ -4005,10 +4005,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4023,10 +4023,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index2", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4042,10 +4042,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index3", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4059,10 +4059,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("indices", typeof(int[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int[])(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4076,10 +4076,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4094,10 +4094,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index2", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])), ((long)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4113,10 +4113,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index3", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])), ((long)(pars[2])), ((long)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4130,10 +4130,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("indices", typeof(long[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long[])(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4145,7 +4145,7 @@ namespace MyNamespace
 					this.Initialize("get_Length", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).Length;
 				}
@@ -4159,7 +4159,7 @@ namespace MyNamespace
 					this.Initialize("get_LongLength", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).LongLength;
 				}
@@ -4174,7 +4174,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dimension", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetLength(((int)(pars[0])));
 				}
@@ -4189,7 +4189,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dimension", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetLongLength(((int)(pars[0])));
 				}
@@ -4203,7 +4203,7 @@ namespace MyNamespace
 					this.Initialize("get_Rank", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).Rank;
 				}
@@ -4218,7 +4218,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dimension", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetUpperBound(((int)(pars[0])));
 				}
@@ -4233,7 +4233,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dimension", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetLowerBound(((int)(pars[0])));
 				}
@@ -4247,7 +4247,7 @@ namespace MyNamespace
 					this.Initialize("get_SyncRoot", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).SyncRoot;
 				}
@@ -4261,7 +4261,7 @@ namespace MyNamespace
 					this.Initialize("get_IsReadOnly", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).IsReadOnly;
 				}
@@ -4275,7 +4275,7 @@ namespace MyNamespace
 					this.Initialize("get_IsFixedSize", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).IsFixedSize;
 				}
@@ -4289,7 +4289,7 @@ namespace MyNamespace
 					this.Initialize("get_IsSynchronized", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).IsSynchronized;
 				}
@@ -4303,7 +4303,7 @@ namespace MyNamespace
 					this.Initialize("Clone", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).Clone();
 				}
@@ -4319,7 +4319,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.BinarySearch(((System.Array)(pars[0])), ((object)(pars[1])));
 				}
@@ -4337,7 +4337,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.BinarySearch(((System.Array)(pars[0])), ((int)(pars[1])), ((int)(pars[2])), ((object)(pars[3])));
 				}
@@ -4354,7 +4354,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.IComparer), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.BinarySearch(((System.Array)(pars[0])), ((object)(pars[1])), ((System.Collections.IComparer)(pars[2])));
 				}
@@ -4373,7 +4373,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.IComparer), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.BinarySearch(((System.Array)(pars[0])), ((int)(pars[1])), ((int)(pars[2])), ((object)(pars[3])), ((System.Collections.IComparer)(pars[4])));
 				}
@@ -4389,10 +4389,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).CopyTo(((System.Array)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4406,10 +4406,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).CopyTo(((System.Array)(pars[0])), ((long)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4421,7 +4421,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetEnumerator();
 				}
@@ -4437,7 +4437,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.IndexOf(((System.Array)(pars[0])), ((object)(pars[1])));
 				}
@@ -4454,7 +4454,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("startIndex", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.IndexOf(((System.Array)(pars[0])), ((object)(pars[1])), ((int)(pars[2])));
 				}
@@ -4472,7 +4472,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.IndexOf(((System.Array)(pars[0])), ((object)(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
 				}
@@ -4488,7 +4488,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.LastIndexOf(((System.Array)(pars[0])), ((object)(pars[1])));
 				}
@@ -4505,7 +4505,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("startIndex", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.LastIndexOf(((System.Array)(pars[0])), ((object)(pars[1])), ((int)(pars[2])));
 				}
@@ -4523,7 +4523,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return System.Array.LastIndexOf(((System.Array)(pars[0])), ((object)(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
 				}
@@ -4538,10 +4538,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("array", typeof(System.Array), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Reverse(((System.Array)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4556,10 +4556,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("length", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Reverse(((System.Array)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4572,10 +4572,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("array", typeof(System.Array), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4589,10 +4589,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("items", typeof(System.Array), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((System.Array)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4607,10 +4607,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("length", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4626,10 +4626,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("length", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((System.Array)(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4643,10 +4643,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.IComparer), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((System.Collections.IComparer)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4661,10 +4661,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.IComparer), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((System.Array)(pars[1])), ((System.Collections.IComparer)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4680,10 +4680,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.IComparer), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((int)(pars[1])), ((int)(pars[2])), ((System.Collections.IComparer)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4700,10 +4700,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.IComparer), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Array.Sort(((System.Array)(pars[0])), ((System.Array)(pars[1])), ((int)(pars[2])), ((int)(pars[3])), ((System.Collections.IComparer)(pars[4])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4715,10 +4715,10 @@ namespace MyNamespace
 					this.Initialize("Initialize", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).Initialize();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -4730,7 +4730,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -4745,7 +4745,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -4759,7 +4759,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -4773,7 +4773,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -4787,7 +4787,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).Length;
 				}
@@ -4801,7 +4801,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).LongLength;
 				}
@@ -4815,7 +4815,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).Rank;
 				}
@@ -4829,7 +4829,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).SyncRoot;
 				}
@@ -4843,7 +4843,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).IsReadOnly;
 				}
@@ -4857,7 +4857,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).IsFixedSize;
 				}
@@ -4871,7 +4871,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).IsSynchronized;
 				}
@@ -5013,7 +5013,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>();
 				}
@@ -5028,7 +5028,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("capacity", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>(((int)(pars[0])));
 				}
@@ -5043,7 +5043,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("collection", typeof(System.Collections.Generic.IEnumerable<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>(((System.Collections.Generic.IEnumerable<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -5057,7 +5057,7 @@ namespace MyNamespace
 					this.Initialize("get_Capacity", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Capacity;
 				}
@@ -5072,7 +5072,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem> tmp = ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj));
 					tmp.Capacity = ((int)(pars[0]));
@@ -5088,7 +5088,7 @@ namespace MyNamespace
 					this.Initialize("get_Count", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Count;
 				}
@@ -5103,7 +5103,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj))[((int)(pars[0]))];
 				}
@@ -5119,7 +5119,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(CollectionsBaseGenRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem> tmp = ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj));
 					tmp[((int)(pars[0]))] = ((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[1]));
@@ -5136,10 +5136,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsBaseGenRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Add(((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5152,10 +5152,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("collection", typeof(System.Collections.Generic.IEnumerable<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).AddRange(((System.Collections.Generic.IEnumerable<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5167,9 +5167,9 @@ namespace MyNamespace
 					this.Initialize("AsReadOnly", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
-					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).AsReadOnly();
+					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj));
 				}
 			}
 
@@ -5185,7 +5185,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).BinarySearch(((int)(pars[0])), ((int)(pars[1])), ((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[2])), ((System.Collections.Generic.IComparer<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[3])));
 				}
@@ -5200,7 +5200,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsBaseGenRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).BinarySearch(((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[0])));
 				}
@@ -5216,7 +5216,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).BinarySearch(((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[0])), ((System.Collections.Generic.IComparer<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[1])));
 				}
@@ -5230,10 +5230,10 @@ namespace MyNamespace
 					this.Initialize("Clear", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Clear();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5246,7 +5246,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsBaseGenRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Contains(((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[0])));
 				}
@@ -5261,10 +5261,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("array", typeof(CollectionsBaseGenRegisteredTests.RegCollItem[]), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).CopyTo(((CollectionsBaseGenRegisteredTests.RegCollItem[])(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5280,10 +5280,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).CopyTo(((int)(pars[0])), ((CollectionsBaseGenRegisteredTests.RegCollItem[])(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5297,10 +5297,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("arrayIndex", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).CopyTo(((CollectionsBaseGenRegisteredTests.RegCollItem[])(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5313,7 +5313,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Exists(((System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -5328,7 +5328,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Find(((System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -5343,7 +5343,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).FindAll(((System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -5358,7 +5358,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).FindIndex(((System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -5374,7 +5374,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).FindIndex(((int)(pars[0])), ((System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[1])));
 				}
@@ -5391,7 +5391,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).FindIndex(((int)(pars[0])), ((int)(pars[1])), ((System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[2])));
 				}
@@ -5406,7 +5406,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).FindLast(((System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -5421,7 +5421,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).FindLastIndex(((System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -5437,7 +5437,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).FindLastIndex(((int)(pars[0])), ((System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[1])));
 				}
@@ -5454,7 +5454,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).FindLastIndex(((int)(pars[0])), ((int)(pars[1])), ((System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[2])));
 				}
@@ -5469,10 +5469,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("action", typeof(System.Action<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).ForEach(((System.Action<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5484,7 +5484,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).GetEnumerator();
 				}
@@ -5500,7 +5500,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).GetRange(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -5515,7 +5515,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsBaseGenRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).IndexOf(((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[0])));
 				}
@@ -5531,7 +5531,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).IndexOf(((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[0])), ((int)(pars[1])));
 				}
@@ -5548,7 +5548,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).IndexOf(((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
 				}
@@ -5564,10 +5564,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsBaseGenRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Insert(((int)(pars[0])), ((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5581,10 +5581,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("collection", typeof(System.Collections.Generic.IEnumerable<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).InsertRange(((int)(pars[0])), ((System.Collections.Generic.IEnumerable<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5597,7 +5597,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsBaseGenRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).LastIndexOf(((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[0])));
 				}
@@ -5613,7 +5613,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).LastIndexOf(((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[0])), ((int)(pars[1])));
 				}
@@ -5630,7 +5630,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).LastIndexOf(((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
 				}
@@ -5645,7 +5645,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsBaseGenRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Remove(((CollectionsBaseGenRegisteredTests.RegCollItem)(pars[0])));
 				}
@@ -5660,7 +5660,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).RemoveAll(((System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -5675,10 +5675,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).RemoveAt(((int)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5692,10 +5692,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).RemoveRange(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5707,10 +5707,10 @@ namespace MyNamespace
 					this.Initialize("Reverse", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Reverse();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5724,10 +5724,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Reverse(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5739,10 +5739,10 @@ namespace MyNamespace
 					this.Initialize("Sort", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Sort();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5755,10 +5755,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Sort(((System.Collections.Generic.IComparer<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5773,10 +5773,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Sort(((int)(pars[0])), ((int)(pars[1])), ((System.Collections.Generic.IComparer<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5789,10 +5789,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparison", typeof(System.Comparison<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Sort(((System.Comparison<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5804,7 +5804,7 @@ namespace MyNamespace
 					this.Initialize("ToArray", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).ToArray();
 				}
@@ -5818,10 +5818,10 @@ namespace MyNamespace
 					this.Initialize("TrimExcess", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).TrimExcess();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -5834,7 +5834,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).TrueForAll(((System.Predicate<CollectionsBaseGenRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -5848,7 +5848,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -5863,7 +5863,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -5877,7 +5877,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -5891,7 +5891,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -5905,12 +5905,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Capacity;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
 					System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem> tmp = ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj));
 					tmp.Capacity = ((int)(value));
@@ -5925,7 +5925,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Collections.Generic.List<CollectionsBaseGenRegisteredTests.RegCollItem>)(obj)).Count;
 				}
@@ -5971,7 +5971,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new CollectionsRegisteredTests.RegCollMethods();
 				}
@@ -5985,7 +5985,7 @@ namespace MyNamespace
 					this.Initialize("GetMultiArray", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((CollectionsRegisteredTests.RegCollMethods)(obj)).GetMultiArray();
 				}
@@ -5999,7 +5999,7 @@ namespace MyNamespace
 					this.Initialize("GetArray", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((CollectionsRegisteredTests.RegCollMethods)(obj)).GetArray();
 				}
@@ -6013,7 +6013,7 @@ namespace MyNamespace
 					this.Initialize("GetItems", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((CollectionsRegisteredTests.RegCollMethods)(obj)).GetItems();
 				}
@@ -6027,7 +6027,7 @@ namespace MyNamespace
 					this.Initialize("GetList", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((CollectionsRegisteredTests.RegCollMethods)(obj)).GetList();
 				}
@@ -6041,7 +6041,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((CollectionsRegisteredTests.RegCollMethods)(obj)).GetEnumerator();
 				}
@@ -6055,7 +6055,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -6070,7 +6070,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -6084,7 +6084,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -6098,7 +6098,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -6136,7 +6136,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new CollectionsRegisteredTests.RegCollItem(((int)(pars[0])));
 				}
@@ -6150,7 +6150,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -6165,7 +6165,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -6179,7 +6179,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -6193,7 +6193,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -6207,12 +6207,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((CollectionsRegisteredTests.RegCollItem)(obj)).Value;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     CollectionsRegisteredTests.RegCollItem tmp = ((CollectionsRegisteredTests.RegCollItem)(obj));
 					tmp.Value = ((int)(value));
@@ -6337,7 +6337,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>();
 				}
@@ -6352,7 +6352,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("capacity", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>(((int)(pars[0])));
 				}
@@ -6367,7 +6367,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("collection", typeof(System.Collections.Generic.IEnumerable<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>(((System.Collections.Generic.IEnumerable<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -6381,7 +6381,7 @@ namespace MyNamespace
 					this.Initialize("get_Capacity", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Capacity;
 				}
@@ -6396,7 +6396,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem> tmp = ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj));
 					tmp.Capacity = ((int)(pars[0]));
@@ -6412,7 +6412,7 @@ namespace MyNamespace
 					this.Initialize("get_Count", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Count;
 				}
@@ -6427,7 +6427,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj))[((int)(pars[0]))];
 				}
@@ -6443,7 +6443,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(CollectionsRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem> tmp = ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj));
 					tmp[((int)(pars[0]))] = ((CollectionsRegisteredTests.RegCollItem)(pars[1]));
@@ -6460,10 +6460,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Add(((CollectionsRegisteredTests.RegCollItem)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6476,10 +6476,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("collection", typeof(System.Collections.Generic.IEnumerable<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).AddRange(((System.Collections.Generic.IEnumerable<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6491,9 +6491,9 @@ namespace MyNamespace
 					this.Initialize("AsReadOnly", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
-					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).AsReadOnly();
+					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj));
 				}
 			}
 
@@ -6509,7 +6509,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).BinarySearch(((int)(pars[0])), ((int)(pars[1])), ((CollectionsRegisteredTests.RegCollItem)(pars[2])), ((System.Collections.Generic.IComparer<CollectionsRegisteredTests.RegCollItem>)(pars[3])));
 				}
@@ -6524,7 +6524,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).BinarySearch(((CollectionsRegisteredTests.RegCollItem)(pars[0])));
 				}
@@ -6540,7 +6540,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).BinarySearch(((CollectionsRegisteredTests.RegCollItem)(pars[0])), ((System.Collections.Generic.IComparer<CollectionsRegisteredTests.RegCollItem>)(pars[1])));
 				}
@@ -6554,10 +6554,10 @@ namespace MyNamespace
 					this.Initialize("Clear", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Clear();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6570,7 +6570,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Contains(((CollectionsRegisteredTests.RegCollItem)(pars[0])));
 				}
@@ -6585,10 +6585,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("array", typeof(CollectionsRegisteredTests.RegCollItem[]), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).CopyTo(((CollectionsRegisteredTests.RegCollItem[])(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6604,10 +6604,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).CopyTo(((int)(pars[0])), ((CollectionsRegisteredTests.RegCollItem[])(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6621,10 +6621,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("arrayIndex", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).CopyTo(((CollectionsRegisteredTests.RegCollItem[])(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6637,7 +6637,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Exists(((System.Predicate<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -6652,7 +6652,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Find(((System.Predicate<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -6667,7 +6667,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).FindAll(((System.Predicate<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -6682,7 +6682,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).FindIndex(((System.Predicate<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -6698,7 +6698,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).FindIndex(((int)(pars[0])), ((System.Predicate<CollectionsRegisteredTests.RegCollItem>)(pars[1])));
 				}
@@ -6715,7 +6715,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).FindIndex(((int)(pars[0])), ((int)(pars[1])), ((System.Predicate<CollectionsRegisteredTests.RegCollItem>)(pars[2])));
 				}
@@ -6730,7 +6730,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).FindLast(((System.Predicate<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -6745,7 +6745,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).FindLastIndex(((System.Predicate<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -6761,7 +6761,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).FindLastIndex(((int)(pars[0])), ((System.Predicate<CollectionsRegisteredTests.RegCollItem>)(pars[1])));
 				}
@@ -6778,7 +6778,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).FindLastIndex(((int)(pars[0])), ((int)(pars[1])), ((System.Predicate<CollectionsRegisteredTests.RegCollItem>)(pars[2])));
 				}
@@ -6793,10 +6793,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("action", typeof(System.Action<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).ForEach(((System.Action<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6808,7 +6808,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).GetEnumerator();
 				}
@@ -6824,7 +6824,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).GetRange(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -6839,7 +6839,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).IndexOf(((CollectionsRegisteredTests.RegCollItem)(pars[0])));
 				}
@@ -6855,7 +6855,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).IndexOf(((CollectionsRegisteredTests.RegCollItem)(pars[0])), ((int)(pars[1])));
 				}
@@ -6872,7 +6872,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).IndexOf(((CollectionsRegisteredTests.RegCollItem)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
 				}
@@ -6888,10 +6888,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Insert(((int)(pars[0])), ((CollectionsRegisteredTests.RegCollItem)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6905,10 +6905,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("collection", typeof(System.Collections.Generic.IEnumerable<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).InsertRange(((int)(pars[0])), ((System.Collections.Generic.IEnumerable<CollectionsRegisteredTests.RegCollItem>)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -6921,7 +6921,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).LastIndexOf(((CollectionsRegisteredTests.RegCollItem)(pars[0])));
 				}
@@ -6937,7 +6937,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).LastIndexOf(((CollectionsRegisteredTests.RegCollItem)(pars[0])), ((int)(pars[1])));
 				}
@@ -6954,7 +6954,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).LastIndexOf(((CollectionsRegisteredTests.RegCollItem)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
 				}
@@ -6969,7 +6969,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("item", typeof(CollectionsRegisteredTests.RegCollItem), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Remove(((CollectionsRegisteredTests.RegCollItem)(pars[0])));
 				}
@@ -6984,7 +6984,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).RemoveAll(((System.Predicate<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -6999,10 +6999,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).RemoveAt(((int)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7016,10 +7016,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).RemoveRange(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7031,10 +7031,10 @@ namespace MyNamespace
 					this.Initialize("Reverse", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Reverse();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7048,10 +7048,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("count", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Reverse(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7063,10 +7063,10 @@ namespace MyNamespace
 					this.Initialize("Sort", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Sort();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7079,10 +7079,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Sort(((System.Collections.Generic.IComparer<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7097,10 +7097,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IComparer<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Sort(((int)(pars[0])), ((int)(pars[1])), ((System.Collections.Generic.IComparer<CollectionsRegisteredTests.RegCollItem>)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7113,10 +7113,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparison", typeof(System.Comparison<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Sort(((System.Comparison<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7128,7 +7128,7 @@ namespace MyNamespace
 					this.Initialize("ToArray", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).ToArray();
 				}
@@ -7142,10 +7142,10 @@ namespace MyNamespace
 					this.Initialize("TrimExcess", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).TrimExcess();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7158,7 +7158,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("match", typeof(System.Predicate<CollectionsRegisteredTests.RegCollItem>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).TrueForAll(((System.Predicate<CollectionsRegisteredTests.RegCollItem>)(pars[0])));
 				}
@@ -7172,7 +7172,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -7187,7 +7187,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -7201,7 +7201,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -7215,7 +7215,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -7229,12 +7229,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Capacity;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
 					System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem> tmp = ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj));
 					tmp.Capacity = ((int)(value));
@@ -7249,7 +7249,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Collections.Generic.List<CollectionsRegisteredTests.RegCollItem>)(obj)).Count;
 				}
@@ -7351,7 +7351,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("idx1", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new int[] {
                             ((int)(pars[0])),
@@ -7369,7 +7369,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("idx1", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new int[] {
                             ((int)(pars[0])),
@@ -7386,7 +7386,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("indices", typeof(int[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((int[])(pars[0])));
 				}
@@ -7401,7 +7401,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((int)(pars[0])));
 				}
@@ -7417,7 +7417,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index2", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -7434,7 +7434,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index3", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((int)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
 				}
@@ -7449,7 +7449,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((long)(pars[0])));
 				}
@@ -7465,7 +7465,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index2", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((long)(pars[0])), ((long)(pars[1])));
 				}
@@ -7482,7 +7482,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index3", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((long)(pars[0])), ((long)(pars[1])), ((long)(pars[2])));
 				}
@@ -7497,7 +7497,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("indices", typeof(long[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetValue(((long[])(pars[0])));
 				}
@@ -7513,10 +7513,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7531,10 +7531,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index2", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])), ((int)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7550,10 +7550,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index3", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int)(pars[1])), ((int)(pars[2])), ((int)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7567,10 +7567,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("indices", typeof(int[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((int[])(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7584,10 +7584,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7602,10 +7602,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index2", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])), ((long)(pars[2])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7621,10 +7621,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index3", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long)(pars[1])), ((long)(pars[2])), ((long)(pars[3])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7638,10 +7638,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("indices", typeof(long[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).SetValue(((object)(pars[0])), ((long[])(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7653,7 +7653,7 @@ namespace MyNamespace
 					this.Initialize("get_Length", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).Length;
 				}
@@ -7667,7 +7667,7 @@ namespace MyNamespace
 					this.Initialize("get_LongLength", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).LongLength;
 				}
@@ -7682,7 +7682,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dimension", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetLength(((int)(pars[0])));
 				}
@@ -7697,7 +7697,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dimension", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetLongLength(((int)(pars[0])));
 				}
@@ -7711,7 +7711,7 @@ namespace MyNamespace
 					this.Initialize("get_Rank", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).Rank;
 				}
@@ -7726,7 +7726,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dimension", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetUpperBound(((int)(pars[0])));
 				}
@@ -7741,7 +7741,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dimension", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetLowerBound(((int)(pars[0])));
 				}
@@ -7755,7 +7755,7 @@ namespace MyNamespace
 					this.Initialize("get_SyncRoot", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).SyncRoot;
 				}
@@ -7769,7 +7769,7 @@ namespace MyNamespace
 					this.Initialize("get_IsReadOnly", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).IsReadOnly;
 				}
@@ -7783,7 +7783,7 @@ namespace MyNamespace
 					this.Initialize("get_IsFixedSize", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).IsFixedSize;
 				}
@@ -7797,7 +7797,7 @@ namespace MyNamespace
 					this.Initialize("get_IsSynchronized", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).IsSynchronized;
 				}
@@ -7811,7 +7811,7 @@ namespace MyNamespace
 					this.Initialize("Clone", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).Clone();
 				}
@@ -7827,10 +7827,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).CopyTo(((System.Array)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7844,10 +7844,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("index", typeof(long), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).CopyTo(((System.Array)(pars[0])), ((long)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7859,7 +7859,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Array)(obj)).GetEnumerator();
 				}
@@ -7873,10 +7873,10 @@ namespace MyNamespace
 					this.Initialize("Initialize", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Array)(obj)).Initialize();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -7888,7 +7888,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -7903,7 +7903,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -7917,7 +7917,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -7931,7 +7931,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -7945,7 +7945,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).Length;
 				}
@@ -7959,7 +7959,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).LongLength;
 				}
@@ -7973,7 +7973,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).Rank;
 				}
@@ -7987,7 +7987,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).SyncRoot;
 				}
@@ -8001,7 +8001,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).IsReadOnly;
 				}
@@ -8015,7 +8015,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).IsFixedSize;
 				}
@@ -8029,7 +8029,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Array)(obj)).IsSynchronized;
 				}
@@ -8090,7 +8090,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new MetatableTests.MyObject();
 				}
@@ -8104,7 +8104,7 @@ namespace MyNamespace
 					this.Initialize("GetSomething", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((MetatableTests.MyObject)(obj)).GetSomething();
 				}
@@ -8118,7 +8118,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -8133,7 +8133,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -8147,7 +8147,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -8161,7 +8161,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -8197,7 +8197,7 @@ namespace MyNamespace
 					this.Initialize("GetValue", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((ProxyObjectsTests.Proxy)(obj)).GetValue();
 				}
@@ -8211,7 +8211,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -8226,7 +8226,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -8240,7 +8240,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -8254,7 +8254,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -8291,7 +8291,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new StructAssignmentTechnique.Transform();
 				}
@@ -8305,7 +8305,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -8320,7 +8320,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -8334,7 +8334,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -8348,7 +8348,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -8362,12 +8362,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((StructAssignmentTechnique.Transform)(obj)).position;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     StructAssignmentTechnique.Transform tmp = ((StructAssignmentTechnique.Transform)(obj));
 					tmp.position = ((StructAssignmentTechnique.Vector3)(value));
@@ -8407,7 +8407,7 @@ namespace MyNamespace
 					this.Initialize("__new", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new StructAssignmentTechnique.Vector3();
 				}
@@ -8422,7 +8422,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).Equals(((object)(pars[0])));
 				}
@@ -8436,7 +8436,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).GetHashCode();
 				}
@@ -8450,7 +8450,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).ToString();
 				}
@@ -8464,7 +8464,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -8478,12 +8478,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((StructAssignmentTechnique.Vector3)(obj)).X;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     StructAssignmentTechnique.Vector3 tmp = ((StructAssignmentTechnique.Vector3)(obj));
 					tmp.X = ((float)(value));
@@ -8498,12 +8498,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((StructAssignmentTechnique.Vector3)(obj)).Y;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     StructAssignmentTechnique.Vector3 tmp = ((StructAssignmentTechnique.Vector3)(obj));
 					tmp.Y = ((float)(value));
@@ -8518,12 +8518,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((StructAssignmentTechnique.Vector3)(obj)).Z;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     StructAssignmentTechnique.Vector3 tmp = ((StructAssignmentTechnique.Vector3)(obj));
 					tmp.Z = ((float)(value));
@@ -8572,7 +8572,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataEventsTests.SomeClass();
 				}
@@ -8587,7 +8587,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(System.EventHandler), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					throw new System.InvalidOperationException("Access to event special methods is not supported by hardwired decriptors.");
 				}
@@ -8602,7 +8602,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(System.EventHandler), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					throw new System.InvalidOperationException("Access to event special methods is not supported by hardwired decriptors.");
 				}
@@ -8617,7 +8617,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(System.EventHandler), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					throw new System.InvalidOperationException("Access to event special methods is not supported by hardwired decriptors.");
 				}
@@ -8632,7 +8632,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(System.EventHandler), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					throw new System.InvalidOperationException("Access to event special methods is not supported by hardwired decriptors.");
 				}
@@ -8646,7 +8646,7 @@ namespace MyNamespace
 					this.Initialize("Trigger_MyEvent", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataEventsTests.SomeClass)(obj)).Trigger_MyEvent();
 				}
@@ -8660,7 +8660,7 @@ namespace MyNamespace
 					this.Initialize("Trigger_MySEvent", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return UserDataEventsTests.SomeClass.Trigger_MySEvent();
 				}
@@ -8674,7 +8674,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -8689,7 +8689,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -8703,7 +8703,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -8717,7 +8717,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -8754,7 +8754,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.EventArgs();
 				}
@@ -8768,7 +8768,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -8783,7 +8783,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -8797,7 +8797,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -8811,7 +8811,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -8825,7 +8825,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return System.EventArgs.Empty;
 				}
@@ -8872,7 +8872,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataEnumsTests.EnumOverloadsTestClass();
 				}
@@ -8887,7 +8887,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("enm", typeof(MyEnum), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataEnumsTests.EnumOverloadsTestClass)(obj)).MyMethod(((MyEnum)(pars[0])));
 				}
@@ -8902,7 +8902,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("enm", typeof(MyFlags), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataEnumsTests.EnumOverloadsTestClass)(obj)).MyMethod(((MyFlags)(pars[0])));
 				}
@@ -8917,7 +8917,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("enm", typeof(MyEnum), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataEnumsTests.EnumOverloadsTestClass)(obj)).MyMethod2(((MyEnum)(pars[0])));
 				}
@@ -8932,7 +8932,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("b", typeof(bool), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataEnumsTests.EnumOverloadsTestClass)(obj)).MyMethodB(((bool)(pars[0])));
 				}
@@ -8946,7 +8946,7 @@ namespace MyNamespace
 					this.Initialize("Get", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataEnumsTests.EnumOverloadsTestClass)(obj)).Get();
 				}
@@ -8960,7 +8960,7 @@ namespace MyNamespace
 					this.Initialize("GetF", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataEnumsTests.EnumOverloadsTestClass)(obj)).GetF();
 				}
@@ -8974,7 +8974,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -8989,7 +8989,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -9003,7 +9003,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -9017,7 +9017,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -9055,7 +9055,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataNestedTypesTests.SomeType.SomeNestedType();
 				}
@@ -9069,7 +9069,7 @@ namespace MyNamespace
 					this.Initialize("Get", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return UserDataNestedTypesTests.SomeType.SomeNestedType.Get();
 				}
@@ -9083,7 +9083,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -9098,7 +9098,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -9112,7 +9112,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -9126,7 +9126,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -9166,7 +9166,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataNestedTypesTests.SomeType();
 				}
@@ -9180,7 +9180,7 @@ namespace MyNamespace
 					this.Initialize("Get", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return UserDataNestedTypesTests.SomeType.Get();
 				}
@@ -9194,7 +9194,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -9209,7 +9209,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -9223,7 +9223,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -9237,7 +9237,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -9309,7 +9309,7 @@ namespace MyNamespace
 					this.Initialize("__new", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataNestedTypesTests.VSomeType.SomeNestedType();
 				}
@@ -9323,7 +9323,7 @@ namespace MyNamespace
 					this.Initialize("Get", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return UserDataNestedTypesTests.VSomeType.SomeNestedType.Get();
 				}
@@ -9338,7 +9338,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).Equals(((object)(pars[0])));
 				}
@@ -9352,7 +9352,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).GetHashCode();
 				}
@@ -9366,7 +9366,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).ToString();
 				}
@@ -9380,7 +9380,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -9417,7 +9417,7 @@ namespace MyNamespace
 					this.Initialize("__new", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataNestedTypesTests.VSomeType();
 				}
@@ -9432,7 +9432,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).Equals(((object)(pars[0])));
 				}
@@ -9446,7 +9446,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).GetHashCode();
 				}
@@ -9460,7 +9460,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).ToString();
 				}
@@ -9474,7 +9474,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -9567,7 +9567,7 @@ namespace MyNamespace
 					this.Initialize("__new", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new VtUserDataPropertiesTests.SomeClass();
 				}
@@ -9581,7 +9581,7 @@ namespace MyNamespace
 					this.Initialize("get_IntProp", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataPropertiesTests.SomeClass)(obj)).IntProp;
 				}
@@ -9596,7 +9596,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     VtUserDataPropertiesTests.SomeClass tmp = ((VtUserDataPropertiesTests.SomeClass)(obj));
 					tmp.IntProp = ((int)(pars[0]));
@@ -9612,7 +9612,7 @@ namespace MyNamespace
 					this.Initialize("get_NIntProp", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataPropertiesTests.SomeClass)(obj)).NIntProp;
 				}
@@ -9627,7 +9627,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(System.Nullable<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     VtUserDataPropertiesTests.SomeClass tmp = ((VtUserDataPropertiesTests.SomeClass)(obj));
 					tmp.NIntProp = ((System.Nullable<int>)(pars[0]));
@@ -9643,7 +9643,7 @@ namespace MyNamespace
 					this.Initialize("get_ObjProp", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataPropertiesTests.SomeClass)(obj)).ObjProp;
 				}
@@ -9658,7 +9658,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     VtUserDataPropertiesTests.SomeClass tmp = ((VtUserDataPropertiesTests.SomeClass)(obj));
 					tmp.ObjProp = ((object)(pars[0]));
@@ -9674,7 +9674,7 @@ namespace MyNamespace
 					this.Initialize("get_StaticProp", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return VtUserDataPropertiesTests.SomeClass.StaticProp;
 				}
@@ -9689,7 +9689,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(string), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     VtUserDataPropertiesTests.SomeClass.StaticProp = ((string)(pars[0]));
 					return null;
@@ -9704,7 +9704,7 @@ namespace MyNamespace
 					this.Initialize("get_RoIntProp", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataPropertiesTests.SomeClass)(obj)).RoIntProp;
 				}
@@ -9718,7 +9718,7 @@ namespace MyNamespace
 					this.Initialize("get_RoIntProp2", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataPropertiesTests.SomeClass)(obj)).RoIntProp2;
 				}
@@ -9733,7 +9733,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     VtUserDataPropertiesTests.SomeClass tmp = ((VtUserDataPropertiesTests.SomeClass)(obj));
 					tmp.WoIntProp = ((int)(pars[0]));
@@ -9750,7 +9750,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     VtUserDataPropertiesTests.SomeClass tmp = ((VtUserDataPropertiesTests.SomeClass)(obj));
 					tmp.WoIntProp2 = ((int)(pars[0]));
@@ -9766,7 +9766,7 @@ namespace MyNamespace
 					this.Initialize("GetWoIntProp2", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataPropertiesTests.SomeClass)(obj)).GetWoIntProp2();
 				}
@@ -9781,7 +9781,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     VtUserDataPropertiesTests.SomeClass tmp = ((VtUserDataPropertiesTests.SomeClass)(obj));
 					tmp.AccessOverrProp = ((int)(pars[0]));
@@ -9797,7 +9797,7 @@ namespace MyNamespace
 					this.Initialize("get_Numbers", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return VtUserDataPropertiesTests.SomeClass.Numbers;
 				}
@@ -9812,7 +9812,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).Equals(((object)(pars[0])));
 				}
@@ -9826,7 +9826,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).GetHashCode();
 				}
@@ -9840,7 +9840,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).ToString();
 				}
@@ -9854,7 +9854,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -9868,12 +9868,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((VtUserDataPropertiesTests.SomeClass)(obj)).IntProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataPropertiesTests.SomeClass tmp = ((VtUserDataPropertiesTests.SomeClass)(obj));
 					tmp.IntProp = ((int)(value));
@@ -9888,12 +9888,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((VtUserDataPropertiesTests.SomeClass)(obj)).NIntProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataPropertiesTests.SomeClass tmp = ((VtUserDataPropertiesTests.SomeClass)(obj));
 					tmp.NIntProp = ((System.Nullable<int>)(value));
@@ -9908,12 +9908,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((VtUserDataPropertiesTests.SomeClass)(obj)).ObjProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataPropertiesTests.SomeClass tmp = ((VtUserDataPropertiesTests.SomeClass)(obj));
 					tmp.ObjProp = ((object)(value));
@@ -9928,12 +9928,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return VtUserDataPropertiesTests.SomeClass.StaticProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataPropertiesTests.SomeClass.StaticProp = ((string)(value));
 				}
@@ -9947,7 +9947,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((VtUserDataPropertiesTests.SomeClass)(obj)).RoIntProp;
 				}
@@ -9961,7 +9961,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((VtUserDataPropertiesTests.SomeClass)(obj)).RoIntProp2;
 				}
@@ -9975,7 +9975,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataPropertiesTests.SomeClass tmp = ((VtUserDataPropertiesTests.SomeClass)(obj));
 					tmp.WoIntProp = ((int)(value));
@@ -9990,7 +9990,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataPropertiesTests.SomeClass tmp = ((VtUserDataPropertiesTests.SomeClass)(obj));
 					tmp.WoIntProp2 = ((int)(value));
@@ -10005,7 +10005,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataPropertiesTests.SomeClass tmp = ((VtUserDataPropertiesTests.SomeClass)(obj));
 					tmp.AccessOverrProp = ((int)(value));
@@ -10020,7 +10020,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return VtUserDataPropertiesTests.SomeClass.Numbers;
 				}
@@ -10073,7 +10073,7 @@ namespace MyNamespace
 					this.Initialize("__new", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new VtUserDataOverloadsTests.OverloadsTestClass();
 				}
@@ -10087,10 +10087,10 @@ namespace MyNamespace
 					this.Initialize("UnCalled", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     VtUserDataOverloadsTests.OverloadsTestClass.UnCalled();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -10105,7 +10105,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("b", typeof(bool), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataOverloadsTests.OverloadsTestClass)(obj)).MethodV(((string)(pars[0])), ((int)(pars[1])), ((bool)(pars[2])));
 				}
@@ -10121,7 +10121,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("args", typeof(object[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataOverloadsTests.OverloadsTestClass)(obj)).MethodV(((string)(pars[0])), ((object[])(pars[1])));
 				}
@@ -10135,7 +10135,7 @@ namespace MyNamespace
 					this.Initialize("Method1", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataOverloadsTests.OverloadsTestClass)(obj)).Method1();
 				}
@@ -10150,7 +10150,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("b", typeof(bool), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return VtUserDataOverloadsTests.OverloadsTestClass.Method1(((bool)(pars[0])));
 				}
@@ -10165,7 +10165,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("d", typeof(double), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataOverloadsTests.OverloadsTestClass)(obj)).Method1(((double)(pars[0])));
 				}
@@ -10181,7 +10181,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("x", typeof(string), true, new SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors.DefaultValue(), false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					if ((argscount <= 1))
 					{
@@ -10202,7 +10202,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("y", typeof(int), true, new SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors.DefaultValue(), false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					if ((argscount <= 2))
 					{
@@ -10221,7 +10221,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("a", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataOverloadsTests.OverloadsTestClass)(obj)).Method1(((int)(pars[0])));
 				}
@@ -10237,7 +10237,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("y", typeof(string), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataOverloadsTests.OverloadsTestClass)(obj)).Method2(((string)(pars[0])), ((string)(pars[1])));
 				}
@@ -10253,7 +10253,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("y", typeof(string), false, null, false, true, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					string refp_0 = ((string)(pars[1]));
 					object retv = ((VtUserDataOverloadsTests.OverloadsTestClass)(obj)).Method2(((string)(pars[0])), ref refp_0);
@@ -10274,7 +10274,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("z", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					string refp_0 = ((string)(pars[1]));
 					object retv = ((VtUserDataOverloadsTests.OverloadsTestClass)(obj)).Method2(((string)(pars[0])), ref refp_0, ((int)(pars[2])));
@@ -10293,7 +10293,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).Equals(((object)(pars[0])));
 				}
@@ -10307,7 +10307,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).GetHashCode();
 				}
@@ -10321,7 +10321,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).ToString();
 				}
@@ -10335,7 +10335,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -10392,7 +10392,7 @@ namespace MyNamespace
 					this.Initialize("__new", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new VtUserDataMethodsTests.SomeClass();
 				}
@@ -10409,7 +10409,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("lowercase", typeof(string), false, null, true, true, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					string refp_0 = ((string)(pars[1]));
 					string refp_1;
@@ -10431,7 +10431,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p2", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMethodsTests.SomeClass)(obj)).ConcatNums(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -10447,7 +10447,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p2", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMethodsTests.SomeClass)(obj)).ConcatNums(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -10462,7 +10462,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("i", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMethodsTests.SomeClass)(obj)).SomeMethodWithLongName(((int)(pars[0])));
 				}
@@ -10477,7 +10477,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("intList", typeof(System.Collections.Generic.List<int[]>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return VtUserDataMethodsTests.SomeClass.SetComplexRecursive(((System.Collections.Generic.List<int[]>)(pars[0])));
 				}
@@ -10496,7 +10496,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("intarray", typeof(int[]), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return VtUserDataMethodsTests.SomeClass.SetComplexTypes(((System.Collections.Generic.List<string>)(pars[0])), ((System.Collections.Generic.IList<int>)(pars[1])), ((System.Collections.Generic.Dictionary<string, int>)(pars[2])), ((string[])(pars[3])), ((int[])(pars[4])));
 				}
@@ -10520,7 +10520,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p10", typeof(int), true, new SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors.DefaultValue(), false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					if ((argscount <= 9))
 					{
@@ -10540,7 +10540,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("args", typeof(object[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMethodsTests.SomeClass)(obj)).Format(((string)(pars[0])), ((object[])(pars[1])));
 				}
@@ -10552,7 +10552,7 @@ namespace MyNamespace
 				internal MTHD_4c7a0cda196f459fb150259bb3a9c3c9()
 				{
 					this.Initialize("ConcatI", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[] {
-                                new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("s", typeof(SolarSharp.Interpreter.Script), false, null, false, false, false),
+                                new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("s", typeof(SolarSharp.Interpreter.LuaState), false, null, false, false, false),
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p1", typeof(int), false, null, false, false, false),
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p2", typeof(string), false, null, false, false, false),
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p3", typeof(System.IComparable), false, null, false, false, false),
@@ -10565,13 +10565,13 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p10", typeof(int), true, new SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors.DefaultValue(), false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					if ((argscount <= 10))
 					{
-						return ((VtUserDataMethodsTests.SomeClass)(obj)).ConcatI(((SolarSharp.Interpreter.Script)(pars[0])), ((int)(pars[1])), ((string)(pars[2])), ((System.IComparable)(pars[3])), ((bool)(pars[4])), ((System.Collections.Generic.List<object>)(pars[5])), ((System.Collections.Generic.IEnumerable<object>)(pars[6])), ((System.Text.StringBuilder)(pars[7])), ((System.Collections.Generic.Dictionary<object, object>)(pars[8])), ((VtUserDataMethodsTests.SomeClass)(pars[9])));
+						return ((VtUserDataMethodsTests.SomeClass)(obj)).ConcatI(((SolarSharp.Interpreter.LuaState)(pars[0])), ((int)(pars[1])), ((string)(pars[2])), ((System.IComparable)(pars[3])), ((bool)(pars[4])), ((System.Collections.Generic.List<object>)(pars[5])), ((System.Collections.Generic.IEnumerable<object>)(pars[6])), ((System.Text.StringBuilder)(pars[7])), ((System.Collections.Generic.Dictionary<object, object>)(pars[8])), ((VtUserDataMethodsTests.SomeClass)(pars[9])));
 					}
-					return ((VtUserDataMethodsTests.SomeClass)(obj)).ConcatI(((SolarSharp.Interpreter.Script)(pars[0])), ((int)(pars[1])), ((string)(pars[2])), ((System.IComparable)(pars[3])), ((bool)(pars[4])), ((System.Collections.Generic.List<object>)(pars[5])), ((System.Collections.Generic.IEnumerable<object>)(pars[6])), ((System.Text.StringBuilder)(pars[7])), ((System.Collections.Generic.Dictionary<object, object>)(pars[8])), ((VtUserDataMethodsTests.SomeClass)(pars[9])), ((int)(pars[10])));
+					return ((VtUserDataMethodsTests.SomeClass)(obj)).ConcatI(((SolarSharp.Interpreter.LuaState)(pars[0])), ((int)(pars[1])), ((string)(pars[2])), ((System.IComparable)(pars[3])), ((bool)(pars[4])), ((System.Collections.Generic.List<object>)(pars[5])), ((System.Collections.Generic.IEnumerable<object>)(pars[6])), ((System.Text.StringBuilder)(pars[7])), ((System.Collections.Generic.Dictionary<object, object>)(pars[8])), ((VtUserDataMethodsTests.SomeClass)(pars[9])), ((int)(pars[10])));
 				}
 			}
 
@@ -10583,7 +10583,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMethodsTests.SomeClass)(obj)).ToString();
 				}
@@ -10599,7 +10599,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("to", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMethodsTests.SomeClass)(obj)).MkList(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -10614,7 +10614,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMethodsTests.SomeClass)(obj)).CompareTo(((object)(pars[0])));
 				}
@@ -10629,7 +10629,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).Equals(((object)(pars[0])));
 				}
@@ -10643,7 +10643,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).GetHashCode();
 				}
@@ -10657,7 +10657,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -10697,7 +10697,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new VtUserDataMethodsTests.SomeOtherClass();
 				}
@@ -10711,7 +10711,7 @@ namespace MyNamespace
 					this.Initialize("Test1", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMethodsTests.SomeOtherClass)(obj)).Test1();
 				}
@@ -10725,7 +10725,7 @@ namespace MyNamespace
 					this.Initialize("Test2", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMethodsTests.SomeOtherClass)(obj)).Test2();
 				}
@@ -10739,7 +10739,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -10754,7 +10754,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -10768,7 +10768,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -10782,7 +10782,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -10810,7 +10810,7 @@ namespace MyNamespace
 					this.Initialize("Test1", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMethodsTests.Interface1)(obj)).Test1();
 				}
@@ -10838,7 +10838,7 @@ namespace MyNamespace
 					this.Initialize("Test2", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMethodsTests.Interface2)(obj)).Test2();
 				}
@@ -10925,7 +10925,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new VtUserDataMetaTests.ArithmOperatorsTestClass(((int)(pars[0])));
 				}
@@ -10939,7 +10939,7 @@ namespace MyNamespace
 					this.Initialize("__new", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new VtUserDataMetaTests.ArithmOperatorsTestClass();
 				}
@@ -10953,7 +10953,7 @@ namespace MyNamespace
 					this.Initialize("get_Value", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj)).Value;
 				}
@@ -10968,7 +10968,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     VtUserDataMetaTests.ArithmOperatorsTestClass tmp = ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj));
 					tmp.Value = ((int)(pars[0]));
@@ -10985,7 +10985,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (-((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])));
 				}
@@ -11001,7 +11001,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) + ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11017,7 +11017,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) + ((int)(pars[1])));
 				}
@@ -11033,7 +11033,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) + ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11049,7 +11049,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) - ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11065,7 +11065,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) - ((int)(pars[1])));
 				}
@@ -11081,7 +11081,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) - ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11097,7 +11097,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) * ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11113,7 +11113,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) * ((int)(pars[1])));
 				}
@@ -11129,7 +11129,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) * ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11145,7 +11145,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) / ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11161,7 +11161,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) / ((int)(pars[1])));
 				}
@@ -11177,7 +11177,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) / ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11193,7 +11193,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) % ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11209,7 +11209,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) % ((int)(pars[1])));
 				}
@@ -11225,7 +11225,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) % ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11240,7 +11240,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj)).Equals(((object)(pars[0])));
 				}
@@ -11254,7 +11254,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj)).GetHashCode();
 				}
@@ -11269,7 +11269,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj)).CompareTo(((object)(pars[0])));
 				}
@@ -11283,7 +11283,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj)).GetEnumerator();
 				}
@@ -11297,7 +11297,7 @@ namespace MyNamespace
 					this.Initialize("DefaultMethod", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj)).DefaultMethod();
 				}
@@ -11311,7 +11311,7 @@ namespace MyNamespace
 					this.Initialize("Pairs", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj)).Pairs();
 				}
@@ -11325,7 +11325,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).ToString();
 				}
@@ -11339,7 +11339,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -11353,12 +11353,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj)).Value;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataMetaTests.ArithmOperatorsTestClass tmp = ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj));
 					tmp.Value = ((int)(value));
@@ -11375,7 +11375,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) + ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11391,7 +11391,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) + ((int)(pars[1])));
 				}
@@ -11407,7 +11407,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) + ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11423,7 +11423,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) + ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11439,7 +11439,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) + ((int)(pars[1])));
 				}
@@ -11455,7 +11455,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(VtUserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) + ((VtUserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -11469,7 +11469,7 @@ namespace MyNamespace
 					this.Initialize("DefaultMethod", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj)).DefaultMethod();
 				}
@@ -11483,7 +11483,7 @@ namespace MyNamespace
 					this.Initialize("Pairs", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj)).Pairs();
 				}
@@ -11497,7 +11497,7 @@ namespace MyNamespace
 					this.Initialize("Pairs", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMetaTests.ArithmOperatorsTestClass)(obj)).Pairs();
 				}
@@ -11536,7 +11536,7 @@ namespace MyNamespace
 					this.Initialize("__new", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new VtUserDataMetaTests.ClassWithCount();
 				}
@@ -11550,7 +11550,7 @@ namespace MyNamespace
 					this.Initialize("get_Count", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMetaTests.ClassWithCount)(obj)).Count;
 				}
@@ -11565,7 +11565,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).Equals(((object)(pars[0])));
 				}
@@ -11579,7 +11579,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).GetHashCode();
 				}
@@ -11593,7 +11593,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).ToString();
 				}
@@ -11607,7 +11607,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -11621,7 +11621,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((VtUserDataMetaTests.ClassWithCount)(obj)).Count;
 				}
@@ -11660,7 +11660,7 @@ namespace MyNamespace
 					this.Initialize("__new", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new VtUserDataMetaTests.ClassWithLength();
 				}
@@ -11674,7 +11674,7 @@ namespace MyNamespace
 					this.Initialize("get_Length", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataMetaTests.ClassWithLength)(obj)).Length;
 				}
@@ -11689,7 +11689,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).Equals(((object)(pars[0])));
 				}
@@ -11703,7 +11703,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).GetHashCode();
 				}
@@ -11717,7 +11717,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).ToString();
 				}
@@ -11731,7 +11731,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -11745,7 +11745,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((VtUserDataMetaTests.ClassWithLength)(obj)).Length;
 				}
@@ -11788,7 +11788,7 @@ namespace MyNamespace
 					this.Initialize("__new", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new VtUserDataIndexerTests.IndexerTestClass();
 				}
@@ -11803,7 +11803,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("idx", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataIndexerTests.IndexerTestClass)(obj))[((int)(pars[0]))];
 				}
@@ -11820,7 +11820,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("idx3", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((VtUserDataIndexerTests.IndexerTestClass)(obj))[((int)(pars[0])), ((int)(pars[1])), ((int)(pars[2]))];
 				}
@@ -11836,7 +11836,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     VtUserDataIndexerTests.IndexerTestClass tmp = ((VtUserDataIndexerTests.IndexerTestClass)(obj));
 					tmp[((int)(pars[0]))] = ((int)(pars[1]));
@@ -11856,7 +11856,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     VtUserDataIndexerTests.IndexerTestClass tmp = ((VtUserDataIndexerTests.IndexerTestClass)(obj));
 					tmp[((int)(pars[0])), ((int)(pars[1])), ((int)(pars[2]))] = ((int)(pars[3]));
@@ -11873,7 +11873,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).Equals(((object)(pars[0])));
 				}
@@ -11887,7 +11887,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).GetHashCode();
 				}
@@ -11901,7 +11901,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).ToString();
 				}
@@ -11915,7 +11915,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -11929,12 +11929,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((VtUserDataIndexerTests.IndexerTestClass)(obj)).mymap;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataIndexerTests.IndexerTestClass tmp = ((VtUserDataIndexerTests.IndexerTestClass)(obj));
 					tmp.mymap = ((System.Collections.Generic.Dictionary<int, int>)(value));
@@ -11976,7 +11976,7 @@ namespace MyNamespace
 					this.Initialize("__new", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new VtUserDataFieldsTests.SomeClass();
 				}
@@ -11991,7 +11991,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).Equals(((object)(pars[0])));
 				}
@@ -12005,7 +12005,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).GetHashCode();
 				}
@@ -12019,7 +12019,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.ValueType)(obj)).ToString();
 				}
@@ -12033,7 +12033,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -12047,12 +12047,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((VtUserDataFieldsTests.SomeClass)(obj)).IntProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataFieldsTests.SomeClass tmp = ((VtUserDataFieldsTests.SomeClass)(obj));
 					tmp.IntProp = ((int)(value));
@@ -12067,12 +12067,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((VtUserDataFieldsTests.SomeClass)(obj)).NIntProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataFieldsTests.SomeClass tmp = ((VtUserDataFieldsTests.SomeClass)(obj));
 					tmp.NIntProp = ((System.Nullable<int>)(value));
@@ -12087,12 +12087,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((VtUserDataFieldsTests.SomeClass)(obj)).ObjProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataFieldsTests.SomeClass tmp = ((VtUserDataFieldsTests.SomeClass)(obj));
 					tmp.ObjProp = ((object)(value));
@@ -12107,12 +12107,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return VtUserDataFieldsTests.SomeClass.StaticProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     VtUserDataFieldsTests.SomeClass.StaticProp = ((string)(value));
 				}
@@ -12126,7 +12126,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return VtUserDataFieldsTests.SomeClass.ConstIntProp;
 				}
@@ -12212,7 +12212,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataMetaTests.ArithmOperatorsTestClass();
 				}
@@ -12227,7 +12227,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataMetaTests.ArithmOperatorsTestClass(((int)(pars[0])));
 				}
@@ -12241,7 +12241,7 @@ namespace MyNamespace
 					this.Initialize("get_Value", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMetaTests.ArithmOperatorsTestClass)(obj)).Value;
 				}
@@ -12256,7 +12256,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     UserDataMetaTests.ArithmOperatorsTestClass tmp = ((UserDataMetaTests.ArithmOperatorsTestClass)(obj));
 					tmp.Value = ((int)(pars[0]));
@@ -12273,7 +12273,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (-((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])));
 				}
@@ -12289,7 +12289,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) + ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12305,7 +12305,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) + ((int)(pars[1])));
 				}
@@ -12321,7 +12321,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) + ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12337,7 +12337,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) - ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12353,7 +12353,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) - ((int)(pars[1])));
 				}
@@ -12369,7 +12369,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) - ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12385,7 +12385,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) * ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12401,7 +12401,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) * ((int)(pars[1])));
 				}
@@ -12417,7 +12417,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) * ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12433,7 +12433,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) / ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12449,7 +12449,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) / ((int)(pars[1])));
 				}
@@ -12465,7 +12465,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) / ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12481,7 +12481,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) % ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12497,7 +12497,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) % ((int)(pars[1])));
 				}
@@ -12513,7 +12513,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) % ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12528,7 +12528,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMetaTests.ArithmOperatorsTestClass)(obj)).Equals(((object)(pars[0])));
 				}
@@ -12542,7 +12542,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMetaTests.ArithmOperatorsTestClass)(obj)).GetHashCode();
 				}
@@ -12557,7 +12557,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMetaTests.ArithmOperatorsTestClass)(obj)).CompareTo(((object)(pars[0])));
 				}
@@ -12571,7 +12571,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMetaTests.ArithmOperatorsTestClass)(obj)).GetEnumerator();
 				}
@@ -12585,7 +12585,7 @@ namespace MyNamespace
 					this.Initialize("DefaultMethod", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMetaTests.ArithmOperatorsTestClass)(obj)).DefaultMethod();
 				}
@@ -12599,7 +12599,7 @@ namespace MyNamespace
 					this.Initialize("Pairs", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMetaTests.ArithmOperatorsTestClass)(obj)).Pairs();
 				}
@@ -12613,7 +12613,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -12627,7 +12627,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -12641,12 +12641,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((UserDataMetaTests.ArithmOperatorsTestClass)(obj)).Value;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     UserDataMetaTests.ArithmOperatorsTestClass tmp = ((UserDataMetaTests.ArithmOperatorsTestClass)(obj));
 					tmp.Value = ((int)(value));
@@ -12663,7 +12663,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) + ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12679,7 +12679,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) + ((int)(pars[1])));
 				}
@@ -12695,7 +12695,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) + ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12711,7 +12711,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o2", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) + ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12727,7 +12727,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("v", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((UserDataMetaTests.ArithmOperatorsTestClass)(pars[0])) + ((int)(pars[1])));
 				}
@@ -12743,7 +12743,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("o", typeof(UserDataMetaTests.ArithmOperatorsTestClass), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return (((int)(pars[0])) + ((UserDataMetaTests.ArithmOperatorsTestClass)(pars[1])));
 				}
@@ -12757,7 +12757,7 @@ namespace MyNamespace
 					this.Initialize("DefaultMethod", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMetaTests.ArithmOperatorsTestClass)(obj)).DefaultMethod();
 				}
@@ -12771,7 +12771,7 @@ namespace MyNamespace
 					this.Initialize("Pairs", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMetaTests.ArithmOperatorsTestClass)(obj)).Pairs();
 				}
@@ -12785,7 +12785,7 @@ namespace MyNamespace
 					this.Initialize("Pairs", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMetaTests.ArithmOperatorsTestClass)(obj)).Pairs();
 				}
@@ -12824,7 +12824,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataMetaTests.ClassWithCount();
 				}
@@ -12838,7 +12838,7 @@ namespace MyNamespace
 					this.Initialize("get_Count", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMetaTests.ClassWithCount)(obj)).Count;
 				}
@@ -12852,7 +12852,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -12867,7 +12867,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -12881,7 +12881,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -12895,7 +12895,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -12909,7 +12909,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((UserDataMetaTests.ClassWithCount)(obj)).Count;
 				}
@@ -12948,7 +12948,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataMetaTests.ClassWithLength();
 				}
@@ -12962,7 +12962,7 @@ namespace MyNamespace
 					this.Initialize("get_Length", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMetaTests.ClassWithLength)(obj)).Length;
 				}
@@ -12976,7 +12976,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -12991,7 +12991,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -13005,7 +13005,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -13019,7 +13019,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -13033,7 +13033,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((UserDataMetaTests.ClassWithLength)(obj)).Length;
 				}
@@ -13075,7 +13075,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataIndexerTests.IndexerTestClass();
 				}
@@ -13090,7 +13090,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("idx", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataIndexerTests.IndexerTestClass)(obj))[((int)(pars[0]))];
 				}
@@ -13107,7 +13107,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("idx3", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataIndexerTests.IndexerTestClass)(obj))[((int)(pars[0])), ((int)(pars[1])), ((int)(pars[2]))];
 				}
@@ -13123,7 +13123,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     UserDataIndexerTests.IndexerTestClass tmp = ((UserDataIndexerTests.IndexerTestClass)(obj));
 					tmp[((int)(pars[0]))] = ((int)(pars[1]));
@@ -13143,7 +13143,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     UserDataIndexerTests.IndexerTestClass tmp = ((UserDataIndexerTests.IndexerTestClass)(obj));
 					tmp[((int)(pars[0])), ((int)(pars[1])), ((int)(pars[2]))] = ((int)(pars[3]));
@@ -13159,7 +13159,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -13174,7 +13174,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -13188,7 +13188,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -13202,7 +13202,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -13258,7 +13258,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataMethodsTests.SomeClass();
 				}
@@ -13275,7 +13275,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("lowercase", typeof(string), false, null, true, true, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					string refp_0 = ((string)(pars[1]));
 					string refp_1;
@@ -13297,7 +13297,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p2", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMethodsTests.SomeClass)(obj)).ConcatNums(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -13312,7 +13312,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("i", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMethodsTests.SomeClass)(obj)).SomeMethodWithLongName(((int)(pars[0])));
 				}
@@ -13327,7 +13327,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("intList", typeof(System.Collections.Generic.List<int[]>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return UserDataMethodsTests.SomeClass.SetComplexRecursive(((System.Collections.Generic.List<int[]>)(pars[0])));
 				}
@@ -13346,7 +13346,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("intarray", typeof(int[]), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return UserDataMethodsTests.SomeClass.SetComplexTypes(((System.Collections.Generic.List<string>)(pars[0])), ((System.Collections.Generic.IList<int>)(pars[1])), ((System.Collections.Generic.Dictionary<string, int>)(pars[2])), ((string[])(pars[3])), ((int[])(pars[4])));
 				}
@@ -13370,7 +13370,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p10", typeof(int), true, new SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors.DefaultValue(), false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					if ((argscount <= 9))
 					{
@@ -13390,7 +13390,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("args", typeof(object[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMethodsTests.SomeClass)(obj)).Format(((string)(pars[0])), ((object[])(pars[1])));
 				}
@@ -13402,7 +13402,7 @@ namespace MyNamespace
 				internal MTHD_61f5d3fb60384969b5322f5527edc159()
 				{
 					this.Initialize("ConcatI", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[] {
-                                new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("s", typeof(SolarSharp.Interpreter.Script), false, null, false, false, false),
+                                new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("s", typeof(SolarSharp.Interpreter.LuaState), false, null, false, false, false),
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p1", typeof(int), false, null, false, false, false),
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p2", typeof(string), false, null, false, false, false),
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p3", typeof(System.IComparable), false, null, false, false, false),
@@ -13415,13 +13415,13 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("p10", typeof(int), true, new SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors.DefaultValue(), false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					if ((argscount <= 10))
 					{
-						return ((UserDataMethodsTests.SomeClass)(obj)).ConcatI(((SolarSharp.Interpreter.Script)(pars[0])), ((int)(pars[1])), ((string)(pars[2])), ((System.IComparable)(pars[3])), ((bool)(pars[4])), ((System.Collections.Generic.List<object>)(pars[5])), ((System.Collections.Generic.IEnumerable<object>)(pars[6])), ((System.Text.StringBuilder)(pars[7])), ((System.Collections.Generic.Dictionary<object, object>)(pars[8])), ((UserDataMethodsTests.SomeClass)(pars[9])));
+						return ((UserDataMethodsTests.SomeClass)(obj)).ConcatI(((SolarSharp.Interpreter.LuaState)(pars[0])), ((int)(pars[1])), ((string)(pars[2])), ((System.IComparable)(pars[3])), ((bool)(pars[4])), ((System.Collections.Generic.List<object>)(pars[5])), ((System.Collections.Generic.IEnumerable<object>)(pars[6])), ((System.Text.StringBuilder)(pars[7])), ((System.Collections.Generic.Dictionary<object, object>)(pars[8])), ((UserDataMethodsTests.SomeClass)(pars[9])));
 					}
-					return ((UserDataMethodsTests.SomeClass)(obj)).ConcatI(((SolarSharp.Interpreter.Script)(pars[0])), ((int)(pars[1])), ((string)(pars[2])), ((System.IComparable)(pars[3])), ((bool)(pars[4])), ((System.Collections.Generic.List<object>)(pars[5])), ((System.Collections.Generic.IEnumerable<object>)(pars[6])), ((System.Text.StringBuilder)(pars[7])), ((System.Collections.Generic.Dictionary<object, object>)(pars[8])), ((UserDataMethodsTests.SomeClass)(pars[9])), ((int)(pars[10])));
+					return ((UserDataMethodsTests.SomeClass)(obj)).ConcatI(((SolarSharp.Interpreter.LuaState)(pars[0])), ((int)(pars[1])), ((string)(pars[2])), ((System.IComparable)(pars[3])), ((bool)(pars[4])), ((System.Collections.Generic.List<object>)(pars[5])), ((System.Collections.Generic.IEnumerable<object>)(pars[6])), ((System.Text.StringBuilder)(pars[7])), ((System.Collections.Generic.Dictionary<object, object>)(pars[8])), ((UserDataMethodsTests.SomeClass)(pars[9])), ((int)(pars[10])));
 				}
 			}
 
@@ -13433,7 +13433,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMethodsTests.SomeClass)(obj)).ToString();
 				}
@@ -13449,7 +13449,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("to", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMethodsTests.SomeClass)(obj)).MkList(((int)(pars[0])), ((int)(pars[1])));
 				}
@@ -13464,7 +13464,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMethodsTests.SomeClass)(obj)).CompareTo(((object)(pars[0])));
 				}
@@ -13479,7 +13479,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -13493,7 +13493,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -13507,7 +13507,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -13547,7 +13547,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataMethodsTests.SomeOtherClass();
 				}
@@ -13561,7 +13561,7 @@ namespace MyNamespace
 					this.Initialize("Test1", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMethodsTests.SomeOtherClass)(obj)).Test1();
 				}
@@ -13575,7 +13575,7 @@ namespace MyNamespace
 					this.Initialize("Test2", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMethodsTests.SomeOtherClass)(obj)).Test2();
 				}
@@ -13589,7 +13589,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -13604,7 +13604,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -13618,7 +13618,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -13632,7 +13632,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -13660,7 +13660,7 @@ namespace MyNamespace
 					this.Initialize("Test1", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMethodsTests.Interface1)(obj)).Test1();
 				}
@@ -13688,7 +13688,7 @@ namespace MyNamespace
 					this.Initialize("Test2", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataMethodsTests.Interface2)(obj)).Test2();
 				}
@@ -13763,7 +13763,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.Dictionary<int, int>();
 				}
@@ -13778,7 +13778,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("dictionary", typeof(System.Collections.Generic.IDictionary<int, int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.Dictionary<int, int>(((System.Collections.Generic.IDictionary<int, int>)(pars[0])));
 				}
@@ -13794,7 +13794,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IEqualityComparer<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.Dictionary<int, int>(((System.Collections.Generic.IDictionary<int, int>)(pars[0])), ((System.Collections.Generic.IEqualityComparer<int>)(pars[1])));
 				}
@@ -13809,7 +13809,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IEqualityComparer<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.Dictionary<int, int>(((System.Collections.Generic.IEqualityComparer<int>)(pars[0])));
 				}
@@ -13824,7 +13824,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("capacity", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.Dictionary<int, int>(((int)(pars[0])));
 				}
@@ -13840,7 +13840,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("comparer", typeof(System.Collections.Generic.IEqualityComparer<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new System.Collections.Generic.Dictionary<int, int>(((int)(pars[0])), ((System.Collections.Generic.IEqualityComparer<int>)(pars[1])));
 				}
@@ -13854,7 +13854,7 @@ namespace MyNamespace
 					this.Initialize("get_Comparer", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj)).Comparer;
 				}
@@ -13868,7 +13868,7 @@ namespace MyNamespace
 					this.Initialize("get_Count", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj)).Count;
 				}
@@ -13882,7 +13882,7 @@ namespace MyNamespace
 					this.Initialize("get_Keys", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj)).Keys;
 				}
@@ -13896,7 +13896,7 @@ namespace MyNamespace
 					this.Initialize("get_Values", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj)).Values;
 				}
@@ -13911,7 +13911,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("key", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj))[((int)(pars[0]))];
 				}
@@ -13927,7 +13927,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					System.Collections.Generic.Dictionary<int, int> tmp = ((System.Collections.Generic.Dictionary<int, int>)(obj));
 					tmp[((int)(pars[0]))] = ((int)(pars[1]));
@@ -13945,10 +13945,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.Dictionary<int, int>)(obj)).Add(((int)(pars[0])), ((int)(pars[1])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -13960,10 +13960,10 @@ namespace MyNamespace
 					this.Initialize("Clear", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.Dictionary<int, int>)(obj)).Clear();
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -13976,7 +13976,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("key", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj)).ContainsKey(((int)(pars[0])));
 				}
@@ -13991,7 +13991,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj)).ContainsValue(((int)(pars[0])));
 				}
@@ -14005,7 +14005,7 @@ namespace MyNamespace
 					this.Initialize("GetEnumerator", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj)).GetEnumerator();
 				}
@@ -14021,12 +14021,12 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("context", typeof(System.Runtime.Serialization.StreamingContext), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 #pragma warning disable SYSLIB0051 // Type or member is obsolete
                     ((System.Collections.Generic.Dictionary<int, int>)(obj)).GetObjectData(((System.Runtime.Serialization.SerializationInfo)(pars[0])), ((System.Runtime.Serialization.StreamingContext)(pars[1])));
 #pragma warning restore SYSLIB0051 // Type or member is obsolete
-                    return DynValue.Void;
+                    return DynValue.Nil;
 				}
 			}
 
@@ -14039,10 +14039,10 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("sender", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					((System.Collections.Generic.Dictionary<int, int>)(obj)).OnDeserialization(((object)(pars[0])));
-					return DynValue.Void;
+					return DynValue.Nil;
 				}
 			}
 
@@ -14055,7 +14055,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("key", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj)).Remove(((int)(pars[0])));
 				}
@@ -14071,7 +14071,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, true, true, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					int refp_0;
 					object retv = ((System.Collections.Generic.Dictionary<int, int>)(obj)).TryGetValue(((int)(pars[0])), out refp_0);
@@ -14089,7 +14089,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -14104,7 +14104,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -14118,7 +14118,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -14132,7 +14132,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -14146,7 +14146,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj)).Comparer;
 				}
@@ -14160,7 +14160,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj)).Count;
 				}
@@ -14174,7 +14174,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj)).Keys;
 				}
@@ -14188,7 +14188,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((System.Collections.Generic.Dictionary<int, int>)(obj)).Values;
 				}
@@ -14240,7 +14240,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataOverloadsTests.OverloadsTestClass();
 				}
@@ -14257,7 +14257,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("b", typeof(bool), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataOverloadsTests.OverloadsTestClass)(obj)).MethodV(((string)(pars[0])), ((int)(pars[1])), ((bool)(pars[2])));
 				}
@@ -14273,7 +14273,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("args", typeof(object[]), false, null, false, false, true)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataOverloadsTests.OverloadsTestClass)(obj)).MethodV(((string)(pars[0])), ((object[])(pars[1])));
 				}
@@ -14287,7 +14287,7 @@ namespace MyNamespace
 					this.Initialize("Method1", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataOverloadsTests.OverloadsTestClass)(obj)).Method1();
 				}
@@ -14302,7 +14302,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("b", typeof(bool), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return UserDataOverloadsTests.OverloadsTestClass.Method1(((bool)(pars[0])));
 				}
@@ -14317,7 +14317,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("d", typeof(double), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataOverloadsTests.OverloadsTestClass)(obj)).Method1(((double)(pars[0])));
 				}
@@ -14333,7 +14333,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("x", typeof(string), true, new SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors.DefaultValue(), false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					if ((argscount <= 1))
 					{
@@ -14354,7 +14354,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("y", typeof(int), true, new SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors.DefaultValue(), false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					if ((argscount <= 2))
 					{
@@ -14373,7 +14373,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("a", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataOverloadsTests.OverloadsTestClass)(obj)).Method1(((int)(pars[0])));
 				}
@@ -14389,7 +14389,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("y", typeof(string), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataOverloadsTests.OverloadsTestClass)(obj)).Method2(((string)(pars[0])), ((string)(pars[1])));
 				}
@@ -14405,7 +14405,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("y", typeof(string), false, null, false, true, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					string refp_0 = ((string)(pars[1]));
 					object retv = ((UserDataOverloadsTests.OverloadsTestClass)(obj)).Method2(((string)(pars[0])), ref refp_0);
@@ -14426,7 +14426,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("z", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					string refp_0 = ((string)(pars[1]));
 					object retv = ((UserDataOverloadsTests.OverloadsTestClass)(obj)).Method2(((string)(pars[0])), ref refp_0, ((int)(pars[2])));
@@ -14444,7 +14444,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -14459,7 +14459,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -14473,7 +14473,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -14487,7 +14487,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -14529,7 +14529,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataFieldsTests.SomeClass();
 				}
@@ -14543,7 +14543,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -14558,7 +14558,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -14572,7 +14572,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -14586,7 +14586,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -14600,12 +14600,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((UserDataFieldsTests.SomeClass)(obj)).IntProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     UserDataFieldsTests.SomeClass tmp = ((UserDataFieldsTests.SomeClass)(obj));
 					tmp.IntProp = ((int)(value));
@@ -14620,7 +14620,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((UserDataFieldsTests.SomeClass)(obj)).RoIntProp;
 				}
@@ -14634,12 +14634,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((UserDataFieldsTests.SomeClass)(obj)).NIntProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     UserDataFieldsTests.SomeClass tmp = ((UserDataFieldsTests.SomeClass)(obj));
 					tmp.NIntProp = ((System.Nullable<int>)(value));
@@ -14654,12 +14654,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((UserDataFieldsTests.SomeClass)(obj)).ObjProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     UserDataFieldsTests.SomeClass tmp = ((UserDataFieldsTests.SomeClass)(obj));
 					tmp.ObjProp = ((object)(value));
@@ -14674,12 +14674,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return UserDataFieldsTests.SomeClass.StaticProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     UserDataFieldsTests.SomeClass.StaticProp = ((string)(value));
 				}
@@ -14693,7 +14693,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return UserDataFieldsTests.SomeClass.ConstIntProp;
 				}
@@ -14767,7 +14767,7 @@ namespace MyNamespace
 					this.Initialize(".ctor", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return new UserDataPropertiesTests.SomeClass();
 				}
@@ -14781,7 +14781,7 @@ namespace MyNamespace
 					this.Initialize("get_IntProp", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataPropertiesTests.SomeClass)(obj)).IntProp;
 				}
@@ -14796,7 +14796,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     UserDataPropertiesTests.SomeClass tmp = ((UserDataPropertiesTests.SomeClass)(obj));
 					tmp.IntProp = ((int)(pars[0]));
@@ -14812,7 +14812,7 @@ namespace MyNamespace
 					this.Initialize("get_NIntProp", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataPropertiesTests.SomeClass)(obj)).NIntProp;
 				}
@@ -14827,7 +14827,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(System.Nullable<int>), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     UserDataPropertiesTests.SomeClass tmp = ((UserDataPropertiesTests.SomeClass)(obj));
 					tmp.NIntProp = ((System.Nullable<int>)(pars[0]));
@@ -14843,7 +14843,7 @@ namespace MyNamespace
 					this.Initialize("get_ObjProp", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataPropertiesTests.SomeClass)(obj)).ObjProp;
 				}
@@ -14858,7 +14858,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     UserDataPropertiesTests.SomeClass tmp = ((UserDataPropertiesTests.SomeClass)(obj));
 					tmp.ObjProp = ((object)(pars[0]));
@@ -14874,7 +14874,7 @@ namespace MyNamespace
 					this.Initialize("get_StaticProp", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return UserDataPropertiesTests.SomeClass.StaticProp;
 				}
@@ -14889,7 +14889,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(string), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     UserDataPropertiesTests.SomeClass.StaticProp = ((string)(pars[0]));
 					return null;
@@ -14904,7 +14904,7 @@ namespace MyNamespace
 					this.Initialize("get_RoIntProp", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataPropertiesTests.SomeClass)(obj)).RoIntProp;
 				}
@@ -14918,7 +14918,7 @@ namespace MyNamespace
 					this.Initialize("get_RoIntProp2", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((UserDataPropertiesTests.SomeClass)(obj)).RoIntProp2;
 				}
@@ -14933,7 +14933,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     UserDataPropertiesTests.SomeClass tmp = ((UserDataPropertiesTests.SomeClass)(obj));
 					tmp.WoIntProp = ((int)(pars[0]));
@@ -14950,7 +14950,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     UserDataPropertiesTests.SomeClass tmp = ((UserDataPropertiesTests.SomeClass)(obj));
 					tmp.WoIntProp2 = ((int)(pars[0]));
@@ -14967,7 +14967,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("value", typeof(int), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
                     UserDataPropertiesTests.SomeClass tmp = ((UserDataPropertiesTests.SomeClass)(obj));
 					tmp.AccessOverrProp = ((int)(pars[0]));
@@ -14983,7 +14983,7 @@ namespace MyNamespace
 					this.Initialize("get_Numbers", true, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return UserDataPropertiesTests.SomeClass.Numbers;
 				}
@@ -14997,7 +14997,7 @@ namespace MyNamespace
 					this.Initialize("ToString", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).ToString();
 				}
@@ -15012,7 +15012,7 @@ namespace MyNamespace
                                 new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor("obj", typeof(object), false, null, false, false, false)}, false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).Equals(((object)(pars[0])));
 				}
@@ -15026,7 +15026,7 @@ namespace MyNamespace
 					this.Initialize("GetHashCode", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetHashCode();
 				}
@@ -15040,7 +15040,7 @@ namespace MyNamespace
 					this.Initialize("GetType", false, new SolarSharp.Interpreter.Interop.BasicDescriptors.ParameterDescriptor[0], false);
 				}
 
-				protected override object Invoke(SolarSharp.Interpreter.Script script, object obj, object[] pars, int argscount)
+				protected override object Invoke(SolarSharp.Interpreter.LuaState script, object obj, object[] pars, int argscount)
 				{
 					return ((object)(obj)).GetType();
 				}
@@ -15054,12 +15054,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((UserDataPropertiesTests.SomeClass)(obj)).IntProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     UserDataPropertiesTests.SomeClass tmp = ((UserDataPropertiesTests.SomeClass)(obj));
 					tmp.IntProp = ((int)(value));
@@ -15074,12 +15074,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((UserDataPropertiesTests.SomeClass)(obj)).NIntProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     UserDataPropertiesTests.SomeClass tmp = ((UserDataPropertiesTests.SomeClass)(obj));
 					tmp.NIntProp = ((System.Nullable<int>)(value));
@@ -15094,12 +15094,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((UserDataPropertiesTests.SomeClass)(obj)).ObjProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     UserDataPropertiesTests.SomeClass tmp = ((UserDataPropertiesTests.SomeClass)(obj));
 					tmp.ObjProp = ((object)(value));
@@ -15114,12 +15114,12 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return UserDataPropertiesTests.SomeClass.StaticProp;
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     UserDataPropertiesTests.SomeClass.StaticProp = ((string)(value));
 				}
@@ -15133,7 +15133,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((UserDataPropertiesTests.SomeClass)(obj)).RoIntProp;
 				}
@@ -15147,7 +15147,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return ((UserDataPropertiesTests.SomeClass)(obj)).RoIntProp2;
 				}
@@ -15161,7 +15161,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     UserDataPropertiesTests.SomeClass tmp = ((UserDataPropertiesTests.SomeClass)(obj));
 					tmp.WoIntProp = ((int)(value));
@@ -15176,7 +15176,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     UserDataPropertiesTests.SomeClass tmp = ((UserDataPropertiesTests.SomeClass)(obj));
 					tmp.WoIntProp2 = ((int)(value));
@@ -15191,7 +15191,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override void SetValueImpl(SolarSharp.Interpreter.Script script, object obj, object value)
+				protected override void SetValueImpl(SolarSharp.Interpreter.LuaState script, object obj, object value)
 				{
                     UserDataPropertiesTests.SomeClass tmp = ((UserDataPropertiesTests.SomeClass)(obj));
 					tmp.AccessOverrProp = ((int)(value));
@@ -15206,7 +15206,7 @@ namespace MyNamespace
 				{
 				}
 
-				protected override object GetValueImpl(SolarSharp.Interpreter.Script script, object obj)
+				protected override object GetValueImpl(SolarSharp.Interpreter.LuaState script, object obj)
 				{
 					return UserDataPropertiesTests.SomeClass.Numbers;
 				}

@@ -12,21 +12,21 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     {
         private static DynValue Script_RunString(string script)
         {
-            Script s1 = new();
+            LuaState s1 = new();
             DynValue v1 = s1.LoadString(script);
 
             using MemoryStream ms = new();
             s1.Dump(v1, ms);
             ms.Seek(0, SeekOrigin.Begin);
 
-            Script s2 = new();
+            LuaState s2 = new();
             DynValue func = s2.LoadStream(ms);
             return func.Function.Call();
         }
 
         private static DynValue Script_LoadFunc(string script, string funcname)
         {
-            Script s1 = new();
+            LuaState s1 = new();
             _ = s1.DoString(script);
             DynValue func = s1.Globals.Get(funcname);
 
@@ -34,7 +34,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             s1.Dump(func, ms);
             ms.Seek(0, SeekOrigin.Begin);
 
-            Script s2 = new();
+            LuaState s2 = new();
             return s2.LoadStream(ms);
         }
 
@@ -48,7 +48,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return fn(9);
 			";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -66,7 +66,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return fn(9);
 			";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -308,7 +308,7 @@ return y;
 
 				sandbox()";
 
-            Script S = new(CoreModules.Preset_Complete);
+            LuaState S = new(CoreModules.Preset_Complete);
 
             S.Globals["print"] = (Action<Table>)(t => list.Add(t));
 

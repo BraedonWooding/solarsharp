@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using SolarSharp.Interpreter.Tree.Expressions;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Tree.Lexer;
 using SolarSharp.Interpreter.Errors;
@@ -56,7 +55,6 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
         }
 
-
         public AssignmentStatement(ScriptLoadingContext lcontext, Expression firstExpression, Token first)
             : base(lcontext)
         {
@@ -76,7 +74,6 @@ namespace SolarSharp.Interpreter.Tree.Statements
             Token last = lcontext.Lexer.Current;
             m_Ref = first.GetSourceRefUpTo(last);
             lcontext.Source.Refs.Add(m_Ref);
-
         }
 
         private IVariable CheckVar(ScriptLoadingContext lcontext, Expression firstExpression)

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Text;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
@@ -18,10 +17,10 @@ namespace SolarSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue debug(ScriptExecutionContext executionContext, CallbackArguments _)
         {
-            Script script = executionContext.GetScript();
+            LuaState script = executionContext.GetScript();
 
             if (script.Options.DebugInput == null)
-                throw new ScriptRuntimeException("debug.debug not supported on this platform/configuration");
+                throw new ErrorException("debug.debug not supported on this platform/configuration");
 
             ReplInterpreter interpreter = new(script)
             {
@@ -37,10 +36,10 @@ namespace SolarSharp.Interpreter.CoreLib
                 {
                     DynValue result = interpreter.Evaluate(s);
 
-                    if (result != null && result.Type != DataType.Void)
+                    if (result.IsNotNil())
                         script.Options.DebugPrint(string.Format("{0}", result));
                 }
-                catch (InterpreterException ex)
+                catch (ErrorException ex)
                 {
                     script.Options.DebugPrint(string.Format("{0}", ex.DecoratedMessage ?? ex.Message));
                 }
@@ -59,7 +58,7 @@ namespace SolarSharp.Interpreter.CoreLib
             if (v.Type != DataType.UserData)
                 return DynValue.Nil;
 
-            return v.UserData.UserValue ?? DynValue.Nil;
+            return v.UserData.UserValue;
         }
 
         [MoonSharpModuleMethod]
@@ -81,7 +80,7 @@ namespace SolarSharp.Interpreter.CoreLib
         public static DynValue getmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue v = args[0];
-            Script S = executionContext.GetScript();
+            LuaState S = executionContext.GetScript();
 
             if (v.Type.CanHaveTypeMetatables())
                 return DynValue.NewTable(S.GetTypeMetatable(v.Type));
@@ -97,13 +96,13 @@ namespace SolarSharp.Interpreter.CoreLib
             DynValue v = args[0];
             DynValue t = args.AsType(1, "setmetatable", DataType.Table, true);
             Table m = t.IsNil() ? null : t.Table;
-            Script S = executionContext.GetScript();
+            LuaState S = executionContext.GetScript();
 
             if (v.Type.CanHaveTypeMetatables())
                 S.SetTypeMetatable(v.Type, m);
             else v.Table.MetaTable = v.Type == DataType.Table
                 ? m
-                : throw new ScriptRuntimeException("cannot debug.setmetatable on type {0}", v.Type.ToErrorTypeString());
+                : throw new ErrorException("cannot debug.setmetatable on type {0}", v.Type.ToErrorTypeString());
 
             return v;
         }
@@ -163,7 +162,7 @@ namespace SolarSharp.Interpreter.CoreLib
             if (index < 0 || index >= closure.Count)
                 return DynValue.Nil;
 
-            closure[index].Assign(args[2]);
+            closure[index] = args[2];
 
             return DynValue.NewString(closure.Symbols[index]);
         }
@@ -181,16 +180,15 @@ namespace SolarSharp.Interpreter.CoreLib
             Closure c2 = f2.Function;
 
             if (n1 < 0 || n1 >= c1.ClosureContext.Count)
-                throw ScriptRuntimeException.BadArgument(1, "upvaluejoin", "invalid upvalue index");
+                throw ErrorException.BadArgument(1, "upvaluejoin", "invalid upvalue index");
 
             if (n2 < 0 || n2 >= c2.ClosureContext.Count)
-                throw ScriptRuntimeException.BadArgument(3, "upvaluejoin", "invalid upvalue index");
+                throw ErrorException.BadArgument(3, "upvaluejoin", "invalid upvalue index");
 
             c2.ClosureContext[n2] = c1.ClosureContext[n1];
 
-            return DynValue.Void;
+            return DynValue.Nil;
         }
-
 
         [MoonSharpModuleMethod]
         public static DynValue traceback(ScriptExecutionContext executionContext, CallbackArguments args)
@@ -221,25 +219,26 @@ namespace SolarSharp.Interpreter.CoreLib
 
             int skip = (int)(vlevel.CastToNumber() ?? defaultSkip);
 
-            WatchItem[] stacktrace = cor.GetStackTrace(Math.Max(0, skip));
+            // TODO:
+            //WatchItem[] stacktrace = cor.GetStackTrace(Math.Max(0, skip));
 
-            if (message != null)
-                sb.AppendLine(message);
+            //if (message != null)
+            //    sb.AppendLine(message);
 
-            sb.AppendLine("stack traceback:");
+            //sb.AppendLine("stack traceback:");
 
-            foreach (WatchItem wi in stacktrace)
-            {
-                string name;
+            //foreach (WatchItem wi in stacktrace)
+            //{
+            //    string name;
 
-                if (wi.Name == null)
-                    name = wi.RetAddress < 0 ? "main chunk" : "?";
-                else
-                    name = "function '" + wi.Name + "'";
+            //    if (wi.Name == null)
+            //        name = wi.RetAddress < 0 ? "main chunk" : "?";
+            //    else
+            //        name = "function '" + wi.Name + "'";
 
-                string loc = wi.Location != null ? wi.Location.FormatLocation(executionContext.GetScript()) : "[clr]";
-                sb.AppendFormat("\t{0}: in {1}\n", loc, name);
-            }
+            //    string loc = wi.Location != null ? wi.Location.FormatLocation(executionContext.GetScript()) : "[clr]";
+            //    sb.AppendFormat("\t{0}: in {1}\n", loc, name);
+            //}
 
             return DynValue.NewString(sb);
         }

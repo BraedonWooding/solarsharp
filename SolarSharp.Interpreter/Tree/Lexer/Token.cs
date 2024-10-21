@@ -1,20 +1,20 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.Debug;
+using System;
 
 namespace SolarSharp.Interpreter.Tree.Lexer
 {
     internal class Token
     {
-        public readonly int SourceId;
+        public readonly Source Source;
         public readonly int FromCol, ToCol, FromLine, ToLine, PrevCol, PrevLine;
         public readonly TokenType Type;
 
         public string Text { get; set; }
 
-        public Token(TokenType type, int sourceId, int fromLine, int fromCol, int toLine, int toCol, int prevLine, int prevCol)
+        public Token(TokenType type, Source source, int fromLine, int fromCol, int toLine, int toCol, int prevLine, int prevCol)
         {
             Type = type;
-
-            SourceId = sourceId;
+            Source = source;
             FromLine = fromLine;
             FromCol = fromCol;
             ToCol = toCol;
@@ -23,69 +23,45 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             PrevLine = prevLine;
         }
 
-
         public override string ToString()
         {
-            string tokenTypeString = (Type.ToString() + "                                                      ")[..16];
+            string tokenTypeString = (Type.ToString() + "                                                      ").Substring(0, 16);
 
             string location = string.Format("{0}:{1}-{2}:{3}", FromLine, FromCol, ToLine, ToCol);
 
-            location = (location + "                                                      ")[..10];
+            location = (location + "                                                      ").Substring(0, 10);
 
             return string.Format("{0}  - {1} - '{2}'", tokenTypeString, location, Text ?? "");
         }
 
         public static TokenType? GetReservedTokenType(string reservedWord)
         {
-            switch (reservedWord)
+            return reservedWord switch
             {
-                case "and":
-                    return TokenType.And;
-                case "break":
-                    return TokenType.Break;
-                case "do":
-                    return TokenType.Do;
-                case "else":
-                    return TokenType.Else;
-                case "elseif":
-                    return TokenType.ElseIf;
-                case "end":
-                    return TokenType.End;
-                case "false":
-                    return TokenType.False;
-                case "for":
-                    return TokenType.For;
-                case "function":
-                    return TokenType.Function;
-                case "goto":
-                    return TokenType.Goto;
-                case "if":
-                    return TokenType.If;
-                case "in":
-                    return TokenType.In;
-                case "local":
-                    return TokenType.Local;
-                case "nil":
-                    return TokenType.Nil;
-                case "not":
-                    return TokenType.Not;
-                case "or":
-                    return TokenType.Or;
-                case "repeat":
-                    return TokenType.Repeat;
-                case "return":
-                    return TokenType.Return;
-                case "then":
-                    return TokenType.Then;
-                case "true":
-                    return TokenType.True;
-                case "until":
-                    return TokenType.Until;
-                case "while":
-                    return TokenType.While;
-                default:
-                    return null;
-            }
+                "and" => TokenType.And,
+                "break" => TokenType.Break,
+                "do" => TokenType.Do,
+                "else" => TokenType.Else,
+                "elseif" => TokenType.ElseIf,
+                "end" => TokenType.End,
+                "false" => TokenType.False,
+                "for" => TokenType.For,
+                "function" => TokenType.Function,
+                "goto" => TokenType.Goto,
+                "if" => TokenType.If,
+                "in" => TokenType.In,
+                "local" => TokenType.Local,
+                "nil" => TokenType.Nil,
+                "not" => TokenType.Not,
+                "or" => TokenType.Or,
+                "repeat" => TokenType.Repeat,
+                "return" => TokenType.Return,
+                "then" => TokenType.Then,
+                "true" => TokenType.True,
+                "until" => TokenType.Until,
+                "while" => TokenType.While,
+                _ => null,
+            };
         }
 
         public double GetNumberValue()
@@ -99,7 +75,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             else
                 throw new NotSupportedException("GetNumberValue is supported only on numeric tokens");
         }
-
 
         public bool IsEndOfBlock()
         {
@@ -146,20 +121,14 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             }
         }
 
-
-        internal Debugging.SourceRef GetSourceRef(bool isStepStop = true)
+        internal SourceRef GetSourceRef()
         {
-            return new Debugging.SourceRef(SourceId, FromCol, ToCol, FromLine, ToLine, isStepStop);
-        }
-
-        internal Debugging.SourceRef GetSourceRef(Token to, bool isStepStop = true)
-        {
-            return new Debugging.SourceRef(SourceId, FromCol, to.ToCol, FromLine, to.ToLine, isStepStop);
-        }
-
-        internal Debugging.SourceRef GetSourceRefUpTo(Token to, bool isStepStop = true)
-        {
-            return new Debugging.SourceRef(SourceId, FromCol, to.PrevCol, FromLine, to.PrevLine, isStepStop);
+            return new SourceRef
+            {
+                Source = Source,
+                LineNumber = FromLine,
+                ColumnNumber = FromCol,
+            };
         }
     }
 }

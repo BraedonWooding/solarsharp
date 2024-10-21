@@ -1,20 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.CoreLib;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Diagnostics;
 using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.Execution;
-using SolarSharp.Interpreter.IO;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Platforms;
-using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.Tree.Fast_Interface;
+using SolarSharp.Interpreter.DataStructs;
 
 namespace SolarSharp.Interpreter
 {
@@ -22,7 +18,7 @@ namespace SolarSharp.Interpreter
     /// This class implements a MoonSharp scripting session. Multiple Script objects can coexist in the same program but cannot share
     /// data among themselves unless some mechanism is put in place.
     /// </summary>
-    public class Script : IScriptPrivateResource
+    public class LuaState
     {
         /// <summary>
         /// The version of the MoonSharp engine
@@ -33,17 +29,22 @@ namespace SolarSharp.Interpreter
         /// The Lua version being supported
         /// </summary>
         public const string LUA_VERSION = "5.2";
+
         private readonly Processor m_MainProcessor = null;
         private readonly ByteCode m_ByteCode;
-        private readonly List<SourceCode> m_Sources = new();
         private readonly Table m_GlobalTable;
-        private IDebugger m_Debugger;
         private readonly Table[] m_TypeMetatables = new Table[(int)LuaTypeExtensions.MaxMetaTypes];
 
+        // TODO: Change stack size to something reasonable
+        // this is 128kb which is actually pretty reasonable (but not per state...)
+        private const int STACK_SIZE = 131072;
+        private readonly FastStack<DynValue> _stack;
+        private readonly FastStack<CallInfo> _callInfo;
+
         /// <summary>
-        /// Initializes the <see cref="Script"/> class.
+        /// Initializes the <see cref="LuaState"/> class.
         /// </summary>
-        static Script()
+        static LuaState()
         {
             GlobalOptions = new ScriptGlobalOptions();
 
@@ -58,18 +59,18 @@ namespace SolarSharp.Interpreter
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Script"/> clas.s
+        /// Initializes a new instance of the <see cref="LuaState"/> class.
         /// </summary>
-        public Script()
+        public LuaState()
             : this(CoreModules.Preset_Default)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Script"/> class.
+        /// Initializes a new instance of the <see cref="LuaState"/> class.
         /// </summary>
         /// <param name="coreModules">The core modules to be pre-registered in the default global table.</param>
-        public Script(CoreModules coreModules)
+        public LuaState(CoreModules coreModules)
         {
             Options = new ScriptOptions(DefaultOptions);
             PerformanceStats = new PerformanceStatistics();
@@ -79,7 +80,6 @@ namespace SolarSharp.Interpreter
             m_MainProcessor = new Processor(this, m_GlobalTable, m_ByteCode);
             m_GlobalTable = new Table(this).RegisterCoreModules(coreModules);
         }
-
 
         /// <summary>
         /// Gets or sets the script loader which will be used as the value of the
@@ -112,44 +112,6 @@ namespace SolarSharp.Interpreter
         }
 
         /// <summary>
-        /// Loads a string containing a Lua/MoonSharp function.
-        /// </summary>
-        /// <param name="code">The code.</param>
-        /// <param name="globalTable">The global table to bind to this chunk.</param>
-        /// <param name="funcFriendlyName">Name of the function used to report errors, etc.</param>
-        /// <returns>
-        /// A DynValue containing a function which will execute the loaded code.
-        /// </returns>
-        public DynValue LoadFunction(string code, Table globalTable = null, string funcFriendlyName = null)
-        {
-            this.CheckScriptOwnership(globalTable);
-
-            string chunkName = string.Format("libfunc_{0}", funcFriendlyName ?? m_Sources.Count.ToString());
-
-            SourceCode source = new(chunkName, code, m_Sources.Count, this);
-
-            m_Sources.Add(source);
-
-            int address = Loader_Fast.LoadFunction(this, source, m_ByteCode, globalTable != null || m_GlobalTable != null);
-
-            SignalSourceCodeChange(source);
-            SignalByteCodeChange();
-
-            return MakeClosure(address, globalTable ?? m_GlobalTable);
-        }
-
-        private void SignalByteCodeChange()
-        {
-            m_Debugger?.SetByteCode(m_ByteCode.Code.Select(s => s.ToString()).ToArray());
-        }
-
-        private void SignalSourceCodeChange(SourceCode source)
-        {
-            m_Debugger?.SetSourceCode(source);
-        }
-
-
-        /// <summary>
         /// Loads a string containing a Lua/MoonSharp script.
         /// </summary>
         /// <param name="code">The code.</param>
@@ -160,28 +122,16 @@ namespace SolarSharp.Interpreter
         /// </returns>
         public DynValue LoadString(string code, Table globalTable = null, string codeFriendlyName = null)
         {
-            this.CheckScriptOwnership(globalTable);
-
             if (code.StartsWith(StringModule.BASE64_DUMP_HEADER))
             {
-                code = code[StringModule.BASE64_DUMP_HEADER.Length..];
+                code = code.Substring(StringModule.BASE64_DUMP_HEADER.Length);
                 byte[] data = Convert.FromBase64String(code);
                 using MemoryStream ms = new(data);
                 return LoadStream(ms, globalTable, codeFriendlyName);
             }
 
-            string chunkName = string.Format("{0}", codeFriendlyName ?? "chunk_" + m_Sources.Count.ToString());
-
-            SourceCode source = new(codeFriendlyName ?? chunkName, code, m_Sources.Count, this);
-
-            m_Sources.Add(source);
-
-            int address = Loader_Fast.LoadChunk(this,
-                source,
-                m_ByteCode);
-
-            SignalSourceCodeChange(source);
-            SignalByteCodeChange();
+            string chunkName = string.Format("{0}", codeFriendlyName ?? "?");
+            int address = Loader_Fast.LoadChunk(this, chunkName, m_ByteCode);
 
             return MakeClosure(address, globalTable ?? m_GlobalTable);
         }
@@ -197,69 +147,11 @@ namespace SolarSharp.Interpreter
         /// </returns>
         public DynValue LoadStream(Stream stream, Table globalTable = null, string codeFriendlyName = null)
         {
-            this.CheckScriptOwnership(globalTable);
-
-            Stream codeStream = new UndisposableStream(stream);
-
-            if (!Processor.IsDumpStream(codeStream))
-            {
-                using StreamReader sr = new(codeStream);
-                string scriptCode = sr.ReadToEnd();
-                return LoadString(scriptCode, globalTable, codeFriendlyName);
-            }
-            else
-            {
-                string chunkName = string.Format("{0}", codeFriendlyName ?? "dump_" + m_Sources.Count.ToString());
-
-                SourceCode source = new(codeFriendlyName ?? chunkName,
-                    string.Format("-- This script was decoded from a binary dump - dump_{0}", m_Sources.Count),
-                    m_Sources.Count, this);
-
-                m_Sources.Add(source);
-
-                int address = m_MainProcessor.Undump(codeStream, m_Sources.Count - 1, globalTable ?? m_GlobalTable, out bool hasUpvalues);
-
-                SignalSourceCodeChange(source);
-                SignalByteCodeChange();
-
-                if (hasUpvalues)
-                    return MakeClosure(address, globalTable ?? m_GlobalTable);
-                else
-                    return MakeClosure(address);
-            }
+            // note: I don't think it's that harmful for us to close... just needs to be a parameter
+            using StreamReader sr = new(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: true);
+            string scriptCode = sr.ReadToEnd();
+            return LoadString(scriptCode, globalTable, codeFriendlyName);
         }
-
-        /// <summary>
-        /// Dumps on the specified stream.
-        /// </summary>
-        /// <param name="function">The function.</param>
-        /// <param name="stream">The stream.</param>
-        /// <exception cref="ArgumentException">
-        /// function arg is not a function!
-        /// or
-        /// stream is readonly!
-        /// or
-        /// function arg has upvalues other than _ENV
-        /// </exception>
-        public void Dump(DynValue function, Stream stream)
-        {
-            this.CheckScriptOwnership(function);
-
-            if (function.Type != DataType.Function)
-                throw new ArgumentException("function arg is not a function!");
-
-            if (!stream.CanWrite)
-                throw new ArgumentException("stream is readonly!");
-
-            Closure.UpvaluesType upvaluesType = function.Function.GetUpvaluesType();
-
-            if (upvaluesType == Closure.UpvaluesType.Closure)
-                throw new ArgumentException("function arg has upvalues other than _ENV");
-
-            UndisposableStream outStream = new(stream);
-            m_MainProcessor.Dump(outStream, function.Function.EntryPointByteCodeLocation, upvaluesType == Closure.UpvaluesType.Environment);
-        }
-
 
         /// <summary>
         /// Loads a string containing a Lua/MoonSharp script.
@@ -272,8 +164,6 @@ namespace SolarSharp.Interpreter
         /// </returns>
         public DynValue LoadFile(string filename, Table globalContext = null, string friendlyFilename = null)
         {
-            this.CheckScriptOwnership(globalContext);
-
 #pragma warning disable 618
             filename = Options.ScriptLoader.ResolveFileName(filename, globalContext ?? m_GlobalTable);
 #pragma warning restore 618
@@ -288,7 +178,6 @@ namespace SolarSharp.Interpreter
                 default: throw new InvalidCastException(string.Format("Unsupported return type from IScriptLoader.LoadFile : {0}", code.GetType()));
             }
         }
-
 
         /// <summary>
         /// Loads and executes a string containing a Lua/MoonSharp script.
@@ -305,7 +194,6 @@ namespace SolarSharp.Interpreter
             return Call(func);
         }
 
-
         /// <summary>
         /// Loads and executes a stream containing a Lua/MoonSharp script.
         /// </summary>
@@ -320,7 +208,6 @@ namespace SolarSharp.Interpreter
             DynValue func = LoadStream(stream, globalContext, codeFriendlyName);
             return Call(func);
         }
-
 
         /// <summary>
         /// Loads and executes a file containing a Lua/MoonSharp script.
@@ -337,7 +224,6 @@ namespace SolarSharp.Interpreter
             return Call(func);
         }
 
-
         /// <summary>
         /// Runs the specified file with all possible defaults for quick experimenting.
         /// </summary>
@@ -345,7 +231,7 @@ namespace SolarSharp.Interpreter
         /// A DynValue containing the result of the processing of the executed script.
         public static DynValue RunFile(string filename)
         {
-            Script S = new();
+            LuaState S = new();
             return S.DoFile(filename);
         }
 
@@ -356,7 +242,7 @@ namespace SolarSharp.Interpreter
         /// A DynValue containing the result of the processing of the executed script.
         public static DynValue RunString(string code)
         {
-            Script S = new();
+            LuaState S = new();
             return S.DoString(code);
         }
 
@@ -365,22 +251,20 @@ namespace SolarSharp.Interpreter
         /// </summary>
         /// <param name="address">The address.</param>
         /// <param name="envTable">The env table to create a 0-upvalue</param>
-        /// <returns></returns>
         private DynValue MakeClosure(int address, Table envTable = null)
         {
-            this.CheckScriptOwnership(envTable);
             Closure c;
 
             if (envTable == null)
             {
-                Instruction meta = m_MainProcessor.FindMeta(ref address);
+                // TODO:
+                Instruction meta = null;// m_MainProcessor.FindMeta(ref address);
 
                 // if we find the meta for a new chunk, we use the value in the meta for the _ENV upvalue
                 c = meta != null && meta.NumVal2 == (int)OpCodeMetadataType.ChunkEntrypoint
-                    ? new Closure(this, address,
-                        new SymbolRef[] { SymbolRef.Upvalue(WellKnownSymbols.ENV, 0) },
+                    ? new Closure(address, new SymbolRef[] { SymbolRef.Upvalue(WellKnownSymbols.ENV, 0) },
                         new DynValue[] { meta.Value })
-                    : new Closure(this, address, new SymbolRef[0], new DynValue[0]);
+                    : new Closure(address, new SymbolRef[0], new DynValue[0]);
             }
             else
             {
@@ -392,7 +276,7 @@ namespace SolarSharp.Interpreter
                     DynValue.NewTable(envTable)
                 };
 
-                c = new Closure(this, address, syms, vals);
+                c = new Closure(address, syms, vals);
             }
 
             return DynValue.NewClosure(c);
@@ -422,14 +306,11 @@ namespace SolarSharp.Interpreter
         /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
         public DynValue Call(DynValue function, params DynValue[] args)
         {
-            this.CheckScriptOwnership(function);
-            this.CheckScriptOwnership(args);
-
             if (function.Type != DataType.Function && function.Type != DataType.ClrFunction)
             {
                 DynValue metafunction = m_MainProcessor.GetMetamethod(function, "__call");
 
-                if (metafunction != null)
+                if (metafunction.IsNotNil())
                 {
                     DynValue[] metaargs = new DynValue[args.Length + 1];
                     metaargs[0] = function;
@@ -446,7 +327,7 @@ namespace SolarSharp.Interpreter
             }
             else if (function.Type == DataType.ClrFunction)
             {
-                return function.Callback.ClrCallback(CreateDynamicExecutionContext(), new CallbackArguments(args, false));
+                return function.Callback.ClrCallback(new Execution.ScriptExecutionContext(m_MainProcessor, ), new CallbackArguments(args, false));
             }
 
             return m_MainProcessor.Call(function, args);
@@ -504,8 +385,6 @@ namespace SolarSharp.Interpreter
         /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function or DataType.ClrFunction</exception>
         public DynValue CreateCoroutine(DynValue function)
         {
-            this.CheckScriptOwnership(function);
-
             if (function.Type == DataType.Function)
                 return m_MainProcessor.Coroutine_Create(function.Function);
             else if (function.Type == DataType.ClrFunction)
@@ -524,12 +403,9 @@ namespace SolarSharp.Interpreter
         /// </returns>
         public DynValue RecycleCoroutine(Coroutine coroutine, DynValue function)
         {
-            this.CheckScriptOwnership(coroutine);
-            this.CheckScriptOwnership(function);
-
             if (coroutine == null || coroutine.Type != Coroutine.CoroutineType.Coroutine)
                 throw new InvalidOperationException("coroutine is not CoroutineType.Coroutine");
-            if (function == null || function.Type != DataType.Function)
+            if (function.IsNil() || function.Type != DataType.Function)
                 throw new InvalidOperationException("function is not DataType.Function");
             if (coroutine.State != CoroutineState.Dead)
                 throw new InvalidOperationException("coroutine's state must be CoroutineState.Dead to recycle");
@@ -551,47 +427,6 @@ namespace SolarSharp.Interpreter
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the debugger is enabled.
-        /// Note that unless a debugger attached, this property returns a 
-        /// value which might not reflect the real status of the debugger.
-        /// Use this property if you want to disable the debugger for some 
-        /// executions.
-        /// </summary>
-        public bool DebuggerEnabled
-        {
-            get { return m_MainProcessor.DebuggerEnabled; }
-            set { m_MainProcessor.DebuggerEnabled = value; }
-        }
-
-
-        /// <summary>
-        /// Attaches a debugger. This usually should be called by the debugger itself and not by user code.
-        /// </summary>
-        /// <param name="debugger">The debugger object.</param>
-        public void AttachDebugger(IDebugger debugger)
-        {
-            DebuggerEnabled = true;
-            m_Debugger = debugger;
-            m_MainProcessor.AttachDebugger(debugger);
-
-            foreach (SourceCode src in m_Sources)
-                SignalSourceCodeChange(src);
-
-            SignalByteCodeChange();
-        }
-
-        /// <summary>
-        /// Gets the source code.
-        /// </summary>
-        /// <param name="sourceCodeID">The source code identifier.</param>
-        /// <returns></returns>
-        public SourceCode GetSourceCode(int sourceCodeID)
-        {
-            return m_Sources[sourceCodeID];
-        }
-
-
-        /// <summary>
         /// Gets the source code count.
         /// </summary>
         /// <value>
@@ -602,21 +437,17 @@ namespace SolarSharp.Interpreter
             get { return m_Sources.Count; }
         }
 
-
-
         /// <summary>
         /// Loads a module as per the "require" Lua function. http://www.lua.org/pil/8.1.html
         /// </summary>
         /// <param name="modname">The module name</param>
         /// <param name="globalContext">The global context.</param>
         /// <returns></returns>
-        /// <exception cref="ScriptRuntimeException">Raised if module is not found</exception>
+        /// <exception cref="ErrorException">Raised if module is not found</exception>
         public DynValue RequireModule(string modname, Table globalContext = null)
         {
-            this.CheckScriptOwnership(globalContext);
-
             Table globals = globalContext ?? m_GlobalTable;
-            string filename = Options.ScriptLoader.ResolveModuleName(modname, globals) ?? throw new ScriptRuntimeException("module '{0}' not found", modname);
+            string filename = Options.ScriptLoader.ResolveModuleName(modname, globals) ?? throw new ErrorException("module '{0}' not found", modname);
             DynValue func = LoadFile(filename, globalContext, filename);
             return func;
         }
@@ -644,8 +475,6 @@ namespace SolarSharp.Interpreter
         /// <exception cref="ArgumentException">Specified type not supported :  + type.ToString()</exception>
         public void SetTypeMetatable(DataType type, Table metatable)
         {
-            this.CheckScriptOwnership(metatable);
-
             int t = (int)type;
 
             m_TypeMetatables[t] = t >= 0 && t < m_TypeMetatables.Length
@@ -659,43 +488,8 @@ namespace SolarSharp.Interpreter
         /// </summary>
         public static void WarmUp()
         {
-            Script s = new(CoreModules.Basic);
+            LuaState s = new(CoreModules.Basic);
             s.LoadString("return 1;");
-        }
-
-
-        /// <summary>
-        /// Creates a new dynamic expression.
-        /// </summary>
-        /// <param name="code">The code of the expression.</param>
-        /// <returns></returns>
-        public DynamicExpression CreateDynamicExpression(string code)
-        {
-            DynamicExprExpression dee = Loader_Fast.LoadDynamicExpr(this, new SourceCode("__dynamic", code, -1, this));
-            return new DynamicExpression(this, code, dee);
-        }
-
-        /// <summary>
-        /// Creates a new dynamic expression which is actually quite static, returning always the same constant value.
-        /// </summary>
-        /// <param name="code">The code of the not-so-dynamic expression.</param>
-        /// <param name="constant">The constant to return.</param>
-        /// <returns></returns>
-        public DynamicExpression CreateConstantDynamicExpression(string code, DynValue constant)
-        {
-            this.CheckScriptOwnership(constant);
-
-            return new DynamicExpression(this, code, constant);
-        }
-
-        /// <summary>
-        /// Gets an execution context exposing only partial functionality, which should be used for
-        /// those cases where the execution engine is not really running - for example for dynamic expression
-        /// or calls from CLR to CLR callbacks
-        /// </summary>
-        internal ScriptExecutionContext CreateDynamicExecutionContext()
-        {
-            return new ScriptExecutionContext(m_MainProcessor, null);
         }
 
         /// <summary>
@@ -724,11 +518,6 @@ namespace SolarSharp.Interpreter
             sb.AppendLine("Copyright (C) 2014-2016 Marco Mastropaolo");
             sb.AppendLine("http://www.SolarSharp.org");
             return sb.ToString();
-        }
-
-        Script IScriptPrivateResource.OwnerScript
-        {
-            get { return this; }
         }
     }
 }

@@ -11,7 +11,6 @@ namespace SolarSharp.Interpreter.Execution.Scopes
         private readonly List<BuildTimeScopeFrame> m_Frames = new();
         private readonly List<IClosureBuilder> m_ClosureBuilders = new();
 
-
         public void PushFunction(IClosureBuilder closureBuilder, bool hasVarArgs)
         {
             m_ClosureBuilders.Add(closureBuilder);
@@ -113,6 +112,5 @@ namespace SolarSharp.Interpreter.Execution.Scopes
         {
             m_Frames.Last().RegisterGoto(gotostat);
         }
-
     }
 }

@@ -48,7 +48,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 return DynValue.Nil;
         }
 
-        private static DynValue GetStandardFile(Script S, StandardFileType file)
+        private static DynValue GetStandardFile(LuaState S, StandardFileType file)
         {
             Table R = S.Registry;
 
@@ -56,11 +56,11 @@ namespace SolarSharp.Interpreter.CoreLib
             return ff;
         }
 
-        private static void SetStandardFile(Script S, StandardFileType file, Stream optionsStream)
+        private static void SetStandardFile(LuaState S, StandardFileType file, Stream optionsStream)
         {
             Table R = S.Registry;
 
-            optionsStream ??= Script.GlobalOptions.Platform.IO_GetStandardStream(file);
+            optionsStream ??= LuaState.GlobalOptions.Platform.IO_GetStandardStream(file);
 
             FileUserDataBase udb = file == StandardFileType.StdIn
                 ? StandardIOFileUserDataBase.CreateInputStream(optionsStream)
@@ -87,13 +87,13 @@ namespace SolarSharp.Interpreter.CoreLib
             SetDefaultFile(executionContext.GetScript(), file, fileHandle);
         }
 
-        internal static void SetDefaultFile(Script script, StandardFileType file, FileUserDataBase fileHandle)
+        internal static void SetDefaultFile(LuaState script, StandardFileType file, FileUserDataBase fileHandle)
         {
             Table R = script.Registry;
             R.Set("853BEAAF298648839E2C99D005E1DF94_" + file.ToString(), UserData.Create(fileHandle));
         }
 
-        public static void SetDefaultFile(Script script, StandardFileType file, Stream stream)
+        public static void SetDefaultFile(LuaState script, StandardFileType file, Stream stream)
         {
             if (file == StandardFileType.StdIn)
                 SetDefaultFile(script, file, StandardIOFileUserDataBase.CreateInputStream(stream));
@@ -168,7 +168,7 @@ namespace SolarSharp.Interpreter.CoreLib
             {
                 List<DynValue> readLines = new();
 
-                using (var stream = Script.GlobalOptions.Platform.IO_OpenFile(executionContext.GetScript(), filename, null, "r"))
+                using (var stream = LuaState.GlobalOptions.Platform.IO_OpenFile(executionContext.GetScript(), filename, null, "r"))
                 {
                     using var reader = new StreamReader(stream);
                     while (!reader.EndOfStream)
@@ -184,7 +184,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
             catch (Exception ex)
             {
-                throw new ScriptRuntimeException(IoExceptionToLuaMessage(ex, filename));
+                throw new ErrorException(IoExceptionToLuaMessage(ex, filename));
             }
         }
 
@@ -205,7 +205,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 .Replace("t", "");
 
             if (invalidChars.Length > 0)
-                throw ScriptRuntimeException.BadArgument(1, "open", "invalid mode");
+                throw ErrorException.BadArgument(1, "open", "invalid mode");
 
 
             try
@@ -229,7 +229,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 else
                 {
                     if (isBinary)
-                        throw new ScriptRuntimeException("Can't specify encodings other than nil or 'binary' for binary streams.");
+                        throw new ErrorException("Can't specify encodings other than nil or 'binary' for binary streams.");
 
                     e = Encoding.GetEncoding(encoding);
                 }
@@ -283,7 +283,7 @@ namespace SolarSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue tmpfile(ScriptExecutionContext executionContext, CallbackArguments _)
         {
-            string tmpfilename = Script.GlobalOptions.Platform.IO_OS_GetTempFilename();
+            string tmpfilename = LuaState.GlobalOptions.Platform.IO_OS_GetTempFilename();
             FileUserDataBase file = Open(executionContext, tmpfilename, GetUTF8Encoding(), "w");
             return UserData.Create(file);
         }

@@ -13,7 +13,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             string script = @"return pcall(function() return 1,2,3 end)";
 
-            Script S = new();
+            LuaState S = new();
             var res = S.DoString(script);
 
             Assert.Multiple(() =>
@@ -38,7 +38,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return r, msg;
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -87,7 +87,7 @@ end
 return a()
 ";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = LuaState.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -119,7 +119,7 @@ end
 
 return a()
 ";
-            Script S = new(CoreModules.None);
+            LuaState S = new(CoreModules.None);
 
             S.Globals["try"] = DynValue.NewCallback((c, a) =>
             {
@@ -128,7 +128,7 @@ return a()
                     var v = a[0].Function.Call();
                     return v;
                 }
-                catch (ScriptRuntimeException)
+                catch (ErrorException)
                 {
                     return DynValue.NewString("!");
                 }

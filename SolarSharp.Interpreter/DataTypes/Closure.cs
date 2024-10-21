@@ -6,7 +6,7 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// A class representing a script function
     /// </summary>
-    public class Closure : RefIdObject, IScriptPrivateResource
+    public class Closure : RefIdObject
     {
         /// <summary>
         /// Type of closure based on upvalues
@@ -27,18 +27,10 @@ namespace SolarSharp.Interpreter.DataTypes
             Closure
         }
 
-
         /// <summary>
         /// Gets the entry point location in bytecode .
         /// </summary>
         public int EntryPointByteCodeLocation { get; private set; }
-
-
-        /// <summary>
-        /// Gets the script owning this function
-        /// </summary>
-        public Script OwnerScript { get; private set; }
-
 
         /// <summary>
         /// Shortcut for an empty closure
@@ -54,69 +46,13 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Initializes a new instance of the <see cref="Closure"/> class.
         /// </summary>
-        /// <param name="script">The script.</param>
         /// <param name="idx">The index.</param>
         /// <param name="symbols">The symbols.</param>
         /// <param name="resolvedLocals">The resolved locals.</param>
-        internal Closure(Script script, int idx, SymbolRef[] symbols, IEnumerable<DynValue> resolvedLocals)
+        internal Closure(int idx, SymbolRef[] symbols, IEnumerable<DynValue> resolvedLocals)
         {
-            OwnerScript = script;
-
             EntryPointByteCodeLocation = idx;
-
             ClosureContext = symbols.Length > 0 ? new ClosureContext(symbols, resolvedLocals) : emptyClosure;
-        }
-
-        /// <summary>
-        /// Calls this function with the specified args
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
-        public DynValue Call()
-        {
-            return OwnerScript.Call(this);
-        }
-
-        /// <summary>
-        /// Calls this function with the specified args
-        /// </summary>
-        /// <param name="args">The arguments to pass to the function.</param>
-        /// <returns></returns>
-        /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
-        public DynValue Call(params object[] args)
-        {
-            return OwnerScript.Call(this, args);
-        }
-
-        /// <summary>
-        /// Calls this function with the specified args
-        /// </summary>
-        /// <param name="args">The arguments to pass to the function.</param>
-        /// <returns></returns>
-        /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
-        public DynValue Call(params DynValue[] args)
-        {
-            return OwnerScript.Call(this, args);
-        }
-
-
-        /// <summary>
-        /// Gets a delegate wrapping calls to this scripted function
-        /// </summary>
-        /// <returns></returns>
-        public ScriptFunctionDelegate GetDelegate()
-        {
-            return args => Call(args).ToObject();
-        }
-
-        /// <summary>
-        /// Gets a delegate wrapping calls to this scripted function
-        /// </summary>
-        /// <typeparam name="T">The type of return value of the delegate.</typeparam>
-        /// <returns></returns>
-        public ScriptFunctionDelegate<T> GetDelegate<T>()
-        {
-            return args => Call(args).ToObject<T>();
         }
 
         /// <summary>
@@ -163,7 +99,5 @@ namespace SolarSharp.Interpreter.DataTypes
             else
                 return UpvaluesType.Closure;
         }
-
-
     }
 }

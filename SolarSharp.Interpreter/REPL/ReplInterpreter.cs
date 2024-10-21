@@ -9,14 +9,14 @@ namespace SolarSharp.Interpreter.REPL
     /// </summary>
     public class ReplInterpreter
     {
-        private readonly Script m_Script;
+        private readonly LuaState m_Script;
         private string m_CurrentCommand = string.Empty;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ReplInterpreter"/> class.
         /// </summary>
         /// <param name="script">The script.</param>
-        public ReplInterpreter(Script script)
+        public ReplInterpreter(LuaState script)
         {
             m_Script = script;
         }
@@ -64,13 +64,13 @@ namespace SolarSharp.Interpreter.REPL
             m_CurrentCommand += input;
 
             if (m_CurrentCommand.Length == 0)
-                return DynValue.Void;
+                return DynValue.Nil;
 
             m_CurrentCommand += "\n";
 
             try
             {
-                DynValue result = null;
+                DynValue result = DynValue.Nil;
 
                 if (isFirstLine && HandleClassicExprsSyntax && m_CurrentCommand.StartsWith("="))
                 {
@@ -102,10 +102,10 @@ namespace SolarSharp.Interpreter.REPL
                 }
                 else
                 {
-                    return null;
+                    return DynValue.Nil;
                 }
             }
-            catch (ScriptRuntimeException sre)
+            catch (ErrorException sre)
             {
                 m_CurrentCommand = "";
                 sre.Rethrow();

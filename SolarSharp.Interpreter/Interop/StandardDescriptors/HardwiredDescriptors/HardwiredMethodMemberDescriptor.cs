@@ -8,7 +8,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptor
 {
     public abstract class HardwiredMethodMemberDescriptor : FunctionMemberDescriptorBase
     {
-        public override DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
+        public override DynValue Execute(LuaState script, object obj, ScriptExecutionContext context, CallbackArguments args)
         {
             this.CheckAccess(MemberDescriptorAccess.CanExecute, obj);
 
@@ -31,6 +31,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptor
             return count;
         }
 
-        protected abstract object Invoke(Script script, object obj, object[] pars, int argscount);
+        protected abstract object Invoke(LuaState script, object obj, object[] pars, int argscount);
     }
 }

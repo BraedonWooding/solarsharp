@@ -4,7 +4,6 @@
     {
         // Meta-opcodes
         Nop,        // Does not perform any operation.
-        Debug,      // Does not perform any operation. Used to help debugging.
 
         // Stack ops and assignment
         Pop,        // Discards the topmost n elements from the v-stack. 

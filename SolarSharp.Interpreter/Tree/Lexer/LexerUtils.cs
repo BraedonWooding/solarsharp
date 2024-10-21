@@ -282,12 +282,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         private static string ConvertUtf32ToChar(int i)
         {
-#if PCL || ENABLE_DOTNET
-			return ((char)i).ToString();
-#else
             return char.ConvertFromUtf32(i);
-#endif
         }
-
     }
 }

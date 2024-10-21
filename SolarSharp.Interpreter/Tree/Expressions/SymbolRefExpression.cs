@@ -50,20 +50,9 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             bc.Emit_Load(m_Ref);
         }
 
-
         public void CompileAssignment(Execution.VM.ByteCode bc, int stackofs, int tupleidx)
         {
             bc.Emit_Store(m_Ref, stackofs, tupleidx);
-        }
-
-        public override DynValue Eval(ScriptExecutionContext context)
-        {
-            return context.EvaluateSymbolByName(m_VarName);
-        }
-
-        public override SymbolRef FindDynamic(ScriptExecutionContext context)
-        {
-            return context.FindSymbolByName(m_VarName);
         }
     }
 }

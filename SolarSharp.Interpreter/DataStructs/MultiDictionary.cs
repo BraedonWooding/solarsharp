@@ -29,7 +29,6 @@ namespace SolarSharp.Interpreter.DataStructs
             m_Map = new Dictionary<K, List<V>>(eqComparer);
         }
 
-
         /// <summary>
         /// Adds the specified key. Returns true if this is the first value for a given key
         /// </summary>
@@ -123,6 +122,5 @@ namespace SolarSharp.Interpreter.DataStructs
 
             return false;
         }
-
     }
 }

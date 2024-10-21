@@ -17,7 +17,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
         {
             List<DynValue> readLines = new();
 
-            DynValue readValue = null;
+            DynValue readValue = DynValue.Nil;
 
             do
             {
@@ -95,7 +95,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
                         }
                         else
                         {
-                            throw ScriptRuntimeException.BadArgument(i, "read", "invalid option");
+                            throw ErrorException.BadArgument(i, "read", "invalid option");
                         }
                     }
 
@@ -106,21 +106,19 @@ namespace SolarSharp.Interpreter.CoreLib.IO
             }
         }
 
-
         public DynValue write(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             try
             {
                 for (int i = 0; i < args.Count; i++)
                 {
-                    //string str = args.AsStringUsingMeta(executionContext, i, "file:write");
                     string str = args.AsType(i, "write", DataType.String, false).String;
                     Write(str);
                 }
 
                 return UserData.Create(this);
             }
-            catch (ScriptRuntimeException)
+            catch (ErrorException)
             {
                 throw;
             }
@@ -140,7 +138,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
                 else
                     return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(msg));
             }
-            catch (ScriptRuntimeException)
+            catch (ErrorException)
             {
                 throw;
             }

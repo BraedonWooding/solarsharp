@@ -165,7 +165,7 @@ namespace SolarSharp.Interpreter.Platforms
         /// <param name="encoding">The encoding.</param>
         /// <param name="mode">The mode (as per Lua usage - e.g. 'w+', 'rb', etc.).</param>
         /// <returns></returns>
-        public abstract Stream IO_OpenFile(Script script, string filename, Encoding encoding, string mode);
+        public abstract Stream IO_OpenFile(LuaState script, string filename, Encoding encoding, string mode);
 
 
         /// <summary>

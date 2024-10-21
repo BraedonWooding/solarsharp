@@ -1,5 +1,5 @@
 ﻿using System;
-using SolarSharp.Interpreter.Debugging;
+using SolarSharp.Interpreter.Debug;
 using SolarSharp.Interpreter.Tree.Lexer;
 
 namespace SolarSharp.Interpreter.Errors
@@ -7,11 +7,11 @@ namespace SolarSharp.Interpreter.Errors
     /// <summary>
     /// Exception for all parsing/lexing errors. 
     /// </summary>
-#if !(PCL || ((!UNITY_EDITOR) && (ENABLE_DOTNET)) || NETFX_CORE)
     [Serializable]
-#endif
-    public class SyntaxErrorException : InterpreterException
+    public class SyntaxErrorException : ErrorException
     {
+        // TODO: Maybe add "to" line number rather than just "from" (will need to diverge from SourceRef).
+
         internal Token Token { get; private set; }
 
         /// <summary>
@@ -32,16 +32,16 @@ namespace SolarSharp.Interpreter.Errors
             Token = t;
         }
 
-        internal SyntaxErrorException(Script script, SourceRef sref, string format, params object[] args)
+        internal SyntaxErrorException(LuaState script, SourceRef sref, string format, params object[] args)
             : base(format, args)
         {
-            DecorateMessage(script, sref);
+            DecorateMessage(sref);
         }
 
-        internal SyntaxErrorException(Script script, SourceRef sref, string message)
+        internal SyntaxErrorException(LuaState script, SourceRef sref, string message)
             : base(message)
         {
-            DecorateMessage(script, sref);
+            DecorateMessage(sref);
         }
 
         private SyntaxErrorException(SyntaxErrorException syntaxErrorException)
@@ -51,23 +51,12 @@ namespace SolarSharp.Interpreter.Errors
             DecoratedMessage = Message;
         }
 
-        internal void DecorateMessage(Script script)
+        internal void DecorateMessage(LuaState script)
         {
             if (Token != null)
             {
-                DecorateMessage(script, Token.GetSourceRef(false));
+                DecorateMessage(Token.GetSourceRef());
             }
         }
-
-        /// <summary>
-        /// Rethrows this instance if 
-        /// </summary>
-        /// <returns></returns>
-        public override void Rethrow()
-        {
-            if (Script.GlobalOptions.RethrowExceptionNested)
-                throw new SyntaxErrorException(this);
-        }
-
     }
 }

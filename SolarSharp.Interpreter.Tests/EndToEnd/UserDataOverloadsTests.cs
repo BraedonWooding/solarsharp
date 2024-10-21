@@ -92,7 +92,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void RunTestOverload(string code, string expected, bool tupleExpected = false)
         {
-            Script S = new();
+            LuaState S = new();
 
             OverloadsTestClass obj = new();
 
@@ -125,7 +125,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             try
             {
-                var lua = new Script();
+                var lua = new LuaState();
                 lua.Globals["DictionaryIntInt"] = typeof(Dictionary<int, int>);
 
                 var script = @"local dict = DictionaryIntInt.__new(); local res, v = dict.TryGetValue(0)";
@@ -228,7 +228,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void Interop_Overloads_ExtMethods2()
         {
             UserData.RegisterExtensionType(typeof(OverloadsExtMethods));
-            Assert.Throws<ScriptRuntimeException>(() => RunTestOverload("s:method3()", "X3"));
+            Assert.Throws<ErrorException>(() => RunTestOverload("s:method3()", "X3"));
         }
 
         [Test]
@@ -237,7 +237,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             // pollute cache
             RunTestOverload("o:method1(5)", "3");
             // exec non static on static
-            Assert.Throws<ScriptRuntimeException>(() => RunTestOverload("s:method1(5)", "s"));
+            Assert.Throws<ErrorException>(() => RunTestOverload("s:method1(5)", "s"));
         }
 
         [Test]
@@ -292,7 +292,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OverloadTest_WithoutObjects()
         {
-            Script s = new();
+            LuaState s = new();
 
             // Create an instance of the overload resolver
             var ov = new OverloadedMethodMemberDescriptor("Method1", GetType());
