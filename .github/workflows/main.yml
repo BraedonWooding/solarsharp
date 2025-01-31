@@ -35,6 +35,12 @@ jobs:
         run: cat Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json | jq ".Benchmarks[] |= select( .Statistics != null )" > INPUT.tmp && mv INPUT.tmp Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
       - name: Output Benchmark
         run: cat Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
+      # Download previous benchmark result from cache (if exists)
+      - name: Download previous benchmark data
+        uses: actions/cache@v4
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-benchmark
       # Run `github-action-benchmark` action
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
@@ -43,6 +49,8 @@ jobs:
           tool: 'benchmarkdotnet'
           # Where the output from the benchmark tool is stored
           output-file-path: Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
+          # Where the previous data file is stored
+          external-data-json-path: ./cache/benchmark-data.json
           # Access token to deploy GitHub Pages branch
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # Push and deploy GitHub pages branch automatically
