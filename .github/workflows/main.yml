@@ -49,8 +49,6 @@ jobs:
           tool: 'benchmarkdotnet'
           # Where the output from the benchmark tool is stored
           output-file-path: Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
-          # Where the previous data file is stored
-          external-data-json-path: ./cache/benchmark-data.json
           # Access token to deploy GitHub Pages branch
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # Push and deploy GitHub pages branch automatically
