@@ -11,10 +11,10 @@ namespace SolarSharp.Interpreter.CoreLib
     /// <summary>
     /// Class implementing debug Lua functions. Support for the debug module is partial. 
     /// </summary>
-    [MoonSharpModule(Namespace = "debug")]
+    [SolarSharpModule(Namespace = "debug")]
     public class DebugModule
     {
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue debug(ScriptExecutionContext executionContext, CallbackArguments _)
         {
             LuaState script = executionContext.GetScript();
@@ -50,7 +50,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue getuservalue(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v = args[0];
@@ -61,7 +61,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return v.UserData.UserValue;
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue setuservalue(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v = args.AsType(0, "setuservalue", DataType.UserData, false);
@@ -70,13 +70,13 @@ namespace SolarSharp.Interpreter.CoreLib
             return v.UserData.UserValue = t;
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue getregistry(ScriptExecutionContext executionContext, CallbackArguments _)
         {
             return DynValue.NewTable(executionContext.GetScript().Registry);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue getmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue v = args[0];
@@ -90,7 +90,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 return DynValue.Nil;
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue setmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue v = args[0];
@@ -107,7 +107,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return v;
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue getupvalue(ScriptExecutionContext _, CallbackArguments args)
         {
             var index = (int)args.AsType(1, "getupvalue", DataType.Number, false).Number - 1;
@@ -128,7 +128,7 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue upvalueid(ScriptExecutionContext _, CallbackArguments args)
         {
             var index = (int)args.AsType(1, "getupvalue", DataType.Number, false).Number - 1;
@@ -147,7 +147,7 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue setupvalue(ScriptExecutionContext _, CallbackArguments args)
         {
             var index = (int)args.AsType(1, "setupvalue", DataType.Number, false).Number - 1;
@@ -168,7 +168,7 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue upvaluejoin(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue f1 = args.AsType(0, "upvaluejoin", DataType.Function, false);
@@ -190,7 +190,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.Nil;
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue traceback(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             StringBuilder sb = new();
@@ -243,7 +243,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewString(sb);
         }
 
-        //[MoonSharpModuleMethod]
+        //[SolarSharpModuleMethod]
         //public static DynValue getlocal(ScriptExecutionContext executionContext, CallbackArguments args)
         //{
         //	Coroutine c;
@@ -293,7 +293,7 @@ namespace SolarSharp.Interpreter.CoreLib
         //}
 
 
-        //[MoonSharpMethod]
+        //[SolarSharpMethod]
         //public static DynValue getinfo(ScriptExecutionContext executionContext, CallbackArguments args)
         //{
         //	Coroutine cor = executionContext.GetCallingCoroutine();

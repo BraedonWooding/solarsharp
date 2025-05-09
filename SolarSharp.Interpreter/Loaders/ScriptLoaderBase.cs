@@ -102,7 +102,7 @@ namespace SolarSharp.Interpreter.Loaders
 
             if (modulePaths == null)
             {
-                string env = LuaState.GlobalOptions.Platform.GetEnvironmentVariable("MOONSHARP_PATH");
+                string env = LuaState.GlobalOptions.Platform.GetEnvironmentVariable("SolarSharp_PATH");
                 if (!string.IsNullOrEmpty(env)) modulePaths = UnpackStringPaths(env);
 
                 if (modulePaths == null)

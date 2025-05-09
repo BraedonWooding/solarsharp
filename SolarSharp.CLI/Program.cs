@@ -163,7 +163,7 @@ namespace SolarSharp
 
         private static void ShowCmdLineHelpBig()
         {
-            Console.WriteLine("usage: moonsharp [-H | --help | -X \"command\" | -W <dumpfile> <destfile> [--internals] [--vb] [--class:<name>] [--namespace:<name>] | <script>]");
+            Console.WriteLine("usage: SolarSharp [-H | --help | -X \"command\" | -W <dumpfile> <destfile> [--internals] [--vb] [--class:<name>] [--namespace:<name>] | <script>]");
             Console.WriteLine();
             Console.WriteLine("-H : shows this help");
             Console.WriteLine("-X : executes the specified command");
@@ -173,7 +173,7 @@ namespace SolarSharp
 
         private static void ShowCmdLineHelp()
         {
-            Console.WriteLine("usage: moonsharp [-H | --help | -X \"command\" | -W <dumpfile> <destfile> [--internals] [--vb] | <script>]");
+            Console.WriteLine("usage: SolarSharp [-H | --help | -X \"command\" | -W <dumpfile> <destfile> [--internals] [--vb] | <script>]");
         }
 
         private static void ExecuteCommand(ShellContext shellContext, string cmdline)

@@ -3,7 +3,7 @@
 namespace SolarSharp.Interpreter.Interop.RegistrationPolicies
 {
     /// <summary>
-    /// The default registration policy used by MoonSharp unless explicitely replaced.
+    /// The default registration policy used by SolarSharp unless explicitely replaced.
     /// Deregistrations are allowed, but registration of a new descriptor are not allowed
     /// if a descriptor is already registered for that type.
     /// 

@@ -12,28 +12,28 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     {
         private class MySubclass
         {
-            [MoonSharpProperty]
+            [SolarSharpProperty]
             public string MyString { get; set; }
 
-            [MoonSharpProperty("number")]
+            [SolarSharpProperty("number")]
             public int MyNumber { get; private set; }
         }
 
         private class MyClass
         {
-            [MoonSharpProperty]
+            [SolarSharpProperty]
             public string MyString { get; set; }
 
-            [MoonSharpProperty("number")]
+            [SolarSharpProperty("number")]
             public int MyNumber { get; private set; }
 
-            [MoonSharpProperty]
+            [SolarSharpProperty]
             internal Table SomeTable { get; private set; }
 
-            [MoonSharpProperty]
+            [SolarSharpProperty]
             public DynValue NativeValue { get; private set; }
 
-            [MoonSharpProperty]
+            [SolarSharpProperty]
             public MySubclass SubObj { get; private set; }
         }
 

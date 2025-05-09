@@ -48,18 +48,18 @@ namespace SolarSharp.Interpreter.Modules
 
 
         /// <summary>
-        /// Registers the standard constants (_G, _VERSION, _MOONSHARP) to a table
+        /// Registers the standard constants (_G, _VERSION, _SolarSharp) to a table
         /// </summary>
         /// <param name="table">The table.</param>
         /// <returns></returns>
         public static Table RegisterConstants(this Table table)
         {
-            DynValue moonsharp_table = DynValue.NewTable(table.OwnerScript);
-            Table m = moonsharp_table.Table;
+            DynValue SolarSharp_table = DynValue.NewTable(table.OwnerScript);
+            Table m = SolarSharp_table.Table;
 
             table.Set("_G", DynValue.NewTable(table));
-            table.Set("_VERSION", DynValue.NewString(string.Format("MoonSharp {0}", LuaState.VERSION)));
-            table.Set("_MOONSHARP", moonsharp_table);
+            table.Set("_VERSION", DynValue.NewString(string.Format("SolarSharp {0}", LuaState.VERSION)));
+            table.Set("_SolarSharp", SolarSharp_table);
 
             m.Set("version", DynValue.NewString(LuaState.VERSION));
             m.Set("luacompat", DynValue.NewString(LuaState.LUA_VERSION));
@@ -89,9 +89,9 @@ namespace SolarSharp.Interpreter.Modules
 
             foreach (MethodInfo mi in Framework.Do.GetMethods(t).Where(__mi => __mi.IsStatic))
             {
-                if (mi.GetCustomAttributes(typeof(MoonSharpModuleMethodAttribute), false).ToArray().Length > 0)
+                if (mi.GetCustomAttributes(typeof(SolarSharpModuleMethodAttribute), false).ToArray().Length > 0)
                 {
-                    MoonSharpModuleMethodAttribute attr = (MoonSharpModuleMethodAttribute)mi.GetCustomAttributes(typeof(MoonSharpModuleMethodAttribute), false).First();
+                    SolarSharpModuleMethodAttribute attr = (SolarSharpModuleMethodAttribute)mi.GetCustomAttributes(typeof(SolarSharpModuleMethodAttribute), false).First();
 
                     if (!CallbackFunction.CheckCallbackSignature(mi, true))
                         throw new ArgumentException(string.Format("Method {0} does not have the right signature.", mi.Name));
@@ -110,16 +110,16 @@ namespace SolarSharp.Interpreter.Modules
 
                     table.Set(name, DynValue.NewCallback(func, name));
                 }
-                else if (mi.Name == "MoonSharpInit")
+                else if (mi.Name == "SolarSharpInit")
                 {
                     object[] args = new object[2] { gtable, table };
                     mi.Invoke(null, args);
                 }
             }
 
-            foreach (FieldInfo fi in Framework.Do.GetFields(t).Where(_mi => _mi.IsStatic && _mi.GetCustomAttributes(typeof(MoonSharpModuleConstantAttribute), false).ToArray().Length > 0))
+            foreach (FieldInfo fi in Framework.Do.GetFields(t).Where(_mi => _mi.IsStatic && _mi.GetCustomAttributes(typeof(SolarSharpModuleConstantAttribute), false).ToArray().Length > 0))
             {
-                MoonSharpModuleConstantAttribute attr = (MoonSharpModuleConstantAttribute)fi.GetCustomAttributes(typeof(MoonSharpModuleConstantAttribute), false).First();
+                SolarSharpModuleConstantAttribute attr = (SolarSharpModuleConstantAttribute)fi.GetCustomAttributes(typeof(SolarSharpModuleConstantAttribute), false).First();
                 string name = !string.IsNullOrEmpty(attr.Name) ? attr.Name : fi.Name;
 
                 RegisterScriptFieldAsConst(fi, null, table, t, name);
@@ -163,7 +163,7 @@ namespace SolarSharp.Interpreter.Modules
 
         private static Table CreateModuleNamespace(Table gtable, Type t)
         {
-            MoonSharpModuleAttribute attr = (MoonSharpModuleAttribute)Framework.Do.GetCustomAttributes(t, typeof(MoonSharpModuleAttribute), false).First();
+            SolarSharpModuleAttribute attr = (SolarSharpModuleAttribute)Framework.Do.GetCustomAttributes(t, typeof(SolarSharpModuleAttribute), false).First();
 
             if (string.IsNullOrEmpty(attr.Namespace))
             {

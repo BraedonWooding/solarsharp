@@ -39,22 +39,22 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return new ArithmOperatorsTestClass(-o.Value);
             }
 
-            [MoonSharpUserDataMetamethod("__concat")]
-            [MoonSharpUserDataMetamethod("__pow")]
+            [SolarSharpUserDataMetamethod("__concat")]
+            [SolarSharpUserDataMetamethod("__pow")]
             public static int operator +(ArithmOperatorsTestClass o, int v)
             {
                 return o.Value + v;
             }
 
-            [MoonSharpUserDataMetamethod("__concat")]
-            [MoonSharpUserDataMetamethod("__pow")]
+            [SolarSharpUserDataMetamethod("__concat")]
+            [SolarSharpUserDataMetamethod("__pow")]
             public static int operator +(int v, ArithmOperatorsTestClass o)
             {
                 return o.Value + v;
             }
 
-            [MoonSharpUserDataMetamethod("__concat")]
-            [MoonSharpUserDataMetamethod("__pow")]
+            [SolarSharpUserDataMetamethod("__concat")]
+            [SolarSharpUserDataMetamethod("__pow")]
             public static int operator +(ArithmOperatorsTestClass o1, ArithmOperatorsTestClass o2)
             {
                 return o1.Value + o2.Value;
@@ -149,14 +149,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return new List<int>() { 1, 2, 3 }.GetEnumerator();
             }
 
-            [MoonSharpUserDataMetamethod("__call")]
+            [SolarSharpUserDataMetamethod("__call")]
             public int DefaultMethod()
             {
                 return -Value;
             }
 
-            [MoonSharpUserDataMetamethod("__pairs")]
-            [MoonSharpUserDataMetamethod("__ipairs")]
+            [SolarSharpUserDataMetamethod("__pairs")]
+            [SolarSharpUserDataMetamethod("__ipairs")]
             public System.Collections.IEnumerator Pairs()
             {
                 return new List<DynValue>() {

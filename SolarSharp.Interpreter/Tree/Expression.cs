@@ -181,7 +181,7 @@ namespace SolarSharp.Interpreter.Tree
                             lcontext.Lexer.Next(); // skip bracket
                             Expression index = Expr(lcontext);
 
-                            // support moonsharp multiple indexers for userdata
+                            // support SolarSharp multiple indexers for userdata
                             if (lcontext.Lexer.Current.Type == TokenType.Comma)
                             {
                                 var explist = ExprListAfterFirstExpr(lcontext, index);

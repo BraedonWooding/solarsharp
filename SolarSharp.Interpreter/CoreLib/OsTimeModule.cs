@@ -11,7 +11,7 @@ namespace SolarSharp.Interpreter.CoreLib
     /// <summary>
     /// Class implementing time related Lua functions from the 'os' module.
     /// </summary>
-    [MoonSharpModule(Namespace = "os")]
+    [SolarSharpModule(Namespace = "os")]
     public class OsTimeModule
     {
         private static readonly DateTime Time0 = DateTime.UtcNow;
@@ -33,7 +33,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return Epoch + ts;
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
 #pragma warning disable IDE0060 // Remove unused parameter
         public static DynValue clock(ScriptExecutionContext _, CallbackArguments _args)
 #pragma warning restore IDE0060 // Remove unused parameter
@@ -43,7 +43,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return t;
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue difftime(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue t2 = args.AsType(0, "difftime", DataType.Number, false);
@@ -55,7 +55,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewNumber(t2.Number - t1.Number);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue time(ScriptExecutionContext _, CallbackArguments args)
         {
             DateTime date = DateTime.UtcNow;
@@ -103,7 +103,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return null;
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue date(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DateTime reference = DateTime.UtcNow;

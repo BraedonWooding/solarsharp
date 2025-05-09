@@ -3,9 +3,9 @@
 namespace SolarSharp.Interpreter.Interop
 {
     /// <summary>
-    /// Enumerations of the possible strategies to marshal CLR objects to MoonSharp userdata and functions
+    /// Enumerations of the possible strategies to marshal CLR objects to SolarSharp userdata and functions
     /// when using automatic descriptors.
-    /// Note that these are "hints" and MoonSharp is free to ignore the access mode specified (if different from
+    /// Note that these are "hints" and SolarSharp is free to ignore the access mode specified (if different from
     /// HideMembers) and downgrade the access mode to "Reflection". 
     /// This particularly happens when running on AOT platforms like iOS.
     /// See also : <see cref="CallbackFunction"/> and <see cref="UserData"/> .

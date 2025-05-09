@@ -10,8 +10,8 @@
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>
     </AssemblyOriginatorKeyFile>
-    <AssemblyTitle>MoonSharp.Hardwire</AssemblyTitle>
-    <Product>MoonSharp.Hardwire</Product>
+    <AssemblyTitle>SolarSharp.Hardwire</AssemblyTitle>
+    <Product>SolarSharp.Hardwire</Product>
     <Copyright>Copyright ©  2024</Copyright>
   </PropertyGroup>
   <ItemGroup>

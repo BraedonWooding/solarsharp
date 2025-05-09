@@ -6,7 +6,7 @@
     <RootNamespace>SolarSharp</RootNamespace>
     <AssemblyName>SolarSharp</AssemblyName>
     <Copyright>2024</Copyright>
-    <Authors>Marco Mastropaolo, Braedon Wooding, MoonSharp Contributors</Authors>
+    <Authors>Marco Mastropaolo, Braedon Wooding, SolarSharp and MoonSharp Contributors</Authors>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\SolarSharp.Hardwire\SolarSharp.Hardwire.csproj" />

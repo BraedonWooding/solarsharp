@@ -10,10 +10,10 @@ namespace SolarSharp.Interpreter.CoreLib
     /// Class implementing system related Lua functions from the 'os' module.
     /// Proper support requires a compatible IPlatformAccessor
     /// </summary>
-    [MoonSharpModule(Namespace = "os")]
+    [SolarSharpModule(Namespace = "os")]
     public class OsSystemModule
     {
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue execute(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v = args.AsType(0, "execute", DataType.String, true);
@@ -41,7 +41,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue exit(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_exitCode = args.AsType(0, "exit", DataType.Number, true);
@@ -55,7 +55,7 @@ namespace SolarSharp.Interpreter.CoreLib
             throw new InvalidOperationException("Unreachable code.. reached.");
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue getenv(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue varName = args.AsType(0, "getenv", DataType.String, false);
@@ -68,7 +68,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 return DynValue.NewString(val);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue remove(ScriptExecutionContext _, CallbackArguments args)
         {
             string fileName = args.AsType(0, "remove", DataType.String, false).String;
@@ -94,7 +94,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue rename(ScriptExecutionContext _, CallbackArguments args)
         {
             string fileNameOld = args.AsType(0, "rename", DataType.String, false).String;
@@ -118,14 +118,14 @@ namespace SolarSharp.Interpreter.CoreLib
             }
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue setlocale(ScriptExecutionContext _, CallbackArguments _args)
         {
             // TODO:
             return DynValue.NewString("n/a");
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue tmpname(ScriptExecutionContext _, CallbackArguments _args)
         {
             return DynValue.NewString(LuaState.GlobalOptions.Platform.IO_OS_GetTempFilename());

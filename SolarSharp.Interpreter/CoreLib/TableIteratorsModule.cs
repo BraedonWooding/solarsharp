@@ -7,7 +7,7 @@ namespace SolarSharp.Interpreter.CoreLib
     /// <summary>
     /// Class implementing table Lua iterators (pairs, ipairs, next)
     /// </summary>
-    [MoonSharpModule]
+    [SolarSharpModule]
     public class TableIteratorsModule
     {
         // ipairs (t)
@@ -16,7 +16,7 @@ namespace SolarSharp.Interpreter.CoreLib
         // Otherwise, returns three values: an iterator function, the table t, and 0, so that the construction
         //	  for i,v in ipairs(t) do body end
         // will iterate over the pairs (1,t[1]), (2,t[2]), ..., up to the first integer key absent from the table. 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue ipairs(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue table = args[0];
@@ -50,7 +50,7 @@ namespace SolarSharp.Interpreter.CoreLib
         //     for k,v in pairs(t) do body end
         // will iterate over all key–value pairs of table t.
         // See function next for the caveats of modifying the table during its traversal. 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue pairs(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue table = args[0];
@@ -87,7 +87,7 @@ namespace SolarSharp.Interpreter.CoreLib
         // (To traverse a table in numeric order, use a numerical for.)
         // The behavior of next is undefined if, during the traversal, you assign any value to a non-existent field in the table. 
         // You may however modify existing fields. In particular, you may clear existing fields. 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue next(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue table = args.AsType(0, "next", DataType.Table);

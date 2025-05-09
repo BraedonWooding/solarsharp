@@ -63,7 +63,7 @@ namespace SolarSharp.Interpreter.DataTypes
     }
 
     /// <summary>
-    /// Enumeration of possible data types in MoonSharp
+    /// Enumeration of possible data types in SolarSharp
     /// </summary>
     public enum DataType : byte
     {

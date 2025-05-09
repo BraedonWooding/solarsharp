@@ -15,7 +15,7 @@ namespace SolarSharp.Interpreter.Interop
     {
         /// <summary>
         /// Determines whether a
-        /// <see cref="MoonSharpVisibleAttribute" /> or a <see cref="MoonSharpHiddenAttribute" />  is changing visibility of a member
+        /// <see cref="SolarSharpVisibleAttribute" /> or a <see cref="SolarSharpHiddenAttribute" />  is changing visibility of a member
         /// to scripts.
         /// </summary>
         /// <param name="mi">The member to check.</param>
@@ -24,17 +24,17 @@ namespace SolarSharp.Interpreter.Interop
         /// <c>false</c> if visibility is forced hidden or the specified MemberInfo is null,
         /// <c>if no attribute was found</c>
         /// </returns>
-        /// <exception cref="InvalidOperationException">If both MoonSharpHiddenAttribute and MoonSharpVisibleAttribute are specified and they convey different messages.</exception>
+        /// <exception cref="InvalidOperationException">If both SolarSharpHiddenAttribute and SolarSharpVisibleAttribute are specified and they convey different messages.</exception>
         public static bool? GetVisibilityFromAttributes(this MemberInfo mi)
         {
             if (mi == null)
                 return false;
 
-            MoonSharpVisibleAttribute va = mi.GetCustomAttributes(true).OfType<MoonSharpVisibleAttribute>().SingleOrDefault();
-            MoonSharpHiddenAttribute ha = mi.GetCustomAttributes(true).OfType<MoonSharpHiddenAttribute>().SingleOrDefault();
+            SolarSharpVisibleAttribute va = mi.GetCustomAttributes(true).OfType<SolarSharpVisibleAttribute>().SingleOrDefault();
+            SolarSharpHiddenAttribute ha = mi.GetCustomAttributes(true).OfType<SolarSharpHiddenAttribute>().SingleOrDefault();
 
             if (va != null && ha != null && va.Visible)
-                throw new InvalidOperationException(string.Format("A member ('{0}') can't have discording MoonSharpHiddenAttribute and MoonSharpVisibleAttribute.", mi.Name));
+                throw new InvalidOperationException(string.Format("A member ('{0}') can't have discording SolarSharpHiddenAttribute and SolarSharpVisibleAttribute.", mi.Name));
             else if (ha != null)
                 return false;
             else if (va != null)
@@ -146,14 +146,14 @@ namespace SolarSharp.Interpreter.Interop
 
         /// <summary>
         /// Gets the list of metamethod names from attributes - in practice the list of metamethods declared through
-        /// <see cref="MoonSharpUserDataMetamethodAttribute" /> .
+        /// <see cref="SolarSharpUserDataMetamethodAttribute" /> .
         /// </summary>
         /// <param name="mi">The mi.</param>
         /// <returns></returns>
         public static List<string> GetMetaNamesFromAttributes(this MethodInfo mi)
         {
-            return mi.GetCustomAttributes(typeof(MoonSharpUserDataMetamethodAttribute), true)
-                .OfType<MoonSharpUserDataMetamethodAttribute>()
+            return mi.GetCustomAttributes(typeof(SolarSharpUserDataMetamethodAttribute), true)
+                .OfType<SolarSharpUserDataMetamethodAttribute>()
                 .Select(a => a.Name)
                 .ToList();
         }

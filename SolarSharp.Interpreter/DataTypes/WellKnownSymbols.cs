@@ -1,7 +1,7 @@
 ﻿namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
-    /// Constants of well known "symbols" in the MoonSharp grammar
+    /// Constants of well known "symbols" in the SolarSharp grammar
     /// </summary>
     public static class WellKnownSymbols
     {

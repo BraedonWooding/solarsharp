@@ -90,7 +90,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Gets or sets the 
         /// <see cref="object" /> with the specified key(s).
-        /// This will marshall CLR and MoonSharp objects in the best possible way.
+        /// This will marshall CLR and SolarSharp objects in the best possible way.
         /// Multiple keys can be used to access subtables.
         /// </summary>
         /// <value>
@@ -111,7 +111,7 @@ namespace SolarSharp.Interpreter.DataTypes
 
         /// <summary>
         /// Gets or sets the <see cref="object"/> with the specified key(s).
-        /// This will marshall CLR and MoonSharp objects in the best possible way.
+        /// This will marshall CLR and SolarSharp objects in the best possible way.
         /// </summary>
         /// <value>
         /// The <see cref="object"/>.
@@ -448,7 +448,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Gets the value associated with the specified keys (expressed as an 
         /// array of <see cref="object"/>).
-        /// This will marshall CLR and MoonSharp objects in the best possible way.
+        /// This will marshall CLR and SolarSharp objects in the best possible way.
         /// Multiple keys can be used to access subtables.
         /// </summary>
         /// <param name="keys">The keys to access the table and subtables</param>

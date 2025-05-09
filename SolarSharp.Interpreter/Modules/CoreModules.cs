@@ -18,7 +18,7 @@ namespace SolarSharp.Interpreter.Modules
         /// </summary>
         Basic = 0x40,
         /// <summary>
-        /// The global constants: "_G", "_VERSION" and "_MOONSHARP".
+        /// The global constants: "_G", "_VERSION" and "_SolarSharp".
         /// </summary>
         GlobalConsts = 0x1,
         /// <summary>
@@ -74,7 +74,7 @@ namespace SolarSharp.Interpreter.Modules
         /// </summary>
         Debug = 0x4000,
         /// <summary>
-        /// The "json" package (introduced by MoonSharp).
+        /// The "json" package (introduced by SolarSharp).
         /// </summary>
         Json = 0x10000,
 

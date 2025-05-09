@@ -10,7 +10,7 @@ namespace SolarSharp.Interpreter.Serialization.Json
     {
         public static bool isNull() { return true; }
 
-        [MoonSharpHidden]
+        [SolarSharpHidden]
         public static bool IsJsonNull(DynValue v)
         {
             return v.Type == DataType.UserData &&
@@ -18,7 +18,7 @@ namespace SolarSharp.Interpreter.Serialization.Json
                 v.UserData.Descriptor.Type == typeof(JsonNull);
         }
 
-        [MoonSharpHidden]
+        [SolarSharpHidden]
         public static DynValue Create()
         {
             return UserData.CreateStatic<JsonNull>();

@@ -4,7 +4,7 @@ using System;
 namespace SolarSharp.Interpreter.Modules
 {
     /// <summary>
-    /// Marks a CLR type to be a MoonSharp module.
+    /// Marks a CLR type to be a SolarSharp module.
     /// Modules are the fastest way to bring interop between scripts and CLR code, albeit at the cost of a very increased
     /// complexity in writing them. Modules is what's used for the standard library, for maximum efficiency.
     /// 
@@ -19,7 +19,7 @@ namespace SolarSharp.Interpreter.Modules
     /// See <see cref="UserData"/> for easier object marshalling.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-    public sealed class MoonSharpModuleAttribute : Attribute
+    public sealed class SolarSharpModuleAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the namespace, that is the name of the table which will contain the defined functions.

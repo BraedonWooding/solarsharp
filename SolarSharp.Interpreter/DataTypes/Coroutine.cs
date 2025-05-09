@@ -119,7 +119,7 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// The purpose of this method is to convert a MoonSharp/Lua coroutine to a Unity3D coroutine.
+        /// The purpose of this method is to convert a SolarSharp/Lua coroutine to a Unity3D coroutine.
         /// This loops over the coroutine, discarding returned values, and returning null for each invocation.
         /// This means however that the coroutine will be invoked each frame.
         /// Only non-CLR coroutines can be resumed with this method. Use an overload of the Resume method accepting a ScriptExecutionContext instead.

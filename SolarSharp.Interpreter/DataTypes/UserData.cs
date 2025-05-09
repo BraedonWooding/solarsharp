@@ -138,7 +138,7 @@ namespace SolarSharp.Interpreter.DataTypes
 
 
         /// <summary>
-        /// Registers all types marked with a MoonSharpUserDataAttribute that ar contained in an assembly.
+        /// Registers all types marked with a SolarSharpUserDataAttribute that ar contained in an assembly.
         /// </summary>
         /// <param name="asm">The assembly.</param>
         /// <param name="includeExtensionTypes">if set to <c>true</c> extension types are registered to the appropriate registry.</param>

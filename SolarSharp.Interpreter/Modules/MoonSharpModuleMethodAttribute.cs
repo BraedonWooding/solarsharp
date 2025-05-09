@@ -6,10 +6,10 @@ namespace SolarSharp.Interpreter.Modules
     /// In a module type, mark methods with this attribute to have them exposed as module functions.
     /// Methods must have the signature "public static DynValue ...(ScriptExecutionContextCallbackArguments)".
     /// 
-    /// See <see cref="MoonSharpModuleAttribute"/> for more information about modules.
+    /// See <see cref="SolarSharpModuleAttribute"/> for more information about modules.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-    public sealed class MoonSharpModuleMethodAttribute : Attribute
+    public sealed class SolarSharpModuleMethodAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the name of the function in the module (defaults to member name)

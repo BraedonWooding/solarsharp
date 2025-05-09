@@ -50,8 +50,8 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         private void FillMemberList()
         {
             HashSet<string> membersToIgnore = new(
-                Framework.Do.GetCustomAttributes(Type, typeof(MoonSharpHideMemberAttribute), true)
-                    .OfType<MoonSharpHideMemberAttribute>()
+                Framework.Do.GetCustomAttributes(Type, typeof(SolarSharpHideMemberAttribute), true)
+                    .OfType<SolarSharpHideMemberAttribute>()
                     .Select(a => a.MemberName)
                 );
 
@@ -140,7 +140,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
 
                 if (!Framework.Do.IsGenericTypeDefinition(nestedType))
                 {
-                    if (Framework.Do.IsNestedPublic(nestedType) || Framework.Do.GetCustomAttributes(nestedType, typeof(MoonSharpUserDataAttribute), true).Length > 0)
+                    if (Framework.Do.IsNestedPublic(nestedType) || Framework.Do.GetCustomAttributes(nestedType, typeof(SolarSharpUserDataAttribute), true).Length > 0)
                     {
                         var descr = UserData.RegisterType(nestedType, AccessMode);
 
