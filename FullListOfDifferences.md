@@ -3,7 +3,7 @@
 Note: we have a separate package called `SolarSharp.Compatibility.MoonSharp` that adds *most* of this compatibility back.  It does not intend to fully match the old behaviour but instead intends to allow previous MoonSharp code to compile.
 
 It does the following:
-- Add proxy classes for all the exposed classes (i.e. a class DynValue that wraps a LuaValue) that keep the *OLD* moonsharp namespaces.  This should make c# code that previously compiled still compile.
+- Add proxy classes for all the exposed classes (i.e. a class DynValue that wraps a LuaValue) that keep the *OLD* moonsharp namespaces.  This should make **most** c# code that previously compiled still compile.
 - Enables syntax support for some legacy syntax (`$` & `|x, y|`).  This should make lua code that previous compiled still compile.
 - Add some features like Dynamic Expressions/dynamic package back into SolarSharp by re-implementing them ontop of new features (i.e. Dynamic Expressions is re-implemented by using our new sandbox).
 - Adds `_MOONSHARP` which just points to `_SOLARSHARP`

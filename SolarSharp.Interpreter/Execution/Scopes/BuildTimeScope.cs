@@ -71,7 +71,6 @@ namespace SolarSharp.Interpreter.Execution.Scopes
             return SymbolRef.Global(name, env);
         }
 
-
         public void ForceEnvUpValue()
         {
             Find(WellKnownSymbols.ENV);

@@ -10,7 +10,6 @@ Key changes from MoonSharp:
 * Built on .net standard 2.1 to take advantage of more modern C# features
 * Large performance improvements across the interpreter & parser
 * Some less useful features removed to simplify codebase
-* 
 * Bug fixes
 Look [here for differences from moonsharp](#differences-from-moonsharp).
 
@@ -70,9 +69,9 @@ Most of these changes were done because:
 - DynValue -> LuaValue and is a completely different type structure now
 	- It's a 16 byte struct now rather than a 32 byte class.  It's much cheaper to copy / carry around *but* you can't update a `LuaValue` and expect it's "slot" to update (since it's a value type not a reference type)
 	- We use NaN boxing to store the type in the number portion
-	- This also removes readonly since structs are readonly by default
 - DataType -> LuaValueType and there have been some changes in what types are available
-	- Void is no longer a type
+	- Void is no longer a type, use nil instead
+	- Tuples are deprecated and will be removed
 - Dynamic Expressions were removed
 	- They are harder to keep in sync with standard Lua processor and are ripe for bugs
 	- We instead support much stronger sandboxing and introduce dynamic "like" expressions (for debugging/other use cases) through that.

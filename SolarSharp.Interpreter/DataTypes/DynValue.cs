@@ -8,7 +8,6 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace SolarSharp.Interpreter.DataTypes
 {
@@ -342,6 +341,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public string ToPrintString()
         {
+            
             if (Object != null && Object is RefIdObject ref_id)
             {
                 RefIdObject refid = ref_id;
@@ -464,17 +464,13 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             if (obj is not DynValue other)
             {
-                switch (Type)
+                return Type switch
                 {
-                    case DataType.Nil:
-                        return obj == null;
-                    case DataType.Boolean:
-                        return Boolean == (bool)obj;
-                    case DataType.Number:
-                        return Number == (double)obj;
-                    default:
-                        return Object == obj;
-                }
+                    DataType.Nil => obj == null,
+                    DataType.Boolean => Boolean == (bool)obj,
+                    DataType.Number => Number == (double)obj,
+                    _ => Object == obj,
+                };
             }
 
             if (other.Type == DataType.Nil && Type == DataType.Nil
@@ -610,7 +606,7 @@ namespace SolarSharp.Interpreter.DataTypes
             if (Type == DataType.String)
                 return NewNumber(String.Length);
 
-            throw new ErrorException("Can't get length of type {0}", Type);
+            throw ErrorException.LenOnInvalidType(this);
         }
 
         /// <summary>
@@ -641,18 +637,6 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Changes the numeric value of a number DynValue.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void AssignNumber(double num)
-        {
-            if (Type != DataType.Number)
-                throw new InternalErrorException("Can't assign number to type {0}", Type);
-
-            Number = num;
-        }
-
-        /// <summary>
         /// Creates a new DynValue from a CLR object
         /// </summary>
         /// <param name="script">The script.</param>
@@ -676,7 +660,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public readonly object ToObject(Type desiredType)
         {
-            //Contract.Requires(desiredType != null);
             return ScriptToClrConversions.DynValueToObjectOfType(this, desiredType, null, false);
         }
 

@@ -7,7 +7,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
     internal class Lexer
     {
         private Token current = null;
-        private readonly string _code;
         private readonly Source _source;
         private int prevLineTo = 0;
         private int prevColTo = 1;
@@ -16,17 +15,21 @@ namespace SolarSharp.Interpreter.Tree.Lexer
         private int col = 0;
         private readonly bool autoSkipComments = false;
 
-        public Lexer(Source source, string scriptContent, bool autoSkipComments)
+        public Lexer(Source source, bool autoSkipComments)
         {
-            _code = scriptContent;
             _source = source;
 
             // remove unicode BOM if any
-            if (_code.Length > 0 && _code[0] == 0xFEFF)
-                _code = _code.Substring(1);
+            if (Code.Length > 0 && Code[0] == 0xFEFF)
+            {
+                // Note: we aren't adjusting col here intentionally
+                cursor = 1;
+            }
 
             this.autoSkipComments = autoSkipComments;
         }
+
+        private string Code => _source.Contents;
 
         public Token Current
         {
@@ -93,8 +96,8 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         private char CursorChar()
         {
-            if (cursor < _code.Length)
-                return _code[cursor];
+            if (cursor < Code.Length)
+                return Code[cursor];
             else
                 return '\0'; //  sentinel
         }
@@ -111,9 +114,9 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             {
                 int j = cursor + i;
 
-                if (j >= _code.Length)
+                if (j >= Code.Length)
                     return false;
-                if (_code[j] != pattern[i])
+                if (Code[j] != pattern[i])
                     return false;
             }
             return true;
@@ -121,7 +124,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         private bool CursorNotEof()
         {
-            return cursor < _code.Length;
+            return cursor < Code.Length;
         }
 
         private bool IsWhiteSpace(char c)
@@ -202,7 +205,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 case '^':
                     return CreateSingleCharToken(TokenType.Op_Pwr, fromLine, fromCol);
                 case '#':
-                    if (cursor == 0 && _code.Length > 1 && _code[1] == '!')
+                    if (cursor == 0 && Code.Length > 1 && Code[1] == '!')
                         return ReadHashBang(fromLine, fromCol);
 
                     return CreateSingleCharToken(TokenType.Op_Len, fromLine, fromCol);

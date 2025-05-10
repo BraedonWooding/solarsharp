@@ -428,6 +428,15 @@ namespace SolarSharp.Interpreter.Errors
 
         /// <summary>
         /// Creates a ScriptRuntimeException with a predefined error message specifying that
+        /// a module could not be found.
+        /// </summary>
+        public static ErrorException ModuleNotFound(string moduleName)
+        {
+            return new ErrorException("module '{0}' not found", moduleName);
+        }
+
+        /// <summary>
+        /// Creates a ScriptRuntimeException with a predefined error message specifying that
         /// a userdata of a specific CLR type was expected and a non-userdata type was passed.
         /// </summary>
         /// <param name="t">The Lua type.</param>

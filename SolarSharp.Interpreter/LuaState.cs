@@ -5,7 +5,6 @@ using System.Text;
 using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.CoreLib;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Diagnostics;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Platforms;
@@ -30,10 +29,10 @@ namespace SolarSharp.Interpreter
         /// </summary>
         public const string LUA_VERSION = "5.2";
 
-        private readonly Processor m_MainProcessor = null;
-        private readonly ByteCode m_ByteCode;
-        private readonly Table m_GlobalTable;
-        private readonly Table[] m_TypeMetatables = new Table[(int)LuaTypeExtensions.MaxMetaTypes];
+        private readonly Processor mainProcessor = null;
+        private readonly ByteCode byteCode;
+        private readonly Table globalTable;
+        private readonly Table[] typeMetatables = new Table[(int)LuaTypeExtensions.MaxMetaTypes];
 
         // TODO: Change stack size to something reasonable
         // this is 128kb which is actually pretty reasonable (but not per state...)
@@ -74,13 +73,14 @@ namespace SolarSharp.Interpreter
         public LuaState(CoreModules coreModules)
         {
             Options = new ScriptOptions(DefaultOptions);
-            PerformanceStats = new PerformanceStatistics();
             Registry = new Table(this);
 
-            m_ByteCode = new ByteCode(this);
-            m_MainProcessor = new Processor(this, m_GlobalTable, m_ByteCode);
-            m_GlobalTable = new Table(this).RegisterCoreModules(coreModules);
+            byteCode = new ByteCode(this);
+            mainProcessor = new Processor(this, globalTable, byteCode);
+            globalTable = new Table(this).RegisterCoreModules(coreModules);
         }
+
+        internal ByteCode ByteCode => byteCode;
 
         /// <summary>
         /// Gets or sets the script loader which will be used as the value of the
@@ -104,7 +104,7 @@ namespace SolarSharp.Interpreter
         /// </summary>
         public Table Globals
         {
-            get { return m_GlobalTable; }
+            get { return globalTable; }
         }
 
         /// <summary>
@@ -127,9 +127,9 @@ namespace SolarSharp.Interpreter
             }
 
             string chunkName = string.Format("{0}", codeFriendlyName ?? "?");
-            int address = Loader_Fast.LoadChunk(this, chunkName, m_ByteCode);
+            int address = Loader_Fast.LoadChunk(this, chunkName, byteCode);
 
-            return MakeClosure(address, globalTable ?? m_GlobalTable);
+            return MakeClosure(address, globalTable ?? this.globalTable);
         }
 
         /// <summary>
@@ -161,10 +161,10 @@ namespace SolarSharp.Interpreter
         public DynValue LoadFile(string filename, Table globalContext = null, string friendlyFilename = null)
         {
 #pragma warning disable 618
-            filename = Options.ScriptLoader.ResolveFileName(filename, globalContext ?? m_GlobalTable);
+            filename = Options.ScriptLoader.ResolveFileName(filename, globalContext ?? globalTable);
 #pragma warning restore 618
 
-            object code = Options.ScriptLoader.LoadFile(filename, globalContext ?? m_GlobalTable);
+            object code = Options.ScriptLoader.LoadFile(filename, globalContext ?? globalTable);
             switch (code)
             {
                 case string v: return LoadString(v, globalContext, friendlyFilename ?? filename);
@@ -304,7 +304,7 @@ namespace SolarSharp.Interpreter
         {
             if (function.Type != DataType.Function && function.Type != DataType.ClrFunction)
             {
-                DynValue metafunction = m_MainProcessor.GetMetamethod(function, "__call");
+                DynValue metafunction = mainProcessor.GetMetamethod(function, "__call");
 
                 if (metafunction.IsNotNil())
                 {
@@ -323,10 +323,10 @@ namespace SolarSharp.Interpreter
             }
             else if (function.Type == DataType.ClrFunction)
             {
-                return function.Callback.ClrCallback(new Execution.ScriptExecutionContext(m_MainProcessor, ), new CallbackArguments(args, false));
+                return function.Callback.ClrCallback(new Execution.ScriptExecutionContext(mainProcessor), new CallbackArguments(args, false));
             }
 
-            return m_MainProcessor.Call(function, args);
+            return mainProcessor.Call(function, args);
         }
 
         /// <summary>
@@ -382,7 +382,7 @@ namespace SolarSharp.Interpreter
         public DynValue CreateCoroutine(DynValue function)
         {
             if (function.Type == DataType.Function)
-                return m_MainProcessor.Coroutine_Create(function.Function);
+                return mainProcessor.Coroutine_Create(function.Function);
             else if (function.Type == DataType.ClrFunction)
                 return DynValue.NewCoroutine(new Coroutine(function.Callback));
             else
@@ -406,7 +406,7 @@ namespace SolarSharp.Interpreter
             if (coroutine.State != CoroutineState.Dead)
                 throw new InvalidOperationException("coroutine's state must be CoroutineState.Dead to recycle");
 
-            return coroutine.Recycle(m_MainProcessor, function.Function);
+            return coroutine.Recycle(mainProcessor, function.Function);
         }
 
         /// <summary>
@@ -423,17 +423,6 @@ namespace SolarSharp.Interpreter
         }
 
         /// <summary>
-        /// Gets the source code count.
-        /// </summary>
-        /// <value>
-        /// The source code count.
-        /// </value>
-        public int SourceCodeCount
-        {
-            get { return m_Sources.Count; }
-        }
-
-        /// <summary>
         /// Loads a module as per the "require" Lua function. http://www.lua.org/pil/8.1.html
         /// </summary>
         /// <param name="modname">The module name</param>
@@ -442,8 +431,8 @@ namespace SolarSharp.Interpreter
         /// <exception cref="ErrorException">Raised if module is not found</exception>
         public DynValue RequireModule(string modname, Table globalContext = null)
         {
-            Table globals = globalContext ?? m_GlobalTable;
-            string filename = Options.ScriptLoader.ResolveModuleName(modname, globals) ?? throw new ErrorException("module '{0}' not found", modname);
+            Table globals = globalContext ?? globalTable;
+            string filename = Options.ScriptLoader.ResolveModuleName(modname, globals) ?? throw ErrorException.ModuleNotFound(modname);
             DynValue func = LoadFile(filename, globalContext, filename);
             return func;
         }
@@ -457,8 +446,8 @@ namespace SolarSharp.Interpreter
         {
             int t = (int)type;
 
-            if (t >= 0 && t < m_TypeMetatables.Length)
-                return m_TypeMetatables[t];
+            if (t >= 0 && t < typeMetatables.Length)
+                return typeMetatables[t];
 
             return null;
         }
@@ -473,7 +462,7 @@ namespace SolarSharp.Interpreter
         {
             int t = (int)type;
 
-            m_TypeMetatables[t] = t >= 0 && t < m_TypeMetatables.Length
+            typeMetatables[t] = t >= 0 && t < typeMetatables.Length
                 ? metatable
                 : throw new ArgumentException("Specified type not supported : " + type.ToString());
         }

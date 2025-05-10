@@ -11,20 +11,19 @@ namespace SolarSharp.Interpreter.DataStructs
     /// <typeparam name="T"></typeparam>
     internal class FastStack<T>
     {
-        private readonly T[] m_Storage;
+        public readonly T[] Storage;
         private int m_HeadIdx = 0;
-        public T[] Storage => m_Storage;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FastStack(int maxCapacity)
         {
-            m_Storage = new T[maxCapacity];
+            Storage = new T[maxCapacity];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Push(T item)
         {
-            m_Storage[m_HeadIdx++] = item;
+            Storage[m_HeadIdx++] = item;
             return item;
         }
 
@@ -37,20 +36,20 @@ namespace SolarSharp.Interpreter.DataStructs
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Zero(int from, int to)
         {
-            Array.Clear(m_Storage, from, to - from + 1);
+            Array.Clear(Storage, from, to - from + 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Peek(int idxofs = 0)
         {
-            T item = m_Storage[m_HeadIdx - 1 - idxofs];
+            T item = Storage[m_HeadIdx - 1 - idxofs];
             return item;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(int idxofs, T item)
         {
-            m_Storage[m_HeadIdx - 1 - idxofs] = item;
+            Storage[m_HeadIdx - 1 - idxofs] = item;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -65,7 +64,7 @@ namespace SolarSharp.Interpreter.DataStructs
             if (cnt == 1)
             {
                 --m_HeadIdx;
-                m_Storage[m_HeadIdx] = default;
+                Storage[m_HeadIdx] = default;
             }
             else
             {
@@ -79,15 +78,15 @@ namespace SolarSharp.Interpreter.DataStructs
         public T Pop()
         {
             --m_HeadIdx;
-            T retval = m_Storage[m_HeadIdx];
-            m_Storage[m_HeadIdx] = default;
+            T retval = Storage[m_HeadIdx];
+            Storage[m_HeadIdx] = default;
             return retval;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ClearUsed()
         {
-            Array.Clear(m_Storage, 0, m_HeadIdx);
+            Array.Clear(Storage, 0, m_HeadIdx);
             m_HeadIdx = 0;
         }
 

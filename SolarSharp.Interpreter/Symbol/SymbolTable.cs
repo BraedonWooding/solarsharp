@@ -13,7 +13,7 @@ namespace SolarSharp.Interpreter.Debug
             // TODO: We should have an optional "lua compatibility mode" for errors (honestly as a compiler flag is *probably* okay
             //       but since this isn't a hot path I'm okay to do a check each time.  That won't output column numbers and will use
             //       the Lua version like `lua5.4: main.lua:5: HEY`
-            return $"solarsharp{LuaState.VERSION}: {Source.FileName}:{LineNumber}:{ColumnNumber}: {message}";
+            return $"solarsharp{LuaState.VERSION}: {Source.ChunkName}:{LineNumber}:{ColumnNumber}: {message}";
         }
     }
 
@@ -43,7 +43,8 @@ namespace SolarSharp.Interpreter.Debug
 
     internal class Source
     {
-        public string FileName { get; set; }
+        public string ChunkName { get; set; }
+        public string Contents { get; set; }
     }
 
     /// <summary>

@@ -1,43 +1,27 @@
-﻿using SolarSharp.Interpreter.Diagnostics;
+﻿using SolarSharp.Interpreter.Debug;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
-using SolarSharp.Interpreter.Execution.Scopes;
-using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Statements;
 
 namespace SolarSharp.Interpreter.Tree.Fast_Interface
 {
     internal static class Loader_Fast
     {
-        private static ScriptLoadingContext CreateLoadingContext(LuaState script, string source)
+        internal static int LoadChunk(LuaState script, Source source)
         {
-            return new ScriptLoadingContext(script)
-            {
-                Scope = new BuildTimeScope(),
-                Source = source,
-                Lexer = new Lexer.Lexer(source.SourceID, source.Code, true)
-            };
-        }
-
-        internal static int LoadChunk(LuaState script, string source, ByteCode bytecode)
-        {
-            ScriptLoadingContext lcontext = CreateLoadingContext(script, source);
+            ScriptLoadingContext lcontext = new ScriptLoadingContext(script, new(), source, new(source, autoSkipComments: true));
             try
             {
-                Statement stat;
-
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
-                    stat = new ChunkStatement(lcontext);
+                Statement statement = new ChunkStatement(lcontext);
 
                 int beginIp = -1;
 
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
-                using (bytecode.EnterSource(null))
+                using (script.ByteCode.EnterSource(null))
                 {
-                    bytecode.Emit_Nop(string.Format("Begin chunk {0}", source.Name));
-                    beginIp = bytecode.GetJumpPointForLastInstruction();
-                    stat.Compile(bytecode);
-                    bytecode.Emit_Nop(string.Format("End chunk {0}", source.Name));
+                    script.ByteCode.Emit_Nop(string.Format("Begin chunk {0}", source.Name));
+                    beginIp = script.ByteCode.GetJumpPointForLastInstruction();
+                    statement.Compile(script.ByteCode);
+                    script.ByteCode.Emit_Nop(string.Format("End chunk {0}", source.Name));
                 }
 
                 return beginIp;
