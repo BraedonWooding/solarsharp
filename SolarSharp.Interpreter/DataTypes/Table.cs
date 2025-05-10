@@ -611,7 +611,7 @@ namespace SolarSharp.Interpreter.DataTypes
 
             readonly object IEnumerator.Current => _current;
 
-            public void Dispose() { }
+            public readonly void Dispose() { }
 
             public bool MoveNext()
             {

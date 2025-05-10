@@ -8,7 +8,7 @@ namespace SolarSharp.Interpreter.Debug
         public int LineNumber;
         public int ColumnNumber;
 
-        public string FormatMessage(string message)
+        public readonly string FormatMessage(string message)
         {
             // TODO: We should have an optional "lua compatibility mode" for errors (honestly as a compiler flag is *probably* okay
             //       but since this isn't a hot path I'm okay to do a check each time.  That won't output column numbers and will use

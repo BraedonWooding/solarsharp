@@ -3,6 +3,7 @@ using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Interop.Converters;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -12,37 +13,33 @@ using System.Text;
 namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
-    /// A class representing a value in a Lua/SolarSharp script.
+    /// A class representing a value in a Lua/SolarSharp script.  This is the core type and is implemented very efficiently.
+    /// 
+    /// It's size is just 24 bytes now but we'll be able to compress it down to at-least 16 in future which is very reasonable.
     /// </summary>
     [StructLayout(LayoutKind.Explicit)]
-    public struct DynValue
+    public readonly struct DynValue
     {
-        private static int s_RefIDCounter = 0;
-
-        /// <summary>
-        /// Gets a unique reference identifier. This is guaranteed to be unique only for dynvalues created in a single thread as it's not thread-safe.
-        /// 
-        /// Has to be reimplemented later I think, I think this is a bad implementation TODO:
-        /// </summary>
-        public int ReferenceID { get { return s_RefIDCounter++; } }
-
         /// <summary>
         /// Bools are 0/1
         /// </summary>
         [FieldOffset(0)]
-        public bool Boolean;
+        [MaybeNull]
+        public readonly bool Boolean;
 
         /// <summary>
         /// Numbers are all doubles (since we are Lua 5.2)
         /// </summary>
         [FieldOffset(0)]
-        public double Number;
+        [MaybeNull]
+        public readonly double Number;
 
         /// <summary>
         /// Used for copying
         /// </summary>
         [FieldOffset(8)]
-        private object Object;
+        [MaybeNull]
+        public readonly object Object;
 
         /// <summary>
         /// Is just a "ptr" or object reference.
@@ -50,19 +47,22 @@ namespace SolarSharp.Interpreter.DataTypes
         /// I may change this to dynamic just to allow for easier function calls.
         /// </summary>
         [FieldOffset(8)]
-        public object LightUserData;
+        [MaybeNull]
+        public readonly object LightUserData;
 
         /// <summary>
         /// Avoid the cast to string by having a direct ref to it.
         /// </summary>
         [FieldOffset(8)]
-        public string String;
+        [MaybeNull]
+        public readonly string String;
 
         /// <summary>
         /// Standard lua table
         /// </summary>
         [FieldOffset(8)]
-        public Table Table;
+        [MaybeNull]
+        public readonly Table Table;
 
         /// <summary>
         /// A lua function!  This doesn't cover a CLR function
@@ -70,99 +70,134 @@ namespace SolarSharp.Interpreter.DataTypes
         /// just for more performant calls.
         /// </summary>
         [FieldOffset(8)]
-        public Closure Function;
+        [MaybeNull]
+        public readonly Closure Function;
 
         /// <summary>
         /// User data.
         /// </summary>
         [FieldOffset(8)]
-        public UserData UserData;
+        [MaybeNull]
+        public readonly UserData UserData;
 
         /// <summary>
         /// A coroutine
         /// </summary>
         [FieldOffset(8)]
-        public Coroutine Coroutine;
+        [MaybeNull]
+        public readonly Coroutine Coroutine;
 
         [FieldOffset(8)]
-        public YieldRequest YieldRequest;
+        [MaybeNull]
+        public readonly YieldRequest YieldRequest;
 
         [FieldOffset(8)]
-        public TailCallData TailCallData;
+        [MaybeNull]
+        public readonly TailCallData TailCallData;
 
         [FieldOffset(8)]
-        public DynValue[] Tuple;
+        [MaybeNull]
+        public readonly DynValue[] Tuple;
 
         [FieldOffset(8)]
-        public CallbackFunction Callback;
+        [MaybeNull]
+        public readonly CallbackFunction Callback;
 
         /// <summary>
         /// The type of lua value
         /// 
-        /// In future I'm planning on using a NaN tagged value (potentially) to get better performance
+        /// In future I'm planning on using a NaN tagged value (potentially) to get better performance but for now
+        /// I'm keeping this as an other 8 byte object, this makes the total size 24 bytes.
         /// </summary>
         [FieldOffset(16)]
-        public DataType Type;
+        public readonly DataType Type;
+
+        public DynValue(bool value) : this()
+        {
+            Boolean = value;
+            Type = DataType.Boolean;
+        }
+
+        public DynValue(double value) : this()
+        {
+            Number = value;
+            Type = DataType.Number;
+        }
+
+        public DynValue(string value) : this()
+        {
+            String = value;
+            Type = DataType.String;
+        }
+
+        public DynValue(object value) : this()
+        {
+            Object = value;
+            Type = DataType.UserData;
+        }
+
+        public DynValue(Closure value) : this()
+        {
+            Function = value;
+            Type = DataType.Function;
+        }
+
+        public DynValue(Table value) : this()
+        {
+            Table = value;
+            Type = DataType.Table;
+        }
+
+        public DynValue(Coroutine value) : this()
+        {
+            Coroutine = value;
+            Type = DataType.Thread;
+        }
+
+        public DynValue(CallbackFunction value) : this()
+        {
+            Callback = value;
+            Type = DataType.ClrFunction;
+        }
+
+        public DynValue(UserData value) : this()
+        {
+            UserData = value;
+            Type = DataType.UserData;
+        }
+
+        public DynValue(YieldRequest value) : this()
+        {
+            YieldRequest = value;
+            Type = DataType.YieldRequest;
+        }
+
+        public DynValue(TailCallData value) : this()
+        {
+            TailCallData = value;
+            Type = DataType.TailCallRequest;
+        }
+
+        public DynValue(DynValue[] value) : this()
+        {
+            Tuple = value;
+            Type = DataType.Tuple;
+        }
 
         /// <summary>
         /// Creates a new writable value initialized to the specified boolean.
         /// </summary>
-        public static DynValue NewBoolean(bool v)
-        {
-            return new DynValue()
-            {
-                Number = v ? 1 : 0,
-                Type = DataType.Boolean,
-            };
-        }
+        public static DynValue NewBoolean(bool v) => new(v);
 
         /// <summary>
         /// Creates a new writable value initialized to the specified number.
         /// </summary>
-        public static DynValue NewNumber(double num)
-        {
-            return new DynValue()
-            {
-                Number = num,
-                Type = DataType.Number,
-            };
-        }
+        public static DynValue NewNumber(double num) => new(num);
 
         /// <summary>
         /// Creates a new writable value initialized to the specified string.
         /// </summary>
-        public static DynValue NewString(string str)
-        {
-            return new DynValue()
-            {
-                String = str,
-                Type = DataType.String,
-            };
-        }
-
-        /// <summary>
-        /// Creates a new writable value initialized to the specified StringBuilder.
-        /// </summary>
-        public static DynValue NewString(StringBuilder sb)
-        {
-            return new DynValue()
-            {
-                String = sb.ToString(),
-                Type = DataType.String,
-            };
-        }
-
-        /// <summary>
-        /// Creates a new writable value initialized to the specified string using String.Format like syntax
-        /// </summary>
-        public static DynValue NewString(string format, params object[] args)
-        {
-            return new DynValue()
-            {
-                String = string.Format(format, args),
-                Type = DataType.String,
-            };
-        }
+        public static DynValue NewString(string str) => new(str);
 
         /// <summary>
         /// Creates a new writable value initialized to the specified coroutine.
@@ -170,89 +205,38 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <param name="coroutine">The coroutine object.</param>
         /// <returns></returns>
-        public static DynValue NewCoroutine(Coroutine coroutine)
-        {
-            return new DynValue()
-            {
-                Coroutine = coroutine,
-                Type = DataType.Thread
-            };
-        }
+        public static DynValue NewCoroutine(Coroutine coroutine) => new(coroutine);
 
         /// <summary>
         /// Creates a new writable value initialized to the specified closure (function).
         /// </summary>
-        public static DynValue NewClosure(Closure function)
-        {
-            return new DynValue()
-            {
-                Function = function,
-                Type = DataType.Function,
-            };
-        }
+        public static DynValue NewClosure(Closure function) => new(function);
 
         /// <summary>
         /// Creates a new writable value initialized to the specified CLR callback.
         /// </summary>
-        public static DynValue NewCallback(Func<ScriptExecutionContext, CallbackArguments, DynValue> callBack, string name = null)
-        {
-            return new DynValue()
-            {
-                Callback = new CallbackFunction(callBack, name),
-                Type = DataType.ClrFunction,
-            };
-        }
+        public static DynValue NewCallback(Func<ScriptExecutionContext, CallbackArguments, DynValue> callBack, string name = null) => NewCallback(new(callBack, name));
 
         /// <summary>
         /// Creates a new writable value initialized to the specified CLR callback.
         /// See also CallbackFunction.FromDelegate and CallbackFunction.FromMethodInfo factory methods.
         /// </summary>
-        public static DynValue NewCallback(CallbackFunction function)
-        {
-            return new DynValue()
-            {
-                Callback = function,
-                Type = DataType.ClrFunction,
-            };
-        }
+        public static DynValue NewCallback(CallbackFunction function) => new(function);
 
         /// <summary>
         /// Creates a new writable value initialized to the specified table.
         /// </summary>
-        public static DynValue NewTable(Table table)
-        {
-            return new DynValue()
-            {
-                Table = table,
-                Type = DataType.Table,
-            };
-        }
-
-        /// <summary>
-        /// Creates a new writable value initialized to an empty prime table (a 
-        /// prime table is a table made only of numbers, strings, booleans and other
-        /// prime tables).
-        /// </summary>
-        public static DynValue NewPrimeTable()
-        {
-            return NewTable(new Table(null));
-        }
+        public static DynValue NewTable(Table table) => new(table);
 
         /// <summary>
         /// Creates a new writable value initialized to an empty table.
         /// </summary>
-        public static DynValue NewTable(LuaState script, int arraySizeHint = 0, int associativeSizeHint = 0)
-        {
-            return NewTable(new Table(script, arraySizeHint, associativeSizeHint));
-        }
+        public static DynValue NewTable(LuaState script, int arraySizeHint = 0, int associativeSizeHint = 0) => NewTable(new Table(script, arraySizeHint, associativeSizeHint));
 
         /// <summary>
         /// Creates a new writable value initialized to with array contents.
         /// </summary>
-        public static DynValue NewTable(LuaState script, params DynValue[] arrayValues)
-        {
-            return NewTable(new Table(script, arrayValues));
-        }
+        public static DynValue NewTable(LuaState script, params DynValue[] arrayValues) => NewTable(new Table(script, arrayValues));
 
         /// <summary>
         /// Creates a new request for a tail call. This is the preferred way to execute Lua/SolarSharp code from a callback,
@@ -264,18 +248,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="tailFn">The function to be called.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        public static DynValue NewTailCallReq(DynValue tailFn, params DynValue[] args)
-        {
-            return new DynValue()
-            {
-                Object = new TailCallData()
-                {
-                    Args = args,
-                    Function = tailFn,
-                },
-                Type = DataType.TailCallRequest,
-            };
-        }
+        public static DynValue NewTailCallReq(DynValue tailFn, params DynValue[] args) => NewTailCallReq(new TailCallData { Args = args, Function = tailFn });
 
         /// <summary>
         /// Creates a new request for a tail call. This is the preferred way to execute Lua/SolarSharp code from a callback,
@@ -286,45 +259,34 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <param name="tailCallData">The data for the tail call.</param>
         /// <returns></returns>
-        public static DynValue NewTailCallReq(TailCallData tailCallData)
-        {
-            return new DynValue()
-            {
-                Object = tailCallData,
-                Type = DataType.TailCallRequest,
-            };
-        }
+        public static DynValue NewTailCallReq(TailCallData tailCallData) => new(tailCallData);
 
         /// <summary>
         /// Creates a new request for a yield of the current coroutine.
         /// </summary>
         /// <param name="args">The yield argumenst.</param>
         /// <returns></returns>
-        public static DynValue NewYieldReq(DynValue[] args)
-        {
-            return new DynValue()
-            {
-                Object = new YieldRequest() { ReturnValues = args },
-                Type = DataType.YieldRequest,
-            };
-        }
+        public static DynValue NewYieldReq(DynValue[] args) => NewYieldReq(new YieldRequest() { ReturnValues = args });
+
+        /// <summary>
+        /// Creates a new request for a yield of the current coroutine.
+        /// </summary>
+        public static DynValue NewYieldReq(YieldRequest req) => new(req);
 
         /// <summary>
         /// Creates a new tuple initialized to the specified values.
         /// </summary>
         public static DynValue NewTuple(params DynValue[] values)
         {
-            if (values.Length == 0)
-                return Nil;
+            // TODO: Long term I think this should be removed
+            //       happy to have an efficient internal array structure
+            //       but I don't think tuple makes much sense, it's very
+            //       much not a lua thing and so this is a bit of a hack.
 
-            if (values.Length == 1)
-                return values[0];
+            if (values.Length == 0) return Nil;
+            if (values.Length == 1) return values[0];
 
-            return new DynValue()
-            {
-                Object = values,
-                Type = DataType.Tuple,
-            };
+            return new(values);
         }
 
         /// <summary>
@@ -332,6 +294,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public static DynValue NewTupleNested(params DynValue[] values)
         {
+            // This is even more so of a hack.
             if (!values.Any(v => v.Type == DataType.Tuple))
                 return NewTuple(values);
 
@@ -348,60 +311,45 @@ namespace SolarSharp.Interpreter.DataTypes
                     vals.Add(v);
             }
 
-            return new DynValue()
-            {
-                Object = vals.ToArray(),
-                Type = DataType.Tuple,
-            };
+            return new(vals.ToArray());
         }
-
 
         /// <summary>
         /// Creates a new userdata value
         /// </summary>
-        public static DynValue NewUserData(UserData userData)
-        {
-            return new DynValue()
-            {
-                Object = userData,
-                Type = DataType.UserData,
-            };
-        }
+        public static DynValue NewUserData(UserData userData) => new(userData);
+
+        // Preinitialized instances are functionally not that much more efficient
+        // than just creating a new one (given dynvalues are structs now)
+        // but they are cleaner to reference, and might be more efficient in some
+        // cases of worse compiler optimizations.
 
         /// <summary>
         /// A preinitialized, instance, equaling Nil
         /// </summary>
-        public static DynValue Nil { get; private set; }
+        public readonly static DynValue Nil = new();
         /// <summary>
         /// A preinitialized, instance, equaling True
         /// </summary>
-        public static DynValue True { get; private set; }
+        public readonly static DynValue True = new(true);
         /// <summary>
         /// A preinitialized, instance, equaling False
         /// </summary>
-        public static DynValue False { get; private set; }
-
-        static DynValue()
-        {
-            Nil = new DynValue() { Type = DataType.Nil };
-            True = NewBoolean(true);
-            False = NewBoolean(false);
-        }
+        public readonly static DynValue False = new(false);
 
         /// <summary>
         /// Returns a string which is what it's expected to be output by the print function applied to this value.
         /// </summary>
         public string ToPrintString()
         {
-            if (Object != null && Object is RefIdObject)
+            if (Object != null && Object is RefIdObject ref_id)
             {
-                RefIdObject refid = (RefIdObject)Object;
+                RefIdObject refid = ref_id;
 
                 string typeString = Type.ToLuaTypeString();
 
-                if (Object is UserData)
+                if (Object is UserData ud)
                 {
-                    UserData ud = (UserData)Object;
                     string str = ud.Descriptor.AsString(ud.Object);
                     if (str != null)
                         return str;
@@ -410,19 +358,14 @@ namespace SolarSharp.Interpreter.DataTypes
                 return refid.FormatTypeString(typeString);
             }
 
-            switch (Type)
+            return Type switch
             {
-                case DataType.String:
-                    return String;
-                case DataType.Tuple:
-                    return string.Join("\t", Tuple.Select(t => t.ToPrintString()).ToArray());
-                case DataType.TailCallRequest:
-                    return "(TailCallRequest -- INTERNAL!)";
-                case DataType.YieldRequest:
-                    return "(YieldRequest -- INTERNAL!)";
-                default:
-                    return ToString();
-            }
+                DataType.String => String,
+                DataType.Tuple => string.Join("\t", Tuple.Select(t => t.ToPrintString()).ToArray()),
+                DataType.TailCallRequest => "(TailCallRequest -- INTERNAL!)",
+                DataType.YieldRequest => "(YieldRequest -- INTERNAL!)",
+                _ => ToString(),
+            };
         }
 
         /// <summary>
@@ -517,7 +460,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns>
         ///   <c>true</c> if the specified <see cref="object" /> is equal to this instance; otherwise, <c>false</c>.
         /// </returns>
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             if (obj is not DynValue other)
             {
@@ -643,7 +586,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Converts a tuple to a scalar value. If it's already a scalar value, this function returns "this".
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public DynValue ToScalar()
+        public readonly DynValue ToScalar()
         {
             if (Type != DataType.Tuple)
                 return this;
@@ -674,7 +617,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Determines whether this instance is nil or void
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsNil()
+        public readonly bool IsNil()
         {
             return Type == DataType.Nil;
         }
@@ -683,7 +626,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Determines whether this instance is not nil or void
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsNotNil()
+        public readonly bool IsNotNil()
         {
             return Type != DataType.Nil;
         }
@@ -692,7 +635,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Determines whether is nil, void or NaN (and thus unsuitable for using as a table key).
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsNilOrNan()
+        public readonly bool IsNilOrNan()
         {
             return Type == DataType.Nil || Type == DataType.Number && double.IsNaN(Number);
         }
@@ -723,7 +666,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Converts this SolarSharp DynValue to a CLR object.
         /// </summary>
-        public object ToObject()
+        public readonly object ToObject()
         {
             return ScriptToClrConversions.DynValueToObject(this);
         }
@@ -731,7 +674,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Converts this SolarSharp DynValue to a CLR object of the specified type.
         /// </summary>
-        public object ToObject(Type desiredType)
+        public readonly object ToObject(Type desiredType)
         {
             //Contract.Requires(desiredType != null);
             return ScriptToClrConversions.DynValueToObjectOfType(this, desiredType, null, false);
@@ -754,7 +697,7 @@ namespace SolarSharp.Interpreter.DataTypes
 		/// <summary>
 		/// Converts this SolarSharp DynValue to a CLR object, marked as dynamic
 		/// </summary>
-		public dynamic ToDynamic()
+		public readonly dynamic ToDynamic()
 		{
 			return ScriptToClrConversions.DynValueToObject(this);
 		}

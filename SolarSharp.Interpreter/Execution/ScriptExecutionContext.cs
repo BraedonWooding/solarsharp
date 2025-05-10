@@ -26,7 +26,7 @@ namespace SolarSharp.Interpreter.Execution
         /// </summary>
         /// <param name="value">The value.</param>
         /// <returns></returns>
-        public Table GetMetatable(DynValue value)
+        public readonly Table GetMetatable(DynValue value)
         {
             return m_Processor.GetMetatable(value);
         }
@@ -37,7 +37,7 @@ namespace SolarSharp.Interpreter.Execution
         /// <param name="value">The value.</param>
         /// <param name="metamethod">The metamethod name.</param>
         /// <returns></returns>
-        public DynValue GetMetamethod(DynValue value, string metamethod)
+        public readonly DynValue GetMetamethod(DynValue value, string metamethod)
         {
             return m_Processor.GetMetamethod(value, metamethod);
         }
@@ -55,7 +55,7 @@ namespace SolarSharp.Interpreter.Execution
         /// <summary>
         /// Gets the metamethod to be used for a binary operation using op1 and op2.
         /// </summary>
-        public DynValue GetBinaryMetamethod(DynValue op1, DynValue op2, string eventName)
+        public readonly DynValue GetBinaryMetamethod(DynValue op1, DynValue op2, string eventName)
         {
             return m_Processor.GetBinaryMetamethod(op1, op2, eventName);
         }
@@ -64,7 +64,7 @@ namespace SolarSharp.Interpreter.Execution
         /// Gets the script object associated with this request
         /// </summary>
         /// <returns></returns>
-        public LuaState GetScript()
+        public readonly LuaState GetScript()
         {
             return m_Processor.GetScript();
         }
@@ -72,7 +72,7 @@ namespace SolarSharp.Interpreter.Execution
         /// <summary>
         /// Gets the coroutine which is performing the call
         /// </summary>
-        public Coroutine GetCallingCoroutine()
+        public readonly Coroutine GetCallingCoroutine()
         {
             return m_Processor.AssociatedCoroutine;
         }
@@ -88,7 +88,7 @@ namespace SolarSharp.Interpreter.Execution
         /// <param name="functionName">Name of the function - for error messages.</param>
         /// <param name="callback">The callback.</param>
         /// <returns></returns>
-        public DynValue EmulateClassicCall(CallbackArguments args, string functionName, Func<Interop.LuaStateInterop.LuaState, int> callback)
+        public readonly DynValue EmulateClassicCall(CallbackArguments args, string functionName, Func<Interop.LuaStateInterop.LuaState, int> callback)
         {
             Interop.LuaStateInterop.LuaState L = new(this, args, functionName);
             int retvals = callback(L);
@@ -166,7 +166,7 @@ namespace SolarSharp.Interpreter.Execution
         /// <summary>
         /// Tries to get the reference of a symbol in the current execution state
         /// </summary>
-        public DynValue EvaluateSymbol(SymbolRef symref)
+        public readonly DynValue EvaluateSymbol(SymbolRef symref)
         {
             if (symref == null)
                 return DynValue.Nil;
@@ -185,7 +185,7 @@ namespace SolarSharp.Interpreter.Execution
         /// <summary>
         /// Finds a symbol by name in the current execution state
         /// </summary>
-        public SymbolRef FindSymbolByName(string symbol)
+        public readonly SymbolRef FindSymbolByName(string symbol)
         {
             return m_Processor.FindSymbolByName(symbol);
         }
@@ -210,7 +210,7 @@ namespace SolarSharp.Interpreter.Execution
         /// </summary>
         /// <param name="messageHandler">The message handler.</param>
         /// <param name="exception">The exception.</param>
-        public void PerformMessageDecorationBeforeUnwind(DynValue messageHandler, ErrorException exception)
+        public readonly void PerformMessageDecorationBeforeUnwind(DynValue messageHandler, ErrorException exception)
         {
             // TODO:
             //exception.DecoratedMessage = messageHandler.IsNotNil()

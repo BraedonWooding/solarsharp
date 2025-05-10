@@ -15,14 +15,15 @@ using SolarSharp.Interpreter.DataStructs;
 namespace SolarSharp.Interpreter
 {
     /// <summary>
-    /// This holds 
+    /// This is the core type that you construct to run Lua code.
     /// </summary>
     public class LuaState
     {
         /// <summary>
         /// The version of the SolarSharp engine
         /// </summary>
-        public const string VERSION = "2.0.0.0";
+        /// <remarks>I've chosen 3.0 here since Moonsharp was on 2.0 and I feel like this is a big jump.</remarks>
+        public const string VERSION = "3.0.0.0";
 
         /// <summary>
         /// The Lua version being supported
@@ -36,6 +37,7 @@ namespace SolarSharp.Interpreter
 
         // TODO: Change stack size to something reasonable
         // this is 128kb which is actually pretty reasonable (but not per state...)
+        // TODO: Make this configurable
         private const int STACK_SIZE = 131072;
         private readonly FastStack<DynValue> _stack;
         private readonly FastStack<CallInfo> _callInfo;
@@ -95,11 +97,6 @@ namespace SolarSharp.Interpreter
         /// Gets the global options, that is options which cannot be customized per-script.
         /// </summary>
         public static ScriptGlobalOptions GlobalOptions { get; private set; }
-
-        /// <summary>
-        /// Gets access to performance statistics.
-        /// </summary>
-        public PerformanceStatistics PerformanceStats { get; private set; }
 
         /// <summary>
         /// Gets the default global table for this script. Unless a different table is intentionally passed (or setfenv has been used)

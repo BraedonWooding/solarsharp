@@ -1498,9 +1498,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 return false;
             }
 
-            public KeyValuePair<TKey, TValue> Current => _current;
+            public readonly KeyValuePair<TKey, TValue> Current => _current;
 
-            public void Dispose() { }
+            public readonly void Dispose() { }
 
             object IEnumerator.Current
             {
@@ -1709,7 +1709,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     _currentKey = currentKey;
                 }
 
-                public void Dispose() { }
+                public readonly void Dispose() { }
 
                 public bool MoveNext()
                 {
@@ -1736,7 +1736,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
                 public readonly TKey Current => _currentKey!;
 
-                object? IEnumerator.Current
+                readonly object? IEnumerator.Current
                 {
                     get
                     {
@@ -1899,7 +1899,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     _currentValue = currentValue;
                 }
 
-                public void Dispose() { }
+                public readonly void Dispose() { }
 
                 public bool MoveNext()
                 {
@@ -1923,9 +1923,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     return false;
                 }
 
-                public TValue Current => _currentValue!;
+                public readonly TValue Current => _currentValue!;
 
-                object IEnumerator.Current
+                readonly object IEnumerator.Current
                 {
                     get
                     {

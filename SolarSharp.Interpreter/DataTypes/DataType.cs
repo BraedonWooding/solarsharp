@@ -72,11 +72,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// A nil value, as in Lua
         /// </summary>
-        Nil,
-        /// <summary>
-        /// A place holder for no value
-        /// </summary>
-        Void,
+        Nil = 0,
         /// <summary>
         /// A Lua boolean
         /// </summary>
@@ -190,7 +186,7 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return type switch
             {
-                DataType.Nil or DataType.Nil => "nil",
+                DataType.Nil => "nil",
                 DataType.Boolean => "boolean",
                 DataType.Number => "number",
                 DataType.String => "string",
