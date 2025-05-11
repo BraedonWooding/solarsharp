@@ -126,8 +126,8 @@ namespace SolarSharp.Interpreter
                 return LoadStream(ms, globalTable, codeFriendlyName);
             }
 
-            string chunkName = string.Format("{0}", codeFriendlyName ?? "?");
-            int address = Loader_Fast.LoadChunk(this, chunkName, byteCode);
+            string chunkName = codeFriendlyName ?? "?";
+            int address = Loader_Fast.LoadChunk(this, new(chunkName, code));
 
             return MakeClosure(address, globalTable ?? this.globalTable);
         }

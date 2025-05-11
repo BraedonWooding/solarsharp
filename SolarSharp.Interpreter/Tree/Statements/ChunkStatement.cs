@@ -29,7 +29,6 @@ namespace SolarSharp.Interpreter.Tree.Statements
             m_StackFrame = lcontext.Scope.PopFunction();
         }
 
-
         public override void Compile(ByteCode bc)
         {
             Instruction meta = bc.Emit_Meta("<chunk-root>", OpCodeMetadataType.ChunkEntrypoint);

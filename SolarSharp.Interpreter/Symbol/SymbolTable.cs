@@ -43,6 +43,12 @@ namespace SolarSharp.Interpreter.Debug
 
     internal class Source
     {
+        public Source(string chunkName, string contents)
+        {
+            ChunkName = chunkName;
+            Contents = contents;
+        }
+
         public string ChunkName { get; set; }
         public string Contents { get; set; }
     }

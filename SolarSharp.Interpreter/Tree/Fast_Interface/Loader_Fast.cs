@@ -9,7 +9,7 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
     {
         internal static int LoadChunk(LuaState script, Source source)
         {
-            ScriptLoadingContext lcontext = new ScriptLoadingContext(script, new(), source, new(source, autoSkipComments: true));
+            ScriptLoadingContext lcontext = new(script, new(), source, new(source, autoSkipComments: true));
             try
             {
                 Statement statement = new ChunkStatement(lcontext);
