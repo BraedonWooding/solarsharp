@@ -1,5 +1,5 @@
+﻿using SolarSharp.Interpreter.Security;
 ﻿using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
@@ -40,7 +40,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return s;
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -82,7 +82,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return s;
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {

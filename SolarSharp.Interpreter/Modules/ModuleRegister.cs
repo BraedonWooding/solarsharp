@@ -15,6 +15,25 @@ namespace SolarSharp.Interpreter.Modules
     public static class ModuleRegister
     {
         /// <summary>
+        /// Register the core modules to a table without filtering
+        /// </summary>
+        /// <param name="table">The table.</param>
+        /// <param name="modules">The modules.</param>
+        /// <param name="skipFiltering">If true, skip platform filtering</param>
+        /// <returns></returns>
+        public static Table RegisterCoreModules(this Table table, CoreModules modules, bool skipFiltering)
+        {
+            if (!skipFiltering)
+            {
+                // Use the table's owner script's platform accessor if available, otherwise fall back to global
+                var platform = table.OwnerScript?.Platform ?? Script.GlobalOptions.Platform;
+                modules = platform.FilterSupportedCoreModules(modules);
+            }
+
+            return RegisterCoreModulesInternal(table, modules);
+        }
+
+        /// <summary>
         /// Register the core modules to a table
         /// </summary>
         /// <param name="table">The table.</param>
@@ -22,8 +41,14 @@ namespace SolarSharp.Interpreter.Modules
         /// <returns></returns>
         public static Table RegisterCoreModules(this Table table, CoreModules modules)
         {
-            modules = Script.GlobalOptions.Platform.FilterSupportedCoreModules(modules);
+            // Use the table's owner script's platform accessor if available, otherwise fall back to global
+            var platform = table.OwnerScript?.Platform ?? Script.GlobalOptions.Platform;
+            modules = platform.FilterSupportedCoreModules(modules);
+            return RegisterCoreModulesInternal(table, modules);
+        }
 
+        private static Table RegisterCoreModulesInternal(Table table, CoreModules modules)
+        {
             if (modules.Has(CoreModules.GlobalConsts)) table.RegisterConstants();
             if (modules.Has(CoreModules.TableIterators)) table.RegisterModuleType<TableIteratorsModule>();
             if (modules.Has(CoreModules.Basic)) table.RegisterModuleType<BasicModule>();
@@ -64,8 +89,10 @@ namespace SolarSharp.Interpreter.Modules
 
             m.Set("version", DynValue.NewString(Script.VERSION));
             m.Set("luacompat", DynValue.NewString(Script.LUA_VERSION));
-            m.Set("platform", DynValue.NewString(Script.GlobalOptions.Platform.GetPlatformName()));
-            m.Set("is_aot", DynValue.NewBoolean(Script.GlobalOptions.Platform.IsRunningOnAOT()));
+            // Use the table's owner script's platform accessor if available, otherwise fall back to global
+            var platform = table.OwnerScript?.Platform ?? Script.GlobalOptions.Platform;
+            m.Set("platform", DynValue.NewString(platform.GetPlatformName()));
+            m.Set("is_aot", DynValue.NewBoolean(platform.IsRunningOnAOT()));
             m.Set("is_unity", DynValue.NewBoolean(PlatformAutoDetector.IsRunningOnUnity));
             m.Set("is_mono", DynValue.NewBoolean(PlatformAutoDetector.IsRunningOnMono));
             m.Set("is_clr4", DynValue.NewBoolean(PlatformAutoDetector.IsRunningOnClr4));

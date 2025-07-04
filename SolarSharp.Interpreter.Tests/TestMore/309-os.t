@@ -57,7 +57,7 @@ like(os.date('%H:%M:%S'), '^%d%d:%d%d:%d%d', "function date")
 if jit and jit.version_num < 20100 then
     todo("LuaJIT TODO. invalid strftime.", 1)
 end
-is(os.date('%Oy', 0), '70')
+is(os.date('!%Oy', 0), '70')
 if jit then
     todo("LuaJIT TODO. invalid strftime.", 1)
 end

@@ -99,7 +99,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 DynValue source = args.AsType(1, "load", DataType.String, true);
                 DynValue env = args.AsType(3, "load", DataType.Table, true);
 
-                DynValue fn = S.LoadString(script,
+                DynValue fn = S.LoadStringInternal(script,
                     !env.IsNil() ? env.Table : defaultEnv,
                     !source.IsNil() ? source.String : "=(load)");
 

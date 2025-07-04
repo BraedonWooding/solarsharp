@@ -14,7 +14,7 @@ namespace SolarSharp.Interpreter.CoreLib
     public class OsSystemModule
     {
         [MoonSharpModuleMethod]
-        public static DynValue execute(ScriptExecutionContext _, CallbackArguments args)
+        public static DynValue execute(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue v = args.AsType(0, "execute", DataType.String, true);
 
@@ -26,7 +26,7 @@ namespace SolarSharp.Interpreter.CoreLib
             {
                 try
                 {
-                    int exitCode = Script.GlobalOptions.Platform.OS_Execute(v.String);
+                    int exitCode = executionContext.GetScript().Platform.OS_Execute(v.String);
 
                     return DynValue.NewTuple(
                         DynValue.Nil,
@@ -42,7 +42,7 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue exit(ScriptExecutionContext _, CallbackArguments args)
+        public static DynValue exit(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue v_exitCode = args.AsType(0, "exit", DataType.Number, true);
             int exitCode = 0;
@@ -50,17 +50,17 @@ namespace SolarSharp.Interpreter.CoreLib
             if (v_exitCode.IsNotNil())
                 exitCode = (int)v_exitCode.Number;
 
-            Script.GlobalOptions.Platform.OS_ExitFast(exitCode);
+            executionContext.GetScript().Platform.OS_ExitFast(exitCode);
 
             throw new InvalidOperationException("Unreachable code.. reached.");
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue getenv(ScriptExecutionContext _, CallbackArguments args)
+        public static DynValue getenv(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue varName = args.AsType(0, "getenv", DataType.String, false);
 
-            string val = Script.GlobalOptions.Platform.GetEnvironmentVariable(varName.String);
+            string val = executionContext.GetScript().Platform.GetEnvironmentVariable(varName.String);
 
             if (val == null)
                 return DynValue.Nil;
@@ -69,15 +69,15 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue remove(ScriptExecutionContext _, CallbackArguments args)
+        public static DynValue remove(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             string fileName = args.AsType(0, "remove", DataType.String, false).String;
 
             try
             {
-                if (Script.GlobalOptions.Platform.OS_FileExists(fileName))
+                if (executionContext.GetScript().Platform.OS_FileExists(fileName))
                 {
-                    Script.GlobalOptions.Platform.OS_FileDelete(fileName);
+                    executionContext.GetScript().Platform.OS_FileDelete(fileName);
                     return DynValue.True;
                 }
                 else
@@ -95,21 +95,21 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue rename(ScriptExecutionContext _, CallbackArguments args)
+        public static DynValue rename(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             string fileNameOld = args.AsType(0, "rename", DataType.String, false).String;
             string fileNameNew = args.AsType(1, "rename", DataType.String, false).String;
 
             try
             {
-                if (!Script.GlobalOptions.Platform.OS_FileExists(fileNameOld))
+                if (!executionContext.GetScript().Platform.OS_FileExists(fileNameOld))
                 {
                     return DynValue.NewTuple(DynValue.Nil,
                         DynValue.NewString("{0}: No such file or directory.", fileNameOld),
                         DynValue.NewNumber(-1));
                 }
 
-                Script.GlobalOptions.Platform.OS_FileMove(fileNameOld, fileNameNew);
+                executionContext.GetScript().Platform.OS_FileMove(fileNameOld, fileNameNew);
                 return DynValue.True;
             }
             catch (Exception ex)
@@ -119,16 +119,16 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue setlocale(ScriptExecutionContext _, CallbackArguments _args)
+        public static DynValue setlocale(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             // TODO:
             return DynValue.NewString("n/a");
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue tmpname(ScriptExecutionContext _, CallbackArguments _args)
+        public static DynValue tmpname(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            return DynValue.NewString(Script.GlobalOptions.Platform.IO_OS_GetTempFilename());
+            return DynValue.NewString(executionContext.GetScript().Platform.IO_OS_GetTempFilename());
         }
     }
 }

@@ -11,6 +11,7 @@ namespace SolarSharp.Interpreter.Execution.VM
     internal sealed partial class Processor
     {
         private const int STACK_SIZE = 131072;
+        private const int RESOURCE_CHECK_INTERVAL = 1000; // Check resources every 1000 instructions
         private readonly ByteCode m_RootChunk;
         private readonly FastStack<DynValue> m_ValueStack;
         private readonly FastStack<CallStackItem> m_ExecutionStack;
@@ -22,6 +23,8 @@ namespace SolarSharp.Interpreter.Execution.VM
         private bool m_CanYield = true;
         private int m_SavedInstructionPtr = -1;
         private readonly DebugContext m_Debug;
+        private long m_InstructionCount = 0;
+        private int m_CallDepth = 0;
 
 
         public Processor(Script script, Table globalContext, ByteCode byteCode)
@@ -73,6 +76,13 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             EnterProcessor();
 
+            // Start resource monitoring if we have a resource controller
+            var resourceController = m_Script.ResourceController();
+            if (resourceController != null && m_Parent == null) // Only start for main processor
+            {
+                resourceController.StartExecution();
+            }
+
             try
             {
                 var stopwatch = m_Script.PerformanceStats.StartStopwatch(PerformanceCounter.Execution);
@@ -81,6 +91,10 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                 try
                 {
+                    // Reset counters for new execution
+                    m_InstructionCount = 0;
+                    m_CallDepth = 0;
+                    
                     int entrypoint = PushClrToScriptStackFrame(CallStackItemFlags.CallEntryPoint, function, args);
                     return Processing_Loop(entrypoint);
                 }
@@ -89,6 +103,12 @@ namespace SolarSharp.Interpreter.Execution.VM
                     m_CanYield = true;
 
                     stopwatch?.Dispose();
+                    
+                    // Stop resource monitoring
+                    if (resourceController != null && m_Parent == null)
+                    {
+                        resourceController.StopExecution();
+                    }
                 }
             }
             finally
@@ -172,6 +192,36 @@ namespace SolarSharp.Interpreter.Execution.VM
         internal SourceRef GetCoroutineSuspendedLocation()
         {
             return GetCurrentSourceRef(m_SavedInstructionPtr);
+        }
+
+        private void CheckResourceLimits()
+        {
+            // Check if script has security configuration and resource controller
+            if (!m_Script.IsSecure())
+                return;
+
+            var resourceController = m_Script.ResourceController();
+            if (resourceController != null)
+            {
+                // Update instruction count
+                resourceController.UpdateInstructionCount(m_InstructionCount);
+                
+                // Update call depth
+                resourceController.UpdateCallDepth(m_CallDepth);
+                
+                // Check all resource limits
+                resourceController.CheckResourceLimits();
+            }
+        }
+
+        internal void IncrementCallDepth()
+        {
+            m_CallDepth++;
+        }
+
+        internal void DecrementCallDepth()
+        {
+            m_CallDepth--;
         }
     }
 }

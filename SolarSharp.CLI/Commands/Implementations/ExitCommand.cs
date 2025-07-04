@@ -1,6 +1,4 @@
-﻿using SolarSharp;
-using SolarSharp.Commands;
-using System;
+﻿using System;
 
 namespace SolarSharp.Commands.Implementations
 {

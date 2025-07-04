@@ -1,5 +1,4 @@
-﻿using SolarSharp;
-using SolarSharp.Commands.Implementations;
+﻿using SolarSharp.Commands.Implementations;
 using System;
 using System.Collections.Generic;
 using System.Linq;

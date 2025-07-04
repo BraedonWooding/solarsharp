@@ -1,3 +1,4 @@
+﻿using SolarSharp.Interpreter.Security;
 ﻿using System;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
@@ -44,7 +45,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            Script s = new(StringExecution.True);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
@@ -70,7 +71,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            Script s = new(StringExecution.True);
 
             var obj = new SomeClass();
             var obj2 = new SomeClass();
@@ -100,7 +101,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            Script s = new(StringExecution.True);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
@@ -127,7 +128,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            Script s = new(StringExecution.True);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
@@ -155,7 +156,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            Script s = new(StringExecution.True);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
@@ -186,7 +187,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            Script s = new(StringExecution.True);
 
             s.Globals["myobj"] = typeof(SomeClass);
             s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
@@ -215,7 +216,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(CoreModules.None);
+            Script s = new(StringExecution.True);
 
             s.Globals["myobj"] = typeof(SomeClass);
             s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });

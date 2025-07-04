@@ -1,3 +1,4 @@
+﻿using SolarSharp.Interpreter.Security;
 ﻿using SolarSharp.Interpreter.CoreLib;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
@@ -37,7 +38,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return x;";
 
-            DynValue res = new Script().DoString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -68,7 +69,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return(v1 + v2);";
 
-            var S = new Script();
+            var S = new Script(StringExecution.True);
             Table globalCtx = S.Globals;
 
             globalCtx.RegisterModuleType<TableIteratorsModule>();
@@ -100,7 +101,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return ( t1a == t1b ), ( t1a == t2 ) 
 				";
 
-            DynValue res = new Script().DoString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -162,7 +163,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return x;
 				";
 
-            DynValue res = new Script().DoString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -204,7 +205,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return(s);
 				";
 
-            DynValue res = new Script().DoString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -236,7 +237,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return(s);
 				";
 
-            DynValue res = new Script().DoString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -305,7 +306,7 @@ end
 
 ";
 
-            Script script = new(CoreModules.Basic | CoreModules.Table | CoreModules.TableIterators | CoreModules.Metatables);
+            Script script = new();
 
             DynValue res = script.DoString(scriptCode);
         }

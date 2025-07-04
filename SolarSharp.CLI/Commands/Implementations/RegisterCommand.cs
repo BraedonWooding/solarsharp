@@ -1,7 +1,5 @@
 ﻿using System;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp;
-using SolarSharp.Commands;
 
 namespace SolarSharp.Commands.Implementations
 {

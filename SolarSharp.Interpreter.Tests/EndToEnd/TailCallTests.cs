@@ -1,3 +1,4 @@
+﻿using SolarSharp.Interpreter.Security;
 ﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
@@ -50,7 +51,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return recsum(70000, 0)";
 
 
-            Script S = new();
+            Script S = new(new SecurityConfiguration().WithScriptingLimits()); // WithScriptingLimits now provides sufficient depth
             var res = S.DoString(script);
 
             Assert.Multiple(() =>
@@ -99,7 +100,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return tostring(9)";
 
 
-            Script S = new(CoreModules.Basic);
+            Script S = new();
             var res = S.DoString(script);
 
             Assert.Multiple(() =>

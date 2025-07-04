@@ -1,3 +1,4 @@
+using SolarSharp.Interpreter.Security;
 ﻿using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
 
@@ -13,7 +14,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return dynamic.eval('5+1');		
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -30,7 +31,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return dynamic.eval(x);
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -55,7 +56,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return f();
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -83,7 +84,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return f();
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.That(res.Type, Is.EqualTo(DataType.Nil));
             //Assert.AreEqual(6, res.Number);

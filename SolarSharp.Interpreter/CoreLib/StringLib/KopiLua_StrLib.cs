@@ -47,12 +47,10 @@
 
 using SolarSharp.Interpreter.Interop.LuaStateInterop;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Execution;
 using lua_Integer = System.Int32;
 using LUA_INTFRM_T = System.Int64;
 using ptrdiff_t = System.Int32;
 using UNSIGNED_LUA_INTFRM_T = System.UInt64;
-using System.Threading;
 
 namespace SolarSharp.Interpreter.CoreLib.StringLib
 {

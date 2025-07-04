@@ -1,3 +1,4 @@
+using SolarSharp.Interpreter.Security;
 ﻿using System.Collections.Generic;
 using System.Linq;
 using SolarSharp.Interpreter.Compatibility;
@@ -125,7 +126,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             try
             {
-                var lua = new Script();
+                var lua = new Script(StringExecution.True);
                 lua.Globals["DictionaryIntInt"] = typeof(Dictionary<int, int>);
 
                 var script = @"local dict = DictionaryIntInt.__new(); local res, v = dict.TryGetValue(0)";

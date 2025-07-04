@@ -162,3 +162,18 @@ $RECYCLE.BIN/
 
 # Mac desktop service store files
 .DS_Store
+
+# =========================
+# IDE Files
+# =========================
+
+# JetBrains IDEs (IntelliJ, Rider, etc.)
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Visual Studio backup files
+*.sln.bak
+*.sln.DotSettings.user
+/game/saves/autosave.sav

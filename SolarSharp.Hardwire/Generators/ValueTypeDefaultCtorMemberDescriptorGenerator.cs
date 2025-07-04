@@ -1,6 +1,5 @@
 ﻿using System.CodeDom;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Hardwire;
 
 namespace SolarSharp.Hardwire.Generators
 {

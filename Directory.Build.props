@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Force clean before build for test projects -->
+    <CleanOnTestRun Condition="'$(IsTestProject)' == 'true'">true</CleanOnTestRun>
+  </PropertyGroup>
+</Project>

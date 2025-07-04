@@ -45,7 +45,6 @@
 // THE SOFTWARE.
 
 
-#region Usings
 using System;
 using System.Globalization;
 using System.IO;
@@ -53,14 +52,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 
-#endregion
-
 namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 {
     internal static class Tools
     {
-        #region Public Methods
-        #region IsNumericType
         /// <summary>
         /// Determines whether the specified value is of numeric type.
         /// </summary>
@@ -82,8 +77,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                 o is double ||
                 o is decimal;
         }
-        #endregion
-        #region IsPositive
+
         /// <summary>
         /// Determines whether the specified value is positive.
         /// </summary>
@@ -123,8 +117,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
             return ZeroIsPositive;
         }
-        #endregion
-        #region ToUnsigned
+
         /// <summary>
         /// Converts the specified values boxed type to its correpsonding unsigned
         /// type.
@@ -160,8 +153,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
             return null;
         }
-        #endregion
-        #region ToInteger
+
         /// <summary>
         /// Converts the specified values boxed type to its correpsonding integer
         /// type.
@@ -200,8 +192,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
             return null;
         }
-        #endregion
-        #region UnboxToLong
+
         public static long UnboxToLong(object Value, bool Round)
         {
             Type t = Value.GetType();
@@ -231,8 +222,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
             return 0;
         }
-        #endregion
-        #region ReplaceMetaChars
+
         /// <summary>
         /// Replaces the string representations of meta chars with their corresponding
         /// character values.
@@ -277,20 +267,16 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                 }
             }
         }
-        #endregion
-        #region fprintf
+
         public static void fprintf(TextWriter Destination, string Format, params object[] Parameters)
         {
             Destination.Write(sprintf(Format, Parameters));
         }
 
 
-        #endregion
-        #region sprintf
         internal static Regex r = new(@"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])");
         public static string sprintf(string Format, params object[] Parameters)
         {
-            #region Variables
             StringBuilder f = new();
             //Regex r = new Regex( @"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])" );
             //"%[parameter][flags][width][.precision][length]type"
@@ -312,23 +298,19 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             char shortLongIndicator = '\0';
             char formatSpecifier = '\0';
             char paddingCharacter = ' ';
-            #endregion
 
             // find all format parameters in format string
             f.Append(Format);
             m = r.Match(f.ToString());
             while (m.Success)
             {
-                #region parameter index
                 paramIx = defaultParamIx;
                 if (m.Groups[1] != null && m.Groups[1].Value.Length > 0)
                 {
                     string val = m.Groups[1].Value[..^1];
                     paramIx = Convert.ToInt32(val) - 1;
                 };
-                #endregion
 
-                #region format flags
                 // extract format flags
                 flagAlternate = false;
                 flagLeft2Right = false;
@@ -351,9 +333,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                     if (flagPositiveSign && flagPositiveSpace)
                         flagPositiveSpace = false;
                 }
-                #endregion
 
-                #region field length
                 // extract field length and 
                 // pading character
                 paddingCharacter = ' ';
@@ -363,7 +343,6 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                     fieldLength = Convert.ToInt32(m.Groups[3].Value);
                     flagZeroPadding = m.Groups[3].Value[0] == '0';
                 }
-                #endregion
 
                 if (flagZeroPadding)
                     paddingCharacter = '0';
@@ -375,26 +354,20 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                     paddingCharacter = ' ';
                 }
 
-                #region field precision
                 // extract field precision
                 fieldPrecision = int.MinValue;
                 if (m.Groups[4] != null && m.Groups[4].Value.Length > 0)
                     fieldPrecision = Convert.ToInt32(m.Groups[4].Value);
-                #endregion
 
-                #region short / long indicator
                 // extract short / long indicator
                 shortLongIndicator = char.MinValue;
                 if (m.Groups[5] != null && m.Groups[5].Value.Length > 0)
                     shortLongIndicator = m.Groups[5].Value[0];
-                #endregion
 
-                #region format specifier
                 // extract format
                 formatSpecifier = char.MinValue;
                 if (m.Groups[6] != null && m.Groups[6].Value.Length > 0)
                     formatSpecifier = m.Groups[6].Value[0];
-                #endregion
 
                 // default precision is 6 digits if none is specified except
                 if (fieldPrecision == int.MinValue &&
@@ -404,7 +377,6 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                     formatSpecifier != 'o')
                     fieldPrecision = 6;
 
-                #region get next value parameter
                 // get next value parameter and convert value parameter depending on short / long indicator
                 if (Parameters == null || paramIx >= Parameters.Length)
                     o = null;
@@ -435,18 +407,15 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                             o = (ulong)(uint)o;
                     }
                 }
-                #endregion
 
                 // convert value parameters to a string depending on the formatSpecifier
                 w = string.Empty;
                 switch (formatSpecifier)
                 {
-                    #region % - character
                     case '%':   // % character
                         w = "%";
                         break;
-                    #endregion
-                    #region d - integer
+
                     case 'd':   // integer
                         w = FormatNumber(flagGroupThousands ? "n" : "d", flagAlternate,
                                         fieldLength, int.MinValue, flagLeft2Right,
@@ -454,36 +423,31 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                                         paddingCharacter, o);
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region i - integer
+
                     case 'i':   // integer
                         goto case 'd';
-                    #endregion
-                    #region o - octal integer
+
                     case 'o':   // octal integer - no leading zero
                         w = FormatOct("o", flagAlternate,
                                         fieldLength, int.MinValue, flagLeft2Right,
                                         paddingCharacter, o);
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region x - hex integer
+
                     case 'x':   // hex integer - no leading zero
                         w = FormatHex("x", flagAlternate,
                                         fieldLength, fieldPrecision, flagLeft2Right,
                                         paddingCharacter, o);
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region X - hex integer
+
                     case 'X':   // same as x but with capital hex characters
                         w = FormatHex("X", flagAlternate,
                                         fieldLength, fieldPrecision, flagLeft2Right,
                                         paddingCharacter, o);
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region u - unsigned integer
+
                     case 'u':   // unsigned integer
                         w = FormatNumber(flagGroupThousands ? "n" : "d", flagAlternate,
                                         fieldLength, int.MinValue, flagLeft2Right,
@@ -491,8 +455,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                                         paddingCharacter, ToUnsigned(o));
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region c - character
+
                     case 'c':   // character
                         if (IsNumericType(o))
                             w = Convert.ToChar(o).ToString();
@@ -502,8 +465,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                             w = ((string)o)[0].ToString();
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region s - string
+
                     case 's':   // string
                                 //string t = "{0" + ( fieldLength != int.MinValue ? "," + ( flagLeft2Right ? "-" : String.Empty ) + fieldLength.ToString() : String.Empty ) + ":s}";
                         w = o.ToString();
@@ -514,8 +476,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                             w = flagLeft2Right ? w.PadRight(fieldLength, paddingCharacter) : w.PadLeft(fieldLength, paddingCharacter);
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region f - double number
+
                     case 'f':   // double
                         w = FormatNumber(flagGroupThousands ? "n" : "f", flagAlternate,
                                         fieldLength, fieldPrecision, flagLeft2Right,
@@ -523,8 +484,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                                         paddingCharacter, o);
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region e - exponent number
+
                     case 'e':   // double / exponent
                         w = FormatNumber("e", flagAlternate,
                                         fieldLength, fieldPrecision, flagLeft2Right,
@@ -532,8 +492,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                                         paddingCharacter, o);
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region E - exponent number
+
                     case 'E':   // double / exponent
                         w = FormatNumber("E", flagAlternate,
                                         fieldLength, fieldPrecision, flagLeft2Right,
@@ -541,8 +500,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                                         paddingCharacter, o);
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region g - general number
+
                     case 'g':   // double / exponent
                         w = FormatNumber("g", flagAlternate,
                                         fieldLength, fieldPrecision, flagLeft2Right,
@@ -550,8 +508,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                                         paddingCharacter, o);
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region G - general number
+
                     case 'G':   // double / exponent
                         w = FormatNumber("G", flagAlternate,
                                         fieldLength, fieldPrecision, flagLeft2Right,
@@ -559,8 +516,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                                         paddingCharacter, o);
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region p - pointer
+
                     case 'p':   // pointer
                         if (o is IntPtr)
 #if PCL || ENABLE_DOTNET
@@ -570,15 +526,13 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 #endif
                         defaultParamIx++;
                         break;
-                    #endregion
-                    #region n - number of processed chars so far
+
                     case 'n':   // number of characters so far
                         w = FormatNumber("d", flagAlternate,
                                         fieldLength, int.MinValue, flagLeft2Right,
                                         flagPositiveSign, flagPositiveSpace,
                                         paddingCharacter, m.Index);
                         break;
-                    #endregion
                     default:
                         w = string.Empty;
                         defaultParamIx++;
@@ -597,11 +551,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
             return f.ToString();
         }
-        #endregion
-        #endregion
 
-        #region Private Methods
-        #region FormatOCT
         private static string FormatOct(string NativeFormat, bool Alternate,
                                             int FieldLength, int FieldPrecision,
                                             bool Left2Right,
@@ -635,8 +585,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
             return w;
         }
-        #endregion
-        #region FormatHEX
+
         private static string FormatHex(string NativeFormat, bool Alternate,
                                             int FieldLength, int FieldPrecision,
                                             bool Left2Right,
@@ -673,8 +622,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
             return w;
         }
-        #endregion
-        #region FormatNumber
+
         private static string FormatNumber(string NativeFormat, bool Alternate,
                                             int FieldLength, int FieldPrecision,
                                             bool Left2Right,
@@ -718,8 +666,6 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
             return w;
         }
-        #endregion
-        #endregion
     }
 }
 

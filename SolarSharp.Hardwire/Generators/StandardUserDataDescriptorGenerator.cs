@@ -2,7 +2,6 @@
 using System.CodeDom;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors;
-using SolarSharp.Hardwire;
 
 namespace SolarSharp.Hardwire.Generators
 {

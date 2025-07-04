@@ -1,3 +1,4 @@
+﻿using SolarSharp.Interpreter.Security;
 ﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop;
 using SolarSharp.Interpreter.Modules;
@@ -39,7 +40,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static MyClass Test(string tableDef)
         {
-            Script s = new(CoreModules.None);
+            Script s = new();
 
             DynValue table = s.DoString("return " + tableDef);
 

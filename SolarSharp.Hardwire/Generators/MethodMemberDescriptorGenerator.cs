@@ -7,7 +7,6 @@ using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors;
-using SolarSharp.Hardwire;
 using SolarSharp.Hardwire.Utils;
 
 namespace SolarSharp.Hardwire.Generators

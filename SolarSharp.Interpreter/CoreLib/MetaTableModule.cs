@@ -2,6 +2,7 @@
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.CoreLib
 {
@@ -22,6 +23,33 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             DynValue table = args.AsType(0, "setmetatable", DataType.Table);
             DynValue metatable = args.AsType(1, "setmetatable", DataType.Table, true);
+
+            // Security check: Block metatables that contain potentially dangerous patterns
+            // Only enforce this in isolated/restricted security contexts
+            if (metatable?.Table != null && executionContext.GetScript().IsSecure())
+            {
+                var securityConfig = executionContext.GetScript().SecurityConfiguration();
+                
+                // Only apply strict metatable security in isolated contexts
+                if (securityConfig.EnvironmentEmulation.Mode == EnvironmentMode.Isolated)
+                {
+                    var mt = metatable.Table;
+                    var indexMethod = mt.Get("__index");
+                    var newindexMethod = mt.Get("__newindex");
+                    var metatableField = mt.Get("__metatable");
+                    
+                    // Block the specific attack pattern: functions for both __index and __newindex
+                    // with __metatable field (indicating attempt to hide metatable)
+                    if (indexMethod != null && !indexMethod.IsNil() && indexMethod.Type == DataType.Function &&
+                        newindexMethod != null && !newindexMethod.IsNil() && newindexMethod.Type == DataType.Function &&
+                        metatableField != null && !metatableField.IsNil())
+                    {
+                        // This specific pattern (both metamethods as functions + hidden metatable)
+                        // is commonly used for security bypass attempts
+                        throw new MetatableViolationException("metatable with both __index and __newindex functions and __metatable field is not allowed in isolated security contexts", "setmetatable", table, metatable);
+                    }
+                }
+            }
 
             DynValue curmeta = executionContext.GetMetamethod(table, "__metatable");
 

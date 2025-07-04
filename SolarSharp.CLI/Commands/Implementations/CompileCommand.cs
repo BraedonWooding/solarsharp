@@ -3,8 +3,7 @@ using System.IO;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
-using SolarSharp;
-using SolarSharp.Commands;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Commands.Implementations
 {
@@ -29,11 +28,13 @@ namespace SolarSharp.Commands.Implementations
         {
             string targetFileName = p + "-compiled";
 
-            Script S = new(CoreModules.None);
+            var config = new SecurityConfiguration();
+            config.AllowedModules = CoreModules.None;
+            Script S = new(config);
 
             DynValue chunk = S.LoadFile(p);
 
-            using Stream stream = new FileStream(targetFileName, FileMode.Create, FileAccess.Write);
+            using Stream stream = new FileStream(targetFileName, FileMode.Create, System.IO.FileAccess.Write);
             S.Dump(chunk, stream);
         }
     }

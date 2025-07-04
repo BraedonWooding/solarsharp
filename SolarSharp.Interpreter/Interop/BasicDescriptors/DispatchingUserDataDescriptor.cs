@@ -512,8 +512,6 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             };
         }
 
-        #region MetaMethodsDispatching
-
 
         private int PerformComparison(object obj, object p1, object p2)
         {
@@ -620,8 +618,6 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             if (v != null) return v;
             return DispatchMetaOnMethod(script, obj, "op_True");
         }
-
-        #endregion
 
         /// <summary>
         /// Determines whether the specified object is compatible with the specified type.

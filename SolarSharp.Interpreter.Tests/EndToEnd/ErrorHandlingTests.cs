@@ -1,3 +1,4 @@
+﻿using SolarSharp.Interpreter.Security;
 ﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Modules;
@@ -38,7 +39,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return r, msg;
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -87,7 +88,7 @@ end
 return a()
 ";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -119,7 +120,7 @@ end
 
 return a()
 ";
-            Script S = new(CoreModules.None);
+            Script S = new();
 
             S.Globals["try"] = DynValue.NewCallback((c, a) =>
             {

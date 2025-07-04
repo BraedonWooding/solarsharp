@@ -213,7 +213,4 @@
   <ItemGroup>
     <EditorConfigFiles Remove="D:\Repos\SolarSharp\SolarSharp.Interpreter.Tests\.editorconfig" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="D:\Repos\SolarSharp\SolarSharp.Interpreter.Tests\.editorconfig" />
-  </ItemGroup>
 </Project>

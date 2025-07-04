@@ -1,0 +1,12 @@
+{
+    "player": {
+        "health": 100,
+        "level": 1,
+        "experience": 0,
+        "inventory": []
+    },
+    "world": {
+        "current_location": "town",
+        "time_of_day": "morning"
+    }
+}

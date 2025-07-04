@@ -5,8 +5,7 @@ using SolarSharp.Hardwire.Languages;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
-using SolarSharp;
-using SolarSharp.Commands;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Commands.Implementations
 {
@@ -118,7 +117,9 @@ namespace SolarSharp.Commands.Implementations
             var logger = new ConsoleLogger();
             try
             {
-                Script s = new(CoreModules.None);
+                var config = new SecurityConfiguration();
+                config.AllowedModules = CoreModules.None;
+                Script s = new(config);
                 var eee = s.CreateDynamicExpression(File.ReadAllText(luafile));
 
                 Table t = eee.Evaluate(null).Table;

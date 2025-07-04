@@ -1,3 +1,4 @@
+﻿using SolarSharp.Interpreter.Security;
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,21 +13,21 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     {
         private static DynValue Script_RunString(string script)
         {
-            Script s1 = new();
+            Script s1 = new(StringExecution.True);
             DynValue v1 = s1.LoadString(script);
 
             using MemoryStream ms = new();
             s1.Dump(v1, ms);
             ms.Seek(0, SeekOrigin.Begin);
 
-            Script s2 = new();
+            Script s2 = new(StringExecution.True);
             DynValue func = s2.LoadStream(ms);
             return func.Function.Call();
         }
 
         private static DynValue Script_LoadFunc(string script, string funcname)
         {
-            Script s1 = new();
+            Script s1 = new(StringExecution.True);
             _ = s1.DoString(script);
             DynValue func = s1.Globals.Get(funcname);
 
@@ -34,7 +35,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             s1.Dump(func, ms);
             ms.Seek(0, SeekOrigin.Begin);
 
-            Script s2 = new();
+            Script s2 = new(StringExecution.True);
             return s2.LoadStream(ms);
         }
 
@@ -48,7 +49,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return fn(9);
 			";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -66,7 +67,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return fn(9);
 			";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -308,7 +309,7 @@ return y;
 
 				sandbox()";
 
-            Script S = new(CoreModules.Preset_Complete);
+            Script S = new();
 
             S.Globals["print"] = (Action<Table>)(t => list.Add(t));
 

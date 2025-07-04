@@ -58,7 +58,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         //	descr.AddMember("Position", new 
 
 
-        //	Script S = new Script();
+        //	Script S = new Script(StringExecution.True);
 
         //	Transform T = new Transform();
 

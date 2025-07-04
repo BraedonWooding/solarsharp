@@ -1,3 +1,4 @@
+using SolarSharp.Interpreter.Security;
 ﻿using System.Collections.Generic;
 using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
@@ -115,7 +116,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return x[2,3];
 				";
 
-            Assert.Throws<ScriptRuntimeException>(() => Script.RunString(script));
+            Assert.Throws<ScriptRuntimeException>(() => new Script(StringExecution.True).DoString(script));
         }
 
         [Test]
@@ -126,7 +127,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x[2,3] = 5;
 				";
 
-            Assert.Throws<ScriptRuntimeException>(() => Script.RunString(script));
+            Assert.Throws<ScriptRuntimeException>(() => new Script(StringExecution.True).DoString(script));
         }
     }
 }

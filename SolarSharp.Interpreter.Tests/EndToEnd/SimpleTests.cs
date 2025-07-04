@@ -1,3 +1,4 @@
+﻿using SolarSharp.Interpreter.Security;
 ﻿using System;
 using System.Collections.Generic;
 using SolarSharp.Interpreter.DataTypes;
@@ -13,7 +14,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void EmptyLongComment()
         {
-            Script S = new(CoreModules.None);
+            Script S = new();
             DynValue res = S.DoString("--[[]]");
         }
 
@@ -21,7 +22,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void EmptyChunk()
         {
-            Script S = new(CoreModules.None);
+            Script S = new();
             DynValue res = S.DoString("");
         }
 
@@ -63,7 +64,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             string script = "local print = print; print(\"hello\", \"world\");";
 
-            var S = new Script();
+            var S = new Script(StringExecution.True);
             S.Globals.Set("print", DynValue.NewCallback(new CallbackFunction((_x, a) => { args = a.GetArray(); return DynValue.NewNumber(1234.0); })));
 
             DynValue res = S.DoString(script);
@@ -87,7 +88,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             var callback2 = DynValue.NewCallback(new CallbackFunction((_x, a) => { return DynValue.NewNumber(1234.0); }));
             var callback = DynValue.NewCallback(new CallbackFunction((_x, a) => { return callback2; }));
 
-            var S = new Script();
+            var S = new Script(StringExecution.True);
             S.Globals.Set("callback", callback);
 
             DynValue res = S.DoString(script);
@@ -106,7 +107,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var callback = DynValue.NewCallback(new CallbackFunction((_x, a) => { return DynValue.NewNumber(1234.0); }));
 
-            var S = new Script();
+            var S = new Script(StringExecution.True);
             S.Globals.Set("callback", callback);
 
             DynValue res = S.DoString(script);
@@ -125,7 +126,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             string script = "return callback 'hello';";
 
-            var S = new Script();
+            var S = new Script(StringExecution.True);
             S.Globals.Set("callback", DynValue.NewCallback(new CallbackFunction((_x, a) => { args = a.GetArray(); return DynValue.NewNumber(1234.0); })));
 
             DynValue res = S.DoString(script);
@@ -147,7 +148,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             string script = "return print(\"hello\", \"world\");";
 
-            var S = new Script();
+            var S = new Script(StringExecution.True);
             S.Globals.Set("print", DynValue.NewCallback(new CallbackFunction((_x, a) => { args = a.GetArray(); return DynValue.NewNumber(1234.0); })));
 
             DynValue res = S.DoString(script);
@@ -179,7 +180,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return x,y,z";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.That(res.Tuple, Has.Length.EqualTo(3));
             Assert.Multiple(() =>
@@ -200,7 +201,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = 'ciao\u{41}';
 				return x;";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -216,7 +217,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = 'ciao\k{41}';
 				return x;";
 
-            Assert.Throws<SyntaxErrorException>(() => Script.RunString(script));
+            Assert.Throws<SyntaxErrorException>(() => new Script(StringExecution.True).DoString(script));
         }
 
         [Test]
@@ -228,7 +229,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				x = '{0}';
 				return x;", keywrd);
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.String));
@@ -247,7 +248,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             try
             {
-                DynValue res = Script.RunString(script);
+                DynValue res = new Script(StringExecution.True).DoString(script);
             }
             catch (SyntaxErrorException ex)
             {
@@ -266,7 +267,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				b\
 				c'";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.That(res.Type, Is.EqualTo(DataType.String));
         }
@@ -279,7 +280,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				Probably, the cook thought it was funny. \
 				He was wrong.'";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.That(res.Type, Is.EqualTo(DataType.String));
         }
@@ -311,7 +312,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             string script = @"return -42";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -325,7 +326,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             string script = @"return 42";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -340,7 +341,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             string script = @"return 6*7";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -421,7 +422,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return false or f(), true or f(), false and f(), true and f(), i";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.That(res.Tuple, Has.Length.EqualTo(5));
             Assert.Multiple(() =>
@@ -452,7 +453,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 			move(4, 1, 2, 3)
 			";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
         }
 
         [Test]
@@ -470,7 +471,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return fact(5)";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -492,7 +493,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return i, x";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -519,7 +520,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 		
 				return i, x";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -547,7 +548,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return x";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -589,7 +590,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return x, y";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -634,7 +635,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return x, y";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -659,7 +660,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
    
 				return #x, #y";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -692,7 +693,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return i, x";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -721,7 +722,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return fact(5)";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -735,7 +736,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             string script = @"return 7";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -749,7 +750,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             string script = @"return 1+2*3";
 
-            Script s = new(CoreModules.None);
+            Script s = new();
             DynValue res = s.DoString(script);
 
             Assert.Multiple(() =>
@@ -763,7 +764,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             string script = @"return 2*3+1";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -777,7 +778,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             string script = @"return 2^3^2";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -790,7 +791,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void OperatorPrecedence3()
         {
             string script = @"return 5-3-2";
-            Script S = new(CoreModules.None);
+            Script S = new();
 
             DynValue res = S.DoString(script);
 
@@ -805,7 +806,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void OperatorPrecedence4()
         {
             string script = @"return 3 + -1";
-            Script S = new(CoreModules.None);
+            Script S = new();
 
             DynValue res = S.DoString(script);
 
@@ -820,7 +821,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void OperatorPrecedence5()
         {
             string script = @"return 3 * -1 + 5 * 3";
-            Script S = new(CoreModules.None);
+            Script S = new();
 
             DynValue res = S.DoString(script);
 
@@ -835,7 +836,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void OperatorPrecedence6()
         {
             string script = @"return -2^2";
-            Script S = new(CoreModules.None);
+            Script S = new();
 
             DynValue res = S.DoString(script);
 
@@ -850,7 +851,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void OperatorPrecedence7()
         {
             string script = @"return -7 / 0.5";
-            Script S = new(CoreModules.None);
+            Script S = new();
 
             DynValue res = S.DoString(script);
 
@@ -866,7 +867,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             string script = @"return 5+3*7-2*5+2^3^2";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -880,7 +881,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             string script = @"return (5+3)*7-2*5+(2^3)^2";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -894,7 +895,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             string script = @"x = 1; return x;";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -918,7 +919,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return w+x+y+z";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -942,7 +943,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return fact(5)";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -969,7 +970,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return fact(5)";
 
-            Script s = new(CoreModules.None);
+            Script s = new();
             DynValue res = s.DoString(script);
 
             Assert.Multiple(() =>
@@ -992,7 +993,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return x;
 			";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1011,7 +1012,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return fact(3)";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1036,7 +1037,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return fact(5)";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1057,7 +1058,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return fact();
 				";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.That(res.Type, Is.EqualTo(DataType.Function));
         }
@@ -1078,7 +1079,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				";
 
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1103,7 +1104,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				";
 
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1129,7 +1130,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				";
 
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.That(res.Type, Is.EqualTo(DataType.Table));
 
@@ -1150,7 +1151,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				";
 
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1175,7 +1176,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 						Allowed();
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
         }
         [Test]
@@ -1192,7 +1193,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 						Allowed();
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
         }
 
@@ -1213,7 +1214,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 						Allowed();
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
         }
 
@@ -1229,7 +1230,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					do return x(); end
 								";
 
-            DynValue res = new Script(CoreModules.None).DoString(script);
+            var config = new SecurityConfiguration();
+            config.AllowedModules = CoreModules.None;
+            DynValue res = new Script(config, StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1250,7 +1253,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return 1,x(),x()
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1276,7 +1279,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return x(a, b+1), a, b;
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.That(res.Tuple, Has.Length.EqualTo(3));
             Assert.Multiple(() =>
@@ -1306,7 +1309,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return 1;
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1333,7 +1336,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return x(1,2,3,4);
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1360,7 +1363,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return x(5,1,2,3,4);
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1387,7 +1390,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return x(1,2,3,4);
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1409,7 +1412,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return n1,n2,n3,n4;
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1435,7 +1438,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return n1,n2,n3,n4;
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -1481,7 +1484,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return RES;
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.That(res.Type, Is.EqualTo(DataType.Table));
 
@@ -1519,7 +1522,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return x() == 3;	
 			";
 
-            Script S = new(CoreModules.None);
+            Script S = new();
             DynValue res = S.DoString(script);
 
             Assert.Multiple(() =>
@@ -1538,7 +1541,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return x;	
 			";
 
-            Script S = new(CoreModules.None);
+            Script S = new();
             DynValue res = S.DoString(script);
 
             Assert.Multiple(() =>
@@ -1557,7 +1560,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return test(1, 2, 3);	
 			";
 
-            Script S = new(CoreModules.None);
+            Script S = new();
             DynValue res = S.DoString(script);
 
             Assert.Multiple(() =>
@@ -1581,7 +1584,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return sum;
 								";
 
-            DynValue fn = new Script().LoadString(script);
+            DynValue fn = new Script(StringExecution.True).LoadString(script);
 
             DynValue res = fn.Function.Call(1, 2, 3, 4);
 
@@ -1610,14 +1613,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return x(1,2,3,4);
 								";
 
-            Assert.Throws<SyntaxErrorException>(() => Script.RunString(script));
+            Assert.Throws<SyntaxErrorException>(() => new Script(StringExecution.True).DoString(script));
         }
 
         [Test]
         public void HexFloats_1()
         {
             string script = "return 0x0.1E";
-            DynValue result = Script.RunString(script);
+            DynValue result = new Script(StringExecution.True).DoString(script);
             Assert.That(result.Number, Is.EqualTo(0x1E / (double)0x100));
         }
 
@@ -1625,7 +1628,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void HexFloats_2()
         {
             string script = "return 0xA23p-4";
-            DynValue result = Script.RunString(script);
+            DynValue result = new Script(StringExecution.True).DoString(script);
             Assert.That(result.Number, Is.EqualTo(0xA23 / 16.0));
         }
 
@@ -1633,7 +1636,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void HexFloats_3()
         {
             string script = "return 0X1.921FB54442D18P+1";
-            DynValue result = Script.RunString(script);
+            DynValue result = new Script(StringExecution.True).DoString(script);
             Assert.That(result.Number, Is.EqualTo((1 + 0x921FB54442D18 / (double)0x10000000000000) * 2));
         }
 
@@ -1641,7 +1644,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void Simple_Delegate_Interop_1()
         {
             int a = 3;
-            var script = new Script();
+            var script = new Script(StringExecution.True);
             script.Globals["action"] = new Action(() => a = 5);
             script.DoString("action()");
             Assert.That(a, Is.EqualTo(5));
@@ -1657,7 +1660,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 UserData.RegistrationPolicy = Interop.InteropRegistrationPolicy.Automatic;
 
                 int a = 3;
-                var script = new Script();
+                var script = new Script(StringExecution.True);
                 script.Globals["action"] = new Action(() => a = 5);
                 script.DoString("action()");
                 Assert.That(a, Is.EqualTo(5));
@@ -1671,7 +1674,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void MissingArgsDefaultToNil()
         {
-            Script S = new(CoreModules.None);
+            Script S = new();
             DynValue res = S.DoString(@"
 				function test(a)
 					return a;
@@ -1684,7 +1687,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void ParsingTest()
         {
-            Script S = new(CoreModules.None);
+            Script S = new();
             DynValue res = S.LoadString(@"
 				t = {'a', 'b', 'c', ['d'] = 'f', ['e'] = 5, [65] = true, [true] = false}
 				function myFunc()
@@ -1716,7 +1719,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         //#if !PCL
         //			var basePath = AppDomain.CurrentDomain.BaseDirectory;
         //			var scriptPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scripts\\test");
-        //			Script script = new Script();
+        //			Script script = new Script(StringExecution.True);
 
         //			((ScriptLoaderBase)script.Options.ScriptLoader).ModulePaths = new[]
         //			{

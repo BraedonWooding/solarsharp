@@ -24,13 +24,19 @@ namespace SolarSharp.Interpreter.Execution.VM
                 {
                     Instruction i = m_RootChunk.Code[instructionPtr];
 
-                    // TODO: Decide on debugger implementation, for now presuming no implementation.
+                    // Debugger support is not implemented in SolarSharp
                     //if (m_Debug.DebuggerAttached != null)
                     //{
                     //    ListenDebugger(i, instructionPtr);
                     //}
 
                     ++instructionPtr;
+                    
+                    // Resource limit checking
+                    if (++m_InstructionCount % RESOURCE_CHECK_INTERVAL == 0)
+                    {
+                        CheckResourceLimits();
+                    }
 
                     switch (i.OpCode)
                     {
@@ -609,9 +615,11 @@ namespace SolarSharp.Interpreter.Execution.VM
         {
             DynValue fn = m_ValueStack.Peek(argsCount);
             CallStackItemFlags flags = (thisCall ? CallStackItemFlags.MethodCall : CallStackItemFlags.None);
+            
+            // Increment call depth for resource tracking
+            IncrementCallDepth();
 
-            // if TCO threshold reached
-            // TODO: Remove this, I doubt it helps with performance since we already have support for tail call...
+            // Check if TCO threshold reached for optimization
             if ((m_ExecutionStack.Count > m_Script.Options.TailCallOptimizationThreshold && m_ExecutionStack.Count > 1)
                 || (m_ValueStack.Count > m_Script.Options.TailCallOptimizationThreshold && m_ValueStack.Count > 1))
             {
@@ -728,6 +736,9 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private int ExecRet(Instruction i)
         {
+            // Decrement call depth for resource tracking
+            DecrementCallDepth();
+            
             CallStackItem csi;
             int retpoint;
             if (i.NumVal == 0)
@@ -1166,8 +1177,8 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                 if (newIndexMethod.Type == DataType.Function || newIndexMethod.Type == DataType.ClrFunction)
                 {
-                    // wtf is this, TODO: Probably remove??
-                    m_ValueStack.Pop(); // burn extra value ?
+                    // Pop the extra value from the stack (required for metamethod call setup)
+                    m_ValueStack.Pop();
 
                     m_ValueStack.Push(newIndexMethod);
                     m_ValueStack.Push(obj);

@@ -2,7 +2,6 @@
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
-using System;
 using System.Collections.Generic;
 using System.Text;
 

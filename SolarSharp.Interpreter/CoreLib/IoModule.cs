@@ -11,6 +11,7 @@ using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Interop;
 using SolarSharp.Interpreter.Platforms;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.CoreLib
 {
@@ -60,7 +61,7 @@ namespace SolarSharp.Interpreter.CoreLib
         {
             Table R = S.Registry;
 
-            optionsStream ??= Script.GlobalOptions.Platform.IO_GetStandardStream(file);
+            optionsStream ??= S.Platform.IO_GetStandardStream(file);
 
             FileUserDataBase udb = file == StandardFileType.StdIn
                 ? StandardIOFileUserDataBase.CreateInputStream(optionsStream)
@@ -168,7 +169,7 @@ namespace SolarSharp.Interpreter.CoreLib
             {
                 List<DynValue> readLines = new();
 
-                using (var stream = Script.GlobalOptions.Platform.IO_OpenFile(executionContext.GetScript(), filename, null, "r"))
+                using (var stream = executionContext.GetScript().Platform.IO_OpenFile(executionContext.GetScript(), filename, null, "r"))
                 {
                     using var reader = new StreamReader(stream);
                     while (!reader.EndOfStream)
@@ -236,6 +237,24 @@ namespace SolarSharp.Interpreter.CoreLib
 
                 return UserData.Create(Open(executionContext, filename, e, mode));
             }
+            catch (CriticalSecurityException)
+            {
+                // Critical security exceptions always throw
+                throw;
+            }
+            catch (NonCriticalSecurityException ex)
+            {
+                // Non-critical security exceptions may throw based on configuration
+                var script = executionContext.GetScript();
+                if (script.SecurityConfiguration()?.ThrowOnNonCriticalViolations == true)
+                {
+                    throw;
+                }
+                
+                // Return nil with error message for graceful handling
+                return DynValue.NewTuple(DynValue.Nil,
+                    DynValue.NewString(ex.Message));
+            }
             catch (Exception ex)
             {
                 return DynValue.NewTuple(DynValue.Nil,
@@ -283,7 +302,7 @@ namespace SolarSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue tmpfile(ScriptExecutionContext executionContext, CallbackArguments _)
         {
-            string tmpfilename = Script.GlobalOptions.Platform.IO_OS_GetTempFilename();
+            string tmpfilename = executionContext.GetScript().Platform.IO_OS_GetTempFilename();
             FileUserDataBase file = Open(executionContext, tmpfilename, GetUTF8Encoding(), "w");
             return UserData.Create(file);
         }

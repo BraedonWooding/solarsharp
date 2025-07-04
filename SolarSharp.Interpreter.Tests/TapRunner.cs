@@ -3,6 +3,7 @@ using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Loaders;
 using NUnit.Framework;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests
 {
@@ -16,7 +17,7 @@ namespace SolarSharp.Interpreter.Tests
 
         public override object LoadFile(string file, Table globalContext)
         {
-            return new FileStream(file, FileMode.Open, FileAccess.Read);
+            return new FileStream(file, FileMode.Open, System.IO.FileAccess.Read);
         }
     }
 #endif
@@ -43,7 +44,13 @@ namespace SolarSharp.Interpreter.Tests
 
         public void Run()
         {
-            Script S = new(CoreModules.Preset_Complete);
+            var config = new SecurityConfiguration()
+                .WithScriptingLimits();  // Use generous limits for test suite
+            config.AllowedModules = CoreModules.Preset_Complete;
+            config.Capabilities |= ScriptCapabilities.FileRead | ScriptCapabilities.FileWrite | ScriptCapabilities.FileDelete; // Enable file operations for IO tests
+            config.FileSystem.DefaultFileAccess = SolarSharp.Interpreter.Security.FileAccess.SandboxedReadWrite;
+            config.FileSystem.DefaultDirectoryAccess = DirectoryAccess.ListAndCreateFiles;
+            Script S = new(config);
 
             S.Options.DebugPrint = Print;
 

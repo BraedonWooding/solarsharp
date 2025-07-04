@@ -5,6 +5,7 @@ using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.REPL;
+using SolarSharp.Interpreter.Security;
 using SolarSharp.Commands;
 using SolarSharp.Commands.Implementations;
 
@@ -19,7 +20,9 @@ namespace SolarSharp
 
             Script.DefaultOptions.ScriptLoader = new ReplInterpreterScriptLoader();
 
-            Script script = new(CoreModules.Preset_Complete);
+            var config = new SecurityConfiguration();
+            config.AllowedModules = CoreModules.Preset_Complete;
+            Script script = new(config);
 
             script.Globals["makestatic"] = (Func<string, DynValue>)MakeStatic;
 
@@ -97,7 +100,9 @@ namespace SolarSharp
 
             if (args.Length == 1 && args[0].Length > 0 && args[0][0] != '-')
             {
-                Script script = new();
+                var config = new SecurityConfiguration();
+                config.AllowedModules = CoreModules.Preset_Complete;
+                Script script = new(config);
                 script.DoFile(args[0]);
             }
 

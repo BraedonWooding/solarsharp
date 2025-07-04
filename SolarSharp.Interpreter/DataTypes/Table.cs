@@ -180,8 +180,6 @@ namespace SolarSharp.Interpreter.DataTypes
         }
         private const int MAX_INT_KEY_ARRAY = 16_000_000;
 
-        #region Set
-
         public void Insert(int index, DynValue value)
         {
             // inserting at end
@@ -242,7 +240,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 if (prev == null)
                 {
                     // then we can increment it if we are adding to end
-                    if (m_CachedLength == index - 1 && (m_CachedLength >= ArraySegment.Length || ArraySegment[m_CachedLength] == null))
+                    if (m_CachedLength == index - 1 && (m_CachedLength >= ArraySegment.Length || (m_CachedLength >= 0 && m_CachedLength < ArraySegment.Length && ArraySegment[m_CachedLength] == null)))
                     {
                         m_CachedLength = index;
                     }
@@ -387,10 +385,6 @@ namespace SolarSharp.Interpreter.DataTypes
             ResolveMultipleKeys(keys, out object key).Set(key, value);
         }
 
-        #endregion
-
-        #region Get
-
         /// <summary>
         /// Gets the value associated with the specified key.
         /// </summary>
@@ -459,8 +453,6 @@ namespace SolarSharp.Interpreter.DataTypes
 
             return ResolveMultipleKeys(keys, out object key).Get(key);
         }
-
-        #endregion
 
         /// <summary>
         /// Performs the Next() operation

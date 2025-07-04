@@ -1,3 +1,4 @@
+﻿using SolarSharp.Interpreter.Security;
 ﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
@@ -100,7 +101,7 @@ end
 				Obj(1)
 			";
 
-            Script S = new(CoreModules.None);
+            Script S = new();
 
             S.DoString(script);
 

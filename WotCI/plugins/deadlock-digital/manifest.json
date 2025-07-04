@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "name": "Deadlock Digital Plugin Suite",
+  "author": "Deadlock Digital",
+  "policy": {
+    "allowedModules": [
+      "basic",
+      "string",
+      "table",
+      "math",
+      "io",
+      "os"
+    ],
+    "capabilities": [
+      "FileRead",
+      "FileWrite",
+      "DirectoryOperations"
+    ],
+    "timeout": 30,
+    "memoryLimit": 100,
+    "defaultFileAccess": "sandboxedreadwrite",
+    "defaultDirectoryAccess": "listandcreatefiles",
+    "filePermissions": {
+      "/game/assets/**": "read",
+      "/game/saves/*.sav": "sandboxedreadwrite",
+      "/game/logs/*.log": "readwrite"
+    }
+  },
+  "files": {}
+}

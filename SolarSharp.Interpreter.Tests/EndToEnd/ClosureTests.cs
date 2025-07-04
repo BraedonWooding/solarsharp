@@ -1,3 +1,4 @@
+﻿using SolarSharp.Interpreter.Security;
 ﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
@@ -20,7 +21,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return (g(3)(2));";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -37,7 +38,7 @@ g = |f, x|f(x, x+1)
 f = |x, y, z|x*(y+z)
 return g(|x,y|f(x,y,1), 2)
 ";
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -58,7 +59,7 @@ return g(|x,y|f(x,y,1), 2)
 
 				return (g(3)(2));";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -92,7 +93,7 @@ return g(|x,y|f(x,y,1), 2)
 						return a[1](), a[2](), a[3](), a[4](), a[5]()";
 
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -138,7 +139,7 @@ return g(|x,y|f(x,y,1), 2)
 
 						return a[1](), a[2](), a[3](), a[4](), a[5]()";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -185,7 +186,7 @@ return g(|x,y|f(x,y,1), 2)
 
 						return a[1](), a[2](), a[3](), a[4](), a[5]()";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -235,7 +236,7 @@ return g(|x,y|f(x,y,1), 2)
 
 				return a1(), a2(), a3(), a4(), a5()";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -280,7 +281,7 @@ return g(|x,y|f(x,y,1), 2)
 	return 10 * m.t.dojob();
 								";
 
-            DynValue res = Script.RunString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -318,7 +319,7 @@ return g(|x,y|f(x,y,1), 2)
 	return 10 * Q.t.dojob();
 								";
 
-            DynValue res = new Script(CoreModules.Preset_HardSandbox).DoString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -354,7 +355,7 @@ return g(|x,y|f(x,y,1), 2)
 				return result;
 								";
 
-            DynValue res = new Script(CoreModules.Preset_HardSandbox).DoString(script);
+            DynValue res = new Script(StringExecution.True).DoString(script);
 
             Assert.Multiple(() =>
             {

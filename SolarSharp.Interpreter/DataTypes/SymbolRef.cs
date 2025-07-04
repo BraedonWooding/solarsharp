@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using SolarSharp.Interpreter.DataTypes.Custom;
 
 namespace SolarSharp.Interpreter.DataTypes
