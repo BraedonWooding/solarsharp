@@ -4,13 +4,13 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using SolarSharp.Interpreter.Interop.StandardDescriptors;
 using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop.Attributes;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using SolarSharp.Interpreter.Interop.ProxyObjects;
 using SolarSharp.Interpreter.Interop.RegistrationPolicies;
+using SolarSharp.Interpreter.Interop.StandardDescriptors;
 
 namespace SolarSharp.Interpreter.Interop.UserDataRegistries
 {
@@ -44,7 +44,7 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
             {
                 var extensionTypes = from t in asm.SafeGetTypes()
                                      let attributes = Framework.Do.GetCustomAttributes(t, typeof(ExtensionAttribute), true)
-                                     where attributes != null && attributes.Length > 0
+                                     where attributes is { Length: > 0 }
                                      select new { Attributes = attributes, DataType = t };
 
                 foreach (var extType in extensionTypes)
@@ -56,7 +56,7 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
 
             var userDataTypes = from t in asm.SafeGetTypes()
                                 let attributes = Framework.Do.GetCustomAttributes(t, typeof(MoonSharpUserDataAttribute), true)
-                                where attributes != null && attributes.Length > 0
+                                where attributes is { Length: > 0 }
                                 select new { Attributes = attributes, DataType = t };
 
             foreach (var userDataType in userDataTypes)

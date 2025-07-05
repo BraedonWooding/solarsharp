@@ -1,16 +1,16 @@
-﻿using SolarSharp.Interpreter.Security;
-﻿using SolarSharp.Interpreter.DataTypes;
-using NUnit.Framework;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     internal class CoroutineTests
     {
         [Test]
         public void Coroutine_Basic()
         {
-            string script = @"
+            var script = @"
 				s = ''
 
 				function foo()
@@ -40,7 +40,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return s;
 				";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -52,7 +52,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Coroutine_Wrap()
         {
-            string script = @"
+            var script = @"
 				s = ''
 
 				function foo()
@@ -82,7 +82,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return s;
 				";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -94,7 +94,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Coroutine_ClrBoundaryHandling()
         {
-            string code = @"
+            var code = @"
 				function a()
 					callback(b)
 				end
@@ -109,13 +109,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				";
 
             // Load the code and get the returned function
-            Script script = new();
+            Script script = new()
+            {
+	            Globals =
+	            {
+		            ["callback"] = DynValue.NewCallback(
+			            (ctx, args) => args[0].Function.Call()
+		            )
+	            }
+            };
 
-            script.Globals["callback"] = DynValue.NewCallback(
-                (ctx, args) => args[0].Function.Call()
-                );
-
-            DynValue ret = script.DoString(code);
+            var ret = script.DoString(code);
 
             Assert.Multiple(() =>
             {
@@ -134,8 +138,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Coroutine_VariousErrorHandling()
         {
-            string last = "";
-            string code = @"
+            var last = "";
+            var code = @"
 
 function checkresume(step, ex, ey)
 	local x, y = coroutine.resume(c)
@@ -169,9 +173,13 @@ checkresume(6, false, 'cannot resume dead coroutine');
 				";
 
             // Load the code and get the returned function
-            Script script = new();
-
-            script.Options.DebugPrint = (s) => last = s;
+            Script script = new()
+            {
+	            Options =
+	            {
+		            DebugPrint = (s) => last = s
+	            }
+            };
 
             script.DoString(code);
 
@@ -181,7 +189,7 @@ checkresume(6, false, 'cannot resume dead coroutine');
         [Test]
         public void Coroutine_Direct_Resume()
         {
-            string code = @"
+            var code = @"
 				return function()
 					local x = 0
 					while true do
@@ -196,16 +204,16 @@ checkresume(6, false, 'cannot resume dead coroutine');
 
             // Load the code and get the returned function
             Script script = new();
-            DynValue function = script.DoString(code);
+            var function = script.DoString(code);
 
             // Create the coroutine in C#
-            DynValue coroutine = script.CreateCoroutine(function);
+            var coroutine = script.CreateCoroutine(function);
 
             // Loop the coroutine 
-            string ret = "";
+            var ret = "";
             while (coroutine.Coroutine.State != CoroutineState.Dead)
             {
-                DynValue x = coroutine.Coroutine.Resume();
+                var x = coroutine.Coroutine.Resume();
                 ret = ret + x.ToString();
             }
 
@@ -216,7 +224,7 @@ checkresume(6, false, 'cannot resume dead coroutine');
         [Test]
         public void Coroutine_Direct_AsEnumerable()
         {
-            string code = @"
+            var code = @"
 				return function()
 					local x = 0
 					while true do
@@ -231,15 +239,15 @@ checkresume(6, false, 'cannot resume dead coroutine');
 
             // Load the code and get the returned function
             Script script = new();
-            DynValue function = script.DoString(code);
+            var function = script.DoString(code);
 
             // Create the coroutine in C#
-            DynValue coroutine = script.CreateCoroutine(function);
+            var coroutine = script.CreateCoroutine(function);
 
             // Loop the coroutine 
-            string ret = "";
+            var ret = "";
 
-            foreach (DynValue x in coroutine.Coroutine.AsTypedEnumerable())
+            foreach (var x in coroutine.Coroutine.AsTypedEnumerable())
             {
                 ret = ret + x.ToString();
             }

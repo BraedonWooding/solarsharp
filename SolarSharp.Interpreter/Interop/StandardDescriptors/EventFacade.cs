@@ -1,8 +1,8 @@
-﻿using SolarSharp.Interpreter.DataTypes;
+﻿using System;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
-using System;
 
 namespace SolarSharp.Interpreter.Interop.StandardDescriptors
 {

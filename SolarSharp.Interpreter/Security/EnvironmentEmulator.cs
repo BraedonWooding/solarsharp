@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -30,8 +30,12 @@ namespace SolarSharp.Interpreter.Security
         }
 
         /// <summary>
-        /// Gets an environment variable value with security controls
+        /// Gets an environment variable value with security controls applied.
+        /// Checks against blocked patterns, validates allowed variables in sandboxed mode,
+        /// returns emulated values when available, or allows passthrough for approved variables.
         /// </summary>
+        /// <param name="variableName">The name of the environment variable to retrieve</param>
+        /// <returns>The variable value, or null if blocked/not allowed</returns>
         public string GetEnvironmentVariable(string variableName)
         {
             if (string.IsNullOrEmpty(variableName))
@@ -73,8 +77,11 @@ namespace SolarSharp.Interpreter.Security
         }
 
         /// <summary>
-        /// Gets all available environment variables (emulated + allowed passthrough)
+        /// Gets all available environment variables (emulated + allowed passthrough).
+        /// Returns a dictionary containing both emulated variables and real environment
+        /// variables that pass security validation.
         /// </summary>
+        /// <returns>Dictionary of available environment variables</returns>
         public Dictionary<string, string> GetAllEnvironmentVariables()
         {
             var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

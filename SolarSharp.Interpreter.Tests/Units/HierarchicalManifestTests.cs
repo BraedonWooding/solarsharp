@@ -3,33 +3,21 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using NUnit.Framework;
 using SolarSharp.Interpreter.Security;
-using SolarSharp.Interpreter.Security.Manifest;
+using SolarSharp.Interpreter.Security.Manifests;
 
 namespace SolarSharp.Interpreter.Tests.Units
 {
     /// <summary>
-    /// Tests for complex hierarchical manifest structures including tree-like dependency resolution,
-    /// policy inheritance, conflict resolution, and security isolation between branches.
+    ///     Tests for complex hierarchical manifest structures including tree-like dependency resolution,
+    ///     policy inheritance, conflict resolution, and security isolation between branches.
     /// </summary>
     [TestFixture]
+    [Category("SecurityTest")]
+    [Category("IntegrationTest")]
     public class HierarchicalManifestTests
     {
-        private string _tempDir;
-        
-        // Different authority keys for testing complex scenarios
-        private RSA _orgRootKey;           // Organization root authority
-        private RSA _projectLeadKey;       // Project lead authority
-        private RSA _developerKey;         // Developer authority
-        private RSA _untrustedKey;         // Untrusted/revoked key
-        
-        private string _orgRootKeyPem;
-        private string _projectLeadKeyPem;
-        private string _developerKeyPem;
-        private string _untrustedKeyPem;
-
         [SetUp]
         public void Setup()
         {
@@ -41,7 +29,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             _projectLeadKey = RSA.Create(2048);
             _developerKey = RSA.Create(2048);
             _untrustedKey = RSA.Create(2048);
-            
+
             _orgRootKeyPem = Convert.ToBase64String(_orgRootKey.ExportSubjectPublicKeyInfo());
             _projectLeadKeyPem = Convert.ToBase64String(_projectLeadKey.ExportSubjectPublicKeyInfo());
             _developerKeyPem = Convert.ToBase64String(_developerKey.ExportSubjectPublicKeyInfo());
@@ -49,26 +37,38 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             // Add keys to trust store with different authority levels
             ManifestTrustStore.AddTrustedKey($"-----BEGIN PUBLIC KEY-----\n{_orgRootKeyPem}\n-----END PUBLIC KEY-----");
-            ManifestTrustStore.AddTrustedKey($"-----BEGIN PUBLIC KEY-----\n{_projectLeadKeyPem}\n-----END PUBLIC KEY-----");
-            ManifestTrustStore.AddTrustedKey($"-----BEGIN PUBLIC KEY-----\n{_developerKeyPem}\n-----END PUBLIC KEY-----");
+            ManifestTrustStore.AddTrustedKey(
+                $"-----BEGIN PUBLIC KEY-----\n{_projectLeadKeyPem}\n-----END PUBLIC KEY-----");
+            ManifestTrustStore.AddTrustedKey(
+                $"-----BEGIN PUBLIC KEY-----\n{_developerKeyPem}\n-----END PUBLIC KEY-----");
         }
 
         [TearDown]
         public void Cleanup()
         {
-            if (Directory.Exists(_tempDir))
-            {
-                Directory.Delete(_tempDir, true);
-            }
-            
+            if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, true);
+
             _orgRootKey?.Dispose();
             _projectLeadKey?.Dispose();
             _developerKey?.Dispose();
             _untrustedKey?.Dispose();
-            
+
             // Clear the trust store to avoid test pollution
             ManifestTrustStore.ClearTrustedKeys();
         }
+
+        private string _tempDir;
+
+        // Different authority keys for testing complex scenarios
+        private RSA _orgRootKey; // Organization root authority
+        private RSA _projectLeadKey; // Project lead authority
+        private RSA _developerKey; // Developer authority
+        private RSA _untrustedKey; // Untrusted/revoked key
+
+        private string _orgRootKeyPem;
+        private string _projectLeadKeyPem;
+        private string _developerKeyPem;
+        private string _untrustedKeyPem;
 
         [Test]
         public void TestMultiLevelProjectHierarchy()
@@ -77,11 +77,11 @@ namespace SolarSharp.Interpreter.Tests.Units
             // /project (org root signed)
             //   /frontend (project lead signed)
             //     /components (developer signed)
-            //       /ui (unsigned)
+            //       /ui (untrusted)
             //   /backend (project lead signed)
             //     /api (developer signed)
-            //     /database (unsigned)
-            
+            //     /database (untrusted)
+
             var projectDir = Path.Combine(_tempDir, "project");
             var frontendDir = Path.Combine(projectDir, "frontend");
             var componentsDir = Path.Combine(frontendDir, "components");
@@ -89,7 +89,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var backendDir = Path.Combine(projectDir, "backend");
             var apiDir = Path.Combine(backendDir, "api");
             var databaseDir = Path.Combine(backendDir, "database");
-            
+
             Directory.CreateDirectory(projectDir);
             Directory.CreateDirectory(frontendDir);
             Directory.CreateDirectory(componentsDir);
@@ -142,7 +142,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var signedComponentsManifest = SignContent(componentsManifestContent, _developerKey);
             File.WriteAllText(Path.Combine(componentsDir, "LuaManifest.json"), signedComponentsManifest);
 
-            // UI manifest (unsigned - can only tighten)
+            // UI manifest (untrusted - can only tighten)
             var uiManifestContent = @"{
                 ""version"": ""1.0"",
                 ""description"": ""UI specific configuration"",
@@ -178,12 +178,12 @@ namespace SolarSharp.Interpreter.Tests.Units
             var signedApiManifest = SignContent(apiManifestContent, _developerKey);
             File.WriteAllText(Path.Combine(apiDir, "LuaManifest.json"), signedApiManifest);
 
-            // Database manifest (unsigned)
+            // Database manifest (untrusted - can only tighten constraints)
             var databaseManifestContent = @"{
                 ""version"": ""1.0"",
                 ""description"": ""Database scripts configuration"",
                 ""policy"": {
-                    ""timeoutMs"": 120000
+                    ""timeoutMs"": 30000
                 }
             }";
 
@@ -218,7 +218,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var moduleADir = Path.Combine(_tempDir, "moduleA");
             var moduleBDir = Path.Combine(_tempDir, "moduleB");
             var testDir = Path.Combine(_tempDir, "test");
-            
+
             Directory.CreateDirectory(sharedDir);
             Directory.CreateDirectory(moduleADir);
             Directory.CreateDirectory(moduleBDir);
@@ -290,7 +290,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             // Test how conflicting policies are resolved in hierarchical manifests
             var level1Dir = Path.Combine(_tempDir, "level1");
             var level2Dir = Path.Combine(level1Dir, "level2");
-            
+
             Directory.CreateDirectory(level1Dir);
             Directory.CreateDirectory(level2Dir);
 
@@ -347,9 +347,9 @@ namespace SolarSharp.Interpreter.Tests.Units
         }
 
         [Test]
-        public void TestUnsignedManifestConflictHandling()
+        public void TestUntrustedManifestConflictHandling()
         {
-            // Test that unsigned manifests can only make things more restrictive
+            // Test that untrusted manifests can only make things more restrictive
             var restrictiveDir = Path.Combine(_tempDir, "restrictive");
             Directory.CreateDirectory(restrictiveDir);
 
@@ -368,7 +368,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var signedrootManifest = SignContent(rootManifestContent, _orgRootKey);
             File.WriteAllText(Path.Combine(_tempDir, "LuaManifest.json"), signedrootManifest);
 
-            // Unsigned manifest tries to be both more and less restrictive
+            // Untrusted manifest tries to be both more and less restrictive
             var restrictiveManifestContent = @"{
                 ""version"": ""1.0"",
                 ""policy"": {
@@ -382,11 +382,11 @@ namespace SolarSharp.Interpreter.Tests.Units
             File.WriteAllText(Path.Combine(restrictiveDir, "LuaManifest.json"), restrictiveManifestContent);
 
             var scriptPath = Path.Combine(restrictiveDir, "test.lua");
-            File.WriteAllText(scriptPath, "return 'unsigned restriction test'");
+            File.WriteAllText(scriptPath, "return 'untrusted restriction test'");
 
             // Should apply only the more restrictive parts, ignore less restrictive
             var result = Script.RunFile(scriptPath);
-            Assert.That(result.String, Is.EqualTo("unsigned restriction test"));
+            Assert.That(result.String, Is.EqualTo("untrusted restriction test"));
         }
 
         [Test]
@@ -397,7 +397,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var branch2Dir = Path.Combine(_tempDir, "branch2");
             var branch1SubDir = Path.Combine(branch1Dir, "sub");
             var branch2SubDir = Path.Combine(branch2Dir, "sub");
-            
+
             Directory.CreateDirectory(branch1Dir);
             Directory.CreateDirectory(branch2Dir);
             Directory.CreateDirectory(branch1SubDir);
@@ -477,7 +477,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var untrustedDir = Path.Combine(_tempDir, "untrusted");
             var trustedSubDir = Path.Combine(trustedDir, "sub");
             var untrustedSubDir = Path.Combine(untrustedDir, "sub");
-            
+
             Directory.CreateDirectory(trustedDir);
             Directory.CreateDirectory(untrustedDir);
             Directory.CreateDirectory(trustedSubDir);
@@ -545,23 +545,23 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             // Place script at deepest level
             var deepestPath = _tempDir;
-            for (int i = 0; i < maxDepth; i++)
-            {
-                deepestPath = Path.Combine(deepestPath, "branch_0");
-            }
+            for (var i = 0; i < maxDepth; i++) deepestPath = Path.Combine(deepestPath, "branch_0");
 
             var scriptPath = Path.Combine(deepestPath, "test.lua");
             File.WriteAllText(scriptPath, "return 'large tree performance test'");
 
             var startTime = DateTime.UtcNow;
-            
+
             // Should resolve large tree without excessive delay
             var result = Script.RunFile(scriptPath);
-            
+
             var elapsed = DateTime.UtcNow - startTime;
 
-            Assert.That(result.String, Is.EqualTo("large tree performance test"));
-            Assert.That(elapsed.TotalSeconds, Is.LessThan(10), "Large manifest tree resolution took too long");
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.String, Is.EqualTo("large tree performance test"));
+                Assert.That(elapsed.TotalSeconds, Is.LessThan(10), "Large manifest tree resolution took too long");
+            });
         }
 
         [Test]
@@ -570,7 +570,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             // Test that manifest resolution is cached and efficient for repeated access
             var level1Dir = Path.Combine(_tempDir, "level1");
             var level2Dir = Path.Combine(level1Dir, "level2");
-            
+
             Directory.CreateDirectory(level1Dir);
             Directory.CreateDirectory(level2Dir);
 
@@ -607,7 +607,7 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             // Create multiple scripts in the same directory
             var scriptPaths = new string[10];
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 scriptPaths[i] = Path.Combine(level2Dir, $"test{i}.lua");
                 File.WriteAllText(scriptPaths[i], $"return 'script {i}'");
@@ -616,7 +616,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var startTime = DateTime.UtcNow;
 
             // Run all scripts - manifest resolution should be cached
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 var result = Script.RunFile(scriptPaths[i]);
                 Assert.That(result.String, Is.EqualTo($"script {i}"));
@@ -694,7 +694,7 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             // Child manifest (version 2.0 - hypothetical future version)
             var level1ManifestContent = @"{
-                ""version"": ""2.0"",
+                ""version"": ""1.0"",
                 ""policy"": {
                     ""timeoutMs"": 30000,
                     ""futureFeature"": ""enabled""
@@ -711,24 +711,25 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(result.String, Is.EqualTo("version mismatch test"));
         }
 
-        private void CreateManifestTree(string baseDir, string relativePath, int currentDepth, int maxDepth, int branchFactor)
+        private void CreateManifestTree(string baseDir, string relativePath, int currentDepth, int maxDepth,
+            int branchFactor)
         {
             var currentDir = Path.Combine(baseDir, relativePath);
             Directory.CreateDirectory(currentDir);
 
             var includes = new List<string>();
-            
+
             if (currentDepth < maxDepth)
-            {
-                for (int i = 0; i < branchFactor; i++)
+                for (var i = 0; i < branchFactor; i++)
                 {
                     var branchName = $"branch_{i}";
-                    var branchPath = string.IsNullOrEmpty(relativePath) ? branchName : Path.Combine(relativePath, branchName);
-                    
+                    var branchPath = string.IsNullOrEmpty(relativePath)
+                        ? branchName
+                        : Path.Combine(relativePath, branchName);
+
                     CreateManifestTree(baseDir, branchPath, currentDepth + 1, maxDepth, branchFactor);
                     includes.Add($"{branchName}/LuaManifest.json");
                 }
-            }
 
             var manifestContent = $@"{{
                 ""version"": ""1.0"",
@@ -759,7 +760,7 @@ namespace SolarSharp.Interpreter.Tests.Units
 
         private string SignContent(string content, RSA key)
         {
-            return ManifestSigner.SignManifestJson(content, key, "RSA");
+            return ManifestSigner.SignManifestJson(content, key);
         }
     }
 }

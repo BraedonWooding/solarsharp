@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Security
@@ -17,7 +16,7 @@ namespace SolarSharp.Interpreter.Security
         /// <returns>Isolated security configuration</returns>
         public static SecurityConfiguration Isolated(this SecurityConfiguration _)
         {
-            return SecurityConfiguration.CreateIsolated();
+            return SecurityConfiguration.Isolated();
         }
 
         /// <summary>
@@ -32,31 +31,20 @@ namespace SolarSharp.Interpreter.Security
             
             foreach (var moduleName in moduleNames)
             {
-                var moduleType = moduleName.ToLowerInvariant() switch
+                // Handle special case mappings
+                var normalizedName = moduleName.ToLowerInvariant() switch
                 {
-                    "basic" => CoreModules.Basic,
-                    "string" => CoreModules.String,
-                    "table" => CoreModules.Table,
-                    "math" => CoreModules.Math,
-                    "io" => CoreModules.IO,
-                    "os" => CoreModules.OS_Time,
-                    "coroutine" => CoreModules.Coroutine,
-                    "bit32" => CoreModules.Bit32,
-                    "debug" => CoreModules.Debug,
-                    "json" => CoreModules.Json,
-                    "dynamic" => CoreModules.Dynamic,
-                    "errorhandling" => CoreModules.ErrorHandling,
-                    "tableiterators" => CoreModules.TableIterators,
-                    "metatables" => CoreModules.Metatables,
-                    "loadmethods" => CoreModules.LoadMethods,
-                    "globalconsts" => CoreModules.GlobalConsts,
-                    _ => CoreModules.None
+                    "os" => "OS_Time",
+                    _ => moduleName
                 };
-                
-                modules |= moduleType;
+
+                if (Enum.TryParse<CoreModules>(normalizedName, true, out var moduleType))
+                {
+                    modules |= moduleType;
+                }
             }
 
-            return config.WithOverrides(overrides => overrides.WithModules(modules));
+            return config.WithOverrides(overrides => { overrides.AllowedModules = modules; });
         }
 
 
@@ -75,7 +63,8 @@ namespace SolarSharp.Interpreter.Security
             return config.WithOverrides(overrides => {
                 overrides.AllowOnlyLuaExtension = policy.AllowOnlyLuaExtension;
                 overrides.PreventLuaFileWrites = policy.PreventLuaFileWrites;
-                overrides.PreventDynamicCode = policy.PreventDynamicCode;
+                overrides.PreventRunString = policy.PreventRunString;
+                overrides.PreventInternalDynamicCode = policy.PreventInternalDynamicCode;
                 overrides.BlockManifestAccess = policy.BlockManifestAccess;
                 overrides.RequireSignedScripts = policy.RequireSignedScripts;
             });

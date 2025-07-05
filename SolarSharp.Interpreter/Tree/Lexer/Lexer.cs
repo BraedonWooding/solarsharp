@@ -1,5 +1,5 @@
-﻿using SolarSharp.Interpreter.Errors;
-using System.Text;
+﻿using System.Text;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Tree.Lexer
 {

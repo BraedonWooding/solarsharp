@@ -2,12 +2,12 @@
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
+using SolarSharp.Hardwire.Utils;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptors;
-using SolarSharp.Hardwire.Utils;
 
 namespace SolarSharp.Hardwire.Generators
 {

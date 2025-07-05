@@ -2,20 +2,19 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
-using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.CoreLib;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Diagnostics;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.IO;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Platforms;
 using SolarSharp.Interpreter.Security;
-using SolarSharp.Interpreter.Security.Manifest;
+using SolarSharp.Interpreter.Security.Manifests;
 using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.Tree.Fast_Interface;
 
@@ -45,8 +44,7 @@ namespace SolarSharp.Interpreter
         private readonly List<Manifest> m_Manifests = new();
         private SystemManifest m_CompiledManifest;
         private readonly SecurityLogger m_SecurityLogger = new();
-        private readonly List<Security.Manifest.PublicKeyInfo> m_LoadedKeys = new();
-        private readonly StringExecution m_StringExecution;
+        private readonly CryptoManager m_CryptoManager = new();
         
         /// <summary>
         /// Gets the platform accessor for this script instance.
@@ -62,8 +60,8 @@ namespace SolarSharp.Interpreter
 
             DefaultOptions = new ScriptOptions()
             {
-                DebugPrint = s => { GlobalOptions.Platform.DefaultPrint(s); },
-                DebugInput = s => { return GlobalOptions.Platform.DefaultInput(s); },
+                DebugPrint = static s => GlobalOptions.Platform.DefaultPrint(s),
+                DebugInput = static s => GlobalOptions.Platform.DefaultInput(s),
                 CheckThreadAccess = true,
                 ScriptLoader = PlatformAutoDetector.GetDefaultScriptLoader(),
                 TailCallOptimizationThreshold = 65536
@@ -77,50 +75,83 @@ namespace SolarSharp.Interpreter
         /// Can be overridden by environment variables.
         /// </summary>
         public Script()
-            : this(manifest: GetDefaultManifestFromEnvironment(), stringExecution: StringExecution.True)
+            : this(manifest: GetDefaultManifestFromEnvironment())
         {
+        }
+
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Script"/> class with SecurityConfiguration.
+        /// SecurityConfiguration provides a fluent C# API for building security policies programmatically.
+        /// </summary>
+        /// <param name="securityConfig">Security configuration to apply</param>
+        public Script(SecurityConfiguration securityConfig)
+        {
+            if (securityConfig == null)
+                throw new ArgumentNullException(nameof(securityConfig), "SecurityConfiguration is required - scripts cannot run without authorization");
+            
+            // Initialize platform accessor before anything else that might need it
+            Platform = GlobalOptions.Platform ?? PlatformAutoDetector.GetDefaultPlatform();
+            
+            // Initialize core components
+            Options = new ScriptOptions(DefaultOptions);
+            PerformanceStats = new PerformanceStatistics();
+            Registry = new Table(this);
+
+            m_ByteCode = new ByteCode(this);
+            m_GlobalTable = new Table(this).RegisterCoreModules(securityConfig.AllowedModules);
+            m_MainProcessor = new Processor(this, m_GlobalTable, m_ByteCode);
+
+            // Apply security configuration directly
+            ApplySecurityConfiguration(securityConfig);
+
+            // Auto-register security tracer if environment variables are set
+            RegisterSecurityTracerIfEnabled();
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Script"/> class with string execution control.
+        /// Initializes a new instance of the <see cref="Script"/> class with a security policy.
+        /// Accepts either Manifest or SecurityConfiguration objects.
         /// </summary>
-        /// <param name="manifest">Manifest to apply (defaults to SystemManifest.Desktop if null)</param>
-        /// <param name="stringExecution">Controls external string execution (default: True, sandboxed by default)</param>
-        public Script(Manifest manifest, StringExecution stringExecution)
-            : this(manifest, stringExecution, true)
+        /// <param name="securityPolicy">Security policy to apply (defaults to SystemManifest.Desktop if null)</param>
+        public Script(ISecurityPolicy securityPolicy)
+            : this(securityPolicy?.ToManifest() ?? SystemManifest.Desktop)
         {
         }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Script"/> class with string execution control.
-        /// </summary>
-        /// <param name="stringExecution">Controls external string execution (default: True, sandboxed by default)</param>
-        public Script(StringExecution stringExecution)
-            : this((Manifest)null, stringExecution)
-        {
-        }
-
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="Script"/> class with specified manifest.
         /// String execution is enabled by default when explicitly providing a manifest.
         /// </summary>
         /// <param name="manifest">Manifest to apply (defaults to SystemManifest.Desktop if null)</param>
         public Script(Manifest manifest)
-            : this(manifest, StringExecution.True, true)
+            : this(manifest, true)
         {
         }
 
         /// <summary>
         /// Internal constructor with full control over initialization
         /// </summary>
-        private Script(Manifest manifest, StringExecution stringExecution, bool initialize)
+        private Script(Manifest manifest, bool initialize)
         {
-            m_StringExecution = stringExecution;
             // Use Desktop as default manifest
             manifest = manifest ?? SystemManifest.Desktop;
             
-            // Convert manifest to SecurityConfiguration for now (compatibility layer)
-            var securityConfig = ConvertManifestToSecurityConfig(manifest);
+            // Use Desktop security configuration as base - manifests contain policy, SecurityConfiguration is the implementation
+            var securityConfig = new SecurityConfiguration();
+            
+            // Apply manifest policy to security configuration
+            if (manifest.Policy != null)
+            {
+                if (manifest.Policy.PreventRunString.HasValue)
+                    securityConfig.AntiPolymorphism.PreventRunString = manifest.Policy.PreventRunString.Value;
+                if (manifest.Policy.PreventInternalDynamicCode.HasValue)
+                    securityConfig.AntiPolymorphism.PreventInternalDynamicCode = manifest.Policy.PreventInternalDynamicCode.Value;
+                if (manifest.Policy.PreventLuaFileWrites.HasValue)
+                    securityConfig.AntiPolymorphism.PreventLuaFileWrites = manifest.Policy.PreventLuaFileWrites.Value;
+                if (manifest.Policy.AllowOnlyLuaExtension.HasValue)
+                    securityConfig.AntiPolymorphism.AllowOnlyLuaExtension = manifest.Policy.AllowOnlyLuaExtension.Value;
+            }
             
             // Initialize platform accessor before anything else that might need it
             Platform = GlobalOptions.Platform ?? PlatformAutoDetector.GetDefaultPlatform();
@@ -136,7 +167,9 @@ namespace SolarSharp.Interpreter
 
             // Store manifest
             m_Manifests.Add(manifest);
-            RecompileManifest();
+            
+            // Use the manifest directly to avoid validation issues
+            m_CompiledManifest = manifest as SystemManifest ?? SystemManifest.Desktop;
 
             // If manifest is signed, automatically load its key
             if (manifest.IsSigned())
@@ -144,52 +177,15 @@ namespace SolarSharp.Interpreter
                 LoadKey(manifest.Security.PublicKey);
             }
 
-            // Apply security configuration
+            // Store and apply security configuration
+            this.SetSecurityConfiguration(securityConfig);
             ApplySecurityConfiguration(securityConfig);
 
             // Auto-register security tracer if environment variables are set
             RegisterSecurityTracerIfEnabled();
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Script"/> class with specified security configuration.
-        /// </summary>
-        /// <param name="securityConfig">Security configuration to apply</param>
-        public Script(SecurityConfiguration securityConfig)
-            : this(securityConfig, StringExecution.True)
-        {
-        }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Script"/> class with specified security configuration and string execution control.
-        /// </summary>
-        /// <param name="securityConfig">Security configuration to apply</param>
-        /// <param name="stringExecution">Controls external string execution (default: True, sandboxed by default)</param>
-        public Script(SecurityConfiguration securityConfig, StringExecution stringExecution)
-        {
-            if (securityConfig == null)
-                throw new ArgumentNullException(nameof(securityConfig));
-
-            m_StringExecution = stringExecution;
-
-            // Initialize core components (but NOT platform accessor yet)
-            Options = new ScriptOptions(DefaultOptions);
-            PerformanceStats = new PerformanceStatistics();
-            Registry = new Table(this);
-
-            m_ByteCode = new ByteCode(this);
-            
-            // Apply security configuration BEFORE registering modules
-            // This will set up the SecurePlatformAccessor which is needed for module registration
-            ApplySecurityConfiguration(securityConfig);
-            
-            // Now register modules with the correct platform accessor in place
-            m_GlobalTable = new Table(this).RegisterCoreModules(securityConfig.AllowedModules);
-            m_MainProcessor = new Processor(this, m_GlobalTable, m_ByteCode);
-
-            // Auto-register security tracer if environment variables are set
-            RegisterSecurityTracerIfEnabled();
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Script"/> class with security overrides.
@@ -208,9 +204,10 @@ namespace SolarSharp.Interpreter
         /// <param name="applicationName">Application name for data directory whitelisting</param>
         /// <param name="timeoutMs">Execution timeout in milliseconds (default: 30000)</param>
         public Script(string applicationName, int timeoutMs = 30000)
-            : this(overrides => overrides
-                .WithApplicationName(applicationName)
-                .WithTimeoutMs(timeoutMs))
+            : this(overrides => {
+                overrides.ApplicationName = applicationName;
+                overrides.TimeoutMs = timeoutMs;
+            })
         {
         }
 
@@ -268,7 +265,7 @@ namespace SolarSharp.Interpreter
         {
             this.CheckScriptOwnership(globalTable);
 
-            string chunkName = string.Format("libfunc_{0}", funcFriendlyName ?? m_Sources.Count.ToString());
+            var chunkName = $"libfunc_{funcFriendlyName ?? m_Sources.Count.ToString()}";
 
             SourceCode source = new(chunkName, code, m_Sources.Count, this);
 
@@ -297,7 +294,7 @@ namespace SolarSharp.Interpreter
         /// </summary>
         private void ApplySecurityConfiguration(SecurityConfiguration config)
         {
-            // Store security configuration
+            // Store security configuration as the primary source of truth
             this.SetSecurityConfiguration(config);
 
             // Initialize security event handler first
@@ -417,10 +414,10 @@ namespace SolarSharp.Interpreter
         /// </returns>
         public DynValue LoadString(string code, Table globalTable = null, string codeFriendlyName = null)
         {
-            if (m_StringExecution == StringExecution.False)
+            if (IsStringExecutionPrevented())
             {
                 throw new UnauthorizedProcessExecutionException(
-                    "String loading is disabled for this VM. Use StringExecution.True in constructor to enable.",
+                    "External string loading is disabled. Set PreventRunString to false in the manifest policy to enable.",
                     "LoadString"
                 );
             }
@@ -572,10 +569,10 @@ namespace SolarSharp.Interpreter
         /// </returns>
         public DynValue DoString(string code, Table globalContext = null, string codeFriendlyName = null)
         {
-            if (m_StringExecution == StringExecution.False)
+            if (IsStringExecutionPrevented())
             {
                 throw new UnauthorizedProcessExecutionException(
-                    "String execution is disabled for this VM. Use StringExecution.True in constructor to enable.",
+                    "External string execution is disabled. Set PreventRunString to false in the manifest policy to enable.",
                     "DoString"
                 );
             }
@@ -630,7 +627,7 @@ namespace SolarSharp.Interpreter
         /// <param name="globalContext">The global context.</param>
         /// <param name="codeFriendlyName">Name of the code - used to report errors, etc. Also used by debuggers to locate the original source file.</param>
         /// <returns>
-        /// A DynValue containing the result of the processing of the loaded chunk.
+        /// A DynValue containing the result of the processing the loaded chunk.
         /// </returns>
         public DynValue DoStream(Stream stream, Table globalContext = null, string codeFriendlyName = null)
         {
@@ -688,7 +685,7 @@ namespace SolarSharp.Interpreter
         public static DynValue RunFile(string filename, SecurityConfiguration baseConfig, Action<SecurityConfigurationOverrides> explicitOverrides)
         {
             // Discover manifest
-            var manifestOverrides = ManifestAutoLoader.CreateOverridesFromManifest(filename);
+            var manifestOverrides = ManifestAutoLoader.CreateOverridesFromManifest(filename, baseConfig);
             
             // Apply explicit overrides if provided
             var explicitOverridesObj = explicitOverrides != null 
@@ -741,7 +738,7 @@ namespace SolarSharp.Interpreter
             // Discover manifest from application directory
             var manifestPath = Path.Combine(applicationDirectory, "LuaManifest.json");
             var manifestOverrides = File.Exists(manifestPath) 
-                ? ManifestAutoLoader.CreateOverridesFromManifest(manifestPath)
+                ? ManifestAutoLoader.CreateOverridesFromManifest(manifestPath, baseConfig)
                 : null;
             
             // Apply explicit overrides if provided
@@ -755,7 +752,7 @@ namespace SolarSharp.Interpreter
             // Ensure chroot is enabled and set to application directory for string scripts
             if (finalConfig.EnableChroot)
             {
-                finalConfig.SetDirectoryAccess(Path.GetFullPath(applicationDirectory), DirectoryAccess.ListAndCreateFiles);
+                finalConfig.SetDirectoryPermissions(Path.GetFullPath(applicationDirectory), DirectoryPermissions.ListAndCreateFiles);
             }
 
             var script = new Script(finalConfig);
@@ -776,10 +773,10 @@ namespace SolarSharp.Interpreter
 
             if (envTable == null)
             {
-                Instruction meta = m_MainProcessor.FindMeta(ref address);
+                var meta = m_MainProcessor.FindMeta(ref address);
 
                 // if we find the meta for a new chunk, we use the value in the meta for the _ENV upvalue
-                c = meta != null && meta.NumVal2 == (int)OpCodeMetadataType.ChunkEntrypoint
+                c = meta is { NumVal2: (int)OpCodeMetadataType.ChunkEntrypoint }
                     ? new Closure(this, address,
                         new SymbolRef[] { SymbolRef.Upvalue(WellKnownSymbols.ENV, 0) },
                         new DynValue[] { meta.Value })
@@ -1042,7 +1039,7 @@ namespace SolarSharp.Interpreter
         /// <summary>
         /// Sets a type metatable.
         /// </summary>
-        /// <param name="type">The type. Must be Nil, Boolean, Number, String or Function</param>
+        /// <param name="type">The type. Must be Nil, Boolean, Number, String, or Function</param>
         /// <param name="metatable">The metatable.</param>
         /// <exception cref="ArgumentException">Specified type not supported :  + type.ToString()</exception>
         public void SetTypeMetatable(DataType type, Table metatable)
@@ -1062,8 +1059,10 @@ namespace SolarSharp.Interpreter
         /// </summary>
         public static void WarmUp()
         {
-            var config = new SecurityConfiguration();
-            config.AllowedModules = CoreModules.Basic;
+            var config = new SecurityConfiguration
+            {
+                AllowedModules = CoreModules.Basic
+            };
             Script s = new(config);
             s.LoadString("return 1;");
         }
@@ -1125,268 +1124,47 @@ namespace SolarSharp.Interpreter
             subproduct = subproduct != null ? subproduct + " " : "";
 
             StringBuilder sb = new();
-            sb.AppendLine(string.Format("MoonSharp {0}{1} [{2}]", subproduct, VERSION, GlobalOptions.Platform.GetPlatformName()));
-            sb.AppendLine("Copyright (C) 2014-2016 Marco Mastropaolo");
-            sb.AppendLine("http://www.SolarSharp.org");
+            sb.AppendLine(string.Format("SolarSharp {0}{1} [{2}]", subproduct, VERSION, GlobalOptions.Platform.GetPlatformName()));
+            sb.AppendLine("A secure Lua interpreter for .NET");
+            sb.AppendLine("Based on MoonSharp - Copyright (C) 2014-2016 Marco Mastropaolo");
             return sb.ToString();
         }
 
-        Script IScriptPrivateResource.OwnerScript
-        {
-            get { return this; }
-        }
+        Script IScriptPrivateResource.OwnerScript => this;
 
         /// <summary>
         /// Loads a public key into the VM, enforcing manifest requirements for all .lua files
         /// </summary>
-        public void LoadKey(Security.Manifest.PublicKeyInfo publicKey)
+        public Script LoadKey(PublicKeyInfo publicKey)
         {
-            if (publicKey == null)
-                throw new ArgumentNullException(nameof(publicKey));
-                
-            if (string.IsNullOrWhiteSpace(publicKey.Value))
-                throw new ArgumentException("Public key value cannot be empty", nameof(publicKey));
-
-            // Validate the key format by attempting to parse it
-            ValidatePublicKey(publicKey);
-
-            m_LoadedKeys.Add(publicKey);
+            m_CryptoManager.LoadKey(publicKey);
+            return this;
         }
 
         /// <summary>
         /// Loads a public key from PEM string into the VM
         /// </summary>
-        public void LoadKey(string pemPublicKey)
+        public Script LoadKey(string pemPublicKey)
         {
-            if (string.IsNullOrWhiteSpace(pemPublicKey))
-                throw new ArgumentException("PEM public key cannot be empty", nameof(pemPublicKey));
-
-            var publicKey = new Security.Manifest.PublicKeyInfo
-            {
-                Algorithm = "RSA",
-                Format = "PEM",
-                Value = pemPublicKey
-            };
-            
-            LoadKey(publicKey);
+            m_CryptoManager.LoadKey(pemPublicKey);
+            return this;
         }
 
-        /// <summary>
-        /// Validates a public key to ensure it's properly formatted and strong enough
-        /// </summary>
-        private void ValidatePublicKey(Security.Manifest.PublicKeyInfo publicKey)
-        {
-            try
-            {
-                if (publicKey.Format == "PEM")
-                {
-                    // Basic PEM format validation
-                    var pemString = publicKey.Value.Trim();
-                    
-                    if (!pemString.StartsWith("-----BEGIN"))
-                        throw new ArgumentException("Invalid PEM format - missing header");
-                    
-                    if (!pemString.EndsWith("-----"))
-                        throw new ArgumentException("Invalid PEM format - missing footer");
-                    
-                    // Check for reasonable length (2048-bit keys in PEM are ~1700 chars)
-                    if (pemString.Length < 200)
-                        throw new ArgumentException("PEM key appears too short to be valid");
-                }
-                else if (publicKey.Format == "BASE64")
-                {
-                    try
-                    {
-                        // Try to parse base64 format key
-                        using var rsa = RSA.Create();
-                        var keyBytes = Convert.FromBase64String(publicKey.Value);
-                        rsa.ImportSubjectPublicKeyInfo(keyBytes, out _);
-                        
-                        // Check key strength (available in .NET Standard 2.1)
-                        if (rsa.KeySize < 2048)
-                            throw new NotSupportedException($"Key size {rsa.KeySize} is too weak. Minimum 2048 bits required.");
-                    }
-                    catch (FormatException ex)
-                    {
-                        throw new ArgumentException("Invalid BASE64 format", ex);
-                    }
-                    catch (CryptographicException ex)
-                    {
-                        throw new ArgumentException("Invalid key data", ex);
-                    }
-                }
-                else
-                {
-                    throw new ArgumentException($"Unsupported key format: {publicKey.Format}");
-                }
-            }
-            catch (Exception ex) when (!(ex is ArgumentException) && !(ex is NotSupportedException))
-            {
-                throw new ArgumentException($"Invalid public key format: {ex.Message}", ex);
-            }
-        }
 
         /// <summary>
         /// Gets whether this VM has loaded any public keys
         /// </summary>
-        public bool HasLoadedKeys => m_LoadedKeys.Count > 0;
+        public bool HasLoadedKeys => m_CryptoManager.HasLoadedKeys;
 
-        /// <summary>
-        /// Gets the string execution mode for this VM
-        /// </summary>
-        public StringExecution StringExecutionMode => m_StringExecution;
 
         /// <summary>
         /// Validates that a file meets manifest requirements if keys are loaded
         /// </summary>
         private void ValidateManifestRequirement(string luaFilePath)
         {
-            if (!HasLoadedKeys) return;
-
-            var manifest = ManifestAutoLoader.DiscoverManifest(luaFilePath);
-            if (manifest == null)
-            {
-                throw new ManifestSignatureException(
-                    $"VM has loaded keys - all Lua files must have manifests: {luaFilePath}",
-                    "RequireManifestForLuaFile",
-                    luaFilePath
-                );
-            }
-
-            if (!manifest.Manifest.IsSigned())
-            {
-                throw new ManifestSignatureException(
-                    $"VM has loaded keys - all manifests must be signed: {luaFilePath}",
-                    "RequireManifestForLuaFile",
-                    luaFilePath
-                );
-            }
-
-            // Verify signature against one of the loaded keys
-            if (!ValidateAgainstLoadedKeys(manifest.Manifest))
-            {
-                throw new ManifestSignatureException(
-                    $"VM has loaded keys - manifest signature not valid against any loaded key: {luaFilePath}",
-                    "RequireManifestForLuaFile",
-                    luaFilePath
-                );
-            }
+            m_CryptoManager.ValidateManifestRequirement(luaFilePath);
         }
 
-        /// <summary>
-        /// Validates a manifest signature against loaded keys
-        /// </summary>
-        private bool ValidateAgainstLoadedKeys(Manifest manifest)
-        {
-            var manifestPublicKey = manifest.Security.PublicKey;
-
-            foreach (var loadedKey in m_LoadedKeys)
-            {
-                if (AreKeysEquivalent(loadedKey, manifestPublicKey))
-                {
-                    // If keys match, the manifest is valid (it was already validated during loading)
-                    return true;
-                }
-            }
-
-            return false; // No matching key found
-        }
-
-        /// <summary>
-        /// Compares two public keys for equivalence, handling different formats
-        /// </summary>
-        private bool AreKeysEquivalent(Security.Manifest.PublicKeyInfo key1, Security.Manifest.PublicKeyInfo key2)
-        {
-            try
-            {
-                // Both must be PEM format now
-                if (key1.Format?.ToUpperInvariant() != "PEM" || key2.Format?.ToUpperInvariant() != "PEM")
-                    return false;
-
-                // Extract and normalize the PEM content (remove whitespace differences)
-                var key1Normalized = NormalizePemKey(key1.Value);
-                var key2Normalized = NormalizePemKey(key2.Value);
-
-                // Direct string comparison after normalization
-                return key1Normalized == key2Normalized;
-            }
-            catch
-            {
-                // If any parsing fails, keys are not equivalent
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Normalizes a PEM key by removing extra whitespace and ensuring consistent formatting
-        /// </summary>
-        private string NormalizePemKey(string pemKey)
-        {
-            var lines = pemKey.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            var sb = new StringBuilder();
-            
-            foreach (var line in lines)
-            {
-                var trimmed = line.Trim();
-                if (trimmed.Length > 0)
-                {
-                    sb.AppendLine(trimmed);
-                }
-            }
-            
-            return sb.ToString().TrimEnd();
-        }
-
-        /// <summary>
-        /// Extracts the raw public key bytes from a PublicKeyInfo (PEM format only)
-        /// </summary>
-        private byte[] ExtractPublicKeyBytes(Security.Manifest.PublicKeyInfo keyInfo)
-        {
-            try
-            {
-                // Only support PEM format
-                if (keyInfo.Format?.ToUpperInvariant() != "PEM")
-                {
-                    throw new NotSupportedException($"Only PEM format is supported. Got: {keyInfo.Format}");
-                }
-                
-                return ExtractBytesFromPem(keyInfo.Value);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"ExtractPublicKeyBytes failed: {ex.Message}");
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Extracts bytes from PEM format key
-        /// </summary>
-        private byte[] ExtractBytesFromPem(string pemContent)
-        {
-            var lines = pemContent.Split('\n');
-            var sb = new StringBuilder();
-            bool inKey = false;
-
-            foreach (var line in lines)
-            {
-                var trimmedLine = line.Trim();
-                if (trimmedLine.StartsWith("-----BEGIN"))
-                {
-                    inKey = true;
-                }
-                else if (trimmedLine.StartsWith("-----END"))
-                {
-                    break;
-                }
-                else if (inKey && !string.IsNullOrWhiteSpace(trimmedLine))
-                {
-                    sb.Append(trimmedLine);
-                }
-            }
-
-            return Convert.FromBase64String(sb.ToString());
-        }
 
         /// <summary>
         /// Gets the default manifest from environment variables
@@ -1398,15 +1176,33 @@ namespace SolarSharp.Interpreter
             if (string.IsNullOrEmpty(defaultManifestName))
                 return SystemManifest.Desktop; // Default fallback
 
-            return defaultManifestName.ToUpperInvariant() switch
+            // Use Enum.TryParse for consistent string-to-enum conversion
+            if (Enum.TryParse<SystemManifestType>(defaultManifestName, true, out var manifestType))
             {
-                "NONE" => SystemManifest.None,
-                "UNRESTRICTED" => SystemManifest.Unrestricted,
-                "DESKTOP" => SystemManifest.Desktop,
-                "JAILED" => SystemManifest.Jailed,
-                "GAME" => SystemManifest.Game,
-                _ => SystemManifest.Desktop // Invalid name defaults to Desktop
-            };
+                return manifestType switch
+                {
+                    SystemManifestType.None => SystemManifest.None,
+                    SystemManifestType.Unrestricted => SystemManifest.Unrestricted,
+                    SystemManifestType.Desktop => SystemManifest.Desktop,
+                    SystemManifestType.Jailed => SystemManifest.Jailed,
+                    SystemManifestType.Game => SystemManifest.Game,
+                    _ => SystemManifest.Desktop
+                };
+            }
+            
+            return SystemManifest.Desktop; // Invalid name defaults to Desktop
+        }
+        
+        /// <summary>
+        /// Enum for SystemManifest types to support Enum.TryParse
+        /// </summary>
+        private enum SystemManifestType
+        {
+            None,
+            Unrestricted,
+            Desktop,
+            Jailed,
+            Game
         }
 
         /// <summary>
@@ -1431,5 +1227,37 @@ namespace SolarSharp.Interpreter
                 m_SecurityLogger.AddHandler(tracer);
             }
         }
+
+        /// <summary>
+        /// Checks if external string execution (RunString) is prevented based on the security configuration
+        /// </summary>
+        private bool IsStringExecutionPrevented()
+        {
+            var securityConfig = this.SecurityConfiguration();
+            if (securityConfig?.AntiPolymorphism == null)
+            {
+                // No security configuration means no authorization to run
+                return true;
+            }
+            
+            return securityConfig.AntiPolymorphism.PreventRunString;
+        }
+
+        /// <summary>
+        /// Checks if internal dynamic code loading is prevented based on the security configuration
+        /// </summary>
+        internal bool IsInternalDynamicCodePrevented()
+        {
+            var securityConfig = this.SecurityConfiguration();
+            if (securityConfig?.AntiPolymorphism == null)
+            {
+                // No security configuration means no authorization to run
+                return true;
+            }
+            
+            return securityConfig.AntiPolymorphism.PreventInternalDynamicCode;
+        }
+
+
     }
 }

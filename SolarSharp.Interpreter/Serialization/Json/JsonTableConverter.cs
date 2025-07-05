@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.IO;
+using System.Text;
+using System.Text.Json;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Tree.Lexer;
@@ -21,56 +23,45 @@ namespace SolarSharp.Interpreter.Serialization.Json
         /// <returns></returns>
         public static string TableToJson(this Table table)
         {
-            StringBuilder sb = new();
-            TableToJson(sb, table);
-            return sb.ToString();
+            using var stream = new MemoryStream();
+            using var writer = new Utf8JsonWriter(stream);
+            TableToJson(writer, table);
+            writer.Flush();
+            return Encoding.UTF8.GetString(stream.ToArray());
         }
 
         /// <summary>
         /// Tables to json.
         /// </summary>
-        /// <param name="sb">The sb.</param>
+        /// <param name="writer">The JSON writer.</param>
         /// <param name="table">The table.</param>
-        private static void TableToJson(StringBuilder sb, Table table)
+        private static void TableToJson(Utf8JsonWriter writer, Table table)
         {
-            bool first = true;
-
             if (table.Length == 0)
             {
-                sb.Append("{");
+                writer.WriteStartObject();
                 foreach (var pair in table)
                 {
                     if (pair.Key.Type == DataType.String && IsValueJsonCompatible(pair.Value))
                     {
-                        if (!first)
-                            sb.Append(',');
-
-                        ValueToJson(sb, pair.Key);
-                        sb.Append(':');
-                        ValueToJson(sb, pair.Value);
-
-                        first = false;
+                        writer.WritePropertyName(pair.Key.String);
+                        ValueToJson(writer, pair.Value);
                     }
                 }
-                sb.Append("}");
+                writer.WriteEndObject();
             }
             else
             {
-                sb.Append("[");
+                writer.WriteStartArray();
                 for (int i = 1; i <= table.Length; i++)
                 {
                     DynValue value = table.Get(i);
                     if (IsValueJsonCompatible(value))
                     {
-                        if (!first)
-                            sb.Append(',');
-
-                        ValueToJson(sb, value);
-
-                        first = false;
+                        ValueToJson(writer, value);
                     }
                 }
-                sb.Append("]");
+                writer.WriteEndArray();
             }
         }
 
@@ -85,43 +76,31 @@ namespace SolarSharp.Interpreter.Serialization.Json
 
 
 
-        private static void ValueToJson(StringBuilder sb, DynValue value)
+        private static void ValueToJson(Utf8JsonWriter writer, DynValue value)
         {
             switch (value.Type)
             {
                 case DataType.Boolean:
-                    sb.Append(value.Boolean ? "true" : "false");
+                    writer.WriteBooleanValue(value.Boolean);
                     break;
                 case DataType.Number:
-                    sb.Append(value.Number.ToString("r"));
+                    writer.WriteNumberValue(value.Number);
                     break;
                 case DataType.String:
-                    sb.Append(EscapeString(value.String ?? ""));
+                    writer.WriteStringValue(value.String ?? "");
                     break;
                 case DataType.Table:
-                    TableToJson(sb, value.Table);
+                    TableToJson(writer, value.Table);
                     break;
                 case DataType.Nil:
                 case DataType.Void:
                 case DataType.UserData:
                 default:
-                    sb.Append("null");
+                    writer.WriteNullValue();
                     break;
             }
         }
 
-        private static string EscapeString(string s)
-        {
-            s = s.Replace(@"\", @"\\");
-            s = s.Replace(@"/", @"\/");
-            s = s.Replace("\"", "\\\"");
-            s = s.Replace("\f", @"\f");
-            s = s.Replace("\b", @"\b");
-            s = s.Replace("\n", @"\n");
-            s = s.Replace("\r", @"\r");
-            s = s.Replace("\t", @"\t");
-            return "\"" + s + "\"";
-        }
 
         private static bool IsValueJsonCompatible(DynValue value)
         {

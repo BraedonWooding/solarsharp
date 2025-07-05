@@ -19,10 +19,10 @@ namespace SolarSharp.Interpreter.Security
         public int? MaxCoroutineResumes { get; set; }
 
         // File system overrides - new granular model
-        public FileAccess? DefaultFileAccess { get; set; }
-        public DirectoryAccess? DefaultDirectoryAccess { get; set; }
-        public Dictionary<string, FileAccess> FilePermissions { get; set; }
-        public Dictionary<string, DirectoryAccess> DirectoryPermissions { get; set; }
+        public FilePermissions? DefaultFileAccess { get; set; }
+        public DirectoryPermissions? DefaultDirectoryAccess { get; set; }
+        public Dictionary<string, FilePermissions> FilePermissions { get; set; }
+        public Dictionary<string, DirectoryPermissions> DirectoryPermissions { get; set; }
         public long? MaxFileSize { get; set; }
         public bool? AllowHiddenFiles { get; set; }
         public bool? AllowSymbolicLinks { get; set; }
@@ -46,7 +46,8 @@ namespace SolarSharp.Interpreter.Security
         // Anti-polymorphism overrides
         public bool? AllowOnlyLuaExtension { get; set; }
         public bool? PreventLuaFileWrites { get; set; }
-        public bool? PreventDynamicCode { get; set; }
+        public bool? PreventRunString { get; set; }
+        public bool? PreventInternalDynamicCode { get; set; }
         public bool? BlockManifestAccess { get; set; }
         public bool? RequireSignedScripts { get; set; }
 
@@ -85,10 +86,10 @@ namespace SolarSharp.Interpreter.Security
 
                 FileSystem = new FileSystemSecurity
                 {
-                    DefaultFileAccess = DefaultFileAccess ?? baseConfig.FileSystem.DefaultFileAccess,
-                    DefaultDirectoryAccess = DefaultDirectoryAccess ?? baseConfig.FileSystem.DefaultDirectoryAccess,
-                    FilePermissions = new Dictionary<string, FileAccess>(baseConfig.FileSystem.FilePermissions),
-                    DirectoryPermissions = new Dictionary<string, DirectoryAccess>(baseConfig.FileSystem.DirectoryPermissions),
+                    DefaultFilePermissions = DefaultFileAccess ?? baseConfig.FileSystem.DefaultFilePermissions,
+                    DefaultDirectoryPermissions = DefaultDirectoryAccess ?? baseConfig.FileSystem.DefaultDirectoryPermissions,
+                    FilePermissions = new Dictionary<string, FilePermissions>(baseConfig.FileSystem.FilePermissions),
+                    DirectoryPermissions = new Dictionary<string, DirectoryPermissions>(baseConfig.FileSystem.DirectoryPermissions),
                     MaxFileSize = MaxFileSize ?? baseConfig.FileSystem.MaxFileSize,
                     AllowHiddenFiles = AllowHiddenFiles ?? baseConfig.FileSystem.AllowHiddenFiles,
                     AllowSymbolicLinks = AllowSymbolicLinks ?? baseConfig.FileSystem.AllowSymbolicLinks
@@ -118,7 +119,8 @@ namespace SolarSharp.Interpreter.Security
                 {
                     AllowOnlyLuaExtension = AllowOnlyLuaExtension ?? baseConfig.AntiPolymorphism.AllowOnlyLuaExtension,
                     PreventLuaFileWrites = PreventLuaFileWrites ?? baseConfig.AntiPolymorphism.PreventLuaFileWrites,
-                    PreventDynamicCode = PreventDynamicCode ?? baseConfig.AntiPolymorphism.PreventDynamicCode,
+                    PreventRunString = PreventRunString ?? baseConfig.AntiPolymorphism.PreventRunString,
+                    PreventInternalDynamicCode = PreventInternalDynamicCode ?? baseConfig.AntiPolymorphism.PreventInternalDynamicCode,
                     BlockManifestAccess = BlockManifestAccess ?? baseConfig.AntiPolymorphism.BlockManifestAccess,
                     RequireSignedScripts = RequireSignedScripts ?? baseConfig.AntiPolymorphism.RequireSignedScripts
                 },
@@ -182,142 +184,5 @@ namespace SolarSharp.Interpreter.Security
             return overrides;
         }
 
-        // Fluent API methods for setting overrides
-
-        public SecurityConfigurationOverrides WithTimeoutMs(int timeoutMs)
-        {
-            TimeoutMs = timeoutMs;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides DisableTimeout()
-        {
-            TimeoutMs = 0;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides WithMemoryLimitMB(int memoryLimitMB)
-        {
-            MaxMemoryMB = memoryLimitMB;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides DisableMemoryLimit()
-        {
-            MaxMemoryMB = 0;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides WithInstructionLimit(long maxInstructions)
-        {
-            MaxInstructions = maxInstructions;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides DisableInstructionLimit()
-        {
-            MaxInstructions = 0;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides WithDefaultFileAccess(FileAccess access)
-        {
-            DefaultFileAccess = access;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides WithDefaultDirectoryAccess(DirectoryAccess access)
-        {
-            DefaultDirectoryAccess = access;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides WithFileAccess(string path, FileAccess access)
-        {
-            FilePermissions = FilePermissions ?? new Dictionary<string, FileAccess>();
-            FilePermissions[path] = access;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides WithDirectoryAccess(string path, DirectoryAccess access)
-        {
-            DirectoryPermissions = DirectoryPermissions ?? new Dictionary<string, DirectoryAccess>();
-            DirectoryPermissions[path] = access;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides WithChroot(bool enabled)
-        {
-            EnableChroot = enabled;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides DisableChroot()
-        {
-            EnableChroot = false;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides EnableNetworkAccess()
-        {
-            AllowNetworkAccess = true;
-            AllowedNetworkOperations = NetworkOperations.HttpGet | NetworkOperations.HttpPost;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides DisableNetworkAccess()
-        {
-            AllowNetworkAccess = false;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides WithModules(CoreModules modules)
-        {
-            AllowedModules = modules;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides WithApplicationName(string applicationName)
-        {
-            ApplicationName = applicationName;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides WithManifestDiscovery(bool enabled)
-        {
-            EnableManifestDiscovery = enabled;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides DisableManifestEnforcement()
-        {
-            EnableManifestDiscovery = false;
-            return this;
-        }
-
-        public SecurityConfigurationOverrides WithAntiPolymorphism(bool enabled = true)
-        {
-            AllowOnlyLuaExtension = enabled;
-            PreventLuaFileWrites = enabled;
-            PreventDynamicCode = enabled;
-            BlockManifestAccess = enabled;
-            return this;
-        }
-
-        /// <summary>
-        /// Sets file access for a specific path
-        /// </summary>
-        public SecurityConfigurationOverrides SetFileAccess(string path, FileAccess access)
-        {
-            return WithFileAccess(path, access);
-        }
-
-        /// <summary>
-        /// Sets directory access for a specific path
-        /// </summary>
-        public SecurityConfigurationOverrides SetDirectoryAccess(string path, DirectoryAccess access)
-        {
-            return WithDirectoryAccess(path, access);
-        }
     }
 }

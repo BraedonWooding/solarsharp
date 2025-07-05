@@ -2,9 +2,9 @@
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Reflection;
+using SolarSharp.Hardwire.Languages;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Hardwire.Languages;
 
 namespace SolarSharp.Hardwire
 {

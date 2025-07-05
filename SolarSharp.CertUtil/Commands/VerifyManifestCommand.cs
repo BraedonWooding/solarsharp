@@ -3,8 +3,27 @@ using System.Text.Json;
 
 namespace SolarSharp.CertUtil.Commands
 {
+    /// <summary>
+    /// Represents the command for verifying the signature of a manifest JSON file.
+    /// </summary>
+    /// <remarks>
+    /// This static class is part of the command-line interface for providing functionality to verify the
+    /// integrity and signature of a manifest JSON file. The command is integrated into the main tool as one of the
+    /// supported operations for certificate and manifest management.
+    /// </remarks>
+    /// <seealso cref="System.CommandLine.Command"/>
+    /// <seealso cref="SolarSharp.CertUtil.Commands.SignManifestCommand"/>
+    /// <seealso cref="SolarSharp.CertUtil.Commands.GenerateCaCommand"/>
     public static class VerifyManifestCommand
     {
+        /// <summary>
+        /// Creates and returns a command for verifying a manifest signature.
+        /// The command expects a required option to specify the path to the manifest
+        /// JSON file that needs to be verified.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.CommandLine.Command"/> configured for verifying a manifest signature.
+        /// </returns>
         public static Command Create()
         {
             var manifestOption = new Option<FileInfo>(
@@ -17,7 +36,7 @@ namespace SolarSharp.CertUtil.Commands
                 manifestOption
             };
 
-            command.SetHandler(async (manifestFile) =>
+            command.SetHandler(static async (manifestFile) =>
             {
                 try
                 {

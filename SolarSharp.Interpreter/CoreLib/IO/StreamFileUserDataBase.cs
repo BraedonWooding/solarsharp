@@ -1,5 +1,5 @@
-﻿using SolarSharp.Interpreter.Errors;
-using System.IO;
+﻿using System.IO;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.CoreLib.IO
 {

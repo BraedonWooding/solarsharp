@@ -1,8 +1,8 @@
-﻿using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.DataTypes;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
-using SolarSharp.Interpreter.Serialization.Json;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Serialization.Json;
 
 namespace SolarSharp.Interpreter.CoreLib
 {

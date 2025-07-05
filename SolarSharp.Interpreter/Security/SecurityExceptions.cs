@@ -6,8 +6,6 @@ namespace SolarSharp.Interpreter.Security
     // CRITICAL SECURITY EXCEPTIONS (Always throw)
     // ===============================================
 
-    #region Resource Exhaustion - Always Critical
-
     /// <summary>
     /// Thrown when a resource limit is exceeded (memory, instructions, etc.)
     /// </summary>
@@ -52,9 +50,16 @@ namespace SolarSharp.Interpreter.Security
         }
     }
 
-    #endregion
-
-    #region Path Security - Always Critical
+    /// <summary>
+    /// Thrown when instruction limit is exceeded
+    /// </summary>
+    public class InstructionLimitExceededException : CriticalSecurityException
+    {
+        public InstructionLimitExceededException(string message, string operation, params object[] arguments)
+            : base(message, SecurityEventType.ResourceLimitExceeded, operation, arguments)
+        {
+        }
+    }
 
     /// <summary>
     /// Thrown when path traversal attack is detected
@@ -77,10 +82,6 @@ namespace SolarSharp.Interpreter.Security
         {
         }
     }
-
-    #endregion
-
-    #region Manifest Security - Always Critical
 
     /// <summary>
     /// Thrown when manifest signature verification fails
@@ -113,10 +114,6 @@ namespace SolarSharp.Interpreter.Security
         {
         }
     }
-
-    #endregion
-
-    #region Write Operations - Always Critical
 
     /// <summary>
     /// Thrown when unauthorized file write is attempted
@@ -162,13 +159,9 @@ namespace SolarSharp.Interpreter.Security
         }
     }
 
-    #endregion
-
     // ===============================================
     // NON-CRITICAL SECURITY EXCEPTIONS (Optional throw)
     // ===============================================
-
-    #region Read Access Restrictions - Non-Critical
 
     /// <summary>
     /// Thrown when file read access is denied
@@ -214,10 +207,6 @@ namespace SolarSharp.Interpreter.Security
         }
     }
 
-    #endregion
-
-    #region Anti-Polymorphism Read Restrictions - Non-Critical
-
     /// <summary>
     /// Thrown when manifest file read is blocked (anti-polymorphism protection)
     /// </summary>
@@ -251,10 +240,6 @@ namespace SolarSharp.Interpreter.Security
         }
     }
 
-    #endregion
-
-    #region Capability Restrictions - Non-Critical
-
     /// <summary>
     /// Thrown when required capability is missing
     /// </summary>
@@ -269,9 +254,9 @@ namespace SolarSharp.Interpreter.Security
     /// <summary>
     /// Thrown when file access is denied (general file access violation)
     /// </summary>
-    public class FileAccessViolationException : NonCriticalSecurityException
+    public class FilePermissionViolationException : NonCriticalSecurityException
     {
-        public FileAccessViolationException(string message, string operation, params object[] arguments)
+        public FilePermissionViolationException(string message, string operation, params object[] arguments)
             : base(message, SecurityEventType.FileAccessViolation, operation, arguments)
         {
         }
@@ -320,6 +305,4 @@ namespace SolarSharp.Interpreter.Security
         {
         }
     }
-
-    #endregion
 }

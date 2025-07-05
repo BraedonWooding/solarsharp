@@ -1,26 +1,26 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Text.Json;
 using FluentAssertions;
 using Moq;
+using NUnit.Framework;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.DataTypes;
 using Spectre.Console.Testing;
-using Xunit;
-using WotCI;
 
 namespace WotCI.Tests
 {
-    public class PluginLoaderTests : IDisposable
+    [TestFixture]
+    [Category("IntegrationTest")]
+    public class PluginLoaderTests
     {
-        private readonly string _testPluginDir;
-        private readonly Mock<GameSimulator> _mockGame;
-        private readonly TestConsole _console;
-        private readonly SimplePluginLoader _loader;
+        private string _testPluginDir;
+        private Mock<GameSimulator> _mockGame;
+        private TestConsole _console;
+        private SimplePluginLoader _loader;
 
-        public PluginLoaderTests()
+        [SetUp]
+        public void SetUp()
         {
             _testPluginDir = Path.Combine(Path.GetTempPath(), $"wotci_test_plugins_{Guid.NewGuid()}");
             Directory.CreateDirectory(_testPluginDir);
@@ -30,7 +30,8 @@ namespace WotCI.Tests
             _loader = new SimplePluginLoader(_mockGame.Object, _console);
         }
 
-        public void Dispose()
+        [TearDown]
+        public void TearDown()
         {
             if (Directory.Exists(_testPluginDir))
             {
@@ -45,18 +46,15 @@ namespace WotCI.Tests
         /// This test verifies that the plugin loader gracefully handles missing manifest files
         /// by displaying a clear error message to the user and continuing operation.
         /// </remarks>
-        [Fact]
+        [Test]
         public void LoadPluginDirectory_NoManifest_ShowsError()
         {
-            // Arrange
-            var pluginDir = Path.Combine(_testPluginDir, "test-plugin");
+                        var pluginDir = Path.Combine(_testPluginDir, "test-plugin");
             Directory.CreateDirectory(pluginDir);
             
-            // Act
-            _loader.LoadPluginDirectory(pluginDir);
+                        _loader.LoadPluginDirectory(pluginDir);
             
-            // Assert
-            _console.Output.Should().Contain("No manifest found");
+                        _console.Output.Should().Contain("No manifest found");
         }
 
         /// <summary>
@@ -66,19 +64,16 @@ namespace WotCI.Tests
         /// This test verifies that the plugin loader can parse a valid manifest file
         /// and load the associated plugin scripts without errors.
         /// </remarks>
-        [Fact]
+        [Test]
         public void LoadPluginDirectory_ValidManifest_LoadsPlugin()
         {
-            // Arrange
-            var pluginDir = CreateTestPlugin("test-plugin", "Test Plugin", "1.0.0");
+                        var pluginDir = CreateTestPlugin("test-plugin", "Test Plugin", "1.0.0");
             var mockApi = new Table(null);
             _mockGame.Setup(g => g.CreateApi()).Returns(mockApi);
 
-            // Act
-            _loader.LoadPluginDirectory(pluginDir);
+                        _loader.LoadPluginDirectory(pluginDir);
 
-            // Assert
-            _console.Output.Should().Contain("Found manifest: Test Plugin v1.0.0");
+                        _console.Output.Should().Contain("Found manifest: Test Plugin v1.0.0");
             _console.Output.Should().Contain("Successfully loaded plugin: Test Plugin");
             _mockGame.Verify(g => g.CreateApi(), Times.Once);
         }
@@ -90,19 +85,16 @@ namespace WotCI.Tests
         /// This test verifies that the plugin loader properly handles corrupted or malformed
         /// manifest JSON files by displaying an appropriate error message and continuing operation.
         /// </remarks>
-        [Fact]
+        [Test]
         public void LoadPluginDirectory_InvalidManifestJson_ShowsError()
         {
-            // Arrange
-            var pluginDir = Path.Combine(_testPluginDir, "invalid-plugin");
+                        var pluginDir = Path.Combine(_testPluginDir, "invalid-plugin");
             Directory.CreateDirectory(pluginDir);
             File.WriteAllText(Path.Combine(pluginDir, "manifest.json"), "{ invalid json }");
 
-            // Act
-            _loader.LoadPluginDirectory(pluginDir);
+                        _loader.LoadPluginDirectory(pluginDir);
 
-            // Assert
-            _console.Output.Should().Contain("Failed to load plugin:");
+                        _console.Output.Should().Contain("Failed to load plugin:");
         }
 
         /// <summary>
@@ -112,11 +104,10 @@ namespace WotCI.Tests
         /// This test verifies that multiple Lua script files within a plugin directory
         /// are all loaded and executed, allowing plugins to consist of multiple script files.
         /// </remarks>
-        [Fact]
+        [Test]
         public void LoadPluginDirectory_LoadsAllLuaFiles()
         {
-            // Arrange
-            var pluginDir = CreateTestPlugin("multi-lua", "Multi Lua", "1.0.0");
+                        var pluginDir = CreateTestPlugin("multi-lua", "Multi Lua", "1.0.0");
             CreateLuaFile(pluginDir, "main.lua", "print('[Plugin] Main loaded')");
             CreateLuaFile(pluginDir, "helper.lua", "print('[Plugin] Helper loaded')");
             CreateLuaFile(pluginDir, "utils.lua", "print('[Plugin] Utils loaded')");
@@ -124,11 +115,9 @@ namespace WotCI.Tests
             var mockApi = new Table(null);
             _mockGame.Setup(g => g.CreateApi()).Returns(mockApi);
 
-            // Act
-            _loader.LoadPluginDirectory(pluginDir);
+                        _loader.LoadPluginDirectory(pluginDir);
 
-            // Assert
-            _console.Output.Should().Contain("Loading: main.lua");
+                        _console.Output.Should().Contain("Loading: main.lua");
             _console.Output.Should().Contain("Loading: helper.lua");
             _console.Output.Should().Contain("Loading: utils.lua");
             _console.Output.Should().Contain("[Plugin] Main loaded");
@@ -143,11 +132,10 @@ namespace WotCI.Tests
         /// This test verifies error isolation - if one script in a plugin directory fails,
         /// the loader should continue processing other scripts and show appropriate error messages.
         /// </remarks>
-        [Fact]
+        [Test]
         public void LoadPluginDirectory_LuaError_ContinuesLoading()
         {
-            // Arrange
-            var pluginDir = CreateTestPlugin("error-plugin", "Error Plugin", "1.0.0");
+                        var pluginDir = CreateTestPlugin("error-plugin", "Error Plugin", "1.0.0");
             CreateLuaFile(pluginDir, "good.lua", "print('[Plugin] Good script')");
             CreateLuaFile(pluginDir, "bad.lua", "invalid lua syntax!@#$");
             CreateLuaFile(pluginDir, "also-good.lua", "print('[Plugin] Also good')");
@@ -155,11 +143,9 @@ namespace WotCI.Tests
             var mockApi = new Table(null);
             _mockGame.Setup(g => g.CreateApi()).Returns(mockApi);
 
-            // Act
-            _loader.LoadPluginDirectory(pluginDir);
+                        _loader.LoadPluginDirectory(pluginDir);
 
-            // Assert
-            _console.Output.Should().Contain("[Plugin] Good script");
+                        _console.Output.Should().Contain("[Plugin] Good script");
             _console.Output.Should().Contain("✗ Failed to load bad.lua:");
             _console.Output.Should().Contain("[Plugin] Also good");
             _console.Output.Should().Contain("Successfully loaded plugin: Error Plugin");
@@ -172,11 +158,10 @@ namespace WotCI.Tests
         /// This test verifies that timeout and memory limit settings from the plugin manifest
         /// are correctly enforced during script execution, providing security boundaries for plugins.
         /// </remarks>
-        [Fact]
+        [Test]
         public void LoadPluginDirectory_AppliesManifestTimeoutAndMemoryLimit()
         {
-            // Arrange
-            var manifest = new SimpleManifest
+                        var manifest = new SimpleManifest
             {
                 version = "1.0.0",
                 name = "Limited Plugin",
@@ -196,11 +181,9 @@ namespace WotCI.Tests
             var mockApi = new Table(null);
             _mockGame.Setup(g => g.CreateApi()).Returns(mockApi);
 
-            // Act
-            _loader.LoadPluginDirectory(pluginDir);
+                        _loader.LoadPluginDirectory(pluginDir);
 
-            // Assert
-            // Note: We can't easily verify the actual security config was applied
+                        // Note: We can't easily verify the actual security config was applied
             // without exposing internals, but we can verify it didn't crash
             // In a real implementation, we'd want to expose this for testing
         }
@@ -212,11 +195,10 @@ namespace WotCI.Tests
         /// This test verifies that user scripts run with limited privileges and access
         /// compared to trusted plugins, enforcing appropriate security boundaries.
         /// </remarks>
-        [Fact]
+        [Test]
         public void LoadUserScripts_LoadsLuaFilesWithLimitedApi()
         {
-            // Arrange
-            var userDir = Path.Combine(_testPluginDir, "user");
+                        var userDir = Path.Combine(_testPluginDir, "user");
             Directory.CreateDirectory(userDir);
             CreateLuaFile(userDir, "user1.lua", "print('User script 1')");
             CreateLuaFile(userDir, "user2.lua", "print('User script 2')");
@@ -224,11 +206,9 @@ namespace WotCI.Tests
             var mockApi = new Table(null);
             _mockGame.Setup(g => g.CreateApi()).Returns(mockApi);
 
-            // Act
-            _loader.LoadUserScripts(userDir);
+                        _loader.LoadUserScripts(userDir);
 
-            // Assert
-            _console.Output.Should().Contain("Loading user scripts from:");
+                        _console.Output.Should().Contain("Loading user scripts from:");
             _console.Output.Should().Contain("Loading: user1.lua");
             _console.Output.Should().Contain("Loading: user2.lua");
             _console.Output.Should().Contain("[User] User script 1");
@@ -243,16 +223,13 @@ namespace WotCI.Tests
         /// This test verifies graceful handling of missing user script directories
         /// by displaying an informative message instead of throwing an exception.
         /// </remarks>
-        [Fact]
+        [Test]
         public void LoadUserScripts_NonExistentDirectory_ShowsMessage()
         {
-            // Arrange
-            var userDir = Path.Combine(_testPluginDir, "nonexistent");
-            // Act
-            _loader.LoadUserScripts(userDir);
+                        var userDir = Path.Combine(_testPluginDir, "nonexistent");
+                        _loader.LoadUserScripts(userDir);
 
-            // Assert
-            _console.Output.Should().Contain("User scripts directory not found:");
+                        _console.Output.Should().Contain("User scripts directory not found:");
         }
 
         /// <summary>
@@ -262,11 +239,10 @@ namespace WotCI.Tests
         /// This test verifies error isolation for user scripts - failures in individual
         /// scripts should not impact the loading of other scripts in the same directory.
         /// </remarks>
-        [Fact]
+        [Test]
         public void LoadUserScripts_ErrorInScript_ContinuesLoading()
         {
-            // Arrange
-            var userDir = Path.Combine(_testPluginDir, "user-errors");
+                        var userDir = Path.Combine(_testPluginDir, "user-errors");
             Directory.CreateDirectory(userDir);
             CreateLuaFile(userDir, "good.lua", "print('Good user script')");
             CreateLuaFile(userDir, "bad.lua", "error('Intentional error')");
@@ -275,11 +251,9 @@ namespace WotCI.Tests
             var mockApi = new Table(null);
             _mockGame.Setup(g => g.CreateApi()).Returns(mockApi);
 
-            // Act
-            _loader.LoadUserScripts(userDir);
+                        _loader.LoadUserScripts(userDir);
 
-            // Assert
-            _console.Output.Should().Contain("[User] Good user script");
+                        _console.Output.Should().Contain("[User] Good user script");
             _console.Output.Should().Contain("Failed to load bad.lua:");
             _console.Output.Should().Contain("[User] Another good script");
         }
@@ -291,11 +265,10 @@ namespace WotCI.Tests
         /// This test verifies that plugins can successfully interact with the game through
         /// the provided API, including reading game state and executing game actions.
         /// </remarks>
-        [Fact]
+        [Test]
         public void PluginScript_HasAccessToGameApi()
         {
-            // Arrange
-            var pluginDir = CreateTestPlugin("api-test", "API Test", "1.0.0");
+                        var pluginDir = CreateTestPlugin("api-test", "API Test", "1.0.0");
             CreateLuaFile(pluginDir, "api-test.lua", @"
                 local health = game.getPlayerHealth()
                 print('Player health: ' .. health)
@@ -303,25 +276,25 @@ namespace WotCI.Tests
                 game.giveGold(100)
             ");
 
-            var mockApi = new Table(null);
-            mockApi["getPlayerHealth"] = DynValue.NewCallback((ctx, args) => DynValue.NewNumber(75));
-            mockApi["heal"] = DynValue.NewCallback((ctx, args) => DynValue.Nil);
-            mockApi["giveGold"] = DynValue.NewCallback((ctx, args) => DynValue.Nil);
-            mockApi["print"] = DynValue.NewCallback((ctx, args) => 
+            var mockApi = new Table(null)
             {
-                if (args.Count > 0)
-                    Spectre.Console.AnsiConsoleExtensions.WriteLine(_console, $"[Plugin] {args[0].CastToString()}");
-                return DynValue.Nil;
-            });
-            
+                ["getPlayerHealth"] = DynValue.NewCallback((ctx, args) => DynValue.NewNumber(75)),
+                ["heal"] = DynValue.NewCallback((ctx, args) => DynValue.Nil),
+                ["giveGold"] = DynValue.NewCallback((ctx, args) => DynValue.Nil),
+                ["print"] = DynValue.NewCallback((ctx, args) => 
+                {
+                    if (args.Count > 0)
+                        Spectre.Console.AnsiConsoleExtensions.WriteLine(_console, $"[Plugin] {args[0].CastToString()}");
+                    return DynValue.Nil;
+                })
+            };
+
             _mockGame.Setup(g => g.CreateApi()).Returns(mockApi);
             _mockGame.Setup(g => g.RegisterPlugin(It.IsAny<string>(), It.IsAny<Script>()));
 
-            // Act
-            _loader.LoadPluginDirectory(pluginDir);
+                        _loader.LoadPluginDirectory(pluginDir);
 
-            // Assert
-            _console.Output.Should().Contain("[Plugin] Player health: 75");
+                        _console.Output.Should().Contain("[Plugin] Player health: 75");
         }
 
         /// <summary>
@@ -331,10 +304,10 @@ namespace WotCI.Tests
         /// This test verifies backward compatibility and robustness by ensuring that plugins
         /// with basic manifest files can still be loaded even if optional metadata is missing.
         /// </remarks>
-        [Fact]
+        [Test]
         public void Manifest_MissingRequiredFields_StillLoads()
         {
-            // Arrange - Minimal manifest
+            // Minimal manifest
             var manifest = new { version = "1.0.0" };
             var pluginDir = Path.Combine(_testPluginDir, "minimal");
             Directory.CreateDirectory(pluginDir);
@@ -345,11 +318,9 @@ namespace WotCI.Tests
             var mockApi = new Table(null);
             _mockGame.Setup(g => g.CreateApi()).Returns(mockApi);
 
-            // Act
-            _loader.LoadPluginDirectory(pluginDir);
+                        _loader.LoadPluginDirectory(pluginDir);
 
-            // Assert
-            _console.Output.Should().Contain("Found manifest:");
+                        _console.Output.Should().Contain("Found manifest:");
         }
 
         private string CreateTestPlugin(string name, string displayName, string version)

@@ -1,6 +1,6 @@
 using System;
 using System.Text.Json;
-using SolarSharp.Interpreter.Security.Manifest;
+using SolarSharp.Interpreter.Security.Manifests;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -8,12 +8,12 @@ namespace SolarSharp.Interpreter.Security
     /// Adapter class for backward compatibility with test expectations
     /// Wraps the actual Manifest class with a simpler API
     /// </summary>
-    public class LuaManifest
+    public class LuaManifest : ISecurityPolicy
     {
         /// <summary>
         /// Underlying manifest instance
         /// </summary>
-        public SolarSharp.Interpreter.Security.Manifest.Manifest Manifest { get; private set; }
+        public Manifests.Manifest Manifest { get; private set; }
 
         /// <summary>
         /// Manifest policy configuration
@@ -23,9 +23,18 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Private constructor - use factory methods
         /// </summary>
-        private LuaManifest(SolarSharp.Interpreter.Security.Manifest.Manifest manifest)
+        private LuaManifest(Manifests.Manifest manifest)
         {
             Manifest = manifest;
+        }
+
+        /// <summary>
+        /// Converts this security policy to a manifest for Script initialization
+        /// </summary>
+        /// <returns>The underlying manifest</returns>
+        public Manifests.Manifest ToManifest()
+        {
+            return Manifest;
         }
 
         /// <summary>
@@ -38,7 +47,7 @@ namespace SolarSharp.Interpreter.Security
         {
             try
             {
-                var manifest = JsonSerializer.Deserialize<SolarSharp.Interpreter.Security.Manifest.Manifest>(json);
+                var manifest = JsonSerializer.Deserialize<Manifests.Manifest>(json);
                 
                 // Validate version after parsing
                 if (manifest != null)

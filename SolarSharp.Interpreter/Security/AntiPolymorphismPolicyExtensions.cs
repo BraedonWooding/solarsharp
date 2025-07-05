@@ -39,13 +39,14 @@ namespace SolarSharp.Interpreter.Security
         }
 
         /// <summary>
-        /// Configures the policy to prevent dynamic code execution
+        /// Configures the policy to prevent dynamic code execution (both internal and external)
         /// </summary>
         /// <param name="policy">Anti-polymorphism policy</param>
         /// <returns>The same policy instance for fluent chaining</returns>
         public static AntiPolymorphismPolicy PreventDynamicCode(this AntiPolymorphismPolicy policy)
         {
-            policy.PreventDynamicCode = true;
+            policy.PreventRunString = true;
+            policy.PreventInternalDynamicCode = true;
             return policy;
         }
 

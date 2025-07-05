@@ -1,11 +1,28 @@
 using System.CommandLine;
-using System.Text.Json;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 
 namespace SolarSharp.CertUtil.Commands
 {
+    /// <summary>
+    /// The SignManifestCommand class provides functionality to create a command for signing JSON manifest files.
+    /// </summary>
+    /// <remarks>
+    /// This command requires options for specifying the manifest file, certificate file, and optionally the private key file.
+    /// It integrates into the command-line tool for managing certificates and manifest files.
+    /// </remarks>
+    /// <example>
+    /// Command usage includes specifying required paths for manifest, certificate, and optionally, the key file.
+    /// </example>
+    /// <seealso cref="System.CommandLine.Command"/>
+    /// <seealso cref="SolarSharp.CertUtil.Commands.GenerateCaCommand"/>
+    /// <seealso cref="SolarSharp.CertUtil.Commands.VerifyManifestCommand"/>
     public static class SignManifestCommand
     {
+        /// <summary>
+        /// Creates a command that enables signing of a manifest file.
+        /// </summary>
+        /// <returns>A new command configured to sign a manifest file, including required options for manifest, certificate, and private key.</returns>
         public static Command Create()
         {
             var manifestOption = new Option<FileInfo>(
@@ -51,7 +68,7 @@ namespace SolarSharp.CertUtil.Commands
                     var manifest = JsonSerializer.Deserialize<Dictionary<string, object>>(manifestJson);
                     
                     X509Certificate2 cert;
-                    if (keyFile != null && keyFile.Exists)
+                    if (keyFile is { Exists: true })
                     {
                         // Load certificate and separate key file
                         var certPem = await File.ReadAllTextAsync(certFile.FullName);
@@ -103,6 +120,12 @@ namespace SolarSharp.CertUtil.Commands
             return command;
         }
 
+        /// <summary>
+        /// Creates a digital signature for the given content using the specified X.509 certificate.
+        /// </summary>
+        /// <param name="content">The content to be signed, represented as a string.</param>
+        /// <param name="cert">The X.509 certificate to be used for signing the content.</param>
+        /// <returns>A base64-encoded string representation of the generated signature.</returns>
         private static string CreateSignature(string content, X509Certificate2 cert)
         {
             // This is a simplified signature approach for demo purposes

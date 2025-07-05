@@ -1,11 +1,10 @@
-using SolarSharp.Interpreter.Security;
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
+using NUnit.Framework;
 using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataTypes;
-using NUnit.Framework;
-using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -31,6 +30,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     }
 
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("IntegrationTest")]
     public class UserDataOverloadsTests
     {
         public class OverloadsTestClass
@@ -102,7 +103,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             S.Globals.Set("s", UserData.CreateStatic<OverloadsTestClass>());
             S.Globals.Set("o", UserData.Create(obj));
 
-            DynValue v = S.DoString("return " + code);
+            var v = S.DoString("return " + code);
 
             if (tupleExpected)
             {
@@ -126,8 +127,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             try
             {
-                var lua = new Script(StringExecution.True);
-                lua.Globals["DictionaryIntInt"] = typeof(Dictionary<int, int>);
+                var lua = new Script
+                {
+                    Globals =
+                    {
+                        ["DictionaryIntInt"] = typeof(Dictionary<int, int>)
+                    }
+                };
 
                 var script = @"local dict = DictionaryIntInt.__new(); local res, v = dict.TryGetValue(0)";
                 lua.DoString(script);
@@ -306,11 +312,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
 
             // Creates the callback over the 'this' object
-            DynValue callback = DynValue.NewCallback(ov.GetCallbackFunction(s, this));
+            var callback = DynValue.NewCallback(ov.GetCallbackFunction(s, this));
             s.Globals.Set("func", callback);
 
             // Execute and check the results.
-            DynValue result = s.DoString("return func(), func(17)");
+            var result = s.DoString("return func(), func(17)");
 
             Assert.Multiple(() =>
             {

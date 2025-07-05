@@ -3,8 +3,21 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace SolarSharp.CertUtil.Commands
 {
+    /// <summary>
+    /// Provides a command to verify a certificate.
+    /// </summary>
+    /// <remarks>
+    /// This command validates the authenticity of a given certificate file, with an optional
+    /// CA (Certificate Authority) certificate for additional validation.
+    /// </remarks>
     public static class VerifyCertCommand
     {
+        /// <summary>
+        /// Creates a command for verifying a certificate within the command-line utility.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="Command"/> configured for verifying certificates with required options.
+        /// </returns>
         public static Command Create()
         {
             var certOption = new Option<FileInfo>(
@@ -63,40 +76,36 @@ namespace SolarSharp.CertUtil.Commands
                     foreach (var part in parts)
                     {
                         var trimmed = part.Trim();
-                        if (trimmed.StartsWith("CN=", StringComparison.OrdinalIgnoreCase))
+                        if (!trimmed.StartsWith("CN=", StringComparison.OrdinalIgnoreCase)) continue;
+                        var cn = trimmed.Substring(3);
+                        if (cn.StartsWith("/"))
                         {
-                            var cn = trimmed.Substring(3);
-                            if (cn.StartsWith("/"))
-                            {
-                                Console.WriteLine($"  Path Constraint: {cn}");
-                            }
+                            Console.WriteLine($"  Path Constraint: {cn}");
                         }
                     }
                     
                     // Basic chain validation
-                    using (var chain = new X509Chain())
+                    using var chain = new X509Chain();
+                    chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+
+                    if (caCertFile.Exists)
                     {
-                        chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
-                        
-                        if (caCertFile != null && caCertFile.Exists)
+                        var caCertPem = await File.ReadAllTextAsync(caCertFile.FullName);
+                        var caCert = X509Certificate2.CreateFromPem(caCertPem);
+                        chain.ChainPolicy.ExtraStore.Add(caCert);
+                        Console.WriteLine($"Using CA certificate: {caCert.Subject}");
+                    }
+
+                    if (chain.Build(cert))
+                    {
+                        Console.WriteLine("✓ Certificate chain is valid");
+                    }
+                    else
+                    {
+                        Console.WriteLine("✗ Certificate chain validation failed:");
+                        foreach (var status in chain.ChainStatus)
                         {
-                            var caCertPem = await File.ReadAllTextAsync(caCertFile.FullName);
-                            var caCert = X509Certificate2.CreateFromPem(caCertPem);
-                            chain.ChainPolicy.ExtraStore.Add(caCert);
-                            Console.WriteLine($"Using CA certificate: {caCert.Subject}");
-                        }
-                        
-                        if (chain.Build(cert))
-                        {
-                            Console.WriteLine("✓ Certificate chain is valid");
-                        }
-                        else
-                        {
-                            Console.WriteLine("✗ Certificate chain validation failed:");
-                            foreach (var status in chain.ChainStatus)
-                            {
-                                Console.WriteLine($"  - {status.Status}: {status.StatusInformation}");
-                            }
+                            Console.WriteLine($"  - {status.Status}: {status.StatusInformation}");
                         }
                     }
                 }

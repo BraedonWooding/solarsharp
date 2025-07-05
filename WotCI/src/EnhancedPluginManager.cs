@@ -1,18 +1,10 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using SolarSharp.Interpreter;
-using SolarSharp.Interpreter.Security;
 using SolarSharp.Interpreter.Communication;
-using SolarSharp.Interpreter.DataTypes;
-using WotCI.Security;
+using SolarSharp.Interpreter.Security;
+using Spectre.Console;
 using WotCI.API;
 using WotCI.UI;
-using Spectre.Console;
 
 namespace WotCI
 {
@@ -236,19 +228,17 @@ namespace WotCI
         {
             return trustLevel switch
             {
-                PluginTrustLevel.User => SecurityConfiguration.CreateIsolated()
-                    .WithOverrides(overrides => overrides
-                        .WithTimeoutMs(30000)
-                        .WithMemoryLimitMB(10)
-                        .WithInstructionLimit(100_000)),
+                PluginTrustLevel.User => SecurityConfiguration.Isolated()
+                    .WithTimeout(TimeSpan.FromSeconds(30))
+                    .WithMemoryLimitMB(10)
+                    .WithInstructionLimit(100_000),
                         
-                PluginTrustLevel.Partner => SecurityConfiguration.CreateDataProcessing()
-                    .WithOverrides(overrides => overrides
-                        .WithTimeoutMs(300000)
-                        .WithMemoryLimitMB(50)
-                        .WithInstructionLimit(1_000_000)),
+                PluginTrustLevel.Partner => SecurityConfiguration.DataProcessing()
+                    .WithTimeout(TimeSpan.FromMinutes(5))
+                    .WithMemoryLimitMB(50)
+                    .WithInstructionLimit(1_000_000),
                         
-                PluginTrustLevel.System => SecurityConfiguration.CreateTrustedAutomation(),
+                PluginTrustLevel.System => SecurityConfiguration.Automation(),
                 
                 _ => throw new ArgumentOutOfRangeException(nameof(trustLevel))
             };

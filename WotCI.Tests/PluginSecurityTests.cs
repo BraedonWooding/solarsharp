@@ -1,24 +1,23 @@
 using System;
-using System.IO;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using FluentAssertions;
+using NUnit.Framework;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
-using SolarSharp.Interpreter.Security.Manifest;
-using Xunit;
+using SolarSharp.Interpreter.Security.Manifests;
 
 namespace WotCI.Tests
 {
+    [TestFixture]
+    [Category("IntegrationTest")]
+    [Category("SecurityTest")]
     public class PluginSecurityTests
     {
-        [Fact]
+        [Test]
         public void PluginExecution_WithValidManifest_Succeeds()
         {
-            // Arrange
-            var rootCa = CertificateTestHelpers.GenerateRootCA();
+                        var rootCa = CertificateTestHelpers.GenerateRootCA();
             var partnerCert = CertificateTestHelpers.GeneratePartnerCertificate(
                 rootCa, "Test Partner", "/plugins/test");
             
@@ -38,26 +37,22 @@ namespace WotCI.Tests
             var signedManifest = ManifestSigner.SignManifestJsonWithCertificate(manifestJson, partnerCert);
             var manifest = LuaManifest.ParseManifest(signedManifest, "/plugins/test");
 
-            // Act
-            var script = new Script(manifest.Policy.ToSecurityConfiguration());
+                        var script = new Script(manifest.Manifest);
             var result = script.DoString("return 'Plugin loaded successfully'");
 
-            // Assert
-            result.String.Should().Be("Plugin loaded successfully");
+                        result.String.Should().Be("Plugin loaded successfully");
         }
 
-        [Fact]
+        [Test]
         public void PluginExecution_ExceedsTimeout_Throws()
         {
-            // Arrange
-            var config = SecurityConfiguration.CreateIsolated()
-                .WithTimeout(1) // 1 second timeout
+                        var config = SecurityConfiguration.Isolated()
+                .WithTimeoutMs(1) // 1 second timeout
                 .AllowModules("basic");
 
             var script = new Script(config);
 
-            // Act & Assert
-            Action action = () => script.DoString(@"
+                        Action action = () => script.DoString(@"
                 while true do
                     -- Infinite loop
                 end
@@ -67,28 +62,25 @@ namespace WotCI.Tests
                 .WithMessage("*limit exceeded*");
         }
 
-        [Fact]
+        [Test]
         public void PluginExecution_AccessDeniedModule_Throws()
         {
-            // Arrange
-            var config = SecurityConfiguration.CreateIsolated()
-                .AllowModules("basic", "string"); // No 'io' module
+                        var config = SecurityConfiguration.Isolated()
+                .WithModules(CoreModules.Basic | CoreModules.String); // No 'io' module
 
             var script = new Script(config);
 
-            // Act & Assert
-            Action action = () => script.DoString(@"
+                        Action action = () => script.DoString(@"
                 local f = io.open('test.txt', 'w')
             ");
 
             action.Should().Throw<ScriptRuntimeException>();
         }
 
-        [Fact]
+        [Test]
         public void ManifestValidation_WithTamperedContent_Fails()
         {
-            // Arrange
-            var rootCa = CertificateTestHelpers.GenerateRootCA();
+                        var rootCa = CertificateTestHelpers.GenerateRootCA();
             var partnerCert = CertificateTestHelpers.GeneratePartnerCertificate(
                 rootCa, "Test Partner", "/plugins/test");
             
@@ -108,8 +100,7 @@ namespace WotCI.Tests
             // Tamper with the manifest
             var tamperedManifest = signedManifest.Replace("Test Plugin", "Hacked Plugin");
 
-            // Act & Assert
-            Action action = () =>
+                        Action action = () =>
             {
                 var manifest = LuaManifest.ParseManifest(tamperedManifest, "/plugins/test");
                 ManifestAutoLoader.VerifyManifestSignature(manifest);
@@ -118,22 +109,20 @@ namespace WotCI.Tests
             action.Should().Throw<ManifestSignatureException>();
         }
 
-        [Fact]
+        [Test]
         public void CertificatePathConstraint_EnforcesPluginBoundaries()
         {
-            // Arrange
-            var rootCa = CertificateTestHelpers.GenerateRootCA();
+                        var rootCa = CertificateTestHelpers.GenerateRootCA();
             var partnerACert = CertificateTestHelpers.GeneratePartnerCertificate(
                 rootCa, "Partner A", "/plugins/partner-a");
             var partnerBCert = CertificateTestHelpers.GeneratePartnerCertificate(
                 rootCa, "Partner B", "/plugins/partner-b");
 
-            // Act - Extract path constraints
+            // Extract path constraints
             var pathA = X509CertificateInfo.ExtractSubjectPath(partnerACert);
             var pathB = X509CertificateInfo.ExtractSubjectPath(partnerBCert);
 
-            // Assert
-            pathA.Should().Be("/plugins/partner-a");
+                        pathA.Should().Be("/plugins/partner-a");
             pathB.Should().Be("/plugins/partner-b");
             pathA.Should().NotBe(pathB);
 
@@ -143,11 +132,10 @@ namespace WotCI.Tests
             constraintsA.IsPathAllowed("/plugins/partner-b/file.lua").Should().BeFalse();
         }
 
-        [Fact]
+        [Test]
         public void AntiPolymorphism_PreventsSelfModifyingCode()
         {
-            // Arrange
-            var config = SecurityConfiguration.CreateIsolated()
+                        var config = SecurityConfiguration.Isolated()
                 .WithAntiPolymorphism(policy => policy
                     .AllowOnlyLuaExtension()
                     .PreventDynamicCode())
@@ -165,12 +153,11 @@ namespace WotCI.Tests
             action.Should().Throw<ScriptRuntimeException>();
         }
 
-        [Fact]
+        [Test]
         public void ResourceLimits_MemoryLimit_Enforced()
         {
-            // Arrange
-            var config = SecurityConfiguration.CreateIsolated()
-                .WithMemoryLimit(1) // 1 MB limit
+                        var config = SecurityConfiguration.Isolated()
+                .WithMemoryLimitMB(1) // 1 MB limit
                 .AllowModules("basic", "table");
 
             var script = new Script(config);

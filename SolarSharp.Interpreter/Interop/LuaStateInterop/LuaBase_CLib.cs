@@ -48,7 +48,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         protected static bool isdigit(char c) { return Char.IsDigit(c); }
         protected static bool islower(char c) { return Char.IsLower(c); }
         protected static bool ispunct(char c) { return Char.IsPunctuation(c); }
-        protected static bool isspace(char c) { return (c == ' ') || (c >= (char)0x09 && c <= (char)0x0D); }
+        protected static bool isspace(char c) { return (c == ' ') || c is >= (char)0x09 and <= (char)0x0D; }
         protected static bool isupper(char c) { return Char.IsUpper(c); }
         protected static bool isalnum(char c) { return Char.IsLetterOrDigit(c); }
         protected static bool isxdigit(char c) { return "0123456789ABCDEFabcdef".IndexOf(c) >= 0; }

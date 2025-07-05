@@ -1,28 +1,31 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using SolarSharp.Interpreter.Security;
-using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Modules;
-using FileAccess = SolarSharp.Interpreter.Security.FileAccess;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.Units
 {
     /// <summary>
-    /// Tests for environmental manipulation attacks including global state corruption,
-    /// thread-local storage pollution, environment variable poisoning, and dependency confusion.
-    /// These attacks exploit shared resources and global state to affect other script executions.
+    ///     Unit tests for identifying and mitigating environmental manipulation vulnerabilities within script execution.
+    ///     These tests address issues like global state corruption, thread-local storage interference,
+    ///     environment variable poisoning, dependency injection flaws, and other shared resource exploits that may
+    ///     compromise script isolation or integrity.
     /// </summary>
     [TestFixture]
+    [Category("SecurityTest")]
+    [Category("IntegrationTest")]
     public class EnvironmentalManipulationTests
     {
-        private string _tempDir;
-
+        /// <summary>
+        ///     A setup method executed before each test in the fixture.
+        ///     It initializes the required test environment by creating a unique temporary directory.
+        ///     This directory serves as isolated storage for test execution, ensuring that tests do
+        ///     not interfere with each other's resources or leave residual state.
+        /// </summary>
         [SetUp]
         public void Setup()
         {
@@ -30,17 +33,33 @@ namespace SolarSharp.Interpreter.Tests.Units
             Directory.CreateDirectory(_tempDir);
         }
 
+        /// <summary>
+        ///     Cleans up the temporary test environment created during setup or execution of the test case.
+        ///     This method is used to ensure that any temp directories created for testing purposes
+        ///     are deleted after the tests complete, helping to prevent resource leakage or filesystem clutter.
+        /// </summary>
         [TearDown]
         public void Cleanup()
         {
-            if (Directory.Exists(_tempDir))
-            {
-                Directory.Delete(_tempDir, true);
-            }
+            if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, true);
         }
 
-        #region Global State Corruption
+        /// <summary>
+        ///     Temporary directory path used during the execution of environmental manipulation tests.
+        ///     This directory is created in the system's temporary location and cleaned up after each test.
+        /// </summary>
+        private string _tempDir;
 
+        /// <summary>
+        ///     This test verifies if the scripting environment is resilient to global state corruption attacks.
+        ///     It simulates an attacker attempting to manipulate the global state, such as overriding global
+        ///     functions or modifying the package system, with the intention of compromising subsequent script executions.
+        ///     The test executes two scripts within the same environment:
+        ///     1) An attacker script that tries to corrupt the global state.
+        ///     2) A victim script whose execution is analyzed to determine if it has been impacted by the attacker.
+        ///     The primary goal of this test is to ensure that global state corruption does not persist or
+        ///     affect other scripts running within the environment.
+        /// </summary>
         [Test]
         public void TestGlobalStateCorruption()
         {
@@ -48,12 +67,12 @@ namespace SolarSharp.Interpreter.Tests.Units
 #if DEBUG || VERBOSE_SECURITY_TESTS
             TestContext.Out.WriteLine("Testing global state corruption attack");
 #endif
-            
-            var config = SecurityConfiguration.CreateIsolated();
-            
+
+            var config = SecurityConfiguration.Isolated();
+
             // First script - the attacker
-            var attackerScript = new Script(config, StringExecution.True);
-            
+            var attackerScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+
             try
             {
                 // Attacker tries to corrupt global state
@@ -90,7 +109,7 @@ namespace SolarSharp.Interpreter.Tests.Units
                     
                     return 'attacker_executed'
                 ");
-                
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
                 TestContext.Out.WriteLine("Attacker script executed");
 #endif
@@ -101,10 +120,10 @@ namespace SolarSharp.Interpreter.Tests.Units
                 TestContext.Out.WriteLine($"Attacker script blocked: {ex.Message}");
 #endif
             }
-            
+
             // Second script - the victim
-            var victimScript = new Script(config, StringExecution.True);
-            
+            var victimScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+
             try
             {
                 var result = victimScript.DoString(@"
@@ -136,22 +155,19 @@ namespace SolarSharp.Interpreter.Tests.Units
                     
                     return table.concat(corruption_detected, ',')
                 ");
-                
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
                 TestContext.Out.WriteLine($"Victim script result: '{result.String}'");
 #endif
-                
+
                 if (!string.IsNullOrEmpty(result.String))
                 {
 #if DEBUG || VERBOSE_SECURITY_TESTS
                     TestContext.Out.WriteLine("WARNING: Global state corruption detected between scripts");
                     TestContext.Out.WriteLine("Scripts are not properly isolated from each other");
-                    
+
                     var corruptions = result.String.Split(',');
-                    foreach (var corruption in corruptions)
-                    {
-                        TestContext.Out.WriteLine($"  - {corruption}");
-                    }
+                    foreach (var corruption in corruptions) TestContext.Out.WriteLine($"  - {corruption}");
 #endif
                 }
                 else
@@ -169,6 +185,22 @@ namespace SolarSharp.Interpreter.Tests.Units
             }
         }
 
+        /// <summary>
+        ///     Tests whether global variables or state from one script instance
+        ///     can improperly leak into another script instance when executed under
+        ///     isolated security configurations. This ensures that scripts maintain
+        ///     proper isolation boundaries to prevent unintended data sharing or security risks.
+        /// </summary>
+        /// <remarks>
+        ///     This test attempts to manipulate the global state using various approaches,
+        ///     such as setting global variables, using rawset, or modifying metatables,
+        ///     to verify that these changes remain contained within individual script instances.
+        ///     The test is executed under a security configuration that enforces isolation.
+        /// </remarks>
+        /// <exception cref="SecurityException">
+        ///     Thrown if restrictions prevent unsafe operations or unauthorized access
+        ///     to protected global variables or metatables.
+        /// </exception>
         [Test]
         public void TestScriptGlobalLeakage()
         {
@@ -176,14 +208,14 @@ namespace SolarSharp.Interpreter.Tests.Units
 #if DEBUG || VERBOSE_SECURITY_TESTS
             TestContext.Out.WriteLine("Testing script global leakage");
 #endif
-            
-            var config = SecurityConfiguration.CreateIsolated();
-            
-            var script1 = new Script(config, StringExecution.True);
-            var script2 = new Script(config, StringExecution.True);
-            
-            var secretValue = "SECRET_" + Guid.NewGuid().ToString();
-            
+
+            var config = SecurityConfiguration.Isolated();
+
+            var script1 = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var script2 = new Script(config.AllowRunString().AllowInternalDynamicCode());
+
+            var secretValue = "SECRET_" + Guid.NewGuid();
+
             try
             {
                 // Script 1 sets a secret global
@@ -205,7 +237,7 @@ namespace SolarSharp.Interpreter.Tests.Units
                     
                     return 'script1_done'
                 ");
-                
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
                 TestContext.Out.WriteLine("Script 1 executed and set secret data");
 #endif
@@ -216,12 +248,12 @@ namespace SolarSharp.Interpreter.Tests.Units
                 TestContext.Out.WriteLine($"Script 1 blocked: {ex.Message}");
 #endif
             }
-            
+
             try
             {
                 // Script 2 tries to access script 1's data
-                var result = script2.DoString($@"
-                    local leaked_data = {{}}
+                var result = script2.DoString(@"
+                    local leaked_data = {}
                     
                     -- Direct global access
                     if _G.secret_data then
@@ -254,11 +286,11 @@ namespace SolarSharp.Interpreter.Tests.Units
                     
                     return table.concat(leaked_data, ';')
                 ");
-                
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
                 TestContext.Out.WriteLine($"Script 2 leaked data: '{result.String}'");
 #endif
-                
+
                 if (result.String.Contains(secretValue))
                 {
 #if DEBUG || VERBOSE_SECURITY_TESTS
@@ -287,10 +319,24 @@ namespace SolarSharp.Interpreter.Tests.Units
             }
         }
 
-        #endregion
-
-        #region Registry/Configuration Pollution
-
+        /// <summary>
+        ///     Tests the Lua registry for potential pollution and unauthorized modifications,
+        ///     ensuring that security configurations prevent any tampering or unintended access
+        ///     to the Lua registry during the execution of scripts. Attempts to simulate an
+        ///     attack scenario where a malicious script modifies the registry, and validates
+        ///     the security measures in place.
+        /// </summary>
+        /// <remarks>
+        ///     This test is designed to emulate scenarios where a Lua script might try to
+        ///     manipulate the Lua registry through debug libraries or other mechanisms. It
+        ///     evaluates whether security configurations effectively isolate scripts and
+        ///     prevent cross-contamination or registry tampering. Logs information during
+        ///     the process for debugging purposes in debug or verbose configurations.
+        /// </remarks>
+        /// <exception cref="SolarSharp.Security.SecurityException">
+        ///     Thrown to indicate a security violation, such as unauthorized access or
+        ///     modification attempts to the Lua registry.
+        /// </exception>
         [Test]
         public void TestLuaRegistryPollution()
         {
@@ -298,12 +344,12 @@ namespace SolarSharp.Interpreter.Tests.Units
 #if DEBUG || VERBOSE_SECURITY_TESTS
             TestContext.Out.WriteLine("Testing Lua registry pollution");
 #endif
-            
-            var config = SecurityConfiguration.CreateIsolated();
-            
-            var attackerScript = new Script(config, StringExecution.True);
-            var victimScript = new Script(config, StringExecution.True);
-            
+
+            var config = SecurityConfiguration.Isolated();
+
+            var attackerScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var victimScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+
             try
             {
                 // Attacker tries to pollute registry
@@ -334,7 +380,7 @@ namespace SolarSharp.Interpreter.Tests.Units
                     
                     return table.concat(registry_pollution, ',')
                 ");
-                
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
                 TestContext.Out.WriteLine("Attacker attempted registry pollution");
 #endif
@@ -345,7 +391,7 @@ namespace SolarSharp.Interpreter.Tests.Units
                 TestContext.Out.WriteLine($"Registry pollution blocked: {ex.Message}");
 #endif
             }
-            
+
             try
             {
                 // Victim checks for registry pollution
@@ -368,11 +414,11 @@ namespace SolarSharp.Interpreter.Tests.Units
                     
                     return table.concat(pollution_detected, ';')
                 ");
-                
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
                 TestContext.Out.WriteLine($"Registry pollution detected: '{result.String}'");
 #endif
-                
+
                 if (!string.IsNullOrEmpty(result.String))
                 {
 #if DEBUG || VERBOSE_SECURITY_TESTS
@@ -389,10 +435,20 @@ namespace SolarSharp.Interpreter.Tests.Units
             }
         }
 
-        #endregion
-
-        #region Environment Variable Manipulation
-
+        /// <summary>
+        ///     Tests the behavior of environment variable manipulation to ensure secure handling
+        ///     and to prevent the poisoning of environment variables that could affect the execution
+        ///     of other scripts or processes. Focuses on scenarios where environment variables are
+        ///     deliberately or inadvertently tampered with.
+        ///     The test validates:
+        ///     - Prevention of dangerous environment variable usage.
+        ///     - Proper handling of environment emulation with passthrough mode.
+        ///     - The functionality of blocking unsafe variables while allowing specific variables.
+        ///     - Secure enablement of automation capabilities, including access to environment variables.
+        ///     - Compatibility with configurations that involve disabling Virtual File System (VFS).
+        ///     This test is aimed at identifying and mitigating vulnerabilities related to environment
+        ///     variable manipulation under various security configurations and runtime scenarios.
+        /// </summary>
         [Test]
         public void TestEnvironmentVariablePoisoning()
         {
@@ -400,46 +456,59 @@ namespace SolarSharp.Interpreter.Tests.Units
 #if DEBUG || VERBOSE_SECURITY_TESTS
             TestContext.Out.WriteLine("Testing environment variable poisoning");
 #endif
-            
+
             // Create custom TrustedAutomation without VFS
-            var config = new SecurityConfiguration()
-                .WithOverrides(overrides => overrides
-                    .WithTimeoutMs(1800000) // 30 minutes
-                    .WithMemoryLimitMB(500)
-                    .WithInstructionLimit(100_000_000)
-                    .WithDefaultFileAccess(FileAccess.ReadWrite)
-                    .WithModules(CoreModules.Basic | CoreModules.String | CoreModules.Math | 
-                               CoreModules.Table | CoreModules.IO | CoreModules.OS_Time | 
-                               CoreModules.OS_System | CoreModules.Coroutine));
-
-            // Trusted automation uses passthrough environment with dangerous variable blocking
-            config.EnvironmentEmulation.Mode = EnvironmentMode.Passthrough;
-            config.EnvironmentEmulation.BlockDangerousVariables = true;
-
-            // Disable VFS
-            config.VirtualFileSystem.Enabled = false;
-
-            // Allow broader command categories for automation
-            config.SafeCommands.Enabled = true;
-            config.SafeCommands.AllowedCategories = SolarSharp.Interpreter.Security.CommandCategory.Safe | SolarSharp.Interpreter.Security.CommandCategory.Filesystem | SolarSharp.Interpreter.Security.CommandCategory.Development;
+            var config = new SecurityConfiguration
+            {
+                Execution =
+                {
+                    TimeoutMs = 1800000, // 30 minutes
+                    MaxMemoryMB = 500,
+                    MaxInstructions = 100_000_000
+                },
+                FileSystem =
+                {
+                    DefaultFilePermissions = FilePermissions.ReadWrite
+                },
+                AllowedModules = CoreModules.Basic | CoreModules.String | CoreModules.Math |
+                                 CoreModules.Table | CoreModules.IO | CoreModules.OS_Time |
+                                 CoreModules.OS_System | CoreModules.Coroutine,
+                EnvironmentEmulation =
+                {
+                    // Trusted automation uses passthrough environment with dangerous variable blocking
+                    Mode = EnvironmentMode.Passthrough,
+                    BlockDangerousVariables = true
+                },
+                VirtualFileSystem =
+                {
+                    // Disable VFS
+                    Enabled = false
+                },
+                SafeCommands =
+                {
+                    // Allow broader command categories for automation
+                    Enabled = true,
+                    AllowedCategories = CommandCategory.Safe | CommandCategory.Filesystem | CommandCategory.Development
+                }
+            };
 
             // Enable automation capabilities
-            config.Capabilities |= ScriptCapabilities.FileRead | ScriptCapabilities.FileWrite | 
-                                 ScriptCapabilities.FileDelete | ScriptCapabilities.EnvironmentAccess;
-            
+            config.Capabilities |= ScriptCapabilities.FileRead | ScriptCapabilities.FileWrite |
+                                   ScriptCapabilities.FileDelete | ScriptCapabilities.EnvironmentAccess;
+
             config.AllowEnvironmentAccess("TEST_VAR", "POISON_VAR", "SHARED_VAR");
-            
-            var attackerScript = new Script(config, StringExecution.True);
-            var victimScript = new Script(config, StringExecution.True);
-            
+
+            var attackerScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var victimScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+
             var originalValue = Environment.GetEnvironmentVariable("SHARED_VAR");
-            
+
             try
             {
                 // Set initial environment state
                 Environment.SetEnvironmentVariable("SHARED_VAR", "legitimate_value");
                 Environment.SetEnvironmentVariable("TEST_VAR", "normal_value");
-                
+
                 // Attacker tries to poison environment
                 attackerScript.DoString(@"
                     -- Try to poison environment variables
@@ -455,15 +524,15 @@ namespace SolarSharp.Interpreter.Tests.Units
                     
                     return 'no_env_access'
                 ");
-                
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
                 TestContext.Out.WriteLine("Attacker accessed environment variables");
 #endif
-                
+
                 // Simulate environment poisoning (since Lua can't directly modify env vars)
                 Environment.SetEnvironmentVariable("SHARED_VAR", "POISONED_VALUE");
                 Environment.SetEnvironmentVariable("POISON_VAR", "attacker_controlled");
-                
+
                 // Victim reads environment
                 var result = victimScript.DoString(@"
                     local env_data = {}
@@ -488,18 +557,18 @@ namespace SolarSharp.Interpreter.Tests.Units
                     
                     return table.concat(env_data, ';')
                 ");
-                
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
                 TestContext.Out.WriteLine($"Victim environment data: '{result.String}'");
 #endif
-                
+
                 if (result.String.Contains("POISONED_VALUE"))
                 {
 #if DEBUG || VERBOSE_SECURITY_TESTS
                     TestContext.Out.WriteLine("WARNING: Environment variable poisoning affected victim script");
 #endif
                 }
-                
+
                 if (result.String.Contains("attacker_controlled"))
                 {
 #if DEBUG || VERBOSE_SECURITY_TESTS
@@ -522,10 +591,23 @@ namespace SolarSharp.Interpreter.Tests.Units
             }
         }
 
-        #endregion
-
-        #region Module/Package System Manipulation
-
+        /// <summary>
+        ///     Validates the security measures of the package system by testing for potential pollution scenarios.
+        ///     This test simulates an attacker attempting to exploit and modify critical elements of the package system,
+        ///     such as `package.loaded`, `package.path`, `package.cpath`, and `package.preload`.
+        ///     The intent is to ensure that security mechanisms effectively prevent unauthorized modifications
+        ///     and preserve system integrity under adversarial conditions.
+        /// </summary>
+        /// <remarks>
+        ///     This method uses isolated security configurations to simulate a controlled environment for both attacker
+        ///     and victim scripts. It attempts to perform the following operations:
+        ///     - Polluting `package.loaded` by injecting malicious modules.
+        ///     - Modifying `package.path` to include unauthorized file paths.
+        ///     - Modifying `package.cpath` to introduce unauthorized shared libraries.
+        ///     - Polluting `package.preload` by injecting unauthorized preload functions.
+        ///     Test cases are expected to throw <see cref="SecurityException" /> if the pollution attempts are blocked.
+        ///     Conditional logging may be used for debugging or verbose output during the tests.
+        /// </remarks>
         [Test]
         public void TestPackageSystemPollution()
         {
@@ -533,13 +615,13 @@ namespace SolarSharp.Interpreter.Tests.Units
 #if DEBUG || VERBOSE_SECURITY_TESTS
             TestContext.Out.WriteLine("Testing package system pollution");
 #endif
-            
-            var config = SecurityConfiguration.CreateIsolated();
-            config.AllowedModules |= SolarSharp.Interpreter.Modules.CoreModules.OS_System; // Allow some modules for testing
-            
-            var attackerScript = new Script(config, StringExecution.True);
-            var victimScript = new Script(config, StringExecution.True);
-            
+
+            var config = SecurityConfiguration.Isolated();
+            config.AllowedModules |= CoreModules.OS_System; // Allow some modules for testing
+
+            var attackerScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var victimScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+
             try
             {
                 // Attacker tries to pollute package system
@@ -582,7 +664,7 @@ namespace SolarSharp.Interpreter.Tests.Units
                     
                     return table.concat(pollution_attempts, ',')
                 ");
-                
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
                 TestContext.Out.WriteLine($"Attacker pollution attempts: '{attackerResult.String}'");
 #endif
@@ -593,7 +675,7 @@ namespace SolarSharp.Interpreter.Tests.Units
                 TestContext.Out.WriteLine($"Package pollution blocked: {ex.Message}");
 #endif
             }
-            
+
             try
             {
                 // Victim checks for package pollution
@@ -636,21 +718,19 @@ namespace SolarSharp.Interpreter.Tests.Units
                     
                     return table.concat(pollution_detected, ';')
                 ");
-                
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
                 TestContext.Out.WriteLine($"Package pollution detected: '{victimResult.String}'");
 #endif
-                
+
                 if (!string.IsNullOrEmpty(victimResult.String))
                 {
 #if DEBUG || VERBOSE_SECURITY_TESTS
                     TestContext.Out.WriteLine("WARNING: Package system pollution successful");
                     TestContext.Out.WriteLine("Module loading system is shared between scripts");
-                    
+
                     if (victimResult.String.Contains("PACKAGE_COMPROMISED"))
-                    {
                         TestContext.Out.WriteLine("CRITICAL: Malicious module executed in victim script");
-                    }
 #endif
                 }
             }
@@ -662,10 +742,19 @@ namespace SolarSharp.Interpreter.Tests.Units
             }
         }
 
-        #endregion
-
-        #region Cross-Script Resource Exhaustion
-
+        /// <summary>
+        ///     Tests the impact of resource exhaustion in one script on another script within a shared configuration.
+        /// </summary>
+        /// <remarks>
+        ///     This method simulates a scenario in which one script attempts to exhaust shared system resources,
+        ///     specifically memory, to potentially disrupt the execution of another independent script.
+        ///     It validates if appropriate resource limitations and security configurations are in place to handle such cases.
+        /// </remarks>
+        /// <exception cref="SecurityException">
+        ///     Thrown when resource allocation exceeds the defined limits within the isolated security configuration.
+        /// </exception>
+        /// <seealso cref="SecurityConfiguration" />
+        /// <seealso cref="Script" />
         [Test]
         public void TestCrossScriptResourceExhaustion()
         {
@@ -673,13 +762,13 @@ namespace SolarSharp.Interpreter.Tests.Units
 #if DEBUG || VERBOSE_SECURITY_TESTS
             TestContext.Out.WriteLine("Testing cross-script resource exhaustion");
 #endif
-            
-            var config = SecurityConfiguration.CreateIsolated();
+
+            var config = SecurityConfiguration.Isolated();
             config.Execution.MaxMemoryMB = 50; // Limited shared memory pool
-            
-            var exhaustionScript = new Script(config, StringExecution.True);
-            var victimScript = new Script(config, StringExecution.True);
-            
+
+            var exhaustionScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var victimScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+
             try
             {
                 // First script exhausts memory
@@ -701,7 +790,7 @@ namespace SolarSharp.Interpreter.Tests.Units
                     
                     return #exhaustion_data
                 ");
-                
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
                 TestContext.Out.WriteLine("Resource exhaustion script executed");
 #endif
@@ -712,12 +801,12 @@ namespace SolarSharp.Interpreter.Tests.Units
                 TestContext.Out.WriteLine($"Resource exhaustion limited: {ex.Message}");
 #endif
             }
-            
+
             try
             {
                 // Second script tries to allocate memory
-                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                
+                var stopwatch = Stopwatch.StartNew();
+
                 var result = victimScript.DoString(@"
                     local victim_data = {}
                     local allocation_success = 0
@@ -736,20 +825,21 @@ namespace SolarSharp.Interpreter.Tests.Units
                     
                     return allocation_success
                 ");
-                
+
                 stopwatch.Stop();
-                
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Victim script allocated {result.Number} objects in {stopwatch.ElapsedMilliseconds}ms");
+                TestContext.Out.WriteLine(
+                    $"Victim script allocated {result.Number} objects in {stopwatch.ElapsedMilliseconds}ms");
 #endif
-                
+
                 if (result.Number < 500)
                 {
 #if DEBUG || VERBOSE_SECURITY_TESTS
                     TestContext.Out.WriteLine("WARNING: Resource exhaustion affected victim script performance");
 #endif
                 }
-                
+
                 if (stopwatch.ElapsedMilliseconds > 5000)
                 {
 #if DEBUG || VERBOSE_SECURITY_TESTS
@@ -765,10 +855,17 @@ namespace SolarSharp.Interpreter.Tests.Units
             }
         }
 
-        #endregion
-
-        #region Concurrent Script Interference
-
+        /// <summary>
+        ///     Tests for concurrent script execution to detect potential interference issues.
+        ///     Verifies that multiple scripts running concurrently do not corrupt each other's state or behavior.
+        ///     This test ensures that global state, thread-local storage, and other shared resources are
+        ///     properly isolated between concurrently executing scripts.
+        ///     Typical interference issues include:
+        ///     - Race conditions due to shared data.
+        ///     - Cross-script resource contention.
+        ///     - Unexpected global state modifications leading to undefined behavior.
+        ///     Raises warnings or errors if interference is detected during script execution.
+        /// </summary>
         [Test]
         public void TestConcurrentScriptInterference()
         {
@@ -776,25 +873,25 @@ namespace SolarSharp.Interpreter.Tests.Units
 #if DEBUG || VERBOSE_SECURITY_TESTS
             TestContext.Out.WriteLine("Testing concurrent script interference");
 #endif
-            
-            var config = SecurityConfiguration.CreateIsolated();
-            
+
+            var config = SecurityConfiguration.Isolated();
+
             var interferenceCount = 0;
             var completedScripts = 0;
             var lockObject = new object();
-            
+
             var tasks = new List<Task>();
-            
+
             // Launch multiple scripts concurrently
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
-                int scriptId = i;
+                var scriptId = i;
                 var task = Task.Run(() =>
                 {
                     try
                     {
-                        var script = new Script(config, StringExecution.True);
-                        
+                        var script = new Script(config.AllowRunString().AllowInternalDynamicCode());
+
                         var result = script.DoString($@"
                             local script_id = {scriptId}
                             local shared_state = _G.shared_state or {{}}
@@ -830,22 +927,20 @@ namespace SolarSharp.Interpreter.Tests.Units
                             
                             return script_id * 10000 + interference * 1000 + (end_count - start_count)
                         ");
-                        
+
                         lock (lockObject)
                         {
                             completedScripts++;
                             var scriptId2 = (int)Math.Floor(result.Number / 10000);
-                            var interference = (int)Math.Floor((result.Number % 10000) / 1000);
+                            var interference = (int)Math.Floor(result.Number % 10000 / 1000);
                             var countDelta = (int)(result.Number % 1000);
-                            
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
-                            TestContext.Out.WriteLine($"Script {scriptId2}: interference={interference}, count delta={countDelta}");
+                            TestContext.Out.WriteLine(
+                                $"Script {scriptId2}: interference={interference}, count delta={countDelta}");
 #endif
-                            
-                            if (interference > 0)
-                            {
-                                interferenceCount++;
-                            }
+
+                            if (interference > 0) interferenceCount++;
                         }
                     }
                     catch (Exception ex)
@@ -855,29 +950,25 @@ namespace SolarSharp.Interpreter.Tests.Units
 #endif
                     }
                 });
-                
+
                 tasks.Add(task);
             }
-            
+
             // Wait for all scripts to complete
             Task.WaitAll(tasks.ToArray(), TimeSpan.FromSeconds(30));
-            
+
 #if DEBUG || VERBOSE_SECURITY_TESTS
             TestContext.Out.WriteLine($"Completed scripts: {completedScripts}/5");
 #endif
 #if DEBUG || VERBOSE_SECURITY_TESTS
             TestContext.Out.WriteLine($"Scripts with interference: {interferenceCount}");
 #endif
-            
-            if (interferenceCount > 0)
-            {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine("WARNING: Scripts interfered with each other's execution");
-                TestContext.Out.WriteLine("Global state is not properly isolated between concurrent scripts");
-#endif
-            }
-        }
 
-        #endregion
+            if (interferenceCount <= 0) return;
+#if DEBUG || VERBOSE_SECURITY_TESTS
+            TestContext.Out.WriteLine("WARNING: Scripts interfered with each other's execution");
+            TestContext.Out.WriteLine("Global state is not properly isolated between concurrent scripts");
+#endif
+        }
     }
 }

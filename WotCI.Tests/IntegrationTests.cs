@@ -4,22 +4,22 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
-using SolarSharp.Interpreter;
-using SolarSharp.Interpreter.DataTypes;
+using NUnit.Framework;
 using SolarSharp.Interpreter.Security;
 using Spectre.Console.Testing;
-using Xunit;
-using WotCI;
 
 namespace WotCI.Tests
 {
-    public class IntegrationTests : IDisposable
+    [TestFixture]
+    [Category("IntegrationTest")]
+    public class IntegrationTests
     {
-        private readonly string _testDir;
-        private readonly string _pluginsDir;
-        private readonly string _certsDir;
+        private string _testDir;
+        private string _pluginsDir;
+        private string _certsDir;
 
-        public IntegrationTests()
+        [SetUp]
+        public void SetUp()
         {
             _testDir = Path.Combine(Path.GetTempPath(), $"wotci_integration_{Guid.NewGuid()}");
             _pluginsDir = Path.Combine(_testDir, "plugins");
@@ -30,8 +30,8 @@ namespace WotCI.Tests
             Directory.CreateDirectory(_certsDir);
         }
 
-
-        public void Dispose()
+        [TearDown]
+        public void TearDown()
         {
             if (Directory.Exists(_testDir))
             {
@@ -39,10 +39,10 @@ namespace WotCI.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void FullPluginLoadingScenario_WithCertificates()
         {
-            // Arrange - Create certificate hierarchy
+            // Create certificate hierarchy
             var rootCa = TestCertificateHelpers.GenerateRootCA();
             var deadlockCert = TestCertificateHelpers.GeneratePartnerCertificate(
                 rootCa, "Deadlock Digital", "/plugins/deadlock-digital");
@@ -71,7 +71,7 @@ namespace WotCI.Tests
                 end
             ");
 
-            // Act - Load plugins
+            // Load plugins
             var console = new TestConsole();
             var game = new GameSimulator(console);
             game.Initialize();
@@ -81,8 +81,7 @@ namespace WotCI.Tests
             loader.LoadPluginDirectory(deadlockDir);
             loader.LoadPluginDirectory(segfaultDir);
 
-            // Assert
-            var outputText = console.Output;
+                        var outputText = console.Output;
             outputText.Should().Contain("Found manifest: Deadlock Digital Plugin");
             outputText.Should().Contain("Found manifest: Segfault Studios Plugin");
             outputText.Should().Contain("[Plugin] Deadlock Digital plugin loaded!");
@@ -91,11 +90,10 @@ namespace WotCI.Tests
             outputText.Should().Contain("Successfully loaded plugin: Segfault Studios Plugin");
         }
 
-        [Fact]
+        [Test]
         public void MixedTrustedAndUntrustedPlugins()
         {
-            // Arrange
-            var trustedDir = CreatePluginStructure("trusted-plugin", "Trusted Plugin", @"
+                        var trustedDir = CreatePluginStructure("trusted-plugin", "Trusted Plugin", @"
                 print('Trusted plugin with full access')
                 local file = io.open('/tmp/test.txt', 'w')
                 if file then
@@ -122,8 +120,7 @@ namespace WotCI.Tests
                 end
             ");
 
-            // Act
-            var console = new TestConsole();
+                        var console = new TestConsole();
             var game = new GameSimulator(console);
             game.Initialize();
             var loader = new SimplePluginLoader(game, console);
@@ -131,18 +128,16 @@ namespace WotCI.Tests
             loader.LoadPluginDirectory(trustedDir);
             loader.LoadUserScripts(untrustedDir);
 
-            // Assert
-            var outputText = console.Output;
+                        var outputText = console.Output;
             outputText.Should().Contain("Trusted plugin with full access");
             outputText.Should().Contain("User script running");
             // Note: Actual file access restrictions depend on Script security implementation
         }
 
-        [Fact]
+        [Test]
         public void PluginWithVirtualFileSystem()
         {
-            // Arrange
-            var rootCa = TestCertificateHelpers.GenerateRootCA();
+                        var rootCa = TestCertificateHelpers.GenerateRootCA();
             var cert = TestCertificateHelpers.GeneratePartnerCertificate(
                 rootCa, "VFS Test Partner", "/plugins/vfs-test");
 
@@ -175,32 +170,29 @@ namespace WotCI.Tests
             ");
 
             // Setup VFS with certificate constraints
-            var config = SecurityConfiguration.CreateIsolated();
+            var config = SecurityConfiguration.Isolated();
             config.Capabilities |= ScriptCapabilities.FileWrite | ScriptCapabilities.FileRead;
             
             var vfs = new SimpleVirtualFileSystem(config, cert);
             vfs.MountMemoryFileSystem("/plugins/vfs-test");
             vfs.MountMemoryFileSystem("/plugins/other");
 
-            // Act
-            var console = new TestConsole();
+                        var console = new TestConsole();
             var game = new GameSimulator(console);
             game.Initialize();
             var loader = new SimplePluginLoader(game, console);
             
             loader.LoadPluginDirectory(pluginDir);
 
-            // Assert
-            var outputText = console.Output;
+                        var outputText = console.Output;
             outputText.Should().Contain("VFS Test Plugin starting");
             // Note: Actual VFS integration would require modifying the loader
         }
 
-        [Fact]
+        [Test]
         public void PluginInteraction_SharedGameState()
         {
-            // Arrange
-            var plugin1Dir = CreatePluginStructure("plugin1", "Plugin 1", @"
+                        var plugin1Dir = CreatePluginStructure("plugin1", "Plugin 1", @"
                 print('Plugin 1: Setting shared data')
                 game.sharedData = { message = 'Hello from Plugin 1' }
                 game.heal(20)
@@ -215,8 +207,7 @@ namespace WotCI.Tests
                 print('Current health: ' .. health)
             ");
 
-            // Act
-            var console = new TestConsole();
+                        var console = new TestConsole();
             var game = new GameSimulator(console);
             game.Initialize();
             game.GetGameState()["player_health"] = 50; // Start with low health
@@ -226,18 +217,16 @@ namespace WotCI.Tests
             loader.LoadPluginDirectory(plugin1Dir);
             loader.LoadPluginDirectory(plugin2Dir);
 
-            // Assert
-            var outputText = console.Output;
+                        var outputText = console.Output;
             outputText.Should().Contain("Plugin 1: Setting shared data");
             outputText.Should().Contain("Plugin 2: Reading shared data");
             outputText.Should().Contain("Current health: 70"); // 50 + 20 from heal
         }
 
-        [Fact]
+        [Test]
         public void PluginErrorHandling_DoesNotCrashOthers()
         {
-            // Arrange
-            var goodPlugin1 = CreatePluginStructure("good1", "Good Plugin 1", @"
+                        var goodPlugin1 = CreatePluginStructure("good1", "Good Plugin 1", @"
                 print('Good Plugin 1 loaded successfully')
                 game.giveGold(100)
             ");
@@ -254,8 +243,7 @@ namespace WotCI.Tests
                 print('Current gold: ' .. gold)
             ");
 
-            // Act
-            var console = new TestConsole();
+                        var console = new TestConsole();
             var game = new GameSimulator(console);
             game.Initialize();
             
@@ -265,8 +253,7 @@ namespace WotCI.Tests
             loader.LoadPluginDirectory(badPlugin);
             loader.LoadPluginDirectory(goodPlugin2);
 
-            // Assert
-            var outputText = console.Output;
+                        var outputText = console.Output;
             outputText.Should().Contain("Good Plugin 1 loaded successfully");
             outputText.Should().Contain("Bad Plugin starting");
             outputText.Should().Contain("Failed to load");
@@ -275,10 +262,10 @@ namespace WotCI.Tests
             outputText.Should().Contain("Current gold: 150"); // 50 initial + 100 from plugin1
         }
 
-        [Fact]
+        [Test]
         public void ManifestSecurity_DifferentPolicies()
         {
-            // Arrange - High security plugin
+            // High security plugin
             var highSecPlugin = CreatePluginWithPolicy("high-sec", "High Security Plugin",
                 new SimpleManifestPolicy
                 {
@@ -294,7 +281,7 @@ namespace WotCI.Tests
                     print('Math result: ' .. x)
                 ");
 
-            // Arrange - Low security plugin
+            // Low security plugin
             var lowSecPlugin = CreatePluginWithPolicy("low-sec", "Low Security Plugin",
                 new SimpleManifestPolicy
                 {
@@ -313,8 +300,7 @@ namespace WotCI.Tests
                     print('Table operations completed')
                 ");
 
-            // Act
-            var console = new TestConsole();
+                        var console = new TestConsole();
             var game = new GameSimulator(console);
             game.Initialize();
             var loader = new SimplePluginLoader(game, console);
@@ -322,18 +308,17 @@ namespace WotCI.Tests
             loader.LoadPluginDirectory(highSecPlugin);
             loader.LoadPluginDirectory(lowSecPlugin);
 
-            // Assert
-            var outputText = console.Output;
+                        var outputText = console.Output;
             outputText.Should().Contain("High security plugin running");
             outputText.Should().Contain("Math result: 2");
             outputText.Should().Contain("Low security plugin running");
             outputText.Should().Contain("Table operations completed");
         }
 
-        [Fact]
+        [Test]
         public void RealWorldScenario_GameWithMultiplePlugins()
         {
-            // Arrange - Create a realistic game scenario
+            // Create a realistic game scenario
             var combatPlugin = CreatePluginStructure("combat-enhancer", "Combat Enhancer", @"
                 print('Combat Enhancer loaded')
                 
@@ -392,7 +377,7 @@ namespace WotCI.Tests
                 end
             ");
 
-            // Act - Run the game with all plugins
+            // Run the game with all plugins
             var console = new TestConsole();
             var game = new GameSimulator(console);
             game.Initialize();
@@ -408,8 +393,7 @@ namespace WotCI.Tests
             game.GetGameState()["player_gold"] = 250;
             game.GetGameState()["enemies_defeated"] = 15;
 
-            // Assert
-            var outputText = console.Output;
+                        var outputText = console.Output;
             
             // All plugins loaded
             outputText.Should().Contain("Combat Enhancer loaded");

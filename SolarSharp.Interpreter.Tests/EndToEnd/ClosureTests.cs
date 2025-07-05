@@ -1,17 +1,25 @@
-﻿using SolarSharp.Interpreter.Security;
-﻿using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Modules;
-using NUnit.Framework;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
+    /// <summary>
+    /// Tests for Lua closure functionality, verifying proper lexical scoping and variable capture.
+    /// Closures in Lua capture variables from their enclosing scope and maintain access to them
+    /// even after the enclosing function returns, which is critical for many Lua programming patterns.
+    /// </summary>
     [TestFixture]
+    [Category("IntegrationTest")]
     public class ClosureTests
     {
+        /// <summary>
+        /// Tests closure capture of function parameters. Verifies that an inner function
+        /// can access parameters from its enclosing function's scope.
+        /// </summary>
         [Test]
         public void ClosureOnParam()
         {
-            string script = @"
+            var script = @"
 				local function g (z)
 				  local function f(a)
 					return a + z;
@@ -21,7 +29,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return (g(3)(2));";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -33,12 +41,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void LambdaFunctions()
         {
-            string script = @"
+            var script = @"
 g = |f, x|f(x, x+1)
 f = |x, y, z|x*(y+z)
 return g(|x,y|f(x,y,1), 2)
 ";
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -52,14 +60,14 @@ return g(|x,y|f(x,y,1), 2)
         [Test]
         public void ClosureOnParamLambda()
         {
-            string script = @"
+            var script = @"
 				local function g (z)
 				  return |a| a + z
 				end
 
 				return (g(3)(2));";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -73,7 +81,7 @@ return g(|x,y|f(x,y,1), 2)
         public void Closures()
         {
             // expected : 201 2001 20001 200001 2000001
-            string script = @"
+            var script = @"
 						a = {}
 						x = 0
 
@@ -93,7 +101,7 @@ return g(|x,y|f(x,y,1), 2)
 						return a[1](), a[2](), a[3](), a[4](), a[5]()";
 
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -119,7 +127,7 @@ return g(|x,y|f(x,y,1), 2)
         public void ClosuresNonAnonymousLocal()
         {
             // expected : 201 2001 20001 200001 2000001
-            string script = @"
+            var script = @"
 						a = {}
 						x = 0
 
@@ -139,7 +147,7 @@ return g(|x,y|f(x,y,1), 2)
 
 						return a[1](), a[2](), a[3](), a[4](), a[5]()";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -166,7 +174,7 @@ return g(|x,y|f(x,y,1), 2)
         public void ClosuresNonAnonymous()
         {
             // expected : 201 2001 20001 200001 2000001
-            string script = @"
+            var script = @"
 						a = {}
 						x = 0
 
@@ -186,7 +194,7 @@ return g(|x,y|f(x,y,1), 2)
 
 						return a[1](), a[2](), a[3](), a[4](), a[5]()";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -211,7 +219,7 @@ return g(|x,y|f(x,y,1), 2)
         [Test]
         public void ClosureNoTable()
         {
-            string script = @"
+            var script = @"
 				x = 0
 
 				function container()
@@ -236,7 +244,7 @@ return g(|x,y|f(x,y,1), 2)
 
 				return a1(), a2(), a3(), a4(), a5()";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -262,7 +270,7 @@ return g(|x,y|f(x,y,1), 2)
         [Test]
         public void NestedUpvalues()
         {
-            string script = @"
+            var script = @"
 	local y = y;
 
 	local x = 0;
@@ -281,7 +289,7 @@ return g(|x,y|f(x,y,1), 2)
 	return 10 * m.t.dojob();
 								";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -293,7 +301,7 @@ return g(|x,y|f(x,y,1), 2)
         [Test]
         public void NestedOutOfScopeUpvalues()
         {
-            string script = @"
+            var script = @"
 
 	function X()
 		local y = y;
@@ -319,7 +327,7 @@ return g(|x,y|f(x,y,1), 2)
 	return 10 * Q.t.dojob();
 								";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -332,7 +340,7 @@ return g(|x,y|f(x,y,1), 2)
         [Test]
         public void LocalRedefinition()
         {
-            string script = @"
+            var script = @"
 
 				result = ''
 
@@ -355,7 +363,7 @@ return g(|x,y|f(x,y,1), 2)
 				return result;
 								";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {

@@ -4,8 +4,21 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace SolarSharp.CertUtil.Commands
 {
+    /// <summary>
+    /// Represents the command for issuing a certificate from a Certificate Authority (CA).
+    /// </summary>
+    /// <remarks>
+    /// The IssueCertCommand is a static class that provides the functionality to create and configure
+    /// a command-line interface for generating a signed certificate utilizing an existing CA certificate and private key.
+    /// </remarks>
     public static class IssueCertCommand
     {
+        /// <summary>
+        /// Creates a command for issuing a certificate from a Certificate Authority (CA).
+        /// </summary>
+        /// <returns>
+        /// A configured <see cref="Command"/> instance for the "issue-cert" operation.
+        /// </returns>
         public static Command Create()
         {
             var caCertOption = new Option<FileInfo>(
@@ -86,6 +99,12 @@ namespace SolarSharp.CertUtil.Commands
             return command;
         }
 
+        /// <summary>
+        /// Loads an X.509 certificate and associates it with a private key.
+        /// </summary>
+        /// <param name="certPath">Path to the certificate file in PEM format.</param>
+        /// <param name="keyPath">Path to the private key file in PEM format.</param>
+        /// <returns>An X509Certificate2 instance with the private key loaded.</returns>
         private static X509Certificate2 LoadCertificateWithKey(string certPath, string keyPath)
         {
             // Load certificate
@@ -100,6 +119,11 @@ namespace SolarSharp.CertUtil.Commands
             return cert.CopyWithPrivateKey(rsa);
         }
 
+        /// Issues a new X.509 certificate signed by the provided Certificate Authority (CA) certificate.
+        /// <param name="caCert">The certificate of the Certificate Authority used to sign the new certificate.</param>
+        /// <param name="subject">The distinguished name (DN) of the new certificate to be issued.</param>
+        /// <param name="constraint">An optional value representing a custom constraint to be added to the new certificate. If null or empty, no constraint is added.</param>
+        /// <returns>The newly issued X.509 certificate with the private key.</returns>
         private static X509Certificate2 IssueCertificate(X509Certificate2 caCert, string subject, string? constraint)
         {
             var rsa = RSA.Create(2048);
@@ -138,6 +162,11 @@ namespace SolarSharp.CertUtil.Commands
             return certificate.CopyWithPrivateKey(rsa);
         }
 
+        /// <summary>
+        /// Saves a given X509Certificate2 object to a specified file path in PEM format.
+        /// </summary>
+        /// <param name="path">The file path where the certificate will be saved.</param>
+        /// <param name="cert">The X509Certificate2 object that represents the certificate to be saved.</param>
         private static void SaveCertificate(string path, X509Certificate2 cert)
         {
             var pemBuilder = new System.Text.StringBuilder();
@@ -147,6 +176,12 @@ namespace SolarSharp.CertUtil.Commands
             File.WriteAllText(path, pemBuilder.ToString());
         }
 
+        /// <summary>
+        /// Saves the RSA private key from a given certificate to a file in PEM format.
+        /// </summary>
+        /// <param name="path">The file path where the private key will be saved.</param>
+        /// <param name="cert">The certificate containing the RSA private key.</param>
+        /// <exception cref="InvalidOperationException">Thrown if the certificate does not contain an RSA private key.</exception>
         private static void SavePrivateKey(string path, X509Certificate2 cert)
         {
             var rsa = cert.GetRSAPrivateKey();

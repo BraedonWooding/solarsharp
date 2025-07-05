@@ -8,53 +8,6 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public static class SecurityConfigurationExtensions
     {
-        /// <summary>
-        /// Sets the execution timeout
-        /// </summary>
-        public static SecurityConfiguration WithTimeout(this SecurityConfiguration config, TimeSpan timeout)
-        {
-            if (config == null) throw new ArgumentNullException(nameof(config));
-            config.Execution.Timeout = timeout;
-            return config;
-        }
-
-        /// <summary>
-        /// Sets the execution timeout in seconds
-        /// </summary>
-        public static SecurityConfiguration WithTimeout(this SecurityConfiguration config, int seconds)
-        {
-            return WithTimeout(config, TimeSpan.FromSeconds(seconds));
-        }
-
-        /// <summary>
-        /// Sets the memory limit in megabytes
-        /// </summary>
-        public static SecurityConfiguration WithMemoryLimit(this SecurityConfiguration config, int megabytes)
-        {
-            if (config == null) throw new ArgumentNullException(nameof(config));
-            config.Execution.MaxMemoryMB = megabytes;
-            return config;
-        }
-
-        /// <summary>
-        /// Sets the instruction limit
-        /// </summary>
-        public static SecurityConfiguration WithInstructionLimit(this SecurityConfiguration config, long instructions)
-        {
-            if (config == null) throw new ArgumentNullException(nameof(config));
-            config.Execution.MaxInstructions = instructions;
-            return config;
-        }
-
-        /// <summary>
-        /// Sets the call depth limit
-        /// </summary>
-        public static SecurityConfiguration WithCallDepth(this SecurityConfiguration config, int callDepth)
-        {
-            if (config == null) throw new ArgumentNullException(nameof(config));
-            config.Execution.MaxCallDepth = callDepth;
-            return config;
-        }
 
         /// <summary>
         /// Applies scripting-appropriate resource limits for complex scripts and test scenarios
@@ -90,11 +43,11 @@ namespace SolarSharp.Interpreter.Security
                 var fullPath = System.IO.Path.GetFullPath(path);
                 if (System.IO.Directory.Exists(fullPath))
                 {
-                    config.SetDirectoryAccess(fullPath, DirectoryAccess.List);
+                    config.SetDirectoryPermissions(fullPath, DirectoryPermissions.List);
                 }
                 else
                 {
-                    config.SetFileAccess(fullPath, FileAccess.Read);
+                    config.SetFilePermissions(fullPath, FilePermissions.Read);
                 }
             }
 
@@ -118,11 +71,11 @@ namespace SolarSharp.Interpreter.Security
                 var fullPath = System.IO.Path.GetFullPath(path);
                 if (System.IO.Directory.Exists(fullPath))
                 {
-                    config.SetDirectoryAccess(fullPath, DirectoryAccess.ListAndCreateFiles);
+                    config.SetDirectoryPermissions(fullPath, DirectoryPermissions.ListAndCreateFiles);
                 }
                 else
                 {
-                    config.SetFileAccess(fullPath, FileAccess.ReadWrite);
+                    config.SetFilePermissions(fullPath, FilePermissions.ReadWrite);
                 }
             }
             
@@ -146,11 +99,11 @@ namespace SolarSharp.Interpreter.Security
                 var fullPath = System.IO.Path.GetFullPath(path);
                 if (System.IO.Directory.Exists(fullPath))
                 {
-                    config.SetDirectoryAccess(fullPath, DirectoryAccess.None);
+                    config.SetDirectoryPermissions(fullPath, DirectoryPermissions.None);
                 }
                 else
                 {
-                    config.SetFileAccess(fullPath, FileAccess.None);
+                    config.SetFilePermissions(fullPath, FilePermissions.None);
                 }
             }
 
@@ -213,7 +166,7 @@ namespace SolarSharp.Interpreter.Security
             config.Network.AllowAccess = true;
             config.Network.AllowedOperations = NetworkOperations.HttpGet | NetworkOperations.HttpPost;
             
-            if (allowedHosts != null && allowedHosts.Length > 0)
+            if (allowedHosts is { Length: > 0 })
             {
                 config.Network.AllowedHosts.AddRange(allowedHosts);
             }
@@ -264,42 +217,50 @@ namespace SolarSharp.Interpreter.Security
         }
 
         /// <summary>
+        /// Sets capabilities (alias for GrantCapabilities for consistency with other With* methods)
+        /// </summary>
+        public static SecurityConfiguration WithCapabilities(this SecurityConfiguration config, ScriptCapabilities capabilities)
+        {
+            return GrantCapabilities(config, capabilities);
+        }
+
+        /// <summary>
         /// Sets file access permissions for a specific file
         /// </summary>
-        public static SecurityConfiguration SetFileAccess(this SecurityConfiguration config, string filePath, FileAccess access)
+        public static SecurityConfiguration SetFileAccess(this SecurityConfiguration config, string filePath, FilePermissions access)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
-            config.FileSystem.SetFileAccess(filePath, access);
+            config.FileSystem.SetFilePermissions(filePath, access);
             return config;
         }
 
         /// <summary>
         /// Sets directory access permissions for a specific directory
         /// </summary>
-        public static SecurityConfiguration SetDirectoryAccess(this SecurityConfiguration config, string directoryPath, DirectoryAccess access)
+        public static SecurityConfiguration SetDirectoryAccess(this SecurityConfiguration config, string directoryPath, DirectoryPermissions permissions)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
-            config.FileSystem.SetDirectoryAccess(directoryPath, access);
+            config.FileSystem.SetDirectoryPermissions(directoryPath, permissions);
             return config;
         }
 
         /// <summary>
         /// Sets default file access level
         /// </summary>
-        public static SecurityConfiguration WithDefaultFileAccess(this SecurityConfiguration config, FileAccess access)
+        public static SecurityConfiguration WithDefaultFileAccess(this SecurityConfiguration config, FilePermissions access)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
-            config.FileSystem.DefaultFileAccess = access;
+            config.FileSystem.DefaultFilePermissions = access;
             return config;
         }
 
         /// <summary>
         /// Sets default directory access level
         /// </summary>
-        public static SecurityConfiguration WithDefaultDirectoryAccess(this SecurityConfiguration config, DirectoryAccess access)
+        public static SecurityConfiguration WithDefaultDirectoryAccess(this SecurityConfiguration config, DirectoryPermissions permissions)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
-            config.FileSystem.DefaultDirectoryAccess = access;
+            config.FileSystem.DefaultDirectoryPermissions = permissions;
             return config;
         }
 
@@ -326,10 +287,10 @@ namespace SolarSharp.Interpreter.Security
                 },
                 FileSystem = new FileSystemSecurity
                 {
-                    FilePermissions = new System.Collections.Generic.Dictionary<string, FileAccess>(config.FileSystem.FilePermissions),
-                    DirectoryPermissions = new System.Collections.Generic.Dictionary<string, DirectoryAccess>(config.FileSystem.DirectoryPermissions),
-                    DefaultFileAccess = config.FileSystem.DefaultFileAccess,
-                    DefaultDirectoryAccess = config.FileSystem.DefaultDirectoryAccess,
+                    FilePermissions = new System.Collections.Generic.Dictionary<string, FilePermissions>(config.FileSystem.FilePermissions),
+                    DirectoryPermissions = new System.Collections.Generic.Dictionary<string, DirectoryPermissions>(config.FileSystem.DirectoryPermissions),
+                    DefaultFilePermissions = config.FileSystem.DefaultFilePermissions,
+                    DefaultDirectoryPermissions = config.FileSystem.DefaultDirectoryPermissions,
                     MaxFileSize = config.FileSystem.MaxFileSize,
                     AllowHiddenFiles = config.FileSystem.AllowHiddenFiles,
                     AllowSymbolicLinks = config.FileSystem.AllowSymbolicLinks

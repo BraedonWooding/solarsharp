@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using SolarSharp.Interpreter.Security;
-using SolarSharp.Interpreter.Security.Manifest;
+using SolarSharp.Interpreter.Security.Manifests;
 
 namespace WotCI
 {
@@ -59,8 +55,7 @@ namespace WotCI
 
         public void MountPluginDirectory(X509Certificate2 certificate, string physicalPath)
         {
-            if (certificate == null)
-                throw new ArgumentNullException(nameof(certificate));
+            ArgumentNullException.ThrowIfNull(certificate);
 
             var subjectPath = X509CertificateInfo.ExtractSubjectPath(certificate);
             if (string.IsNullOrEmpty(subjectPath))

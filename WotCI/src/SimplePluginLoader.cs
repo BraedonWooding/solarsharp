@@ -1,14 +1,7 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Text.Json;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
-using SolarSharp.Interpreter.Security.Manifest;
 using Spectre.Console;
 
 namespace WotCI
@@ -101,12 +94,16 @@ namespace WotCI
                     _console.WriteLine($"  Loading: {Path.GetFileName(luaFile)}");
                     
                     // User scripts get minimal security
-                    var config = SecurityConfiguration.CreateIsolated();
-                    var script = new Script();
-                    
-                    // Very limited API
-                    script.Globals["print"] = (Action<string>)(msg => _console.WriteLine($"[User] {msg}"));
-                    script.Globals["game"] = _game.CreateApi(); // Limited API
+                    var config = SecurityConfiguration.Isolated();
+                    var script = new Script(config)
+                    {
+                        Globals =
+                        {
+                            // Very limited API
+                            ["print"] = (Action<string>)(msg => _console.WriteLine($"[User] {msg}")),
+                            ["game"] = _game.CreateApi() // Limited API
+                        }
+                    };
 
                     script.DoFile(luaFile);
                 }
@@ -120,7 +117,7 @@ namespace WotCI
         private Script CreateSecureScript(SimpleManifest manifest, string pluginDir)
         {
             // Create security configuration based on manifest
-            var config = SecurityConfiguration.CreateDesktop();
+            var config = new SecurityConfiguration();
             
             // Apply timeout from manifest
             if (manifest.policy?.timeout > 0)
@@ -135,23 +132,27 @@ namespace WotCI
             }
 
             // Create script with security configuration
-            var script = new Script();
-
-            // Set up sandboxed print
-            script.Globals["print"] = DynValue.NewCallback((ctx, args) => 
+            var script = new Script(config)
             {
-                if (args.Count > 0)
+                Globals =
                 {
-                    var parts = new string[args.Count];
-                    for (int i = 0; i < args.Count; i++)
+                    // Set up sandboxed print
+                    ["print"] = DynValue.NewCallback((ctx, args) => 
                     {
-                        parts[i] = args[i].CastToString();
-                    }
-                    var msg = string.Join(" ", parts);
-                    _console.WriteLine($"[Plugin] {msg}");
+                        if (args.Count > 0)
+                        {
+                            var parts = new string[args.Count];
+                            for (int i = 0; i < args.Count; i++)
+                            {
+                                parts[i] = args[i].CastToString();
+                            }
+                            var msg = string.Join(" ", parts);
+                            _console.WriteLine($"[Plugin] {msg}");
+                        }
+                        return DynValue.Nil;
+                    })
                 }
-                return DynValue.Nil;
-            });
+            };
 
             return script;
         }

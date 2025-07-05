@@ -1,13 +1,15 @@
-﻿using SolarSharp.Interpreter.DataTypes;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Interop;
-using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
 #pragma warning disable 169 // unused private field
 
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("IntegrationTest")]
     public class VtUserDataFieldsTests
     {
         public struct SomeClass
@@ -26,7 +28,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_ConstIntFieldGetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script = @"    
 				x = myobj.ConstIntProp;
 				return x;";
 
@@ -39,7 +41,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("myobj", UserData.Create(obj));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -52,7 +54,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             try
             {
-                string script = @"    
+                var script = @"    
 				myobj.ConstIntProp = 1;
 				return myobj.ConstIntProp;";
 
@@ -65,7 +67,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 S.Globals.Set("myobj", UserData.Create(obj));
 
-                DynValue res = S.DoString(script);
+                var res = S.DoString(script);
 
                 Assert.Multiple(() =>
                 {
@@ -82,11 +84,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
 
-
-
         private static void Test_IntFieldGetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script = @"    
 				x = myobj.IntProp;
 				return x;";
 
@@ -99,7 +99,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("myobj", UserData.Create(obj));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -110,7 +110,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_NIntFieldGetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script = @"    
 				x = myobj1.NIntProp;
 				y = myobj2.NIntProp;
 				return x,y;";
@@ -126,7 +126,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             S.Globals.Set("myobj1", UserData.Create(obj1));
             S.Globals.Set("myobj2", UserData.Create(obj2));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -139,7 +139,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_ObjFieldGetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script = @"    
 				x = myobj1.ObjProp;
 				y = myobj2.ObjProp;
 				z = myobj2.ObjProp.ObjProp;
@@ -156,7 +156,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             S.Globals.Set("myobj1", UserData.Create(obj1));
             S.Globals.Set("myobj2", UserData.Create(obj2));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -172,7 +172,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_IntFieldSetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script = @"    
 				myobj.IntProp = 19;
 				return myobj.IntProp;
 				";
@@ -188,7 +188,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(obj.IntProp, Is.EqualTo(321));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -201,7 +201,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_NIntFieldSetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script = @"    
 				myobj1.NIntProp = nil;
 				myobj2.NIntProp = 19;
 				return myobj1.NIntProp, myobj2.NIntProp;
@@ -224,7 +224,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(obj2.NIntProp, Is.EqualTo(null));
             });
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -241,7 +241,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_InvalidFieldSetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script = @"    
 				myobj.IntProp = '19';";
 
             Script S = new();
@@ -260,7 +260,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_StaticFieldAccess(InteropAccessMode opt)
         {
-            string script = @"    
+            var script = @"    
 				static.StaticProp = 'asdasd' .. static.StaticProp;";
 
             Script S = new();
@@ -274,7 +274,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(SomeClass.StaticProp, Is.EqualTo("qweqwe"));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.That(SomeClass.StaticProp, Is.EqualTo("asdasdqweqwe"));
         }
@@ -409,11 +409,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
 
-
         [Test]
         public void VInterop_IntFieldSetterWithSimplifiedSyntax()
         {
-            string script = @"    
+            var script = @"    
 				myobj.IntProp = 19;
 				return myobj.IntProp;
 			";
@@ -429,7 +428,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(obj.IntProp, Is.EqualTo(321));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -439,8 +438,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(obj.IntProp, Is.EqualTo(321));
             });
         }
-
-
 
 
         [Test]
@@ -462,7 +459,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
 
-
         [Test]
         public void VInterop_ConstIntFieldSetter_None()
         {
@@ -480,17 +476,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             Test_ConstIntFieldSetter(InteropAccessMode.Preoptimized);
         }
-
-
-
-
-
-
-
-
-
-
-
-
     }
 }

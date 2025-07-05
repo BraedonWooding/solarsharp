@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Debugging;
 
 namespace SolarSharp.Interpreter.Execution.VM
 {
@@ -58,7 +58,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
 
             if (m_Debug.DebuggerAttached.IsPauseRequested() ||
-                (instr.SourceCodeRef != null && instr.SourceCodeRef.Breakpoint && isOnDifferentRef))
+                (instr.SourceCodeRef is { Breakpoint: true } && isOnDifferentRef))
             {
                 m_Debug.DebuggerCurrentAction = DebuggerAction.ActionType.None;
                 m_Debug.DebuggerCurrentActionTarget = -1;
@@ -297,7 +297,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             List<WatchItem> locals = new();
             var top = m_ExecutionStack.Peek();
 
-            if (top != null && top.Debug_Symbols != null && top.LocalScope != null)
+            if (top is { Debug_Symbols: not null, LocalScope: not null })
             {
                 int len = Math.Min(top.Debug_Symbols.Length, top.LocalScope.Length);
 

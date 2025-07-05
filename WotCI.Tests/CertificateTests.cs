@@ -2,23 +2,32 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using FluentAssertions;
-using Xunit;
+using NUnit.Framework;
 
 namespace WotCI.Tests
 {
-    public class CertificateTests : IDisposable
+    /// <summary>
+    /// Tests for X.509 certificate functionality in the WotCI plugin system.
+    /// Validates certificate generation, chain validation, and cryptographic operations
+    /// used for plugin manifest signing and verification.
+    /// </summary>
+    [TestFixture]
+    [Category("IntegrationTest")]
+    [Category("SecurityTest")]
+    public class CertificateTests
     {
-        private readonly string _testCertsDir;
+        private string _testCertsDir;
 
-        public CertificateTests()
+        [SetUp]
+        public void SetUp()
         {
             _testCertsDir = Path.Combine(Path.GetTempPath(), $"wotci_test_certs_{Guid.NewGuid()}");
             Directory.CreateDirectory(_testCertsDir);
         }
 
-        public void Dispose()
+        [TearDown]
+        public void TearDown()
         {
             if (Directory.Exists(_testCertsDir))
             {
@@ -26,78 +35,74 @@ namespace WotCI.Tests
             }
         }
 
-        [Fact]
+        /// <summary>
+        /// Verifies that the root CA certificate generation creates a valid self-signed certificate
+        /// with proper subject and issuer fields for the certificate chain.
+        /// </summary>
+        [Test]
         public void GenerateRootCA_CreatesValidSelfSignedCertificate()
         {
-            // Act
-            var rootCa = TestCertificateHelpers.GenerateRootCA();
+                        var rootCa = TestCertificateHelpers.GenerateRootCA();
 
-            // Assert
-            rootCa.Should().NotBeNull();
+                        rootCa.Should().NotBeNull();
             rootCa.Subject.Should().Contain("CN=Broken Build Entertainment Root CA");
             rootCa.Subject.Should().Contain("O=Broken Build Entertainment");
             rootCa.Issuer.Should().Be(rootCa.Subject); // Self-signed
             rootCa.HasPrivateKey.Should().BeTrue();
         }
 
-        [Fact]
+        /// <summary>
+        /// Tests partner certificate generation to ensure proper certificate chain validation.
+        /// Partner certificates are signed by the root CA and used for plugin manifest signing.
+        /// </summary>
+        [Test]
         public void GeneratePartnerCertificate_CreatesValidSignedCertificate()
         {
-            // Arrange
-            var rootCa = TestCertificateHelpers.GenerateRootCA();
+                        var rootCa = TestCertificateHelpers.GenerateRootCA();
 
-            // Act
-            var partnerCert = TestCertificateHelpers.GeneratePartnerCertificate(
+                        var partnerCert = TestCertificateHelpers.GeneratePartnerCertificate(
                 rootCa, "Test Partner", "/plugins/test-partner");
 
-            // Assert
-            partnerCert.Should().NotBeNull();
+                        partnerCert.Should().NotBeNull();
             partnerCert.Subject.Should().Contain("CN=/plugins/test-partner");
             partnerCert.Subject.Should().Contain("O=Test Partner");
             partnerCert.Issuer.Should().Be(rootCa.Subject);
             partnerCert.HasPrivateKey.Should().BeTrue();
         }
 
-        [Fact]
+        [Test]
         public void ExtractSubjectPath_ExtractsPathFromCN()
         {
-            // Arrange
-            var rootCa = TestCertificateHelpers.GenerateRootCA();
+                        var rootCa = TestCertificateHelpers.GenerateRootCA();
             var partnerCert = TestCertificateHelpers.GeneratePartnerCertificate(
                 rootCa, "Deadlock Digital", "/plugins/deadlock-digital");
 
-            // Act
-            var path = ExtractSubjectPath(partnerCert);
+                        var path = ExtractSubjectPath(partnerCert);
 
-            // Assert
-            path.Should().Be("/plugins/deadlock-digital");
+                        path.Should().Be("/plugins/deadlock-digital");
         }
 
-        [Fact]
+        [Test]
         public void PathConstraintValidation_AllowsMatchingPaths()
         {
-            // Arrange
-            var rootCa = TestCertificateHelpers.GenerateRootCA();
+                        var rootCa = TestCertificateHelpers.GenerateRootCA();
             var partnerCert = TestCertificateHelpers.GeneratePartnerCertificate(
                 rootCa, "Test Partner", "/plugins/test-partner");
             var constraint = ExtractSubjectPath(partnerCert);
 
-            // Act & Assert
-            IsPathAllowed("/plugins/test-partner/script.lua", constraint).Should().BeTrue();
+                        IsPathAllowed("/plugins/test-partner/script.lua", constraint).Should().BeTrue();
             IsPathAllowed("/plugins/test-partner/subfolder/file.txt", constraint).Should().BeTrue();
         }
 
-        [Fact]
+        [Test]
         public void PathConstraintValidation_BlocksDifferentPaths()
         {
-            // Arrange
-            var rootCa = TestCertificateHelpers.GenerateRootCA();
+                        var rootCa = TestCertificateHelpers.GenerateRootCA();
             var partnerCert = TestCertificateHelpers.GeneratePartnerCertificate(
                 rootCa, "Test Partner", "/plugins/test-partner");
             var constraint = ExtractSubjectPath(partnerCert);
 
-            // Act & Assert
-            IsPathAllowed("/plugins/other-partner/script.lua", constraint).Should().BeFalse();
+                        IsPathAllowed("/plugins/other-partner/script.lua", constraint).Should().BeFalse();
             IsPathAllowed("/system/file.txt", constraint).Should().BeFalse();
         }
 

@@ -4,8 +4,22 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace SolarSharp.CertUtil.Commands
 {
+    /// <summary>
+    /// Represents a command for generating a Certificate Authority (CA) certificate.
+    /// </summary>
+    /// <remarks>
+    /// This class provides a command-line interface for creating a CA certificate.
+    /// It includes options to specify the name of the certificate and the output directory for the generated files.
+    /// The generated output includes a CA certificate file and a private key file.
+    /// </remarks>
     public static class GenerateCaCommand
     {
+        /// <summary>
+        /// Creates a command to generate a Certificate Authority (CA) certificate.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="Command"/> that allows the user to generate a CA certificate.
+        /// </returns>
         public static Command Create()
         {
             var nameOption = new Option<string>(
@@ -16,7 +30,7 @@ namespace SolarSharp.CertUtil.Commands
             var outputOption = new Option<DirectoryInfo>(
                 "--output",
                 description: "Output directory for certificates",
-                getDefaultValue: () => new DirectoryInfo(Directory.GetCurrentDirectory()));
+                getDefaultValue: static () => new DirectoryInfo(Directory.GetCurrentDirectory()));
 
             var command = new Command("generate-ca", "Generate a root CA certificate")
             {
@@ -24,7 +38,7 @@ namespace SolarSharp.CertUtil.Commands
                 outputOption
             };
 
-            command.SetHandler((name, outputDir) =>
+            command.SetHandler(static (name, outputDir) =>
             {
                 try
                 {
@@ -33,7 +47,7 @@ namespace SolarSharp.CertUtil.Commands
                     if (!outputDir.Exists)
                         outputDir.Create();
                     
-                    var rootCa = GenerateRootCA(name);
+                    var rootCa = GenerateRootCa(name);
                     var certPath = Path.Combine(outputDir.FullName, "root-ca.crt");
                     var keyPath = Path.Combine(outputDir.FullName, "root-ca.key");
                     
@@ -53,7 +67,14 @@ namespace SolarSharp.CertUtil.Commands
             return command;
         }
 
-        private static X509Certificate2 GenerateRootCA(string caName)
+        /// <summary>
+        /// Generates a self-signed root Certificate Authority (CA) certificate.
+        /// </summary>
+        /// <param name="caName">The name of the CA certificate to be generated. This name will appear in the certificate's distinguished name.</param>
+        /// <returns>
+        /// A generated <see cref="X509Certificate2"/> object representing the root CA certificate.
+        /// </returns>
+        private static X509Certificate2 GenerateRootCa(string caName)
         {
             var rsa = RSA.Create(4096);
             var request = new CertificateRequest(
@@ -82,6 +103,11 @@ namespace SolarSharp.CertUtil.Commands
                 X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
         }
 
+        /// <summary>
+        /// Saves the specified X.509 certificate to a file in PEM format.
+        /// </summary>
+        /// <param name="path">The file path where the certificate will be saved.</param>
+        /// <param name="cert">The X.509 certificate to save.</param>
         private static void SaveCertificate(string path, X509Certificate2 cert)
         {
             var pemBuilder = new System.Text.StringBuilder();
@@ -91,6 +117,12 @@ namespace SolarSharp.CertUtil.Commands
             File.WriteAllText(path, pemBuilder.ToString());
         }
 
+        /// <summary>
+        /// Saves the private key of a given X509Certificate to a specified file path in PEM format.
+        /// </summary>
+        /// <param name="path">The file path where the private key will be saved.</param>
+        /// <param name="cert">The X509Certificate2 object containing the private key to save.</param>
+        /// <exception cref="InvalidOperationException">Thrown if the certificate does not contain an RSA private key.</exception>
         private static void SavePrivateKey(string path, X509Certificate2 cert)
         {
             var rsa = cert.GetRSAPrivateKey();

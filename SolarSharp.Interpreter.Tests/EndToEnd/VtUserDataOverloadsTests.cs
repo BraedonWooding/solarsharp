@@ -1,5 +1,5 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using NUnit.Framework;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
@@ -20,6 +20,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("IntegrationTest")]
     public class VtUserDataOverloadsTests
     {
         public struct OverloadsTestClass
@@ -98,7 +100,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             S.Globals.Set("s", UserData.CreateStatic<OverloadsTestClass>());
             S.Globals.Set("o", UserData.Create(obj));
 
-            DynValue v = S.DoString("return " + code);
+            var v = S.DoString("return " + code);
 
             if (tupleExpected)
             {

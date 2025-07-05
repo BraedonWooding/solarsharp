@@ -1,6 +1,6 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using System;
+﻿using System;
 using System.Linq;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Loaders
 {

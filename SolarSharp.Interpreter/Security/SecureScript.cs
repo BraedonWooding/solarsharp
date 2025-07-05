@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 namespace SolarSharp.Interpreter.Security
@@ -15,7 +14,7 @@ namespace SolarSharp.Interpreter.Security
         /// <returns>Script with isolated security configuration</returns>
         public static Script CreateIsolated()
         {
-            return new Script(SecurityConfiguration.CreateIsolated());
+            return new Script(SecurityConfiguration.Isolated());
         }
 
         /// <summary>
@@ -34,7 +33,7 @@ namespace SolarSharp.Interpreter.Security
         /// <returns>Script suitable for configuration file processing</returns>
         public static Script CreateForConfiguration()
         {
-            return new Script(SecurityConfiguration.CreateDesktop());
+            return new Script(new SecurityConfiguration());
         }
 
         /// <summary>
@@ -45,11 +44,11 @@ namespace SolarSharp.Interpreter.Security
         /// <returns>Script configured for data processing</returns>
         public static Script CreateForDataProcessing(string inputPath, string outputPath)
         {
-            var config = SecurityConfiguration.CreateDataProcessing()
+            var config = SecurityConfiguration.DataProcessing()
                 .WithOverrides(overrides => {
-                    overrides.FilePermissions = overrides.FilePermissions ?? new Dictionary<string, FileAccess>();
-                    overrides.FilePermissions[inputPath] = FileAccess.Read;
-                    overrides.FilePermissions[outputPath] = FileAccess.ReadWrite;
+                    overrides.FilePermissions = overrides.FilePermissions ?? new Dictionary<string, FilePermissions>();
+                    overrides.FilePermissions[inputPath] = FilePermissions.Read;
+                    overrides.FilePermissions[outputPath] = FilePermissions.ReadWrite;
                 });
             
             return new Script(config);
@@ -62,10 +61,10 @@ namespace SolarSharp.Interpreter.Security
         /// <returns>Script configured for automation tasks</returns>
         public static Script CreateForTrustedAutomation(string workspacePath)
         {
-            var config = SecurityConfiguration.CreateTrustedAutomation()
+            var config = SecurityConfiguration.Automation()
                 .WithOverrides(overrides => {
-                    overrides.FilePermissions = overrides.FilePermissions ?? new Dictionary<string, FileAccess>();
-                    overrides.FilePermissions[workspacePath] = FileAccess.ReadWrite;
+                    overrides.FilePermissions = overrides.FilePermissions ?? new Dictionary<string, FilePermissions>();
+                    overrides.FilePermissions[workspacePath] = FilePermissions.ReadWrite;
                 });
             
             return new Script(config);

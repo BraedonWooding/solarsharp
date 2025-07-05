@@ -1,7 +1,7 @@
-﻿using SolarSharp.Interpreter.Tree.Statements;
-using SolarSharp.Interpreter.Execution;
+﻿using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.Tree.Lexer;
+using SolarSharp.Interpreter.Tree.Statements;
 
 namespace SolarSharp.Interpreter.Tree
 {

@@ -206,12 +206,12 @@ namespace SolarSharp.Interpreter.Security
             }
 
             // Validate file access using the new system
-            _fileValidator.ValidateFileAccess(realPath, operation);
+            _fileValidator.ValidateFilePermissions(realPath, operation);
             
             // Validate VFS access if enabled
             if (_fileSystemMapper != null && !_fileSystemMapper.ValidateRealPath(realPath, operation))
             {
-                throw new FileAccessViolationException(
+                throw new FilePermissionViolationException(
                     $"File access outside sandbox is not allowed: {filename}",
                     "IO_OpenFile",
                     filename);
@@ -239,7 +239,7 @@ namespace SolarSharp.Interpreter.Security
             {
                 case StandardFileType.StdIn:
                     // Check if basic file read is allowed
-                    if (_config.FileSystem.DefaultFileAccess == FileAccess.None)
+                    if (_config.FileSystem.DefaultFilePermissions == FilePermissions.None)
                         return Stream.Null;
                     break;
                 case StandardFileType.StdOut:
@@ -262,12 +262,12 @@ namespace SolarSharp.Interpreter.Security
             var realPath = _fileSystemMapper?.MapVirtualToReal(file) ?? file;
             
             // Validate delete operation using new system
-            _fileValidator.ValidateFileAccess(realPath, FileOperation.Delete);
+            _fileValidator.ValidateFilePermissions(realPath, FileOperation.Delete);
             
             // Validate VFS access if enabled
             if (_fileSystemMapper != null && !_fileSystemMapper.ValidateRealPath(realPath, FileOperation.Delete))
             {
-                throw new FileAccessViolationException(
+                throw new FilePermissionViolationException(
                     $"File deletion outside sandbox is not allowed: {file}",
                     "OS_FileDelete",
                     file);
@@ -289,22 +289,22 @@ namespace SolarSharp.Interpreter.Security
             var realDst = _fileSystemMapper?.MapVirtualToReal(dst) ?? dst;
             
             // Validate move operation (requires delete on source, create on destination)
-            _fileValidator.ValidateFileAccess(realSrc, FileOperation.Delete);
-            _fileValidator.ValidateFileAccess(realDst, FileOperation.Create);
+            _fileValidator.ValidateFilePermissions(realSrc, FileOperation.Delete);
+            _fileValidator.ValidateFilePermissions(realDst, FileOperation.Create);
             
             // Validate VFS access if enabled
             if (_fileSystemMapper != null)
             {
                 if (!_fileSystemMapper.ValidateRealPath(realSrc, FileOperation.Delete))
                 {
-                    throw new FileAccessViolationException(
+                    throw new FilePermissionViolationException(
                         $"Source file move outside sandbox is not allowed: {src}",
                         "OS_FileMove",
                         src);
                 }
                 if (!_fileSystemMapper.ValidateRealPath(realDst, FileOperation.Create))
                 {
-                    throw new FileAccessViolationException(
+                    throw new FilePermissionViolationException(
                         $"Destination file move outside sandbox is not allowed: {dst}",
                         "OS_FileMove",
                         dst);
@@ -326,7 +326,7 @@ namespace SolarSharp.Interpreter.Security
                 var realPath = _fileSystemMapper?.MapVirtualToReal(file) ?? file;
                 
                 // Check if we can at least read the file to determine existence
-                _fileValidator.ValidateFileAccess(realPath, FileOperation.Read);
+                _fileValidator.ValidateFilePermissions(realPath, FileOperation.Read);
                 
                 // Validate VFS access if enabled
                 if (_fileSystemMapper != null && !_fileSystemMapper.ValidateRealPath(realPath, FileOperation.Read))

@@ -1,6 +1,6 @@
 ﻿#if DOTNET_CORE || (!(PCL || ENABLE_DOTNET || NETFX_CORE))
-using SolarSharp.Interpreter.DataTypes;
 using System.IO;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Loaders
 {

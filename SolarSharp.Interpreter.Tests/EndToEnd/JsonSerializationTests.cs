@@ -1,11 +1,12 @@
-﻿using SolarSharp.Interpreter.DataTypes;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Serialization.Json;
-using NUnit.Framework;
 
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class JsonSerializationTests
     {
         private static void AssertTableValues(Table t)
@@ -25,7 +26,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(t.Get("slash").String, Is.EqualTo("a/b"));
             });
 
-            Table o = t.Get("anObject").Table;
+            var o = t.Get("anObject").Table;
 
             Assert.Multiple(() =>
             {
@@ -36,7 +37,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(o.Get("aString").String, Is.EqualTo("4"));
             });
 
-            Table a = t.Get("anArray").Table;
+            var a = t.Get("anArray").Table;
 
             Assert.Multiple(() =>
             {
@@ -56,13 +57,16 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 Assert.That(a.Get(3).Type, Is.EqualTo(DataType.Boolean));
             });
-            Assert.That(a.Get(3).Boolean, Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(a.Get(3).Boolean, Is.True);
 
-            Assert.That(a.Get(4).Type, Is.EqualTo(DataType.UserData));
-            Assert.That(JsonNull.IsJsonNull(a.Get(4)), Is.True);
+                Assert.That(a.Get(4).Type, Is.EqualTo(DataType.UserData));
+                Assert.That(JsonNull.IsJsonNull(a.Get(4)), Is.True);
 
-            Assert.That(a.Get(5).Type, Is.EqualTo(DataType.Table));
-            Table s = a.Get(5).Table;
+                Assert.That(a.Get(5).Type, Is.EqualTo(DataType.Table));
+            });
+            var s = a.Get(5).Table;
 
             Assert.Multiple(() =>
             {
@@ -81,7 +85,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void JsonDeserialization()
         {
-            string json = @"{
+            var json = @"{
 				'aNumber' : 1,
 				'aString' : '2',
 				'anObject' : { 'aNumber' : 3, 'aString' : '4' },
@@ -91,14 +95,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				}
 			".Replace('\'', '\"');
 
-            Table t = JsonTableConverter.JsonToTable(json);
+            var t = JsonTableConverter.JsonToTable(json);
             AssertTableValues(t);
         }
 
         [Test]
         public void JsonSerialization()
         {
-            string json = @"{
+            var json = @"{
 				'aNumber' : 1,
 				'aString' : '2',
 				'anObject' : { 'aNumber' : 3, 'aString' : '4' },
@@ -108,11 +112,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				}
 			".Replace('\'', '\"');
 
-            Table t1 = JsonTableConverter.JsonToTable(json);
+            var t1 = JsonTableConverter.JsonToTable(json);
 
-            string json2 = t1.TableToJson();
+            var json2 = t1.TableToJson();
 
-            Table t = JsonTableConverter.JsonToTable(json2);
+            var t = JsonTableConverter.JsonToTable(json2);
 
             AssertTableValues(t);
         }
@@ -147,9 +151,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             };
 
 
-            string json = JsonTableConverter.ObjectToJson(o);
+            var json = JsonTableConverter.ObjectToJson(o);
 
-            Table t = JsonTableConverter.JsonToTable(json);
+            var t = JsonTableConverter.JsonToTable(json);
 
             AssertTableValues(t);
         }

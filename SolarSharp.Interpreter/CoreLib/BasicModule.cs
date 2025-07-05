@@ -250,7 +250,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 {
                     uiv = Convert.ToUInt32(ee.String.Trim(), bb);
                 }
-                else if (bb < 10 && bb > 2) // Support for 3, 4, 5, 6, 7 and 9 based numbers
+                else if (bb is < 10 and > 2) // Support for 3, 4, 5, 6, 7 and 9 based numbers
                 {
                     foreach (char digit in ee.String.Trim())
                     {

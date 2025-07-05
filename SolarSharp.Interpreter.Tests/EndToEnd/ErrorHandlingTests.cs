@@ -1,18 +1,17 @@
-﻿using SolarSharp.Interpreter.Security;
-﻿using SolarSharp.Interpreter.DataTypes;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.Modules;
-using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class ErrorHandlingTests
     {
         [Test]
         public void PCallMultipleReturns()
         {
-            string script = @"return pcall(function() return 1,2,3 end)";
+            var script = @"return pcall(function() return 1,2,3 end)";
 
             Script S = new();
             var res = S.DoString(script);
@@ -34,12 +33,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Errors_PCall_ClrFunction()
         {
-            string script = @"
+            var script = @"
 				r, msg = pcall(assert, false, 'catched')
 				return r, msg;
 								";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -57,7 +56,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Errors_PCall_Multiples()
         {
-            string script = @"
+            var script = @"
 function try(fn)
 	local x, y = pcall(fn)
 	
@@ -88,7 +87,7 @@ end
 return a()
 ";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script().DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -100,7 +99,7 @@ return a()
         [Test]
         public void Errors_TryCatch_Multiples()
         {
-            string script = @"
+            var script = @"
 function a()
 	return try(b) .. 'a';
 end
@@ -120,23 +119,27 @@ end
 
 return a()
 ";
-            Script S = new();
-
-            S.Globals["try"] = DynValue.NewCallback((c, a) =>
+            Script S = new()
             {
-                try
+                Globals =
                 {
-                    var v = a[0].Function.Call();
-                    return v;
+                    ["try"] = DynValue.NewCallback((c, a) =>
+                    {
+                        try
+                        {
+                            var v = a[0].Function.Call();
+                            return v;
+                        }
+                        catch (ScriptRuntimeException)
+                        {
+                            return DynValue.NewString("!");
+                        }
+                    })
                 }
-                catch (ScriptRuntimeException)
-                {
-                    return DynValue.NewString("!");
-                }
-            });
+            };
 
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -144,6 +147,5 @@ return a()
                 Assert.That(res.String, Is.EqualTo("!cba"));
             });
         }
-
     }
 }

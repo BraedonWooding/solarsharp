@@ -1,7 +1,7 @@
-﻿using SolarSharp.Interpreter.Modules;
-using System;
+﻿using System;
 using System.IO;
 using System.Text;
+using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Platforms
 {

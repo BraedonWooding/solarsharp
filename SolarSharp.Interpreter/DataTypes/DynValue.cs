@@ -1,11 +1,11 @@
-﻿using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.Execution;
-using SolarSharp.Interpreter.Interop.Converters;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.Converters;
 
 namespace SolarSharp.Interpreter.DataTypes
 {
@@ -417,7 +417,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public string ToPrintString()
         {
-            if (m_Object != null && m_Object is RefIdObject)
+            if (m_Object is RefIdObject)
             {
                 RefIdObject refid = (RefIdObject)m_Object;
 
@@ -454,7 +454,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public string ToDebugPrintString()
         {
-            if (m_Object != null && m_Object is RefIdObject)
+            if (m_Object is RefIdObject)
             {
                 RefIdObject refid = (RefIdObject)m_Object;
 
@@ -891,7 +891,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 return default;
 
             object o = v.UserData.Object;
-            if (o != null && o is T)
+            if (o is T)
                 return (T)o;
 
             throw ScriptRuntimeException.BadArgumentUserData(argNum, funcName, typeof(T), o, allowNil);

@@ -1,7 +1,7 @@
-﻿using SolarSharp.Interpreter.DataStructs;
-using SolarSharp.Interpreter.DataTypes;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using SolarSharp.Interpreter.DataStructs;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Interop
 {

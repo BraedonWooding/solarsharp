@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.Debugging;
-using SolarSharp.Interpreter.Execution;
-using SolarSharp.Interpreter.Tree.Lexer;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.Tree.Lexer;
 
 namespace SolarSharp.Interpreter.Tree.Statements
 {

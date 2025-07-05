@@ -4,9 +4,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
-using SolarSharp.Interpreter.Security.Manifest;
+using SolarSharp.Interpreter.Security.Manifests;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -50,7 +49,7 @@ namespace SolarSharp.Interpreter.Security
         /// <returns>True if file exists</returns>
         public bool FileExists(string path)
         {
-            ValidateAccess(path, SolarSharp.Interpreter.Security.FileAccess.Read);
+            ValidateAccess(path, FilePermissions.Read);
             var provider = ResolveProvider(path, out var relativePath);
             return provider?.ExistsAsync(relativePath).GetAwaiter().GetResult() ?? false;
         }
@@ -62,7 +61,7 @@ namespace SolarSharp.Interpreter.Security
         /// <returns>File content as byte array</returns>
         public byte[] ReadAllBytes(string path)
         {
-            ValidateAccess(path, SolarSharp.Interpreter.Security.FileAccess.Read);
+            ValidateAccess(path, FilePermissions.Read);
             var provider = ResolveProvider(path, out var relativePath);
             
             if (provider == null)
@@ -78,7 +77,7 @@ namespace SolarSharp.Interpreter.Security
         /// <param name="content">Content to write</param>
         public void WriteAllBytes(string path, byte[] content)
         {
-            ValidateAccess(path, SolarSharp.Interpreter.Security.FileAccess.ReadWrite);
+            ValidateAccess(path, FilePermissions.ReadWrite);
             var provider = ResolveProvider(path, out var relativePath);
             
             if (provider == null)
@@ -103,7 +102,7 @@ namespace SolarSharp.Interpreter.Security
         /// <returns>File stream</returns>
         public Stream OpenFile(string path, FileMode mode, System.IO.FileAccess access)
         {
-            ValidateAccess(path, access == System.IO.FileAccess.Read ? SolarSharp.Interpreter.Security.FileAccess.Read : SolarSharp.Interpreter.Security.FileAccess.ReadWrite);
+            ValidateAccess(path, access == System.IO.FileAccess.Read ? FilePermissions.Read : FilePermissions.ReadWrite);
             var provider = ResolveProvider(path, out var relativePath);
             
             if (provider == null)
@@ -157,16 +156,16 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Validates access to a path based on security configuration and certificate constraints
         /// </summary>
-        private void ValidateAccess(string path, SolarSharp.Interpreter.Security.FileAccess requiredAccess)
+        private void ValidateAccess(string path, FilePermissions requiredAccess)
         {
             // Check capabilities
             var hasReadCapability = _securityConfig.Capabilities.HasFlag(ScriptCapabilities.FileRead);
             var hasWriteCapability = _securityConfig.Capabilities.HasFlag(ScriptCapabilities.FileWrite);
 
-            if (requiredAccess == SolarSharp.Interpreter.Security.FileAccess.Read && !hasReadCapability)
+            if (requiredAccess == FilePermissions.Read && !hasReadCapability)
                 throw new UnauthorizedAccessException("File read access denied by security configuration");
             
-            if (requiredAccess == SolarSharp.Interpreter.Security.FileAccess.ReadWrite && !hasWriteCapability)
+            if (requiredAccess == FilePermissions.ReadWrite && !hasWriteCapability)
                 throw new UnauthorizedAccessException("File write access denied by security configuration");
 
             // Check certificate constraints

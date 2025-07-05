@@ -21,14 +21,14 @@ SolarSharp provides a comprehensive security system designed to safely execute u
 
 ### Key Features
 
-- **Manifest-based VM control**: All security policies are defined through manifests
-- **VM-level key loading**: When keys are loaded, enforce manifest requirements for all .lua files
-- **StringExecution control**: External string execution disabled by default for security
-- **Signed manifest chains**: Strict same-key validation for included manifests
+- **Fluent Security API**: Configure security policies using intuitive builder pattern
+- **Preset Security Levels**: Isolated, DataProcessing, and Automation configurations
+- **Dynamic code control**: PreventDynamicCode option (allowed by default for developer convenience)
+- **Manifest compatibility**: Unified ISecurityPolicy interface for manifests and SecurityConfiguration
 - **Granular file access control**: Fine-grained permissions for files and directories
 - **Resource limits**: CPU time, memory, and instruction count limits
 - **Anti-polymorphism protection**: Prevents self-modifying code attacks
-- **Cryptographic signing**: RSA signature verification with proper canonicalization
+- **Cryptographic signing**: RSA/ECDSA signature verification with proper canonicalization
 - **Environment variable configuration**: Security tracing and learning mode support
 - **Auto-generation**: Trace script execution to generate minimal manifests
 
@@ -48,10 +48,11 @@ SolarSharp provides a comprehensive security system designed to safely execute u
 ┌─────────────────────────────────────────────────────────────┐
 │                        Script Instance                       │
 ├─────────────────────────────────────────────────────────────┤
-│                      Manifest System                         │
-│  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐   │
-│  │  Manifests  │→ │  Composer    │→ │ SystemManifest  │   │
-│  └─────────────┘  └──────────────┘  └─────────────────┘   │
+│                   Security Policy Layer                      │
+│  ┌─────────────────┐         ┌──────────────────────────┐  │
+│  │SecurityConfig   │ ←─────→ │ ISecurityPolicy          │  │
+│  │(Fluent API)     │         │ (Manifest/Config)        │  │
+│  └─────────────────┘         └──────────────────────────┘  │
 ├─────────────────────────────────────────────────────────────┤
 │                    Security Enforcement                      │
 │  ┌──────────────┐  ┌──────────────┐  ┌────────────────┐   │
@@ -205,19 +206,17 @@ When multiple manifests are applied to a script, they are composed according to 
 Example composition:
 
 ```csharp
-// Base manifest (untrusted)
-var baseManifest = new ManifestBuilder()
-    .WithTimeout(60)
-    .WithMemoryLimit(100)
-    .Build();
+// Using SecurityConfiguration (C# fluent API)
+var config = SecurityConfiguration.Isolated()
+    .WithTimeout(TimeSpan.FromSeconds(30))
+    .WithMemoryLimitMB(100)
+    .AddModule(CoreModules.IO);
 
-// Application manifest (trusted)
-var appManifest = new ManifestBuilder()
-    .WithTimeout(30)  // Overrides base
-    .AllowModule(CoreModules.IO)  // Adds permission
-    .Build();
+// Or using manifest files
+var manifest = Manifest.LoadFromFile("app.manifest");
 
-// Result: 30s timeout, 100MB memory, IO module allowed
+// Both implement ISecurityPolicy for unified usage
+var script = new Script(config);  // or new Script(manifest)
 ```
 
 ### Scope System
@@ -285,35 +284,36 @@ bool hasKeys = script.HasLoadedKeys;
 - **Validation**: Signatures must be valid against one of the loaded keys
 - **Chain Validation**: All included manifests must use the same signing key
 
-### StringExecution Control
+### Dynamic Code Control
 
-External string execution is disabled by default for security. Internal VM operations continue to work normally:
+Dynamic code execution is allowed by default for developer convenience but can be disabled for enhanced security:
 
 ```csharp
-// Secure default - external string execution disabled
-var script = new Script(manifest); // StringExecution.False (default)
+// Default - dynamic code allowed (developer friendly)
+var script = new Script(); // PreventDynamicCode = false
 
-// Development mode - external string execution enabled  
-var script = new Script(manifest, StringExecution.True);
+// Disable dynamic code for production
+var config = new SecurityConfiguration()
+    .DisableDynamicCode(); // Sets PreventDynamicCode = true
 
-// Constructor variations
-var script = new Script(); // StringExecution.False
-var script = new Script(SystemManifest.Desktop, StringExecution.True);
-var script = new Script(config, StringExecution.True);
+// Using preset configurations
+var script = new Script(SecurityConfiguration.Isolated()); // Dynamic code disabled
+var script = new Script(SecurityConfiguration.DataProcessing()); // Dynamic code disabled
+var script = new Script(SecurityConfiguration.Automation()); // Dynamic code allowed
 ```
 
-#### StringExecution Modes
+#### PreventDynamicCode Setting
 
-- **StringExecution.False** (default): Blocks DoString/LoadString for security
-- **StringExecution.True**: Allows external string execution for development
+- **false** (default): Allows loadstring, load, and DoString operations
+- **true**: Blocks dynamic code loading for enhanced security
 
-#### Internal VM Operations
+#### Affected Operations
 
-These operations always work regardless of StringExecution setting:
-- `load()` function within Lua scripts
-- `eval()` type operations
-- Internal VM string compilation
-- Dynamic code execution from within scripts
+When PreventDynamicCode is true, these are blocked:
+- `loadstring()` function within Lua scripts
+- `load()` function with string input
+- `DoString()` from C# API
+- `LoadString()` from C# API
 
 ### Signed Manifest Chain Validation
 
@@ -349,7 +349,7 @@ When manifests include other manifests, strict same-key validation is enforced:
 
 ### File System Security
 
-SolarSharp implements granular file access control:
+SolarSharp implements a two-tier security model for file access control, providing both coarse-grained capabilities and fine-grained permissions. See [Understanding the Two-Tier File Access Security Model](#understanding-the-two-tier-file-access-security-model) below for details.
 
 #### File Access Levels
 - **None**: No access allowed
@@ -365,12 +365,14 @@ SolarSharp implements granular file access control:
 Example configuration:
 
 ```csharp
-var manifest = new ManifestBuilder()
-    .WithDefaultFileAccess(FileAccess.Read)
-    .WithDefaultDirectoryAccess(DirectoryAccess.List)
-    .AddFileRule("logs/*.log", FileAccess.ReadWrite)
-    .AddDirectoryRule("temp", DirectoryAccess.ListAndCreateFiles)
-    .Build();
+// Using SecurityConfiguration fluent API
+var config = new SecurityConfiguration()
+    .WithFileAccess(FileAccess.Read)
+    .WithDirectoryAccess(DirectoryAccess.List)
+    .AddFileAccess("logs/*.log", FileAccess.ReadWrite)
+    .AddDirectoryAccess("temp", DirectoryAccess.ListAndCreateFiles);
+
+var script = new Script(config);
 ```
 
 ### Anti-Polymorphism Protection
@@ -378,28 +380,141 @@ var manifest = new ManifestBuilder()
 Prevents self-modifying code and manifest tampering:
 
 ```csharp
-var manifest = new ManifestBuilder()
-    .WithAntiPolymorphism()  // Enables all protections
-    .Build();
+// Using SecurityConfiguration
+var config = new SecurityConfiguration()
+    .DisableDynamicCode()        // Prevent loadstring/load
+    .DisableMetatableChanges()   // Prevent metatable modification
+    .DisableEnvironmentAccess(); // Block _ENV/_G modifications
 
-// Equivalent to:
-// - *.lua files: Can execute, cannot modify
-// - Manifest files: No access
-// - Digest-protected files: No modification
-// - Dynamic code execution: Blocked
+// Preset configurations include these protections:
+var config = SecurityConfiguration.Isolated(); // All protections enabled
 ```
+
+### Understanding the Two-Tier File Access Security Model
+
+SolarSharp employs a two-tier security model for file operations, implementing defense in depth through both **capabilities** and **permissions**. Understanding this model is crucial for properly securing your scripts.
+
+#### Tier 1: Script Capabilities (Feature-Level Control)
+
+**Capabilities** answer the question: "What features can this script use?"
+
+They control whether a script can use certain types of operations AT ALL, regardless of specific paths:
+
+- `ScriptCapabilities.FileRead` - Can the script read ANY files?
+- `ScriptCapabilities.FileWrite` - Can the script write to ANY files?
+- `ScriptCapabilities.FileDelete` - Can the script delete ANY files?
+- `ScriptCapabilities.DirectoryOperations` - Can the script list/create directories?
+
+#### Tier 2: File/Directory Permissions (Path-Level Control)
+
+**Permissions** answer the question: "Which specific files/directories can be accessed and how?"
+
+They control access to specific paths:
+
+- `FilePermissions.Read` - Can read this specific file
+- `FilePermissions.ReadWrite` - Can read and write this specific file
+- `FilePermissions.SandboxedReadWrite` - Can read/write but changes go to temp folder
+- `DirectoryPermissions.List` - Can list this directory
+- `DirectoryPermissions.ListAndCreateFiles` - Can list and create files in this directory
+
+#### How They Work Together
+
+Every file operation goes through BOTH security checks in sequence:
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌──────────────┐
+│ Script attempts │ --> │ Capability Check │ --> │ Permission   │ --> Success
+│ file operation  │     │ (Can I do this?) │     │ Check        │
+└─────────────────┘     └──────────────────┘     │ (Can I do it │
+                               │                  │ here?)       │
+                               ▼                  └──────────────┘
+                        Access Denied                    │
+                                                        ▼
+                                                  Access Denied
+```
+
+#### Why Both Layers?
+
+This two-tier approach provides several benefits:
+
+1. **Administrative Control**: Administrators can globally disable features (e.g., no file writing at all)
+2. **Fine-Grained Security**: Even with capabilities enabled, access is limited to specific paths
+3. **Clear Security Audit**: Easy to see what a script CAN do (capabilities) and WHERE it can do it (permissions)
+4. **Defense in Depth**: Two independent checks must pass for any operation to succeed
+
+#### Common Configuration Examples
+
+**Example 1: Read-Only Script**
+```csharp
+var config = new SecurityConfiguration()
+    .AddCapabilities(ScriptCapabilities.FileRead)  // Enable file reading capability
+    .SetFilePermissions("/app/config.json", FilePermissions.Read)
+    .SetFilePermissions("/app/data/*.txt", FilePermissions.Read);
+
+// Result:
+// Can read /app/config.json
+// Can read /app/data/file.txt
+// Cannot write anywhere (no FileWrite capability)
+// Cannot read /app/secret.json (no permission)
+```
+
+**Example 2: Limited Write Access**
+```csharp
+var config = new SecurityConfiguration()
+    .AddCapabilities(ScriptCapabilities.FileRead | ScriptCapabilities.FileWrite)
+    .SetFilePermissions("/app/logs/*.log", FilePermissions.ReadWrite)
+    .SetFilePermissions("/app/config/*", FilePermissions.Read);
+
+// Result:
+// Can read and write /app/logs/app.log
+// Can read /app/config/settings.json
+// Cannot write /app/config/settings.json (read-only permission)
+// Cannot access /etc/passwd (no permission)
+```
+
+**Example 3: Common Mistake - Missing Capability**
+```csharp
+var config = new SecurityConfiguration()
+    // Forgot to add FileWrite capability!
+    .SetFilePermissions("/app/output/*", FilePermissions.ReadWrite);
+
+// Result:
+// Cannot write to /app/output/file.txt
+// Error: "Missing capability: FileWrite"
+```
+
+#### Troubleshooting Access Denied Errors
+
+When file access is denied, check both tiers:
+
+1. **Capability Error**: `MissingCapabilityException: FileWrite`
+   - Solution: Add the required capability with `.AddCapabilities(ScriptCapabilities.FileWrite)`
+
+2. **Permission Error**: `FilePermissionViolationException: File operation 'Write' not allowed`
+   - Solution: Grant appropriate permissions with `.SetFilePermissions(path, FilePermissions.ReadWrite)`
+
+3. **Both Configured but Still Denied**:
+   - Check if path matches your permission patterns
+   - Verify no deny rules are overriding
+   - Check for typos in path patterns
+   - Remember that more specific rules override general ones
 
 ### Resource Limits
 
 Control script resource consumption:
 
 ```csharp
-var manifest = new ManifestBuilder()
-    .WithTimeout(30)              // 30 seconds
-    .WithMemoryLimit(50)          // 50MB
-    .WithMaxInstructions(1000000) // 1M instructions
-    .WithMaxCallDepth(100)        // Stack depth
-    .Build();
+// Using SecurityConfiguration fluent API
+var config = new SecurityConfiguration()
+    .WithTimeout(TimeSpan.FromSeconds(30))   // 30 seconds
+    .WithMemoryLimitMB(50)                     // 50MB
+    .WithInstructionLimit(1_000_000)         // 1M instructions
+    .WithScriptingLimits(limits => limits
+        .WithMaxCallDepth(100)               // Stack depth
+        .WithMaxTables(1000)                 // Max table count
+        .WithMaxStringLength(1_000_000));    // Max string size
+
+var script = new Script(config);
 ```
 
 #### Resource Monitoring Implementation
@@ -528,10 +643,10 @@ When you add hostnames to the allowed list, SolarSharp:
 3. Accepts all subdomains under the specified domain (e.g., "example.org" includes "www.example.org")
 
 ```csharp
-var config = SecurityConfiguration.CreateDataProcessing()
-    .AllowNetworkAccess()
-    .AddAllowedHost("api.example.com")
-    .AddAllowedHost("*.trusted-domain.com");  // Wildcard subdomain
+var config = SecurityConfiguration.DataProcessing()
+    .WithNetworkAccess(net => net
+        .WithAllowedHosts("api.example.com", "*.trusted-domain.com")
+        .WithAllowedPorts(443, 80));
 ```
 
 **Security Considerations:**
@@ -544,12 +659,11 @@ var config = SecurityConfiguration.CreateDataProcessing()
 For stricter control, specify exact IP addresses or CIDR ranges:
 
 ```csharp
-var config = SecurityConfiguration.CreateDataProcessing()
-    .AllowNetworkAccess()
-    .AddAllowedIP("192.168.1.0/24")      // IPv4 subnet
-    .AddAllowedIP("10.0.0.1")            // Single IPv4
-    .AddAllowedIPv6("2001:db8::/32")     // IPv6 subnet
-    .AddAllowedIPv6("::1");              // IPv6 loopback
+var config = SecurityConfiguration.DataProcessing()
+    .WithNetworkAccess(net => net
+        .AllowNetwork()
+        .WithAllowedIPs("192.168.1.0/24", "10.0.0.1")
+        .WithAllowedIPv6s("2001:db8::/32", "::1"));
 ```
 
 #### Manifest Configuration
@@ -586,11 +700,11 @@ var config = SecurityConfiguration.CreateDataProcessing()
 
 ```csharp
 // Create a configuration that allows both hostname and IP-based access
-var config = SecurityConfiguration.CreateDataProcessing()
-    .AllowNetworkAccess()
-    // Trusted services by hostname
-    .AddAllowedHost("api.mycompany.com")
-    .AddAllowedHost("auth.mycompany.com")
+var config = SecurityConfiguration.DataProcessing()
+    .WithNetworkAccess(net => net
+        .AllowNetwork()
+        // Trusted services by hostname
+        .WithAllowedHosts("api.mycompany.com", "auth.mycompany.com")
     // Internal network by IP range
     .AddAllowedIP("10.0.0.0/8")         // Private network
     .AddAllowedIP("172.16.0.0/12")      // Private network
@@ -648,34 +762,35 @@ script.DoString("io.open('/etc/passwd', 'r')"); // Logs violation but continues
 ### Basic Script Execution
 
 ```csharp
-// Using default desktop security
+// Using default desktop security (dynamic code allowed)
 var script = new Script();
 script.DoString("print('Hello, World!')");
 
-// Using specific system manifest
-var script = new Script(SystemManifest.Game);
-script.DoString("return 1 + 1");
+// Using preset security configurations
+var script = new Script(SecurityConfiguration.Isolated()); // High security
+script.DoFile("untrusted.lua"); // DoString blocked when PreventDynamicCode=true
 
-// Using custom manifest
-var manifest = new ManifestBuilder()
-    .WithTimeout(10)
-    .WithMemoryLimit(25)
-    .Build();
-var script = new Script(manifest);
+// Using custom configuration
+var config = new SecurityConfiguration()
+    .WithTimeout(TimeSpan.FromSeconds(10))
+    .WithMemoryLimitMB(25)
+    .AddModule(CoreModules.Math);
+var script = new Script(config);
 ```
 
-### Adding Manifests at Runtime
+### Working with Manifests
 
 ```csharp
-var script = new Script(SystemManifest.Jailed);
+// Load manifest from file
+var manifest = Manifest.LoadFromFile("app.manifest");
+var script = new Script(manifest);
 
-// Add untrusted manifest (can only restrict)
-var userManifest = LoadManifestFromFile("user.manifest");
-script.AddManifest(userManifest, TrustLevel.Untrusted);
+// Both SecurityConfiguration and Manifest implement ISecurityPolicy
+ISecurityPolicy policy = SecurityConfiguration.Isolated();
+// or
+ISecurityPolicy policy = manifest;
 
-// Add trusted manifest (can grant permissions)
-var trustedManifest = LoadManifestFromFile("trusted.manifest");
-script.AddManifest(trustedManifest, TrustLevel.Trusted);
+var script = new Script(policy);
 ```
 
 ### Manifest Auto-Generation
@@ -735,10 +850,10 @@ package.luapackage/
 
 ```csharp
 // Constructors
-public Script()  // Uses SystemManifest.Desktop, StringExecution.False
-public Script(Manifest manifest)  // Uses specified manifest, StringExecution.False
-public Script(Manifest manifest, StringExecution stringExecution)
-public Script(SecurityConfiguration securityConfig, StringExecution stringExecution)
+public Script()  // Uses Desktop security (PreventDynamicCode=false)
+public Script(ISecurityPolicy policy)  // Manifest or SecurityConfiguration
+public Script(SecurityConfiguration config)
+public Script(Manifest manifest)
 
 // Core execution methods
 public DynValue DoString(string code, Table globalContext = null, string codeFriendlyName = null)
@@ -776,8 +891,8 @@ public enum StringExecution
 ```csharp
 var manifest = new ManifestBuilder()
     // Resource limits
-    .WithTimeout(30)
-    .WithMemoryLimit(50)
+    .WithTimeoutMs(30000)  // 30 seconds
+    .WithMemoryLimitMB(50)
     .WithMaxInstructions(1000000000)
     .WithMaxCallDepth(200)
     
@@ -792,22 +907,34 @@ var manifest = new ManifestBuilder()
     .AddExecutionRule("*.lua", true)
     .AddWriteRule("*.lua", false)
     
+### SecurityConfiguration API
+
+```csharp
+var config = new SecurityConfiguration()  // Desktop defaults
+    // Resource limits
+    .WithTimeout(TimeSpan.FromSeconds(30))
+    .WithMemoryLimitMB(50)
+    .WithInstructionLimit(1_000_000)
+    
     // Modules and capabilities
-    .AllowModule(CoreModules.IO | CoreModules.OS)
-    .AllowCapability(ScriptCapabilities.FileRead)
+    .AddModules(CoreModules.IO | CoreModules.OS)
+    .AddCapabilities(ScriptCapabilities.FileRead)
     
     // Security features
-    .WithAntiPolymorphism()
-    .EnableChroot()
+    .DisableDynamicCode()
+    .DisableMetatableChanges()
+    .DisableEnvironmentAccess()
     
-    // Network and environment
-    .AllowNetworkAccess()
-    .WithAllowedHosts("api.example.com", "cdn.example.com")
-    .AllowEnvironmentAccess()
-    .WithAllowedEnvironmentVariables("HOME", "USER")
+    // File system
+    .WithFileAccess(FileAccess.Read)
+    .AddFileAccess("logs/*.log", FileAccess.ReadWrite)
+    .AddDirectoryAccess("data", DirectoryAccess.ListAndCreateFiles)
     
-    // Build
-    .Build();
+    // Network
+    .WithNetworkAccess(net => net
+        .AllowNetwork()
+        .WithAllowedHosts("api.example.com", "cdn.example.com")
+        .WithAllowedPorts(443, 80));
 ```
 
 ### ManifestTracer
@@ -854,21 +981,21 @@ using (var scope = ManifestTrustStore.CreateScope())
 
 ### 1. Always Use Appropriate Security Configuration
 
-Never run untrusted code without appropriate security restrictions. The Script class uses secure defaults (SystemManifest.Desktop), but you should choose the most restrictive configuration that meets your needs:
+Never run untrusted code without appropriate security restrictions. Choose the most restrictive configuration that meets your needs:
 
 ```csharp
-// NEVER do this with untrusted code
-var script = new Script(SystemManifest.Unrestricted);
+// For untrusted code - use maximum restrictions
+var script = new Script(SecurityConfiguration.Isolated());
 
-// ALWAYS use appropriate security
-var script = new Script(); // Uses SystemManifest.Desktop by default
-// or for maximum restriction
-var script = new Script(SystemManifest.Jailed);
-// or with custom configuration
-var script = new Script(customSecureManifest);
+// For data processing - limited file/network access
+var script = new Script(SecurityConfiguration.DataProcessing());
+
+// For development - Desktop configuration (default)
+var script = new Script(); // PreventDynamicCode = false
+
+// For trusted automation
+var script = new Script(SecurityConfiguration.Automation());
 ```
-
-Note: Untrusted code may or may not have an associated manifest file. Manifests are optional security policies that can further restrict permissions beyond the SystemManifest.
 
 ### 2. Principle of Least Privilege
 
@@ -876,12 +1003,12 @@ Grant only the minimum permissions required:
 
 ```csharp
 // Too permissive
-.WithDefaultFileAccess(FileAccess.ReadWrite)
+config.WithFileAccess(FileAccess.ReadWrite);
 
-// Specific permissions
-.WithDefaultFileAccess(FileAccess.None)
-.AddFileRule("config/*.json", FileAccess.Read)
-.AddFileRule("logs/*.log", FileAccess.ReadWrite)
+// Better - specific permissions
+config.WithFileAccess(FileAccess.None)
+    .AddFileAccess("config/*.json", FileAccess.Read)
+    .AddFileAccess("logs/*.log", FileAccess.ReadWrite);
 ```
 
 ### 3. Validate Manifest Signatures
@@ -910,7 +1037,25 @@ var manifest = new ManifestBuilder()
     .Build();
 ```
 
-### 5. Monitor Security Events
+### 5. Configure Both Security Tiers for File Access
+
+Always configure both capabilities AND permissions for file operations:
+
+```csharp
+// Common mistake - permissions without capability
+var config = new SecurityConfiguration()
+    .SetFilePermissions("/data/*", FilePermissions.ReadWrite);
+// Result: File writes will fail with MissingCapabilityException
+
+// Correct - both tiers configured
+var config = new SecurityConfiguration()
+    .AddCapabilities(ScriptCapabilities.FileRead | ScriptCapabilities.FileWrite)
+    .SetFilePermissions("/data/*", FilePermissions.ReadWrite);
+```
+
+Remember: Capabilities control IF a feature can be used, Permissions control WHERE it can be used.
+
+### 6. Monitor Security Events
 
 Subscribe to security events for logging:
 
@@ -1003,77 +1148,81 @@ var updatedManifest = tracer.GenerateManifest();
 
 ## Migration Guide
 
-### Key Features in Version 1.0
+### Key API Changes
 
-**TrustLevel Consolidation:**
-- Consolidated `TrustLevel` and `ManifestTrustLevel` enums to eliminate DRY violation
-- Now uses single `TrustLevel` enum: `Unsigned (0)`, `Untrusted (1)`, `Trusted (2)`
-- Update all references from `ManifestTrustLevel` to `TrustLevel`
+**StringExecution Removed:**
+- The `StringExecution` enum has been removed
+- Dynamic code execution is now controlled by `PreventDynamicCode` in `AntiPolymorphismPolicy`
+- Default is now `false` (dynamic code allowed) for developer convenience
 
-**Resource Limit Semantics:**
-- Changed "no limits" representation from `0` to `-1` for clarity
-- `0` now means "limit of zero" (immediate failure)
-- `-1` now means "no limit" (unlimited resources)
+**SecurityConfiguration Fluent API:**
+- `SecurityConfiguration` now uses a fluent builder pattern
+- Factory methods renamed: `CreateDesktop()` → default constructor, `CreateIsolated()` → `Isolated()`, etc.
+- All configuration methods now return `this` for chaining
 
-**Anti-Polymorphism Implementation:**
-- Anti-polymorphism is no longer a simple boolean policy attribute
-- It's now implemented through specific rules that control file execution and modification
-- Use `ManifestBuilder.WithAntiPolymorphism()` to apply the rule set
+**ISecurityPolicy Interface:**
+- Both `SecurityConfiguration` and `Manifest` implement `ISecurityPolicy`
+- Script constructors accept `ISecurityPolicy` for unified usage
+- Allows seamless switching between C# config and JSON manifests
 
-**SystemManifest.None Special Case:**
-- SystemManifest.None now has no policy and no rules (previously had explicit deny rules)
-- Denial is implicit through the absence of permissions
-- This is the only valid case where a SystemManifest can have null policy
+**Namespace Changes:**
+- `Manifest` namespace renamed to `Manifests` to avoid collision with `Manifest` class
+- Update all `using` statements from `SolarSharp.Interpreter.Security.Manifest` to `SolarSharp.Interpreter.Security.Manifests`
 
-**Manifest Composition:**
-- `ManifestComposer.Compose()` now returns `Manifest`, not `SystemManifest`
-- Use `SystemManifest.FromManifest()` to validate and promote the result
-
-### From SecurityConfiguration to Manifests
+### From StringExecution to PreventDynamicCode
 
 Old code:
 ```csharp
+// External string execution disabled
+var script = new Script(manifest, StringExecution.False);
+
+// External string execution enabled
+var script = new Script(manifest, StringExecution.True);
+```
+
+New code:
+```csharp
+// Dynamic code allowed by default
+var script = new Script(); // PreventDynamicCode = false
+
+// Disable dynamic code
 var config = new SecurityConfiguration()
-    .WithTimeout(30)
-    .WithMemoryLimit(50);
+    .DisableDynamicCode();
 var script = new Script(config);
 ```
 
-New code:
-```csharp
-var manifest = new ManifestBuilder()
-    .WithTimeout(30)
-    .WithMemoryLimit(50)
-    .Build();
-var script = new Script(manifest);
-```
-
-### From File Write Policies to Granular Access
+### From Factory Methods to Fluent API
 
 Old code:
 ```csharp
-config.FileSystem.WritePolicy = WritePolicy.AllowFilesOnly;
+var config = SecurityConfiguration.CreateDesktop();
+var config = SecurityConfiguration.CreateIsolated();
+var config = SecurityConfiguration.CreateDataProcessing();
 ```
 
 New code:
 ```csharp
-manifest.AddFileRule("*", FileAccess.SandboxedReadWrite)
-    .AddDirectoryRule("*", DirectoryAccess.List);
+var config = new SecurityConfiguration(); // Desktop is default
+var config = SecurityConfiguration.Isolated();
+var config = SecurityConfiguration.DataProcessing();
 ```
 
-### Using System Manifests
+### Using Preset Configurations
 
-Instead of creating custom configurations, use system manifests:
+Instead of building from scratch, use preset configurations:
 
 ```csharp
-// Development
-var script = new Script(SystemManifest.Desktop);
+// Maximum security - no I/O, no network, no dynamic code
+var script = new Script(SecurityConfiguration.Isolated());
 
-// Production
-var script = new Script(SystemManifest.Jailed);
+// Data processing - limited file and network access
+var script = new Script(SecurityConfiguration.DataProcessing());
 
-// Game modding
-var script = new Script(SystemManifest.Game);
+// Automation - broader permissions for trusted scripts
+var script = new Script(SecurityConfiguration.Automation());
+
+// Development - default with dynamic code allowed
+var script = new Script(); // Uses Desktop configuration
 ```
 
 ## Troubleshooting
@@ -1105,9 +1254,9 @@ var script = new Script(SystemManifest.Game);
 Enable detailed logging:
 
 ```csharp
-var manifest = new ManifestBuilder()
-    .WithProperty("debug", "true")
-    .Build();
+// Using environment variables
+Environment.SetEnvironmentVariable("LUA_SANDBOX_LOG_DIR", "/tmp/solarsharp-logs");
+Environment.SetEnvironmentVariable("LUA_SANDBOX_LEARN_MODE", "true");
 ```
 
 ### Manifest Validation
@@ -1157,7 +1306,7 @@ public void Manifest_BlocksUnauthorizedFileAccess()
 public void ResourceLimits_EnforceTimeout()
 {
     var manifest = new ManifestBuilder()
-        .WithTimeout(0.1) // 100ms
+        .WithTimeoutMs(100) // 100ms
         .Build();
     var script = new Script(manifest);
     

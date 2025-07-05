@@ -1,5 +1,5 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Execution.VM
 {

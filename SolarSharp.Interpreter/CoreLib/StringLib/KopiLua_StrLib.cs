@@ -45,8 +45,8 @@
 // THE SOFTWARE.
 
 
-using SolarSharp.Interpreter.Interop.LuaStateInterop;
 using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Interop.LuaStateInterop;
 using lua_Integer = System.Int32;
 using LUA_INTFRM_T = System.Int64;
 using ptrdiff_t = System.Int32;

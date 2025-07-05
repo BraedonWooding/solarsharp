@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using SolarSharp.Interpreter.CoreLib.IO;
 using SolarSharp.Interpreter.Compatibility;
+using SolarSharp.Interpreter.CoreLib.IO;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Interop;
-using SolarSharp.Interpreter.Platforms;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Platforms;
 using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.CoreLib

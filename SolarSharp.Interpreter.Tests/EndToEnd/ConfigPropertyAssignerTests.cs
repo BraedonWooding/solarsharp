@@ -1,14 +1,13 @@
-﻿using SolarSharp.Interpreter.Security;
-﻿using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Interop;
-using SolarSharp.Interpreter.Modules;
-using NUnit.Framework;
-using SolarSharp.Interpreter.Interop.Attributes;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Interop.Attributes;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class ConfigPropertyAssignerTests
     {
         private class MySubclass
@@ -42,7 +41,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             Script s = new();
 
-            DynValue table = s.DoString("return " + tableDef);
+            var table = s.DoString("return " + tableDef);
 
             Assert.That(table.Type, Is.EqualTo(DataType.Table));
 
@@ -61,7 +60,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void ConfigProp_SimpleAssign()
         {
-            MyClass x = Test(@"
+            var x = Test(@"
 				{
 				class = 'oohoh',
 				myString = 'ciao',

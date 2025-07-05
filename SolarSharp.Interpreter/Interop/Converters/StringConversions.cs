@@ -1,7 +1,7 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Errors;
-using System;
+﻿using System;
 using System.Text;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Interop.Converters
 {

@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Linq;
-using SolarSharp.Interpreter.Serialization.Json;
-using SolarSharp.Interpreter.Interop.StandardDescriptors;
-using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using System.Reflection;
 using SolarSharp.Interpreter.Interop;
-using SolarSharp.Interpreter.Interop.RegistrationPolicies;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using SolarSharp.Interpreter.Interop.PredefinedUserData;
-using SolarSharp.Interpreter.Interop.UserDataRegistries;
 using SolarSharp.Interpreter.Interop.ProxyObjects;
+using SolarSharp.Interpreter.Interop.RegistrationPolicies;
+using SolarSharp.Interpreter.Interop.StandardDescriptors;
+using SolarSharp.Interpreter.Interop.UserDataRegistries;
+using SolarSharp.Interpreter.Serialization.Json;
 
 namespace SolarSharp.Interpreter.DataTypes
 {

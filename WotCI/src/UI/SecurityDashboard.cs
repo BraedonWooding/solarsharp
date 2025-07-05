@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using SolarSharp.Interpreter.Communication;
+using SolarSharp.Interpreter.Security;
 using Spectre.Console;
 using Spectre.Console.Rendering;
-using SolarSharp.Interpreter.Security;
-using SolarSharp.Interpreter.Communication;
 
 namespace WotCI.UI
 {
@@ -45,13 +42,15 @@ namespace WotCI.UI
             // Header
             layout["Header"].Update(CreateHeader());
 
-            // Main content
+            // Main content - enhanced with message bus section
             layout["Left"].SplitRows(
-                new Layout("Metrics").Size(8),
+                new Layout("Metrics").Size(10),
+                new Layout("MessageBus").Size(8),
                 new Layout("Events")
             );
 
             layout["Left"]["Metrics"].Update(CreateMetricsPanel());
+            layout["Left"]["MessageBus"].Update(CreateMessageBusPanel());
             layout["Left"]["Events"].Update(CreateEventsPanel());
             layout["Right"].Update(CreatePluginsPanel());
 
@@ -74,11 +73,20 @@ namespace WotCI.UI
 
             layout["Header"].Update(CreateHeader());
             layout["Left"]["Metrics"].Update(CreateMetricsPanel());
+            layout["Left"]["MessageBus"].Update(CreateMessageBusPanel());
             layout["Left"]["Events"].Update(CreateEventsPanel());
             layout["Right"].Update(CreatePluginsPanel());
             layout["Footer"].Update(CreateFooter());
 
             _lastUpdate = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Gets the current message bus statistics
+        /// </summary>
+        public MessageBusStats? GetMessageBusStats()
+        {
+            return _messageBus?.GetStats();
         }
 
         private IRenderable CreateHeader()
@@ -138,9 +146,145 @@ namespace WotCI.UI
                 table.AddRow("Dropped Messages", 
                     $"[{(messageBusStats.DroppedMessages == 0 ? "green" : "red")}]{messageBusStats.DroppedMessages}[/]", 
                     GetStatusIcon(messageBusStats.DroppedMessages, 0, 5));
+
+                table.AddRow("Total Subscriptions", 
+                    $"[blue]{messageBusStats.TotalSubscriptions}[/]", 
+                    GetStatusIcon(messageBusStats.TotalSubscriptions, 0, 50, true));
+
+                table.AddRow("Policy Violations", 
+                    $"[{(messageBusStats.PolicyViolations == 0 ? "green" : "red")}]{messageBusStats.PolicyViolations}[/]", 
+                    GetStatusIcon(messageBusStats.PolicyViolations, 0, 3));
+
+                table.AddRow("Expired Messages", 
+                    $"[{(messageBusStats.ExpiredMessages == 0 ? "green" : "yellow")}]{messageBusStats.ExpiredMessages}[/]", 
+                    GetStatusIcon(messageBusStats.ExpiredMessages, 0, 5));
+
+                if (messageBusStats.AverageProcessingTime.TotalMilliseconds > 0)
+                {
+                    table.AddRow("Avg Processing Time", 
+                        $"[cyan]{messageBusStats.AverageProcessingTime.TotalMilliseconds:F1}ms[/]", 
+                        GetStatusIcon((int)messageBusStats.AverageProcessingTime.TotalMilliseconds, 50, 200));
+                }
             }
 
             return table;
+        }
+
+        private IRenderable CreateMessageBusPanel()
+        {
+            var messageBusStats = _messageBus?.GetStats();
+            
+            if (messageBusStats == null)
+            {
+                var emptyPanel = new Panel("[dim]Message Bus not available[/]")
+                    .Border(BoxBorder.Rounded)
+                    .BorderColor(Color.Grey);
+                emptyPanel.Header = new PanelHeader("[bold grey]Message Bus[/]");
+                return emptyPanel;
+            }
+
+            var grid = new Grid();
+            grid.AddColumn(new GridColumn().NoWrap());
+            grid.AddColumn(new GridColumn().NoWrap());
+
+            // Message types breakdown
+            var messageTypesTable = new Table()
+                .Border(TableBorder.None)
+                .HideHeaders()
+                .AddColumn("")
+                .AddColumn("")
+                .Title("[bold]Message Types[/]");
+
+            if (messageBusStats.MessagesByType.Any())
+            {
+                var topTypes = messageBusStats.MessagesByType
+                    .OrderByDescending(kvp => kvp.Value)
+                    .Take(5);
+
+                foreach (var (type, count) in topTypes)
+                {
+                    messageTypesTable.AddRow(
+                        $"[cyan]{TruncateText(type, 20)}[/]",
+                        $"[yellow]{count}[/]"
+                    );
+                }
+            }
+            else
+            {
+                messageTypesTable.AddRow("[dim]No messages[/]", "");
+            }
+
+            // Active subscriptions
+            var subscriptions = _messageBus?.GetSubscriptions();
+            var subscriptionsTable = new Table()
+                .Border(TableBorder.None)
+                .HideHeaders()
+                .AddColumn("")
+                .AddColumn("")
+                .Title("[bold]Active Subscriptions[/]");
+
+            if (subscriptions != null && subscriptions.Any())
+            {
+                var topSubs = subscriptions
+                    .OrderByDescending(kvp => kvp.Value.Count)
+                    .Take(5);
+
+                foreach (var (messageType, subscribers) in topSubs)
+                {
+                    subscriptionsTable.AddRow(
+                        $"[magenta]{TruncateText(messageType, 20)}[/]",
+                        $"[green]{subscribers.Count} subs[/]"
+                    );
+                }
+            }
+            else
+            {
+                subscriptionsTable.AddRow("[dim]No subscriptions[/]", "");
+            }
+
+            grid.AddRow(messageTypesTable, subscriptionsTable);
+
+            // Message flow indicators
+            var flowIndicators = new Table()
+                .Border(TableBorder.None)
+                .HideHeaders()
+                .AddColumn("")
+                .AddColumn("")
+                .AddColumn("");
+
+            if (messageBusStats.LastMessage != default && messageBusStats.FirstMessage != default)
+            {
+                var duration = messageBusStats.LastMessage - messageBusStats.FirstMessage;
+                var rate = duration.TotalSeconds > 0 
+                    ? messageBusStats.TotalMessagesProcessed / duration.TotalSeconds 
+                    : 0;
+
+                flowIndicators.AddRow(
+                    $"[blue]Message Rate:[/]",
+                    $"[yellow]{rate:F1} msg/s[/]",
+                    GetMessageFlowIndicator(rate)
+                );
+            }
+
+            grid.AddRow(flowIndicators);
+
+            var panel = new Panel(grid)
+                .Border(BoxBorder.Rounded)
+                .BorderColor(Color.Purple);
+            panel.Header = new PanelHeader($"[bold purple]Message Bus ({messageBusStats.ActiveScripts} scripts)[/]");
+            return panel;
+        }
+
+        private string GetMessageFlowIndicator(double rate)
+        {
+            return rate switch
+            {
+                > 10 => "[red]▶▶▶[/]",
+                > 5 => "[yellow]▶▶[/]",
+                > 1 => "[green]▶[/]",
+                > 0 => "[dim]•[/]",
+                _ => "[dim]-[/]"
+            };
         }
 
         private IRenderable CreateEventsPanel()
@@ -157,7 +301,7 @@ namespace WotCI.UI
 
             lock (_eventsLock)
             {
-                foreach (var evt in _recentEvents.TakeLast(SolarSharp.Interpreter.Security.SecurityConstants.Dashboard.MaxRecentEvents).Reverse())
+                foreach (var evt in _recentEvents.TakeLast(SecurityConstants.Dashboard.MaxRecentEvents).Reverse())
                 {
                     var severityColor = evt.Severity switch
                     {
@@ -268,7 +412,7 @@ namespace WotCI.UI
             {
                 _recentEvents.Clear();
                 
-                var auditEvents = _auditor.GetRecentEvents(SolarSharp.Interpreter.Security.SecurityConstants.Dashboard.MaxEventsFetch);
+                var auditEvents = _auditor.GetRecentEvents(SecurityConstants.Dashboard.MaxEventsFetch);
                 foreach (var evt in auditEvents)
                 {
                     _recentEvents.Add(new SecurityDisplayEvent
@@ -284,10 +428,10 @@ namespace WotCI.UI
                 _recentEvents.Sort((a, b) => b.Timestamp.CompareTo(a.Timestamp));
                 
                 // Ensure we don't keep more than the maximum allowed events
-                if (_recentEvents.Count > SolarSharp.Interpreter.Security.SecurityConstants.Dashboard.MaxEventsFetch)
+                if (_recentEvents.Count > SecurityConstants.Dashboard.MaxEventsFetch)
                 {
-                    _recentEvents.RemoveRange(SolarSharp.Interpreter.Security.SecurityConstants.Dashboard.MaxEventsFetch, 
-                        _recentEvents.Count - SolarSharp.Interpreter.Security.SecurityConstants.Dashboard.MaxEventsFetch);
+                    _recentEvents.RemoveRange(SecurityConstants.Dashboard.MaxEventsFetch, 
+                        _recentEvents.Count - SecurityConstants.Dashboard.MaxEventsFetch);
                 }
             }
         }
@@ -383,7 +527,7 @@ namespace WotCI.UI
         /// <summary>
         /// Runs the interactive dashboard
         /// </summary>
-        public async System.Threading.Tasks.Task RunAsync()
+        public async Task RunAsync()
         {
             _isRunning = true;
             var layout = _dashboard.CreateDashboard();
@@ -406,7 +550,7 @@ namespace WotCI.UI
                             await HandleKeyInput(key);
                         }
 
-                        await System.Threading.Tasks.Task.Delay(1000); // Update every second
+                        await Task.Delay(1000); // Update every second
                     }
                 });
         }
@@ -419,7 +563,7 @@ namespace WotCI.UI
             _isRunning = false;
         }
 
-        private System.Threading.Tasks.Task HandleKeyInput(ConsoleKeyInfo key)
+        private Task HandleKeyInput(ConsoleKeyInfo key)
         {
             switch (key.Key)
             {
@@ -445,7 +589,7 @@ namespace WotCI.UI
                     break;
             }
             
-            return System.Threading.Tasks.Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         private void ShowHelp()

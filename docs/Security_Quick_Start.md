@@ -4,17 +4,17 @@
 
 ### For Development (Relaxed Security)
 ```csharp
-var script = new Script(SystemManifest.Desktop, StringExecution.True);
+var script = new Script(); // Default: Desktop configuration
 ```
 - 60 second timeout
 - 128MB memory limit
 - No chroot (full file access)
 - All Lua modules available
-- String execution enabled for development
+- Dynamic code execution enabled for development
 
 ### For Production (High Security)
 ```csharp
-var script = new Script(SystemManifest.Jailed);
+var script = new Script(SecurityConfiguration.Isolated());
 ```
 - 5 second timeout
 - 10MB memory limit
@@ -68,33 +68,33 @@ script.DoFile("app.lua");
 
 ### Execute a Simple Script
 ```csharp
-var script = new Script(SystemManifest.Desktop, StringExecution.True); // Enable string execution for development
+var script = new Script(); // Default allows dynamic code execution
 var result = script.DoString("return 'Hello, World!'");
 Console.WriteLine(result.String); // "Hello, World!"
 ```
 
 ### Execute a File
 ```csharp
-var script = new Script(SystemManifest.Jailed);
+var script = new Script(SecurityConfiguration.Isolated());
 var result = script.DoFile("userscript.lua");
 ```
 
-### Production vs Development String Execution
+### Production vs Development Dynamic Code Execution
 ```csharp
-// Production: String execution disabled by default (secure)
-var prodScript = new Script(SystemManifest.Jailed);
-// prodScript.DoString("..."); // Throws SecurityException
-
-// Development: Enable string execution
-var devScript = new Script(SystemManifest.Desktop, StringExecution.True);
+// Development: Dynamic code execution allowed by default
+var devScript = new Script();
 devScript.DoString("return 'Hello from string!'"); // Works
+
+// Production: Disable dynamic code execution
+var prodScript = new Script(new SecurityConfiguration().PreventDynamicCode());
+// prodScript.DoString("..."); // Throws UnauthorizedProcessExecutionException
 ```
 
 ### With Custom Security
 ```csharp
 var manifest = new ManifestBuilder()
-    .WithTimeout(10)              // 10 seconds
-    .WithMemoryLimit(50)          // 50MB
+    .WithTimeoutMs(10)              // 10 seconds
+    .WithMemoryLimitMB(50)          // 50MB
     .WithDefaultFileAccess(FileAccess.Read)
     .Build();
 
@@ -125,19 +125,20 @@ var manifest = new ManifestBuilder()
 
 Using Virtual File System with custom paths:
 ```csharp
-var config = SecurityConfiguration.CreateDataProcessing();
-
-// Configure sandbox paths
-config.VirtualFileSystem.SandboxRoot = "/var/app/sandbox";
-config.VirtualFileSystem.TempDirectory = "/var/app/sandbox/temp";
-config.VirtualFileSystem.WorkingDirectory = "/var/app/sandbox/work";
-
-// Add virtual path mappings
-config.VirtualFileSystem.VirtualMappings = new Dictionary<string, string>
-{
-    ["/data"] = "/var/app/data",
-    ["/config"] = "/etc/app/config"
-};
+var config = SecurityConfiguration.DataProcessing()
+    .WithVirtualFileSystem(vfs => {
+        // Configure sandbox paths
+        vfs.SandboxRoot = "/var/app/sandbox";
+        vfs.TempDirectory = "/var/app/sandbox/temp";
+        vfs.WorkingDirectory = "/var/app/sandbox/work";
+        
+        // Add virtual path mappings
+        vfs.VirtualMappings = new Dictionary<string, string>
+        {
+            ["/data"] = "/var/app/data",
+            ["/config"] = "/etc/app/config"
+        };
+    });
 
 var script = new Script(config);
 // Script sees: /data/input.txt
@@ -404,8 +405,8 @@ if (ManifestTrustStore.GetTrustLevel(manifest) != TrustLevel.Trusted)
 ### Web Service Script
 ```csharp
 var manifest = new ManifestBuilder()
-    .WithTimeout(30)
-    .WithMemoryLimit(50)
+    .WithTimeoutMs(30)
+    .WithMemoryLimitMB(50)
     .WithDefaultFileAccess(FileAccess.None)
     .AddFileRule("config/*.json", FileAccess.Read)
     .AllowNetworkAccess()
@@ -418,8 +419,8 @@ var manifest = new ManifestBuilder()
 ### Data Processing Script
 ```csharp
 var manifest = new ManifestBuilder()
-    .WithTimeout(300)  // 5 minutes
-    .WithMemoryLimit(256)
+    .WithTimeoutMs(300)  // 5 minutes
+    .WithMemoryLimitMB(256)
     .AddFileRule("input/*.csv", FileAccess.Read)
     .AddFileRule("output/*.csv", FileAccess.ReadWrite)
     .AddDirectoryRule("temp", DirectoryAccess.ListAndCreateFiles)
@@ -430,8 +431,8 @@ var manifest = new ManifestBuilder()
 ### Plugin System
 ```csharp
 var manifest = new ManifestBuilder()
-    .WithTimeout(5)
-    .WithMemoryLimit(25)
+    .WithTimeoutMs(5)
+    .WithMemoryLimitMB(25)
     .EnableChroot()
     .WithDefaultFileAccess(FileAccess.Read)
     .AddDirectoryRule("plugin-data", DirectoryAccess.ListAndCreateFiles)
@@ -483,7 +484,7 @@ Console.WriteLine($"Executed {stats.InstructionCount} instructions");
 try
 {
     var manifest = new ManifestBuilder()
-        .WithTimeout(10)
+        .WithTimeoutMs(10)
         .Build();
     
     var testScript = new Script(manifest);

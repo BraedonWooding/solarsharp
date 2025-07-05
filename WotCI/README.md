@@ -224,8 +224,8 @@ dotnet run --project ../SolarSharp.CertUtil -- sign-manifest \
   "policy": {
     "allowedModules": ["basic", "string", "table"],
     "capabilities": ["HealthRead", "InventoryRead", "MessageReceive"],
-    "timeout": 30,
-    "memoryLimit": 5,
+    "timeoutMs": 30000,
+    "maxMemoryMB": 5,
     "rateLimits": {
       "messaging": { "send": 10, "receive": 100 }
     }
@@ -315,9 +315,9 @@ end
 
 ```csharp
 // Custom security policy for specialized plugins
-var policy = SecurityConfiguration.CreateIsolated()
+var policy = SecurityConfiguration.Isolated()
     .WithTimeout(TimeSpan.FromMinutes(2))
-    .WithMemoryLimit(10)
+    .WithMemoryLimitMB(10)
     .AllowCapability("health", "read")
     .AllowCapability("inventory", "read", "add")
     .WithRateLimit("messaging", 50, TimeSpan.FromMinutes(1))

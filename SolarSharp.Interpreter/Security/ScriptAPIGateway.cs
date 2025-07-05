@@ -260,14 +260,15 @@ namespace SolarSharp.Interpreter.Security
 
         private DynValue ConvertStatsToLua(CapabilityUsageStats stats, Script script)
         {
-            var table = new Table(script);
-            
-            table["name"] = DynValue.NewString(stats.CapabilityName);
-            table["totalOperations"] = DynValue.NewNumber(stats.TotalOperations);
-            table["failedOperations"] = DynValue.NewNumber(stats.FailedOperations);
-            table["blockedOperations"] = DynValue.NewNumber(stats.BlockedOperations);
-            table["lastUsed"] = DynValue.NewString(stats.LastUsed.ToString("yyyy-MM-dd HH:mm:ss"));
-            table["totalExecutionTime"] = DynValue.NewNumber(stats.TotalExecutionTime.TotalMilliseconds);
+            var table = new Table(script)
+            {
+                ["name"] = DynValue.NewString(stats.CapabilityName),
+                ["totalOperations"] = DynValue.NewNumber(stats.TotalOperations),
+                ["failedOperations"] = DynValue.NewNumber(stats.FailedOperations),
+                ["blockedOperations"] = DynValue.NewNumber(stats.BlockedOperations),
+                ["lastUsed"] = DynValue.NewString(stats.LastUsed.ToString("yyyy-MM-dd HH:mm:ss")),
+                ["totalExecutionTime"] = DynValue.NewNumber(stats.TotalExecutionTime.TotalMilliseconds)
+            };
 
             // Operation counts
             var operationsTable = new Table(script);

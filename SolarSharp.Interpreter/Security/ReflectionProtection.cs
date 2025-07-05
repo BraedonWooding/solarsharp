@@ -108,43 +108,42 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public Table CreateProtectedMetatable(Script script, object targetObject = null)
         {
-            var metatable = new Table(script);
-
-            // Override dangerous metamethods
-            metatable["__index"] = DynValue.NewCallback((ctx, args) =>
+            var metatable = new Table(script)
             {
-                if (args.Count < 2)
-                    return DynValue.Nil;
-
-                var key = args[1];
-                var keyStr = key.CastToString();
-
-                // Block access to dangerous properties/methods
-                if (IsDangerousKey(keyStr))
+                // Override dangerous metamethods
+                ["__index"] = DynValue.NewCallback((ctx, args) =>
                 {
-                    _auditor?.LogSecurityViolation($"Metatable access blocked for key: {keyStr}", 
-                        SecurityEventType.ReflectionAccessDenied);
+                    if (args.Count < 2)
+                        return DynValue.Nil;
+
+                    var key = args[1];
+                    var keyStr = key.CastToString();
+
+                    // Block access to dangerous properties/methods
+                    if (IsDangerousKey(keyStr))
+                    {
+                        _auditor?.LogSecurityViolation($"Metatable access blocked for key: {keyStr}", 
+                            SecurityEventType.ReflectionAccessDenied);
+                        return DynValue.Nil;
+                    }
+
+                    // If target object exists, try to get the value safely
+                    if (targetObject != null)
+                    {
+                        return GetValueSafely(targetObject, keyStr, script);
+                    }
+
                     return DynValue.Nil;
-                }
-
-                // If target object exists, try to get the value safely
-                if (targetObject != null)
+                }),
+                ["__newindex"] = DynValue.NewCallback((ctx, args) =>
                 {
-                    return GetValueSafely(targetObject, keyStr, script);
-                }
-
-                return DynValue.Nil;
-            });
-
-            metatable["__newindex"] = DynValue.NewCallback((ctx, args) =>
-            {
-                // Block all modifications in protected mode
-                _auditor?.LogSecurityViolation("Metatable modification blocked", 
-                    SecurityEventType.MetatableViolation);
-                throw new MetatableViolationException("Modifications not allowed in protected metatable", "newindex");
-            });
-
-            metatable["__metatable"] = DynValue.NewString("protected"); // Hide metatable access
+                    // Block all modifications in protected mode
+                    _auditor?.LogSecurityViolation("Metatable modification blocked", 
+                        SecurityEventType.MetatableViolation);
+                    throw new MetatableViolationException("Modifications not allowed in protected metatable", "newindex");
+                }),
+                ["__metatable"] = DynValue.NewString("protected") // Hide metatable access
+            };
 
             return metatable;
         }

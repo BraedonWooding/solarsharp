@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
-using NUnit.Framework;
 using SolarSharp.Interpreter.Interop.Attributes;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("IntegrationTest")]
     public class VtUserDataMetaTests
     {
         public struct ClassWithLength
@@ -126,7 +128,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 if (obj is not ArithmOperatorsTestClass)
                     return false;
 
-                ArithmOperatorsTestClass other = (ArithmOperatorsTestClass)obj;
+                var other = (ArithmOperatorsTestClass)obj;
                 return Value == other.Value;
             }
 
@@ -143,7 +145,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 if (obj is not ArithmOperatorsTestClass)
                     return 1;
 
-                ArithmOperatorsTestClass other = (ArithmOperatorsTestClass)obj;
+                var other = (ArithmOperatorsTestClass)obj;
                 return Value.CompareTo(other.Value);
             }
 
@@ -206,7 +208,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<ArithmOperatorsTestClass>();
             S.Globals.Set("o", UserData.Create(new ArithmOperatorsTestClass(-5)));
 
-            string @script = @"
+            var @script = @"
 				local str = ''
 				for k,v in pairs(o) do
 					str = str .. k .. v;
@@ -225,7 +227,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<ArithmOperatorsTestClass>();
             S.Globals.Set("o", UserData.Create(new ArithmOperatorsTestClass(-5)));
 
-            string @script = @"
+            var @script = @"
 				local str = ''
 				for k,v in ipairs(o) do
 					str = str .. k .. v;
@@ -246,7 +248,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<ArithmOperatorsTestClass>();
             S.Globals.Set("o", UserData.Create(new ArithmOperatorsTestClass(-5)));
 
-            string @script = @"
+            var @script = @"
 				local sum = 0
 				for i in o do
 					sum = sum + i
@@ -356,7 +358,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("o", UserData.Create(obj));
 
-            DynValue v = S.DoString(code);
+            var v = S.DoString(code);
 
             Assert.Multiple(() =>
             {

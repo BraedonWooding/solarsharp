@@ -53,14 +53,39 @@ namespace SolarSharp.Interpreter.Security
                 _callDepth = 0;
                 _tableCount = 0;
 
+                // Check for null limits that should fail instantly
+                CheckNullLimits();
+
                 // Capture baseline memory
-                GC.Collect(2, GCCollectionMode.Forced, true);
-                GC.WaitForPendingFinalizers();
-                _baselineMemory = GC.GetTotalMemory(false);
+                if (_limits.TestMode && _limits.UseStableMemoryMeasurement)
+                {
+                    // More aggressive GC for test mode
+                    GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
+                    GC.WaitForPendingFinalizers();
+                    GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
+                    _baselineMemory = GC.GetTotalMemory(true);
+                }
+                else
+                {
+                    // Normal baseline capture
+                    GC.Collect(2, GCCollectionMode.Forced, true);
+                    GC.WaitForPendingFinalizers();
+                    _baselineMemory = GC.GetTotalMemory(false);
+                }
 
                 // Start timers
                 _executionTimer.Restart();
-                _timeoutTimer.Change(_limits.Timeout, Timeout.InfiniteTimeSpan);
+                
+                // Start a timeout timer if timeout is enabled and not unlimited (0)
+                if (_limits.TimeoutMs is > 0)
+                {
+                    _timeoutTimer.Change(TimeSpan.FromMilliseconds(_limits.TimeoutMs.Value), TimeSpan.FromMilliseconds(-1));
+                }
+                else
+                {
+                    // Disable timer for infinite timeout (0 or null)
+                    _timeoutTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                }
             }
         }
 
@@ -72,53 +97,83 @@ namespace SolarSharp.Interpreter.Security
             var depth = Interlocked.Decrement(ref _executionDepth);
             
             // Only stop timers when we reach the outermost execution level
-            if (depth == 0)
-            {
-                _executionTimer.Stop();
-                _timeoutTimer.Change(Timeout.Infinite, Timeout.Infinite);
-            }
+            if (depth != 0) return;
+            _executionTimer.Stop();
+            _timeoutTimer.Change(Timeout.Infinite, Timeout.Infinite);
         }
 
         /// <summary>
         /// Checks if execution has timed out
         /// </summary>
-        public void CheckTimeout()
+        private void CheckTimeout()
         {
             if (_timedOut)
             {
                 throw new ExecutionTimeoutException(
-                    $"Script execution timeout after {_limits.Timeout}",
+                    $"Script execution timeout after {_limits.TimeoutMs}ms",
                     "CheckTimeout");
             }
         }
 
         /// <summary>
-        /// Increments instruction count and checks limit
+        /// Checks for null limits that should cause immediate failure
+        /// </summary>
+        private void CheckNullLimits()
+        {
+            if (!_limits.TimeoutMs.HasValue)
+                throw new ResourceLimitExceededException("TimeoutMs is null - execution denied", "TimeoutMs");
+            if (!_limits.MaxInstructions.HasValue)
+                throw new ResourceLimitExceededException("MaxInstructions is null - execution denied", "MaxInstructions");
+            if (!_limits.MaxMemoryMB.HasValue)
+                throw new ResourceLimitExceededException("MaxMemoryMB is null - execution denied", "MaxMemoryMB");
+            if (!_limits.MaxCallDepth.HasValue)
+                throw new ResourceLimitExceededException("MaxCallDepth is null - execution denied", "MaxCallDepth");
+            if (!_limits.MaxTables.HasValue)
+                throw new ResourceLimitExceededException("MaxTables is null - execution denied", "MaxTables");
+            if (!_limits.MaxStringLength.HasValue)
+                throw new ResourceLimitExceededException("MaxStringLength is null - execution denied", "MaxStringLength");
+            if (!_limits.MaxCoroutineResumes.HasValue)
+                throw new ResourceLimitExceededException("MaxCoroutineResumes is null - execution denied", "MaxCoroutineResumes");
+        }
+
+        /// <summary>
+        /// Increments the instruction count and checks the limit
         /// </summary>
         public void IncrementInstructionCount()
         {
             if (_executionDepth == 0) return;
 
-            if (++_instructionCount > _limits.MaxInstructions)
+            // Check timeout immediately if already timed out
+            if (_timedOut)
+            {
+                throw new ExecutionTimeoutException(
+                    $"Script execution timeout after {_limits.TimeoutMs}ms",
+                    "InstructionCount");
+            }
+
+            ++_instructionCount;
+
+            // Skip check if unlimited (0)
+            if (_limits.MaxInstructions is > 0 &&
+                _instructionCount > _limits.MaxInstructions.Value)
             {
                 var args = new ResourceLimitExceededEventArgs(
                     ResourceType.Instructions,
                     _instructionCount,
-                    _limits.MaxInstructions);
+                    _limits.MaxInstructions.Value);
 
                 ResourceLimitExceeded?.Invoke(this, args);
 
-                throw new ResourceLimitExceededException(
-                    $"Instruction limit exceeded: {_instructionCount} > {_limits.MaxInstructions}",
+                throw new InstructionLimitExceededException(
+                    $"Instruction limit exceeded: {_instructionCount} > {_limits.MaxInstructions.Value}",
                     "InstructionCount");
             }
 
-            // Check timeout periodically
-            if (_instructionCount % 1000 == 0)
-            {
-                CheckTimeout();
-                CheckMemoryUsage();
-            }
+            // Check memory more frequently in test mode
+            var checkInterval = _limits.TestMode ? _limits.CheckMemoryEveryNInstructions : 1000;
+            if (_instructionCount % checkInterval != 0) return;
+            CheckTimeout();
+            CheckMemoryUsage();
         }
 
         /// <summary>
@@ -128,19 +183,21 @@ namespace SolarSharp.Interpreter.Security
         {
             if (_executionDepth == 0) return;
 
-            if (++_callDepth > _limits.MaxCallDepth)
-            {
-                var args = new ResourceLimitExceededEventArgs(
-                    ResourceType.CallDepth,
-                    _callDepth,
-                    _limits.MaxCallDepth);
+            ++_callDepth;
 
-                ResourceLimitExceeded?.Invoke(this, args);
+            // Skip check if unlimited (0)
+            if (_limits.MaxCallDepth is not > 0 ||
+                _callDepth <= _limits.MaxCallDepth.Value) return;
+            var args = new ResourceLimitExceededEventArgs(
+                ResourceType.CallDepth,
+                _callDepth,
+                _limits.MaxCallDepth.Value);
 
-                throw new CallDepthExceededException(
-                    $"Call depth limit exceeded: {_callDepth} > {_limits.MaxCallDepth}",
-                    "CallDepth");
-            }
+            ResourceLimitExceeded?.Invoke(this, args);
+
+            throw new CallDepthExceededException(
+                $"Call depth limit exceeded: {_callDepth} > {_limits.MaxCallDepth.Value}",
+                "CallDepth");
         }
 
         /// <summary>
@@ -161,17 +218,21 @@ namespace SolarSharp.Interpreter.Security
         {
             if (_executionDepth == 0) return;
 
-            if (++_tableCount > _limits.MaxTables)
+            ++_tableCount;
+
+            // Skip check if unlimited (0)
+            if (_limits.MaxTables is > 0 &&
+                _tableCount > _limits.MaxTables.Value)
             {
                 var args = new ResourceLimitExceededEventArgs(
                     ResourceType.Tables,
                     _tableCount,
-                    _limits.MaxTables);
+                    _limits.MaxTables.Value);
 
                 ResourceLimitExceeded?.Invoke(this, args);
 
                 throw new ResourceLimitExceededException(
-                    $"Table limit exceeded: {_tableCount} > {_limits.MaxTables}",
+                    $"Table limit exceeded: {_tableCount} > {_limits.MaxTables.Value}",
                     "TableCount");
             }
         }
@@ -183,17 +244,19 @@ namespace SolarSharp.Interpreter.Security
         {
             if (_executionDepth == 0) return;
 
-            if (length > _limits.MaxStringLength)
+            // Skip check if unlimited (0)
+            if (_limits.MaxStringLength is > 0 &&
+                length > _limits.MaxStringLength.Value)
             {
                 var args = new ResourceLimitExceededEventArgs(
                     ResourceType.StringLength,
                     length,
-                    _limits.MaxStringLength);
+                    _limits.MaxStringLength.Value);
 
                 ResourceLimitExceeded?.Invoke(this, args);
 
                 throw new ResourceLimitExceededException(
-                    $"String length limit exceeded: {length} > {_limits.MaxStringLength}",
+                    $"String length limit exceeded: {length} > {_limits.MaxStringLength.Value}",
                     "StringLength");
             }
         }
@@ -223,33 +286,35 @@ namespace SolarSharp.Interpreter.Security
 
             CheckTimeout();
 
-            // Check instruction count
-            if (_instructionCount > _limits.MaxInstructions)
+            // Check instruction count if not unlimited (0)
+            if (_limits.MaxInstructions is > 0 &&
+                _instructionCount > _limits.MaxInstructions.Value)
             {
                 var args = new ResourceLimitExceededEventArgs(
                     ResourceType.Instructions,
                     _instructionCount,
-                    _limits.MaxInstructions);
+                    _limits.MaxInstructions.Value);
 
                 ResourceLimitExceeded?.Invoke(this, args);
 
-                throw new ResourceLimitExceededException(
-                    $"Instruction limit exceeded: {_instructionCount} > {_limits.MaxInstructions}",
+                throw new InstructionLimitExceededException(
+                    $"Instruction limit exceeded: {_instructionCount} > {_limits.MaxInstructions.Value}",
                     "InstructionCount");
             }
 
-            // Check call depth
-            if (_callDepth > _limits.MaxCallDepth)
+            // Check call depth if not unlimited (0)
+            if (_limits.MaxCallDepth is > 0 &&
+                _callDepth > _limits.MaxCallDepth.Value)
             {
                 var args = new ResourceLimitExceededEventArgs(
                     ResourceType.CallDepth,
                     _callDepth,
-                    _limits.MaxCallDepth);
+                    _limits.MaxCallDepth.Value);
 
                 ResourceLimitExceeded?.Invoke(this, args);
 
                 throw new CallDepthExceededException(
-                    $"Call depth limit exceeded: {_callDepth} > {_limits.MaxCallDepth}",
+                    $"Call depth limit exceeded: {_callDepth} > {_limits.MaxCallDepth.Value}",
                     "CallDepth");
             }
 
@@ -264,9 +329,24 @@ namespace SolarSharp.Interpreter.Security
         {
             if (_executionDepth == 0) return;
 
-            var currentMemory = GC.GetTotalMemory(false);
+            // Skip check if unlimited (0)
+            if (!_limits.MaxMemoryMB.HasValue || _limits.MaxMemoryMB.Value <= 0) return;
+
+            // Force GC in test mode if requested
+            if (_limits.TestMode && _limits.ForceGCOnMemoryCheck)
+            {
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
+                GC.WaitForPendingFinalizers();
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
+            }
+
+            // Get memory measurement
+            var currentMemory = _limits.TestMode && _limits.UseStableMemoryMeasurement
+                ? GC.GetTotalMemory(true)  // Forces GC and waits for accurate measurement
+                : GC.GetTotalMemory(false); // Normal fast measurement
+                
             var usedMemory = currentMemory - _baselineMemory;
-            var limitBytes = _limits.MaxMemoryMB * 1024L * 1024L;
+            var limitBytes = _limits.MaxMemoryMB.Value * 1024L * 1024L;
 
             if (usedMemory > limitBytes)
             {
@@ -278,7 +358,7 @@ namespace SolarSharp.Interpreter.Security
                 ResourceLimitExceeded?.Invoke(this, args);
 
                 throw new MemoryExhaustionException(
-                    $"Memory limit exceeded: {usedMemory / 1024 / 1024}MB > {_limits.MaxMemoryMB}MB",
+                    $"Memory limit exceeded: {usedMemory / 1024 / 1024}MB > {_limits.MaxMemoryMB.Value}MB",
                     "MemoryUsage");
             }
         }
@@ -289,7 +369,7 @@ namespace SolarSharp.Interpreter.Security
         private void OnTimeout(object state)
         {
             _timedOut = true;
-            _executionDepth = 0;
+            // Do NOT set _executionDepth = 0 here! That would disable all checks
         }
 
         /// <summary>
@@ -362,7 +442,7 @@ namespace SolarSharp.Interpreter.Security
         public long Limit { get; }
 
         /// <summary>
-        /// Creates new resource limit exceeded event args
+        /// Creates a new resource limit exceeded event args
         /// </summary>
         public ResourceLimitExceededEventArgs(ResourceType resourceType, long currentValue, long limit)
         {

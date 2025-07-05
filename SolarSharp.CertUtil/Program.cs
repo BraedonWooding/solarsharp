@@ -1,11 +1,23 @@
 using System.CommandLine;
+using System.Threading.Tasks;
 using SolarSharp.CertUtil.Commands;
 
 namespace SolarSharp.CertUtil
 {
-    class Program
+    /// <summary>
+    /// Represents the entry point for certificate utilities.
+    /// </summary>
+    internal static class Program
     {
-        static async Task<int> Main(string[] args)
+        /// <summary>
+        /// Entry point of the SolarSharp Certificate and Manifest Utility application.
+        /// Initializes and creates a root command with subcommands for generating a CA,
+        /// issuing certificates, signing manifests, and verifying certificates or manifests.
+        /// </summary>
+        /// <param name="args">Command-line arguments passed to the application.</param>
+        /// <returns>A task representing the asynchronous operation; the result contains the exit code
+        /// of the application.</returns>
+        private static async Task<int> Main(string[] args)
         {
             var rootCommand = new RootCommand("SolarSharp Certificate and Manifest Utility")
             {

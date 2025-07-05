@@ -13,22 +13,22 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// File-specific access permissions
         /// </summary>
-        public Dictionary<string, FileAccess> FilePermissions { get; set; } = new();
+        public Dictionary<string, FilePermissions> FilePermissions { get; set; } = new();
 
         /// <summary>
         /// Directory-specific access permissions
         /// </summary>
-        public Dictionary<string, DirectoryAccess> DirectoryPermissions { get; set; } = new();
+        public Dictionary<string, DirectoryPermissions> DirectoryPermissions { get; set; } = new();
 
         /// <summary>
         /// Default file access level for files not explicitly configured
         /// </summary>
-        public FileAccess DefaultFileAccess { get; set; } = FileAccess.SandboxedReadWrite;
+        public FilePermissions DefaultFilePermissions { get; set; } = Security.FilePermissions.SandboxedReadWrite;
 
         /// <summary>
         /// Default directory access level for directories not explicitly configured
         /// </summary>
-        public DirectoryAccess DefaultDirectoryAccess { get; set; } = DirectoryAccess.ListAndCreateFiles;
+        public DirectoryPermissions DefaultDirectoryPermissions { get; set; } = Security.DirectoryPermissions.ListAndCreateFiles;
 
         /// <summary>
         /// Maximum file size for read/write operations (bytes)
@@ -56,7 +56,7 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         /// <param name="filePath">Absolute path to the file</param>
         /// <param name="access">Access level to grant</param>
-        public void SetFileAccess(string filePath, FileAccess access)
+        public void SetFilePermissions(string filePath, FilePermissions access)
         {
             var normalizedPath = Path.GetFullPath(filePath);
             FilePermissions[normalizedPath] = access;
@@ -66,11 +66,11 @@ namespace SolarSharp.Interpreter.Security
         /// Sets access permissions for a specific directory
         /// </summary>
         /// <param name="directoryPath">Absolute path to the directory</param>
-        /// <param name="access">Access level to grant</param>
-        public void SetDirectoryAccess(string directoryPath, DirectoryAccess access)
+        /// <param name="permissions">Access level to grant</param>
+        public void SetDirectoryPermissions(string directoryPath, DirectoryPermissions permissions)
         {
             var normalizedPath = Path.GetFullPath(directoryPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            DirectoryPermissions[normalizedPath] = access;
+            DirectoryPermissions[normalizedPath] = permissions;
         }
 
         /// <summary>
@@ -78,10 +78,10 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         /// <param name="filePath">Path to the file</param>
         /// <returns>Effective file access level</returns>
-        public FileAccess GetFileAccess(string filePath)
+        public FilePermissions GetFilePermissions(string filePath)
         {
             if (string.IsNullOrWhiteSpace(filePath))
-                return DefaultFileAccess;
+                return DefaultFilePermissions;
                 
             var normalizedPath = Path.GetFullPath(filePath);
             
@@ -130,14 +130,14 @@ namespace SolarSharp.Interpreter.Security
             var directory = Path.GetDirectoryName(normalizedPath);
             if (!string.IsNullOrEmpty(directory))
             {
-                var dirAccess = GetDirectoryAccess(directory);
-                if (dirAccess == DirectoryAccess.None)
+                var dirAccess = GetDirectoryPermissions(directory);
+                if (dirAccess == Security.DirectoryPermissions.None)
                 {
-                    return FileAccess.None; // Can't access files in inaccessible directories
+                    return Security.FilePermissions.None; // Can't access files in inaccessible directories
                 }
             }
 
-            return DefaultFileAccess;
+            return DefaultFilePermissions;
         }
 
         /// <summary>
@@ -145,10 +145,10 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         /// <param name="directoryPath">Path to the directory</param>
         /// <returns>Effective directory access level</returns>
-        public DirectoryAccess GetDirectoryAccess(string directoryPath)
+        public DirectoryPermissions GetDirectoryPermissions(string directoryPath)
         {
             if (string.IsNullOrWhiteSpace(directoryPath))
-                return DefaultDirectoryAccess;
+                return DefaultDirectoryPermissions;
                 
             var normalizedPath = Path.GetFullPath(directoryPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             
@@ -202,7 +202,7 @@ namespace SolarSharp.Interpreter.Security
                 if (DirectoryPermissions.TryGetValue(parentPath, out var parentAccess))
                 {
                     // If parent is more restrictive, inherit that
-                    if (parentAccess < DefaultDirectoryAccess)
+                    if (!PermissionChecks.HasDirectoryPermission(DefaultDirectoryPermissions, parentAccess))
                     {
                         return parentAccess;
                     }
@@ -211,7 +211,7 @@ namespace SolarSharp.Interpreter.Security
                 parentPath = Path.GetDirectoryName(parentPath);
             }
 
-            return DefaultDirectoryAccess;
+            return DefaultDirectoryPermissions;
         }
 
         /// <summary>
@@ -220,29 +220,13 @@ namespace SolarSharp.Interpreter.Security
         /// <param name="filePath">Path to the file</param>
         /// <param name="operation">Operation being attempted</param>
         /// <returns>True if operation is allowed</returns>
-        public bool IsFileOperationAllowed(string filePath, FileOperation operation)
+        public bool IsFileOperationPermitted(string filePath, FileOperation operation)
         {
-            var fileAccess = GetFileAccess(filePath);
+            var fileAccess = GetFilePermissions(filePath);
             var directory = Path.GetDirectoryName(filePath);
-            var dirAccess = GetDirectoryAccess(directory);
+            var dirAccess = GetDirectoryPermissions(directory);
 
-            switch (operation)
-            {
-                case FileOperation.Read:
-                    return fileAccess >= FileAccess.Read && dirAccess >= DirectoryAccess.List;
-
-                case FileOperation.Write:
-                    return fileAccess >= FileAccess.ReadWrite && dirAccess >= DirectoryAccess.List;
-
-                case FileOperation.Create:
-                    return fileAccess >= FileAccess.SandboxedReadWrite && dirAccess >= DirectoryAccess.ListAndCreateFiles;
-
-                case FileOperation.Delete:
-                    return fileAccess == FileAccess.ReadWrite && dirAccess >= DirectoryAccess.ListAndCreateFiles;
-
-                default:
-                    return false;
-            }
+            return PermissionChecks.CanPerformFileOperation(operation, fileAccess, dirAccess);
         }
 
         /// <summary>
@@ -250,8 +234,8 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public static FileSystemSecurity NoAccess() => new()
         {
-            DefaultFileAccess = FileAccess.None,
-            DefaultDirectoryAccess = DirectoryAccess.None
+            DefaultFilePermissions = Security.FilePermissions.None,
+            DefaultDirectoryPermissions = Security.DirectoryPermissions.None
         };
 
         /// <summary>
@@ -259,8 +243,8 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public static FileSystemSecurity ReadOnlyAccess() => new()
         {
-            DefaultFileAccess = FileAccess.Read,
-            DefaultDirectoryAccess = DirectoryAccess.List
+            DefaultFilePermissions = Security.FilePermissions.Read,
+            DefaultDirectoryPermissions = Security.DirectoryPermissions.List
         };
 
         /// <summary>
@@ -268,8 +252,8 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public static FileSystemSecurity SandboxedAccess() => new()
         {
-            DefaultFileAccess = FileAccess.SandboxedReadWrite,
-            DefaultDirectoryAccess = DirectoryAccess.ListAndCreateFiles
+            DefaultFilePermissions = Security.FilePermissions.SandboxedReadWrite,
+            DefaultDirectoryPermissions = Security.DirectoryPermissions.ListAndCreateFiles
         };
 
         /// <summary>
@@ -277,8 +261,8 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public static FileSystemSecurity FullAccess() => new()
         {
-            DefaultFileAccess = FileAccess.ReadWrite,
-            DefaultDirectoryAccess = DirectoryAccess.ListAndCreateFiles,
+            DefaultFilePermissions = Security.FilePermissions.ReadWrite,
+            DefaultDirectoryPermissions = Security.DirectoryPermissions.ListAndCreateFiles,
             AllowHiddenFiles = true,
             AllowSymbolicLinks = true,
             MaxFileSize = long.MaxValue

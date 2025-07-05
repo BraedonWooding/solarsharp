@@ -58,9 +58,9 @@ namespace SolarSharp.Interpreter
         }
 
         /// <summary>
-        /// Gets whether this script is running in secure mode
+        /// Gets whether this script has authorization to run (has valid SecurityConfiguration)
         /// </summary>
-        public static bool IsSecure(this Script script)
+        public static bool IsAuthorizedToRun(this Script script)
         {
             var data = _securityData.GetOrCreateValue(script);
             return data.Configuration != null;

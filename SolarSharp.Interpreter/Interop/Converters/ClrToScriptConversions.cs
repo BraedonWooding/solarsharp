@@ -1,10 +1,10 @@
-﻿using SolarSharp.Interpreter.DataTypes;
+﻿using System;
+using System.Reflection;
+using System.Text;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Interop.PredefinedUserData;
-using System;
-using System.Reflection;
-using System.Text;
 
 namespace SolarSharp.Interpreter.Interop.Converters
 {

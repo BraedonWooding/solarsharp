@@ -2,7 +2,6 @@ using System;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using SolarSharp.Interpreter.Security.Manifest;
 
 namespace SolarSharp.Interpreter.Security
 {

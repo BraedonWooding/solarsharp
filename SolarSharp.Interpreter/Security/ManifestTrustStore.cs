@@ -2,13 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
-using ManifestNS = SolarSharp.Interpreter.Security.Manifest;
+using SolarSharp.Interpreter.Security.Manifests;
+using ManifestNS = SolarSharp.Interpreter.Security.Manifests;
 
 namespace SolarSharp.Interpreter.Security
 {
+    using Manifest_Manifest = ManifestNS.Manifest;
+    using TrustLevel = ManifestNS.TrustLevel;
+
     /// <summary>
     /// Manages trusted public keys for manifest signature verification
     /// </summary>
@@ -86,7 +89,7 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         /// <param name="manifest">Manifest to check</param>
         /// <returns>True if manifest is signed by a trusted key</returns>
-        public static bool IsManifestTrusted(ManifestNS.Manifest manifest)
+        public static bool IsManifestTrusted(Manifest_Manifest manifest)
         {
             if (manifest?.Security?.PublicKey?.Value == null)
                 return false;
@@ -112,7 +115,7 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         /// <param name="manifest">Manifest to check</param>
         /// <returns>True if manifest has a signature</returns>
-        public static bool HasSignature(ManifestNS.Manifest manifest)
+        public static bool HasSignature(Manifest_Manifest manifest)
         {
             return manifest?.Security?.Signature?.Value != null && 
                    !string.IsNullOrWhiteSpace(manifest.Security.Signature.Value);
@@ -123,25 +126,25 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         /// <param name="manifest">Manifest to evaluate</param>
         /// <returns>Trust level of the manifest</returns>
-        public static ManifestNS.TrustLevel GetTrustLevel(ManifestNS.Manifest manifest)
+        public static TrustLevel GetTrustLevel(Manifest_Manifest manifest)
         {
             if (manifest?.Security == null)
-                return ManifestNS.TrustLevel.Unsigned;
+                return TrustLevel.Untrusted;
 
             if (!HasSignature(manifest))
-                return ManifestNS.TrustLevel.Unsigned;
+                return TrustLevel.Untrusted;
 
             // Check certificate-based trust first
             if (manifest.Security.UsesCertificates())
             {
-                return ManifestNS.CertificateTrustStore.GetCertificateTrustLevel(manifest);
+                return CertificateTrustStore.GetCertificateTrustLevel(manifest);
             }
 
             // Fall back to raw key trust
             if (IsManifestTrusted(manifest))
-                return ManifestNS.TrustLevel.Trusted;
+                return TrustLevel.Trusted;
 
-            return ManifestNS.TrustLevel.Untrusted;
+            return TrustLevel.Untrusted;
         }
 
         /// <summary>

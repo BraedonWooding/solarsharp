@@ -1,32 +1,34 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using FluentAssertions;
+using NUnit.Framework;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.Security;
-using Xunit;
-using WotCI;
 
 namespace WotCI.Tests
 {
-    public class SecurityConstraintTests : IDisposable
+    [TestFixture]
+    [Category("IntegrationTest")]
+    [Category("SecurityTest")]
+    public class SecurityConstraintTests
     {
-        private readonly string _testDir;
-        private readonly X509Certificate2 _rootCa;
+        private string _testDir;
+        private X509Certificate2 _rootCa;
 
-        public SecurityConstraintTests()
+        [SetUp]
+        public void SetUp()
         {
             _testDir = Path.Combine(Path.GetTempPath(), $"wotci_security_{Guid.NewGuid()}");
             Directory.CreateDirectory(_testDir);
             _rootCa = TestCertificateHelpers.GenerateRootCA();
         }
 
-        public void Dispose()
+        [TearDown]
+        public void TearDown()
         {
             if (Directory.Exists(_testDir))
             {
@@ -34,17 +36,15 @@ namespace WotCI.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void CertificatePathConstraint_EnforcesStrictBoundaries()
         {
-            // Arrange
-            var cert1 = TestCertificateHelpers.GeneratePartnerCertificate(
+                        var cert1 = TestCertificateHelpers.GeneratePartnerCertificate(
                 _rootCa, "Partner 1", "/plugins/partner1");
             var cert2 = TestCertificateHelpers.GeneratePartnerCertificate(
                 _rootCa, "Partner 2", "/plugins/partner2");
 
-            // Act & Assert
-            ValidatePathAccess(cert1, "/plugins/partner1/file.lua").Should().BeTrue();
+                        ValidatePathAccess(cert1, "/plugins/partner1/file.lua").Should().BeTrue();
             ValidatePathAccess(cert1, "/plugins/partner1/subdir/file.lua").Should().BeTrue();
             ValidatePathAccess(cert1, "/plugins/partner2/file.lua").Should().BeFalse();
             ValidatePathAccess(cert1, "/system/file.lua").Should().BeFalse();
@@ -53,11 +53,10 @@ namespace WotCI.Tests
             ValidatePathAccess(cert2, "/plugins/partner1/file.lua").Should().BeFalse();
         }
 
-        [Fact]
+        [Test]
         public void PathTraversalAttacks_ArePrevented()
         {
-            // Arrange
-            var cert = TestCertificateHelpers.GeneratePartnerCertificate(
+                        var cert = TestCertificateHelpers.GeneratePartnerCertificate(
                 _rootCa, "Test", "/plugins/test");
 
             // Act & Assert - Various path traversal attempts
@@ -67,18 +66,16 @@ namespace WotCI.Tests
             ValidatePathAccess(cert, "/plugins/test//file.lua").Should().BeTrue(); // double slash normalized
         }
 
-        [Fact]
+        [Test]
         public void SharedResourceAccess_CanBeControlled()
         {
-            // Arrange
-            var constraints = new CertificateConstraints
+                        var constraints = new CertificateConstraints
             {
                 SubjectPath = "/plugins/restricted",
                 CanAccessSharedResources = true
             };
 
-            // Act & Assert
-            constraints.IsPathAllowed("/plugins/restricted/file.lua").Should().BeTrue();
+                        constraints.IsPathAllowed("/plugins/restricted/file.lua").Should().BeTrue();
             constraints.IsPathAllowed("/include/shared.lua").Should().BeTrue(); // Shared resources
 
             // Disable shared access
@@ -86,28 +83,25 @@ namespace WotCI.Tests
             constraints.IsPathAllowed("/include/shared.lua").Should().BeFalse();
         }
 
-        [Fact]
+        [Test]
         public void AdditionalAllowedPaths_ExtendAccess()
         {
-            // Arrange
-            var constraints = new CertificateConstraints
+                        var constraints = new CertificateConstraints
             {
                 SubjectPath = "/plugins/main",
                 AllowedPaths = new[] { "/data/shared", "/config" }
             };
 
-            // Act & Assert
-            constraints.IsPathAllowed("/plugins/main/file.lua").Should().BeTrue();
+                        constraints.IsPathAllowed("/plugins/main/file.lua").Should().BeTrue();
             constraints.IsPathAllowed("/data/shared/database.db").Should().BeTrue();
             constraints.IsPathAllowed("/config/settings.json").Should().BeTrue();
             constraints.IsPathAllowed("/data/private/secret.key").Should().BeFalse();
         }
 
-        [Fact]
+        [Test]
         public void ManifestSecurityPolicy_EnforcesLimits()
         {
-            // Arrange
-            var manifest = new SimpleManifest
+                        var manifest = new SimpleManifest
             {
                 version = "1.0.0",
                 name = "Limited Plugin",
@@ -121,8 +115,8 @@ namespace WotCI.Tests
                 }
             };
 
-            // Act - Create security config from manifest
-            var config = SecurityConfiguration.CreateIsolated();
+            // Create security config from manifest
+            var config = SecurityConfiguration.Isolated();
             if (manifest.policy?.timeout > 0)
             {
                 config.Execution.Timeout = TimeSpan.FromSeconds(manifest.policy.timeout);
@@ -132,16 +126,14 @@ namespace WotCI.Tests
                 config.Execution.MaxMemoryMB = manifest.policy.memoryLimit;
             }
 
-            // Assert
-            config.Execution.Timeout.Should().Be(TimeSpan.FromSeconds(5));
+                        config.Execution.Timeout.Should().Be(TimeSpan.FromSeconds(5));
             config.Execution.MaxMemoryMB.Should().Be(50);
         }
 
-        [Fact]
+        [Test]
         public void FileAccessLevels_AreRespected()
         {
-            // Arrange
-            var filePerms = new Dictionary<string, string>
+                        var filePerms = new Dictionary<string, string>
             {
                 ["/game/assets/**"] = "read",
                 ["/game/saves/*.sav"] = "sandboxedreadwrite",
@@ -149,8 +141,7 @@ namespace WotCI.Tests
                 ["/game/system/**"] = "none"
             };
 
-            // Act & Assert
-            GetFileAccessLevel(filePerms, "/game/assets/texture.png").Should().Be("read");
+                        GetFileAccessLevel(filePerms, "/game/assets/texture.png").Should().Be("read");
             GetFileAccessLevel(filePerms, "/game/assets/models/player.obj").Should().Be("read");
             GetFileAccessLevel(filePerms, "/game/saves/game1.sav").Should().Be("sandboxedreadwrite");
             GetFileAccessLevel(filePerms, "/game/logs/debug.log").Should().Be("readwrite");
@@ -158,7 +149,7 @@ namespace WotCI.Tests
             GetFileAccessLevel(filePerms, "/other/file.txt").Should().BeNull(); // No match
         }
 
-        [Fact]
+        [Test]
         public void WildcardPatterns_MatchCorrectly()
         {
             // Arrange & Act & Assert
@@ -180,13 +171,12 @@ namespace WotCI.Tests
             MatchesPattern("/game/**/saves/*.sav", "/game/profiles/user1/saves/game.sav").Should().BeTrue();
         }
 
-        [Fact]
+        [Test]
         public void SecurityConfiguration_DefaultsAreSafe()
         {
-            // Arrange
-            var config = SecurityConfiguration.CreateIsolated();
+                        var config = SecurityConfiguration.Isolated();
 
-            // Assert - Isolated config should be restrictive
+            // Isolated config should be restrictive
             config.Execution.Timeout.Should().BeLessThan(TimeSpan.FromMinutes(5));
             config.Execution.MaxMemoryMB.Should().BeGreaterThan(0);
             config.Execution.MaxInstructions.Should().BeGreaterThan(0);
@@ -199,16 +189,15 @@ namespace WotCI.Tests
             (config.Capabilities & ScriptCapabilities.ProcessExecution).Should().Be(0);
         }
 
-        [Fact]
+        [Test]
         public void CrossPluginAccess_IsPrevented()
         {
-            // Arrange
-            var partner1Cert = TestCertificateHelpers.GeneratePartnerCertificate(
+                        var partner1Cert = TestCertificateHelpers.GeneratePartnerCertificate(
                 _rootCa, "Partner 1", "/plugins/partner1");
             var partner2Cert = TestCertificateHelpers.GeneratePartnerCertificate(
                 _rootCa, "Partner 2", "/plugins/partner2");
 
-            var config = SecurityConfiguration.CreateIsolated();
+            var config = SecurityConfiguration.Isolated();
             config.Capabilities |= ScriptCapabilities.FileWrite | ScriptCapabilities.FileRead;
             
             // Create test directories
@@ -218,7 +207,7 @@ namespace WotCI.Tests
             
             try
             {
-                config.SetDirectoryAccess(testRoot, DirectoryAccess.ListAndCreateFiles);
+                config.SetDirectoryPermissions(testRoot, DirectoryPermissions.ListAndCreateFiles);
                 
                 // Create VFS instances with memory filesystems
                 var vfs1 = new SimpleVirtualFileSystem(config, partner1Cert);
@@ -229,10 +218,10 @@ namespace WotCI.Tests
                 vfs1.MountFileSystemProvider("/plugins", sharedMemFS);
                 vfs2.MountFileSystemProvider("/plugins", sharedMemFS);
 
-                // Act - Partner 1 writes to its area
+                // Partner 1 writes to its area
                 vfs1.WriteAllBytes("/plugins/partner1/data.txt", Encoding.UTF8.GetBytes("Partner 1 data"));
 
-                // Assert - Partner 2 cannot access Partner 1's data due to certificate constraint
+                // Partner 2 cannot access Partner 1's data due to certificate constraint
                 Action crossAccess = () => vfs2.ReadAllBytes("/plugins/partner1/data.txt");
                 crossAccess.Should().Throw<UnauthorizedAccessException>();
             }
@@ -244,11 +233,10 @@ namespace WotCI.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void ManifestSignatureValidation_RequiresValidChain()
         {
-            // Arrange
-            var manifest = new
+                        var manifest = new
             {
                 version = "1.0",
                 name = "Signed Plugin",
@@ -270,19 +258,17 @@ namespace WotCI.Tests
 
             var manifestJson = JsonSerializer.Serialize(manifest);
 
-            // Act & Assert
-            // In a real implementation, this would verify the signature
+                        // In a real implementation, this would verify the signature
             // Here we're testing the structure is correct
             manifest.security.Should().NotBeNull();
             manifest.security.signature.Should().NotBeNull();
             manifest.security.certificate.Should().NotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void ResourceLimits_PreventDoS()
         {
-            // Arrange
-            var config = SecurityConfiguration.CreateIsolated();
+                        var config = SecurityConfiguration.Isolated();
             config.Execution.Timeout = TimeSpan.FromSeconds(1);
             config.Execution.MaxInstructions = 1000;
             
@@ -294,24 +280,25 @@ namespace WotCI.Tests
             config.Execution.MaxInstructions.Should().Be(1000);
         }
 
-        [Fact]
+        [Test]
         public void AntiPolymorphism_PreventsSelfModification()
         {
-            // Arrange
-            var config = SecurityConfiguration.CreateIsolated();
+                        var config = SecurityConfiguration.Isolated();
             config.AntiPolymorphism.Should().NotBeNull();
             
             // In a real implementation, these would be enforced
             config.AntiPolymorphism.AllowOnlyLuaExtension = true;
             config.AntiPolymorphism.PreventLuaFileWrites = true;
             config.AntiPolymorphism.BlockManifestAccess = true;
-            config.AntiPolymorphism.PreventDynamicCode = true;
+            config.AntiPolymorphism.PreventRunString = true;
+            config.AntiPolymorphism.PreventInternalDynamicCode = true;
 
             // Assert configuration is set
             config.AntiPolymorphism.AllowOnlyLuaExtension.Should().BeTrue();
             config.AntiPolymorphism.PreventLuaFileWrites.Should().BeTrue();
             config.AntiPolymorphism.BlockManifestAccess.Should().BeTrue();
-            config.AntiPolymorphism.PreventDynamicCode.Should().BeTrue();
+            config.AntiPolymorphism.PreventRunString.Should().BeTrue();
+            config.AntiPolymorphism.PreventInternalDynamicCode.Should().BeTrue();
         }
 
         private bool ValidatePathAccess(X509Certificate2 cert, string path)
@@ -386,14 +373,8 @@ namespace WotCI.Tests
 
         private bool MatchesPattern(string pattern, string path)
         {
-            // Convert glob pattern to regex
-            var regexPattern = "^" + Regex.Escape(pattern)
-                .Replace("\\*\\*/", "(.*/)?")  // ** matches any number of directories
-                .Replace("\\*\\*", ".*")        // ** at end matches everything
-                .Replace("\\*", "[^/]*")        // * matches within directory
-                + "$";
-            
-            return Regex.IsMatch(path, regexPattern, RegexOptions.IgnoreCase);
+            // Use standardized GlobMatcher for consistent behavior
+            return GlobMatcher.MatchesPattern(path, pattern);
         }
     }
 

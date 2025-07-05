@@ -1,9 +1,10 @@
-﻿using SolarSharp.Interpreter.Modules;
-using NUnit.Framework;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Tests
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class TestMoreTests
     {
         [Test]
@@ -253,7 +254,7 @@ namespace SolarSharp.Interpreter.Tests
 
         private static bool AreCoreModulesFullySupported(CoreModules modules)
         {
-            CoreModules supp = Script.GlobalOptions.Platform.FilterSupportedCoreModules(modules);
+            var supp = Script.GlobalOptions.Platform.FilterSupportedCoreModules(modules);
             return supp == modules;
         }
 
@@ -288,4 +289,3 @@ namespace SolarSharp.Interpreter.Tests
         //}
     }
 }
-

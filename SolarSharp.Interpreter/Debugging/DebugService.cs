@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution.VM;
 
 namespace SolarSharp.Interpreter.Debugging
 {

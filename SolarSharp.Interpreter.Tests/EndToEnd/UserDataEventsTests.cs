@@ -1,14 +1,14 @@
-﻿using SolarSharp.Interpreter.Security;
 ﻿using System;
-using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
 #pragma warning disable 169 // unused private field
 
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("IntegrationTest")]
     public class UserDataEventsTests
     {
         public class SomeClass
@@ -23,6 +23,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     MyEvent(this, EventArgs.Empty);
                     return true;
                 }
+
                 return false;
             }
 
@@ -33,6 +34,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     MySEvent(null, EventArgs.Empty);
                     return true;
                 }
+
                 return false;
             }
         }
@@ -41,15 +43,19 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Event_Simple()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(StringExecution.True);
+            var s = new Script();
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
+            {
+                invocationCount += 1;
+                return DynValue.Void;
+            });
 
             s.DoString(@"
 				function handler(o, a)
@@ -67,17 +73,21 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Event_TwoObjects()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(StringExecution.True);
+            var s = new Script();
 
             var obj = new SomeClass();
             var obj2 = new SomeClass();
             s.Globals["myobj"] = obj;
             s.Globals["myobj2"] = obj2;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
+            {
+                invocationCount += 1;
+                return DynValue.Void;
+            });
 
             s.DoString(@"
 				function handler(o, a)
@@ -97,15 +107,19 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Event_Multi()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(StringExecution.True);
+            var s = new Script();
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
+            {
+                invocationCount += 1;
+                return DynValue.Void;
+            });
 
             s.DoString(@"
 				function handler(o, a)
@@ -124,15 +138,19 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Event_MultiAndDetach()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(StringExecution.True);
+            var s = new Script();
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
+            {
+                invocationCount += 1;
+                return DynValue.Void;
+            });
 
             s.DoString(@"
 				function handler(o, a)
@@ -152,15 +170,19 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Event_DetachAndDeregister()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(StringExecution.True);
+            var s = new Script();
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
+            {
+                invocationCount += 1;
+                return DynValue.Void;
+            });
 
             s.DoString(@"
 				function handler(o, a)
@@ -175,22 +197,33 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj.MyEvent.remove(handler);
 				");
 
-            Assert.That(obj.Trigger_MyEvent(), Is.False, "deregistration");
-            Assert.That(invocationCount, Is.EqualTo(3));
+            Assert.Multiple(() =>
+            {
+                Assert.That(obj.Trigger_MyEvent(), Is.False, "deregistration");
+                Assert.That(invocationCount, Is.EqualTo(3));
+            });
         }
 
 
         [Test]
         public void Interop_SEvent_DetachAndDeregister()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(StringExecution.True);
-
-            s.Globals["myobj"] = typeof(SomeClass);
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            var s = new Script
+            {
+                Globals =
+                {
+                    ["myobj"] = typeof(SomeClass),
+                    ["ext"] = DynValue.NewCallback((c, a) =>
+                    {
+                        invocationCount += 1;
+                        return DynValue.Void;
+                    })
+                }
+            };
 
             s.DoString(@"
 				function handler(o, a)
@@ -205,21 +238,32 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj.MySEvent.remove(handler);
 				");
 
-            Assert.That(SomeClass.Trigger_MySEvent(), Is.False, "deregistration");
-            Assert.That(invocationCount, Is.EqualTo(3));
+            Assert.Multiple(() =>
+            {
+                Assert.That(SomeClass.Trigger_MySEvent(), Is.False, "deregistration");
+                Assert.That(invocationCount, Is.EqualTo(3));
+            });
         }
 
         [Test]
         public void Interop_SEvent_DetachAndReregister()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            Script s = new(StringExecution.True);
-
-            s.Globals["myobj"] = typeof(SomeClass);
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            var s = new Script
+            {
+                Globals =
+                {
+                    ["myobj"] = typeof(SomeClass),
+                    ["ext"] = DynValue.NewCallback((c, a) =>
+                    {
+                        invocationCount += 1;
+                        return DynValue.Void;
+                    })
+                }
+            };
 
             s.DoString(@"
 				function handler(o, a)
@@ -240,13 +284,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(SomeClass.Trigger_MySEvent(), Is.True, "deregistration");
             });
         }
-
-
-
-
-
-
-
-
     }
 }

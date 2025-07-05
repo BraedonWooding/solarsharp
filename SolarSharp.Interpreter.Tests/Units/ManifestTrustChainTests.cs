@@ -1,12 +1,11 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
-using System.Text;
 using NUnit.Framework;
-using SolarSharp.Interpreter.Security;
-using SolarSharp.Interpreter.Security.Manifest;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Security.Manifests;
 
 namespace SolarSharp.Interpreter.Tests.Units
 {
@@ -14,7 +13,27 @@ namespace SolarSharp.Interpreter.Tests.Units
     /// Tests for manifest trust chains, nested signatures, and hierarchical trust inheritance.
     /// Validates that trust relationships work correctly in complex manifest hierarchies.
     /// </summary>
+    /// <remarks>
+    /// This test suite validates the manifest trust chain system, which allows signed manifests
+    /// to establish trust relationships and delegate authority. Key concepts tested:
+    /// 
+    /// Trust Hierarchy:
+    /// - Root keys (highest trust) can override any restrictions
+    /// - Intermediate keys can override within delegated authority
+    /// - Untrusted keys can only tighten restrictions, never loosen them
+    /// 
+    /// Trust Chain Rules:
+    /// - Signed manifests in the trust store can override security policies
+    /// - Untrusted manifests can only make policies more restrictive
+    /// - Trust must be continuous - one untrusted link breaks the chain
+    /// - Circular includes are detected and handled safely
+    /// 
+    /// The tests use a mock PKI with root, intermediate, and leaf certificates to
+    /// simulate real-world trust delegation scenarios.
+    /// </remarks>
     [TestFixture]
+    [Category("SecurityTest")]
+    [Category("IntegrationTest")]
     public class ManifestTrustChainTests
     {
         private string _tempDir;
@@ -69,6 +88,16 @@ namespace SolarSharp.Interpreter.Tests.Units
             ManifestTrustStore.ClearTrustedKeys();
         }
 
+        /// <summary>
+        /// Verifies that root-trusted manifests can override security policies in any direction.
+        /// </summary>
+        /// <remarks>
+        /// Root keys represent the highest level of trust in the system. Manifests signed by
+        /// root keys should be able to both increase and decrease security restrictions.
+        /// This test creates a manifest with elevated privileges (long timeout, high memory,
+        /// dangerous capabilities) and verifies it's accepted when signed by a root key.
+        /// This models scenarios where trusted administrators need full control.
+        /// </remarks>
         [Test]
         public void TestRootManifestCanOverrideInAnyDirection()
         {
@@ -97,6 +126,15 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(result.String, Is.EqualTo("root trust works"));
         }
 
+        /// <summary>
+        /// Verifies that intermediate-trusted manifests can override within their authority.
+        /// </summary>
+        /// <remarks>
+        /// Intermediate keys represent delegated trust. They can override policies but may
+        /// have limitations compared to root keys. This test verifies that manifests signed
+        /// by intermediate keys in the trust store are properly accepted and applied.
+        /// This models scenarios like department-level administrators with delegated authority.
+        /// </remarks>
         [Test]
         public void TestIntermediateManifestCanOverride()
         {
@@ -124,6 +162,16 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(result.String, Is.EqualTo("intermediate trust works"));
         }
 
+        /// <summary>
+        /// Verifies that untrusted keys cannot override security policies to be less restrictive.
+        /// </summary>
+        /// <remarks>
+        /// Keys not in the trust store should not be able to escalate privileges. This test
+        /// attempts to use an untrusted key to sign a manifest with dangerous permissions
+        /// (unlimited timeout, write access, network access). The system should reject this
+        /// manifest with a ManifestSignatureException. This prevents attackers from creating
+        /// their own permissive manifests.
+        /// </remarks>
         [Test]
         public void TestUntrustedKeyCannotOverride()
         {
@@ -150,6 +198,15 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.Throws<ManifestSignatureException>(() => Script.RunFile(scriptPath));
         }
 
+        /// <summary>
+        /// Verifies that leaf keys not in the trust store are treated as untrusted.
+        /// </summary>
+        /// <remarks>
+        /// Even if a key is part of a valid certificate chain, it must be explicitly added
+        /// to the trust store to sign manifests. This test uses a leaf key that hasn't been
+        /// added to the trust store and verifies its signatures are rejected. This ensures
+        /// explicit trust management and prevents automatic trust propagation.
+        /// </remarks>
         [Test]
         public void TestLeafKeyWithoutTrustStoreEntry()
         {
@@ -174,6 +231,19 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.Throws<ManifestSignatureException>(() => Script.RunFile(scriptPath));
         }
 
+        /// <summary>
+        /// Tests trust inheritance through nested manifest includes.
+        /// </summary>
+        /// <remarks>
+        /// Manifests can include other manifests, creating a hierarchy. This test validates:
+        /// - Root manifest (signed by root key) establishes base trust
+        /// - Child manifest (signed by intermediate key) inherits and modifies policies
+        /// - Grandchild manifest (untrusted) can only tighten restrictions
+        /// 
+        /// The test creates a three-level directory structure with chained manifests to
+        /// verify that trust flows correctly through the include chain and that each level
+        /// can only modify policies according to its trust level.
+        /// </remarks>
         [Test]
         public void TestNestedManifestTrustInheritance()
         {
@@ -215,7 +285,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var childManifestPath = Path.Combine(childDir, "LuaManifest.json");
             File.WriteAllText(childManifestPath, signedChildManifest);
 
-            // Grandchild manifest (unsigned - should only tighten restrictions)
+            // Grandchild manifest (untrusted - should only tighten restrictions)
             var grandchildManifestContent = @"{
                 ""version"": ""1.0"",
                 ""policy"": {
@@ -234,6 +304,20 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(result.String, Is.EqualTo("nested trust works"));
         }
 
+        /// <summary>
+        /// Verifies that untrusted nested manifests cannot escalate privileges.
+        /// </summary>
+        /// <remarks>
+        /// Even when included by a trusted manifest, an untrusted child manifest should not
+        /// be able to grant itself additional privileges. This test:
+        /// - Creates a trusted root manifest with restrictive policies
+        /// - Includes an untrusted child manifest that attempts privilege escalation
+        /// - Verifies the escalation attempt fails at manifest load time
+        /// 
+        /// The child tries to set massive timeouts, memory limits, and dangerous capabilities,
+        /// but the manifest loader rejects it with ManifestFormatException when it detects
+        /// the untrusted manifest attempting to increase timeout beyond the root's limit.
+        /// </remarks>
         [Test]
         public void TestUntrustedNestedManifestCannotEscalate()
         {
@@ -258,7 +342,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var childDir = Path.Combine(_tempDir, "child");
             Directory.CreateDirectory(childDir);
 
-            // Child manifest (unsigned, tries to escalate)
+            // Child manifest (untrusted, tries to escalate)
             var childManifestContent = @"{
                 ""version"": ""1.0"",
                 ""policy"": {
@@ -272,12 +356,27 @@ namespace SolarSharp.Interpreter.Tests.Units
             File.WriteAllText(childManifestPath, childManifestContent);
 
             var scriptPath = Path.Combine(childDir, "malicious.lua");
-            File.WriteAllText(scriptPath, "os.execute('rm -rf /')"); // Should be nil
+            File.WriteAllText(scriptPath, "os.execute('echo test')"); // Should be nil
 
-            // Should not escalate privileges - os.execute should be nil
-            Assert.Throws<ScriptRuntimeException>(() => Script.RunFile(scriptPath));
+            // Should not escalate privileges - manifest validation should fail
+            var ex = Assert.Throws<ManifestFormatException>(() => Script.RunFile(scriptPath));
+            Assert.That(ex.Message, Does.Contain("Untrusted manifests cannot increase timeout"));
         }
 
+        /// <summary>
+        /// Tests validation of trust chains with mixed trusted and untrusted links.
+        /// </summary>
+        /// <remarks>
+        /// A trust chain is only as strong as its weakest link. This test creates:
+        /// - Trusted root manifest
+        /// - Untrusted child manifest (signed by untrusted key)
+        /// - Trusted grandchild manifest
+        /// 
+        /// Even though both root and grandchild are properly signed, the untrusted middle
+        /// link should break the chain of trust. The entire chain should be rejected with
+        /// ManifestSignatureException. This prevents bypass attacks where attackers insert
+        /// malicious manifests in the middle of a trust chain.
+        /// </remarks>
         [Test]
         public void TestMixedTrustChainValidation()
         {
@@ -332,6 +431,19 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.Throws<ManifestSignatureException>(() => Script.RunFile(scriptPath));
         }
 
+        /// <summary>
+        /// Verifies that trusted manifests can override untrusted parent manifests.
+        /// </summary>
+        /// <remarks>
+        /// When a script is in a subdirectory with a trusted manifest, it should use the
+        /// trusted manifest's policies even if the parent directory has an untrusted manifest.
+        /// This test creates:
+        /// - Untrusted parent manifest with minimal permissions
+        /// - Trusted child manifest with elevated permissions
+        /// 
+        /// The child's trusted manifest should take precedence, allowing the higher privileges.
+        /// This models scenarios where trusted code needs to run in untrusted environments.
+        /// </remarks>
         [Test]
         public void TestTrustedManifestOverridesUntrusted()
         {
@@ -373,6 +485,19 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(result.String, Is.EqualTo("trusted override works"));
         }
 
+        /// <summary>
+        /// Verifies that explicit programmatic overrides take precedence over manifests.
+        /// </summary>
+        /// <remarks>
+        /// When security configuration is explicitly provided in code, it should override
+        /// even trusted manifests. This test:
+        /// - Creates a trusted manifest with high privileges
+        /// - Runs a script with explicit security overrides (low timeout, basic modules only)
+        /// - Verifies the explicit overrides are applied
+        /// 
+        /// This ensures developers can always enforce specific security policies regardless
+        /// of manifest configuration, providing a final level of control.
+        /// </remarks>
         [Test]
         public void TestExplicitOverridesAlwaysWin()
         {
@@ -395,13 +520,28 @@ namespace SolarSharp.Interpreter.Tests.Units
             File.WriteAllText(scriptPath, "return 'explicit override test'");
 
             // Explicit overrides should win even over trusted manifest
-            var result = Script.RunFile(scriptPath, new SecurityConfiguration(), overrides => overrides
-                .WithTimeoutMs(5000)
-                .WithModules(CoreModules.Basic));
+            var config = new SecurityConfiguration
+            {
+                Execution =
+                {
+                    TimeoutMs = 5000
+                },
+                AllowedModules = CoreModules.Basic
+            };
+            var result = Script.RunFile(scriptPath, config);
 
             Assert.That(result.String, Is.EqualTo("explicit override test"));
         }
 
+        /// <summary>
+        /// Validates that only keys in the trust store can sign accepted manifests.
+        /// </summary>
+        /// <remarks>
+        /// This test verifies basic trust store functionality by signing a manifest with
+        /// an intermediate key that was added to the trust store during setup. The manifest
+        /// should be accepted and its policies applied. This confirms the trust store is
+        /// working correctly as the gatekeeper for manifest signatures.
+        /// </remarks>
         [Test]
         public void TestTrustStoreKeyValidation()
         {
@@ -427,6 +567,19 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(result.String, Is.EqualTo("trusted key works"));
         }
 
+        /// <summary>
+        /// Tests that trust store modifications are properly isolated.
+        /// </summary>
+        /// <remarks>
+        /// The trust store should maintain proper state isolation. This test:
+        /// - Creates a new key not in the trust store
+        /// - Verifies manifests signed by it are rejected
+        /// - Adds the key to the trust store
+        /// - Verifies manifests are now accepted
+        /// 
+        /// This ensures trust store modifications take effect immediately and that
+        /// keys must be explicitly trusted before their signatures are accepted.
+        /// </remarks>
         [Test]
         public void TestTrustStoreIsolation()
         {
@@ -437,7 +590,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             try
             {
                 // This key shouldn't be trusted yet
-                var manifestContent = @"{
+                const string manifestContent = @"{
                     ""version"": ""1.0"",
                     ""policy"": {
                         ""capabilities"": [""FileWrite""]
@@ -466,15 +619,29 @@ namespace SolarSharp.Interpreter.Tests.Units
             }
         }
 
+        /// <summary>
+        /// Tests that very deep manifest chains are handled gracefully.
+        /// </summary>
+        /// <remarks>
+        /// Even with valid trust, extremely deep manifest chains (50 levels) could cause
+        /// performance issues or stack overflow. This test creates a deep chain of manifests
+        /// to verify:
+        /// - The system can handle reasonable depths without crashing
+        /// - Performance remains acceptable
+        /// - Depth limits (if any) are enforced gracefully
+        /// 
+        /// Each level slightly reduces the timeout to create policy variation. The system
+        /// should either process the entire chain or fail gracefully with SecurityException.
+        /// </remarks>
         [Test]
         public void TestDeepTrustChainLimit()
         {
             // Create a very deep manifest chain to test depth limits
             var currentDir = _tempDir;
-            var chainDepth = 50; // Test reasonable depth limit
+            const int chainDepth = 50; // Test reasonable depth limit
 
             // Root manifest (trusted)
-            var rootManifestContent = @"{
+            const string rootManifestContent = @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""capabilities"": [""FileRead""]
@@ -487,7 +654,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             File.WriteAllText(Path.Combine(currentDir, "LuaManifest.json"), signedRootManifest);
 
             // Create chain of manifests
-            for (int i = 1; i < chainDepth; i++)
+            for (var i = 1; i < chainDepth; i++)
             {
                 var levelDir = Path.Combine(currentDir, $"level{i}");
                 Directory.CreateDirectory(levelDir);
@@ -523,6 +690,20 @@ namespace SolarSharp.Interpreter.Tests.Units
             }
         }
 
+        /// <summary>
+        /// Tests detection and handling of circular references in manifest includes.
+        /// </summary>
+        /// <remarks>
+        /// Circular manifest references could cause infinite loops during loading. This test
+        /// creates a cycle: A → B → C → A. The manifest system should:
+        /// - Detect the circular reference
+        /// - Break the cycle gracefully
+        /// - Still apply valid policies from the manifests
+        /// 
+        /// The test verifies the script executes successfully, proving the circular reference
+        /// was handled without hanging or crashing. This prevents denial-of-service attacks
+        /// using manifest cycles.
+        /// </remarks>
         [Test]
         public void TestCircularTrustChainDetection()
         {
@@ -536,7 +717,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             Directory.CreateDirectory(dirC);
 
             // Manifest A includes B
-            var manifestA = @"{
+            const string manifestA = @"{
                 ""version"": ""1.0"",
                 ""includes"": [""../b/Manifest.json""],
                 ""policy"": {
@@ -545,7 +726,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             }";
 
             // Manifest B includes C
-            var manifestB = @"{
+            const string manifestB = @"{
                 ""version"": ""1.0"",
                 ""includes"": [""../c/Manifest.json""],
                 ""policy"": {
@@ -554,7 +735,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             }";
 
             // Manifest C includes A (creates cycle)
-            var manifestC = @"{
+            const string manifestC = @"{
                 ""version"": ""1.0"",
                 ""includes"": [""../a/Manifest.json""],
                 ""policy"": {
@@ -577,6 +758,21 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(result.String, Is.EqualTo("circular test"));
         }
 
+        /// <summary>
+        /// Tests manifest chains with alternating trusted and untrusted manifests.
+        /// </summary>
+        /// <remarks>
+        /// Real-world manifest hierarchies may have a mix of trusted and untrusted manifests.
+        /// This test creates: Root (signed) → Level1 (untrusted) → Level2 (signed) → Level3 (untrusted)
+        /// 
+        /// Rules validated:
+        /// - Signed manifests can override policies in any direction
+        /// - Untrusted manifests can only tighten restrictions
+        /// - Trust doesn't "flow through" untrusted manifests
+        /// 
+        /// The alternating pattern tests that each manifest is evaluated independently
+        /// based on its own trust status, not its position in the hierarchy.
+        /// </remarks>
         [Test]
         public void TestPartiallySignedChain()
         {
@@ -590,7 +786,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             Directory.CreateDirectory(level3Dir);
 
             // Root: signed (trusted)
-            var rootManifestContent = @"{
+            const string rootManifestContent = @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""capabilities"": [""FileRead"", ""FileWrite""]
@@ -602,8 +798,8 @@ namespace SolarSharp.Interpreter.Tests.Units
             var signedRootManifest = CreateSignedManifest(rootManifestContent, "RSA", _rootKeyPem, "SHA256withRSA", rootSignature);
             File.WriteAllText(Path.Combine(_tempDir, "LuaManifest.json"), signedRootManifest);
 
-            // Level 1: unsigned (can only tighten)
-            var level1ManifestContent = @"{
+            // Level 1: untrusted (can only tighten)
+            const string level1ManifestContent = @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""timeoutMs"": 30000,
@@ -615,7 +811,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             File.WriteAllText(Path.Combine(level1Dir, "LuaManifest.json"), level1ManifestContent);
 
             // Level 2: signed again (trusted)
-            var level2ManifestContent = @"{
+            const string level2ManifestContent = @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""capabilities"": [""FileRead"", ""FileWrite"", ""NetworkAccess""]
@@ -627,8 +823,8 @@ namespace SolarSharp.Interpreter.Tests.Units
             var signedLevel2Manifest = CreateSignedManifest(level2ManifestContent, "RSA", _intermediateKeyPem, "SHA256withRSA", level2Signature);
             File.WriteAllText(Path.Combine(level2Dir, "LuaManifest.json"), signedLevel2Manifest);
 
-            // Level 3: unsigned again
-            var level3ManifestContent = @"{
+            // Level 3: untrusted again
+            const string level3ManifestContent = @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""timeoutMs"": 10000
@@ -640,11 +836,27 @@ namespace SolarSharp.Interpreter.Tests.Units
             var scriptPath = Path.Combine(level3Dir, "test.lua");
             File.WriteAllText(scriptPath, "return 'partial chain test'");
 
-            // Should work - signed manifests can override, unsigned can only tighten
+            // Should work - signed manifests can override, untrusted can only tighten
             var result = Script.RunFile(scriptPath);
             Assert.That(result.String, Is.EqualTo("partial chain test"));
         }
 
+        /// <summary>
+        /// Tests that trust delegation respects capability boundaries.
+        /// </summary>
+        /// <remarks>
+        /// Even trusted manifests should respect delegation limits. This test verifies that
+        /// when a root manifest delegates limited capabilities, child manifests cannot exceed
+        /// those limits even if signed by trusted keys.
+        /// 
+        /// Scenario:
+        /// - Root manifest allows only FileRead capability
+        /// - Child manifest (signed by trusted key) requests FileWrite, NetworkAccess, etc.
+        /// - Script attempts os.execute() which requires CommandExecution
+        /// 
+        /// The execution should fail because the root manifest's delegation limits cannot
+        /// be exceeded, demonstrating proper capability delegation enforcement.
+        /// </remarks>
         [Test]
         public void TestTrustDelegationLimits()
         {
@@ -653,7 +865,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             Directory.CreateDirectory(delegatedDir);
 
             // Root manifest that delegates specific capabilities
-            var rootManifestContent = @"{
+            const string rootManifestContent = @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""capabilities"": [""FileRead""]
@@ -666,7 +878,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             File.WriteAllText(Path.Combine(_tempDir, "LuaManifest.json"), signedRootManifest);
 
             // Delegated manifest tries to exceed delegated authority
-            var delegatedManifestContent = @"{
+            const string delegatedManifestContent = @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""capabilities"": [""FileRead"", ""FileWrite"", ""NetworkAccess"", ""CommandExecution""]
@@ -684,12 +896,31 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.Throws<ScriptRuntimeException>(() => Script.RunFile(scriptPath));
         }
 
+        /// <summary>
+        /// Helper method to sign manifest content with an RSA key.
+        /// </summary>
+        /// <param name="content">The manifest JSON content to sign.</param>
+        /// <param name="key">The RSA private key for signing.</param>
+        /// <returns>The signed manifest JSON.</returns>
         private string SignContent(string content, RSA key)
         {
             return ManifestSigner.SignManifestJson(content, key, "RSA");
         }
 
-        private string CreateSignedManifest(string manifestContent, string algorithm, string publicKeyPem, string signatureAlgorithm, string signature)
+        /// <summary>
+        /// Helper method to create a signed manifest structure.
+        /// </summary>
+        /// <param name="manifestContent">The original manifest content.</param>
+        /// <param name="algorithm">The key algorithm (RSA or ECDSA).</param>
+        /// <param name="publicKeyPem">The public key in PEM format.</param>
+        /// <param name="signatureAlgorithm">The signature algorithm used.</param>
+        /// <param name="signature">The computed signature.</param>
+        /// <returns>The complete signed manifest JSON.</returns>
+        /// <remarks>
+        /// Currently returns just the signature for simplicity, as ManifestSigner.SignManifestJson
+        /// handles the complete manifest structure creation.
+        /// </remarks>
+        private static string CreateSignedManifest(string manifestContent, string algorithm, string publicKeyPem, string signatureAlgorithm, string signature)
         {
             return signature;
         }

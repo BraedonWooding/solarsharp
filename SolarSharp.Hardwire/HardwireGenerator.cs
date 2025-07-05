@@ -1,7 +1,7 @@
 ﻿using System.CodeDom.Compiler;
 using System.IO;
-using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Hardwire.Languages;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Hardwire
 {

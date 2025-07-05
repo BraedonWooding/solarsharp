@@ -1,5 +1,5 @@
-﻿using SolarSharp.Hardwire.Generators.Base;
-using System.CodeDom;
+﻿using System.CodeDom;
+using SolarSharp.Hardwire.Generators.Base;
 
 namespace SolarSharp.Hardwire.Generators
 {

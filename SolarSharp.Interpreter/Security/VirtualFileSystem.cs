@@ -238,7 +238,7 @@ namespace SolarSharp.Interpreter.Security
         {
             if (_writePolicy == WritePolicy.Deny && access != System.IO.FileAccess.Read)
             {
-                throw new FileAccessViolationException($"Write access denied by security policy: {virtualPath}", "ValidateFileAccess", virtualPath);
+                throw new FilePermissionViolationException($"Write access denied by security policy: {virtualPath}", "ValidateFileAccess", virtualPath);
             }
 
             bool isWrite = access != System.IO.FileAccess.Read;

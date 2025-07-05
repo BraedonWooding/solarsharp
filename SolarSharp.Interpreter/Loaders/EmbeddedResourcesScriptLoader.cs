@@ -1,7 +1,7 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Loaders
 {

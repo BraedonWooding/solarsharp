@@ -1,5 +1,4 @@
 ﻿#if EMBEDTEST || UNITY_5
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,13 +7,16 @@ using System.Text;
 namespace NUnit.Framework
 {
 	public class TestAttribute : Attribute
-	{ }
+	{
+	}
 
 	public class IgnoreAttribute : Attribute
-	{ }
+	{
+	}
 
 	public class TestFixtureAttribute : Attribute
-	{ }
+	{
+	}
 
 	public class ExpectedExceptionAttribute : Attribute
 	{
@@ -35,7 +37,7 @@ namespace NUnit.Framework
 
 		public static void AreEqual(object expected, object other, string message = null)
 		{
-			if (expected is int && other is double) 
+			if (expected is int && other is double)
 				AreEqualNum((int)expected, (double)other, message);
 			else if (expected != null)
 				Assert.IsTrue(expected.Equals(other), message ?? string.Format("{0} was expected, {1} was returned", expected, other));
@@ -75,12 +77,11 @@ namespace NUnit.Framework
 			{
 				a();
 			}
-			catch(Exception e)
+			catch (Exception e)
 			{
 				Assert.IsTrue(e is ET);
 			}
 		}
-
 
 
 		internal static void Fail()
@@ -88,9 +89,6 @@ namespace NUnit.Framework
 			Assert.IsTrue(false);
 		}
 	}
-
-
-
 }
 
 

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
-using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -19,9 +19,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
     public class RegCollMethods
     {
-        private readonly List<RegCollItem> m_Items = new() { new RegCollItem(7), new RegCollItem(8), new RegCollItem(9) };
-        private readonly List<int> m_List = new() { 1, 2, 3 };
         private readonly int[] m_Array = new int[3] { 2, 4, 6 };
+
+        private readonly List<RegCollItem> m_Items = new()
+            { new RegCollItem(7), new RegCollItem(8), new RegCollItem(9) };
+
+        private readonly List<int> m_List = new() { 1, 2, 3 };
         private readonly int[,] m_MultiArray = new int[2, 3] { { 2, 4, 6 }, { 7, 8, 9 } };
 
         public int[,] GetMultiArray()
@@ -51,8 +54,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     }
 
 
-
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("IntegrationTest")]
     public class CollectionsBaseInterfGenRegisteredTests
     {
         private void Do(string code, Action<DynValue> asserts)
@@ -74,7 +78,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 s.Globals["o"] = obj;
                 s.Globals["ctor"] = UserData.CreateStatic<RegCollItem>();
 
-                DynValue res = s.DoString(code);
+                var res = s.DoString(code);
 
                 asserts(res, obj);
             }
@@ -97,9 +101,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
 
-
-
-
         [Test]
         public void RegCollGenInterf_IteratorOnList_Auto()
         {
@@ -112,14 +113,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				end
 				return x;
 			",
-             (r) =>
-             {
-                 Assert.Multiple(() =>
-                 {
-                     Assert.That(r.Type, Is.EqualTo(DataType.Number));
-                     Assert.That(r.Number, Is.EqualTo(6));
-                 });
-             });
+                r =>
+                {
+                    Assert.Multiple(() =>
+                    {
+                        Assert.That(r.Type, Is.EqualTo(DataType.Number));
+                        Assert.That(r.Number, Is.EqualTo(6));
+                    });
+                });
         }
 
 
@@ -145,14 +146,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return x;
 
 			",
-             (r) =>
-             {
-                 Assert.Multiple(() =>
-                 {
-                     Assert.That(r.Type, Is.EqualTo(DataType.Number));
-                     Assert.That(r.Number, Is.EqualTo(6));
-                 });
-             });
+                r =>
+                {
+                    Assert.Multiple(() =>
+                    {
+                        Assert.That(r.Type, Is.EqualTo(DataType.Number));
+                        Assert.That(r.Number, Is.EqualTo(6));
+                    });
+                });
         }
 
         [Test]
@@ -169,17 +170,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				end
 				return x;
 			",
-             (r, o) =>
-             {
-                 Assert.Multiple(() =>
-                 {
-                     Assert.That(r.Type, Is.EqualTo(DataType.Number));
-                     Assert.That(r.Number, Is.EqualTo(9));
-                     Assert.That(o.GetList()[0], Is.EqualTo(1));
-                     Assert.That(o.GetList()[1], Is.EqualTo(5));
-                     Assert.That(o.GetList()[2], Is.EqualTo(3));
-                 });
-             });
+                (r, o) =>
+                {
+                    Assert.Multiple(() =>
+                    {
+                        Assert.That(r.Type, Is.EqualTo(DataType.Number));
+                        Assert.That(r.Number, Is.EqualTo(9));
+                        Assert.That(o.GetList()[0], Is.EqualTo(1));
+                        Assert.That(o.GetList()[1], Is.EqualTo(5));
+                        Assert.That(o.GetList()[2], Is.EqualTo(3));
+                    });
+                });
         }
 
 
@@ -194,14 +195,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					x = x + i;
 				end
 				return x;			",
-             (r) =>
-             {
-                 Assert.Multiple(() =>
-                 {
-                     Assert.That(r.Type, Is.EqualTo(DataType.Number));
-                     Assert.That(r.Number, Is.EqualTo(12));
-                 });
-             });
+                r =>
+                {
+                    Assert.Multiple(() =>
+                    {
+                        Assert.That(r.Type, Is.EqualTo(DataType.Number));
+                        Assert.That(r.Number, Is.EqualTo(12));
+                    });
+                });
         }
 
 
@@ -219,19 +220,18 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				end
 				return x;
 			",
-             (r, o) =>
-             {
-                 Assert.Multiple(() =>
-                 {
-                     Assert.That(r.Type, Is.EqualTo(DataType.Number));
-                     Assert.That(r.Number, Is.EqualTo(13));
-                     Assert.That(o.GetArray()[0], Is.EqualTo(2));
-                     Assert.That(o.GetArray()[1], Is.EqualTo(5));
-                     Assert.That(o.GetArray()[2], Is.EqualTo(6));
-                 });
-             });
+                (r, o) =>
+                {
+                    Assert.Multiple(() =>
+                    {
+                        Assert.That(r.Type, Is.EqualTo(DataType.Number));
+                        Assert.That(r.Number, Is.EqualTo(13));
+                        Assert.That(o.GetArray()[0], Is.EqualTo(2));
+                        Assert.That(o.GetArray()[1], Is.EqualTo(5));
+                        Assert.That(o.GetArray()[2], Is.EqualTo(6));
+                    });
+                });
         }
-
 
 
         [Test]
@@ -246,14 +246,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				end
 				return x;
 			",
-             (r) =>
-             {
-                 Assert.Multiple(() =>
-                 {
-                     Assert.That(r.Type, Is.EqualTo(DataType.Number));
-                     Assert.That(r.Number, Is.EqualTo(24));
-                 });
-             });
+                r =>
+                {
+                    Assert.Multiple(() =>
+                    {
+                        Assert.That(r.Type, Is.EqualTo(DataType.Number));
+                        Assert.That(r.Number, Is.EqualTo(24));
+                    });
+                });
         }
 
 
@@ -279,14 +279,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return x;
 
 			",
-             (r) =>
-             {
-                 Assert.Multiple(() =>
-                 {
-                     Assert.That(r.Type, Is.EqualTo(DataType.Number));
-                     Assert.That(r.Number, Is.EqualTo(24));
-                 });
-             });
+                r =>
+                {
+                    Assert.Multiple(() =>
+                    {
+                        Assert.That(r.Type, Is.EqualTo(DataType.Number));
+                        Assert.That(r.Number, Is.EqualTo(24));
+                    });
+                });
         }
 
         [Test]
@@ -303,20 +303,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				end
 				return x;
 			",
-             (r, o) =>
-             {
-                 Assert.Multiple(() =>
-                 {
-                     Assert.That(r.Type, Is.EqualTo(DataType.Number));
-                     Assert.That(r.Number, Is.EqualTo(7 + 17 + 9));
-                     Assert.That(o.GetItems()[0].Value, Is.EqualTo(7));
-                     Assert.That(o.GetItems()[1].Value, Is.EqualTo(17));
-                     Assert.That(o.GetItems()[2].Value, Is.EqualTo(9));
-                 });
-             });
+                (r, o) =>
+                {
+                    Assert.Multiple(() =>
+                    {
+                        Assert.That(r.Type, Is.EqualTo(DataType.Number));
+                        Assert.That(r.Number, Is.EqualTo(7 + 17 + 9));
+                        Assert.That(o.GetItems()[0].Value, Is.EqualTo(7));
+                        Assert.That(o.GetItems()[1].Value, Is.EqualTo(17));
+                        Assert.That(o.GetItems()[2].Value, Is.EqualTo(9));
+                    });
+                });
         }
-
-
-
     }
 }

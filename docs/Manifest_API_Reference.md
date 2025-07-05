@@ -2,17 +2,18 @@
 
 ## Quick Start - Do You Need a Manifest?
 
-### Running Untrusted Code? No Manifest Required!
+### Running Untrusted Code? Use SecurityConfiguration!
 
-SolarSharp provides effective security through SystemManifests. For most use cases, you don't need to create custom manifests:
+SolarSharp provides a fluent C# API for security configuration. For most use cases, you don't need manifest files:
 
 ```csharp
-// Secure by default - no custom manifest needed
-var script = new Script(); // Uses SystemManifest.Desktop
-script.DoString(untrustedCode); // Already sandboxed with timeout, memory limits, etc.
+// Secure by default - Desktop configuration
+var script = new Script(); // PreventDynamicCode = false for development
 
-// Need stricter security? Use a different SystemManifest
-var script = new Script(SystemManifest.Jailed); // Maximum restrictions
+// Need stricter security? Use preset configurations
+var script = new Script(SecurityConfiguration.Isolated()); // Maximum restrictions
+var script = new Script(SecurityConfiguration.DataProcessing()); // Limited I/O
+var script = new Script(SecurityConfiguration.Automation()); // Trusted scripts
 ```
 
 ### When You Need Custom Manifests
@@ -24,11 +25,12 @@ Custom manifests are optional security policies for specific scenarios:
 3. **Reusable Security Policies** - When managing security across multiple scripts
 4. **Cryptographic Enforcement** - When you need signed manifests to ensure script integrity
 
-### How Manifests Work
+### Security Configuration vs Manifests
 
-- **Untrusted Manifests** - Can only add restrictions, never grant new permissions
-- **Trusted Manifests** (signed) - Can override base restrictions and grant elevated permissions
-- **Automatic Discovery** - SolarSharp automatically finds and applies manifests from script directories
+- **SecurityConfiguration** - Fluent C# API for programmatic security control
+- **Manifests** - JSON files for declarative security policies
+- **ISecurityPolicy** - Both implement this interface for unified usage
+- **Automatic Discovery** - SolarSharp can still find and apply manifest files from script directories
 
 ## Table of Contents
 
@@ -76,15 +78,14 @@ Custom manifests are optional security policies for specific scenarios:
         "publicKey": {
           "type": "object",
           "properties": {
-            "algorithm": {"type": "string", "enum": ["RSA", "ECDSA"]},
-            "format": {"type": "string", "enum": ["PEM", "BASE64"]},
-            "value": {"type": "string"}
+            "algorithm": {"type": "string", "enum": ["RSA", "ECDSA-P256"]},
+            "key": {"type": "string"}
           }
         },
         "signature": {
           "type": "object",
           "properties": {
-            "algorithm": {"type": "string", "enum": ["SHA256withRSA", "SHA256withECDSA-P256"]},
+            "algorithm": {"type": "string", "enum": ["RSA-SHA256", "ECDSA-SHA256"]},
             "value": {"type": "string"}
           }
         }
@@ -156,22 +157,42 @@ interface ManifestPolicy {
 
 ## Core Classes
 
+### Namespace Changes
+
+**Important**: The `Manifest` namespace has been renamed to `Manifests` to avoid collision with the `Manifest` class:
+
+```csharp
+// Old namespace
+using SolarSharp.Interpreter.Security.Manifest;
+
+// New namespace
+using SolarSharp.Interpreter.Security.Manifests;
+```
+
 ### Manifest
 
 ```csharp
-public class Manifest
+namespace SolarSharp.Interpreter.Security.Manifests
 {
-    // Properties
-    public string Version { get; set; }
-    public DateTime Created { get; set; }
-    public string Description { get; set; }
-    public string Type { get; set; }
-    public ManifestSecurity Security { get; set; }
-    public ManifestPolicy Policy { get; set; }
-    public Dictionary<string, ManifestRule> Rules { get; set; }
-    public Dictionary<string, ManifestFileEntry> Files { get; set; }
-    public List<string> Includes { get; set; }
-    public TrustLevel TrustLevel { get; set; }
+    public class Manifest : ISecurityPolicy
+    {
+        // Properties (JSON serialized)
+        public string version { get; set; }
+        public DateTime created { get; set; }
+        public string description { get; set; }
+        public string type { get; set; }
+        public ManifestSecurity security { get; set; }
+        public ManifestPolicy policy { get; set; }
+        public Dictionary<string, ManifestRule> rules { get; set; }
+        public Dictionary<string, ManifestFileEntry> files { get; set; }
+        public List<string> includes { get; set; }
+        
+        // Runtime properties
+        public TrustLevel TrustLevel { get; set; }
+        
+        // ISecurityPolicy implementation
+        public Manifest ToManifest() => this;
+    }
 }
 
 public enum TrustLevel
@@ -190,40 +211,48 @@ public enum TrustLevel
 }
 ```
 
-### SystemManifest
+### SecurityConfiguration
 
-**Important**: SystemManifests provide comprehensive security configurations. When you create a Script with a SystemManifest, no additional custom manifest is required - the SystemManifest alone provides all necessary security boundaries.
+**Recommended**: Use SecurityConfiguration for programmatic security control instead of manifest files:
 
 ```csharp
-public sealed class SystemManifest : Manifest
+public class SecurityConfiguration : ISecurityPolicy
 {
-    // Static instances - Comprehensive security configurations
-    public static SystemManifest None { get; }          // Special: No policy, no rules - denial is implicit
-    public static SystemManifest Unrestricted { get; }  // No limits (use only for trusted internal code)
-    public static SystemManifest Desktop { get; }       // Development: 60s timeout, 128MB memory
-    public static SystemManifest Jailed { get; }        // Maximum security: 5s timeout, 10MB memory, no I/O
-    public static SystemManifest Game { get; }          // Game scripting: 300ms timeout, 25MB memory
+    // Factory methods for preset configurations
+    public static SecurityConfiguration Isolated();        // Maximum security
+    public static SecurityConfiguration DataProcessing();  // Limited I/O and network
+    public static SecurityConfiguration Automation();      // Trusted automation
     
-    // Promotion from regular manifest
-    public static SystemManifest FromManifest(Manifest manifest);
+    // Default constructor creates Desktop configuration
+    public SecurityConfiguration(); // PreventDynamicCode = false
     
-    // Fluent modifiers
-    public Manifest WithTimeout(int timeoutMs);
-    public Manifest WithMemoryLimit(int memoryMB);
+    // Fluent configuration methods
+    public SecurityConfiguration WithTimeout(TimeSpan timeout);
+    public SecurityConfiguration WithTimeoutMs(int milliseconds);
+    public SecurityConfiguration WithTimeoutSeconds(int seconds);
+    public SecurityConfiguration WithMemoryLimitMB(int megabytes);
+    public SecurityConfiguration WithInstructionLimit(long limit);
+    public SecurityConfiguration DisableDynamicCode();
+    public SecurityConfiguration AddModules(CoreModules modules);
+    public SecurityConfiguration WithFileAccess(FileAccess access);
+    // ... and many more
+    
+    // ISecurityPolicy implementation
+    public Manifest ToManifest();
 }
 ```
 
-**Usage Example - No Custom Manifest Needed**:
+**Usage Examples**:
 ```csharp
-// For untrusted code - effective security out of the box
-var script = new Script(SystemManifest.Jailed);
-script.DoString(untrustedUserCode); // Fully sandboxed
+// For untrusted code - use preset
+var script = new Script(SecurityConfiguration.Isolated());
 
-// For development - reasonable limits with full module access
-var script = new Script(); // Uses SystemManifest.Desktop by default
-```
-
-**Special Note on SystemManifest.None**: This manifest is unique - it has no policy and no rules. All operations are denied implicitly. This is the only valid case where a SystemManifest can have null policy.
+// Custom configuration
+var config = new SecurityConfiguration()
+    .WithTimeout(TimeSpan.FromSeconds(10))
+    .WithMemoryLimitMB(50)
+    .DisableDynamicCode();
+var script = new Script(config);
 ```
 
 ### ManifestRule
@@ -251,6 +280,8 @@ public enum RuleTarget
 
 ## Builder API
 
+**Note**: For programmatic security configuration, consider using `SecurityConfiguration` instead of `ManifestBuilder`. The fluent C# API is more convenient than building manifest files.
+
 ### ManifestBuilder
 
 ```csharp
@@ -267,8 +298,9 @@ public class ManifestBuilder
     public ManifestBuilder WithType(string type);
     
     // Resource limits
-    public ManifestBuilder WithTimeout(int seconds);
-    public ManifestBuilder WithMemoryLimit(int mb);
+    public ManifestBuilder WithTimeoutMs(int milliseconds);
+    public ManifestBuilder WithTimeoutSeconds(int seconds);
+    public ManifestBuilder WithMemoryLimitMB(int mb);
     public ManifestBuilder WithMaxInstructions(long count);
     public ManifestBuilder WithMaxCallDepth(int depth);
     
@@ -316,32 +348,20 @@ public class ManifestBuilder
 ### Usage Examples
 
 ```csharp
-// Basic manifest
+// Recommended: Use SecurityConfiguration instead
+var config = SecurityConfiguration.Isolated()
+    .WithTimeout(TimeSpan.FromSeconds(30))
+    .WithMemoryLimitMB(50);
+var script = new Script(config);
+
+// If you need manifest files:
 var manifest = new ManifestBuilder()
-    .WithTimeout(30)
-    .WithMemoryLimit(50)
+    .WithTimeoutMs(30000)  // 30 seconds
+    .WithMemoryLimitMB(50)
     .Build();
 
-// From system manifest
-var manifest = ManifestBuilder.From(SystemManifest.Desktop)
-    .WithTimeout(45)
-    .AddFileRule("logs/*.log", FileAccess.ReadWrite)
-    .Build();
-
-// Complex manifest
-var manifest = new ManifestBuilder()
-    .WithDescription("My Application Manifest")
-    .WithTimeout(60)
-    .WithMemoryLimit(128)
-    .WithMaxInstructions(10_000_000_000)
-    .WithDefaultFileAccess(FileAccess.Read)
-    .AddFileRule("data/**", FileAccess.ReadWrite)
-    .AddDirectoryRule("temp", DirectoryAccess.ListAndCreateFiles)
-    .AllowModule(CoreModules.IO | CoreModules.OS)
-    .AllowNetworkAccess()
-    .WithAllowedHosts("api.example.com")
-    .WithAntiPolymorphism()
-    .Build();
+// Save to file for distribution
+File.WriteAllText("app.manifest", manifest.ToJson());
 ```
 
 ## Composition API
@@ -762,36 +782,20 @@ Console.WriteLine($"Trust level: {trustLevel}"); // Trusted
 ### Full Application Example
 
 ```csharp
-// 1. Create and sign a manifest
-var builder = new ManifestBuilder()
-    .WithDescription("My Application v1.0")
-    .WithTimeout(60)
-    .WithMemoryLimit(100)
-    .WithDefaultFileAccess(FileAccess.None)
-    .AddFileRule("config/*.json", FileAccess.Read)
-    .AddFileRule("data/*.db", FileAccess.ReadWrite)
-    .AddDirectoryRule("logs", DirectoryAccess.ListAndCreateFiles)
-    .AllowModule(CoreModules.Basic | CoreModules.Table | CoreModules.String | CoreModules.IO)
-    .WithAntiPolymorphism()
-    .EnableChroot();
+// Recommended: Use SecurityConfiguration for programmatic control
+var config = SecurityConfiguration.DataProcessing()
+    .WithTimeout(TimeSpan.FromSeconds(60))
+    .WithMemoryLimitMB(100)
+    .WithFileAccess(FileAccess.None)
+    .AddFileAccess("config/*.json", FileAccess.Read)
+    .AddFileAccess("data/*.db", FileAccess.ReadWrite)
+    .AddDirectoryAccess("logs", DirectoryAccess.ListAndCreateFiles)
+    .AddModules(CoreModules.Basic | CoreModules.Table | CoreModules.String | CoreModules.IO)
+    .DisableDynamicCode()
+    .DisableMetatableChanges();
 
-var manifest = builder.BuildAndSign(privateKey);
-File.WriteAllText("app.manifest", JsonSerializer.Serialize(manifest));
+var script = new Script(config);
 
-// 2. Set up trust store
-ManifestTrustStore.AddTrustedKeyFromFile("company-public.pem");
-
-// 3. Create script with manifest discovery
-var script = new Script();  // Uses Desktop by default
-
-// 4. Add application manifest
-var appManifest = ManifestAutoLoader.DiscoverManifest("app.lua");
-if (appManifest != null)
-{
-    script.AddManifest(appManifest.Manifest, appManifest.Manifest.TrustLevel);
-}
-
-// 5. Execute script
 try
 {
     var result = script.DoFile("app.lua");
@@ -801,6 +805,16 @@ catch (SecurityException ex)
 {
     Console.WriteLine($"Security violation: {ex.Message}");
 }
+
+// Alternative: If you need manifest files for distribution
+var manifest = new ManifestBuilder()
+    .WithDescription("My Application v1.0")
+    .WithTimeoutMs(60000)  // 60 seconds
+    .WithMemoryLimitMB(100)
+    // ... same settings as above
+    .BuildAndSign(privateKey);
+
+File.WriteAllText("app.manifest", JsonSerializer.Serialize(manifest));
 ```
 
 ### Hierarchical Manifest Example
@@ -855,7 +869,7 @@ var manifest = tracer.GenerateManifest();
 // Customize generated manifest
 var customized = new ManifestBuilder(manifest)
     .WithDescription("Auto-generated and customized")
-    .WithTimeout(manifest.Policy.TimeoutMs.Value - 10) // Tighten timeout
+    .WithTimeoutMs(manifest.Policy.TimeoutMs.Value - 10000) // Tighten timeout by 10 seconds
     .Build();
 
 // Sign and save

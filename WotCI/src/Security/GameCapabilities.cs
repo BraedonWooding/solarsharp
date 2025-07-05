@@ -1,12 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using SolarSharp.Interpreter.Security;
 
 namespace WotCI.Security
 {
     /// <summary>
-    /// Game-specific capability for health management
+    /// Game-specific capability for player health management with trust-level based access control.
+    /// Provides secure access to player health operations including reading, healing, modification, and damage.
+    /// Access levels are controlled by plugin trust levels:
+    /// - All: Can read health
+    /// - Partner: Can heal and modify health (with limits)
+    /// - System: Can damage player (full system access)
     /// </summary>
     public class HealthCapability : ScriptCapabilityBase
     {
@@ -28,9 +30,9 @@ namespace WotCI.Security
             return operation switch
             {
                 "read" => true, // All trust levels can read health
-                "heal" => _trustLevel >= PluginTrustLevel.Partner, // Partners can heal
-                "modify" => _trustLevel >= PluginTrustLevel.Partner && ValidateHealthModification(parameters),
-                "damage" => _trustLevel >= PluginTrustLevel.System, // Only system can damage
+                "heal" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel), // Partners can heal
+                "modify" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel) && ValidateHealthModification(parameters),
+                "damage" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.System, _trustLevel), // Only system can damage
                 _ => false
             };
         }
@@ -52,19 +54,23 @@ namespace WotCI.Security
             return operation switch
             {
                 "read" => ValidationResult.Valid(),
-                "heal" when parameters?.Length > 0 && parameters[0] is int amount && amount > 0 && amount <= 50 
+                "heal" when parameters?.Length > 0 && parameters[0] is int and > 0 and <= 50 
                     => ValidationResult.Valid(),
                 "heal" => ValidationResult.Invalid("Heal amount must be a positive integer <= 50"),
-                "modify" when parameters?.Length > 0 && parameters[0] is int health && health >= 0 && health <= 100 
+                "modify" when parameters?.Length > 0 && parameters[0] is int and >= 0 and <= 100 
                     => ValidationResult.Valid(),
                 "modify" => ValidationResult.Invalid("Health must be an integer between 0 and 100"),
-                "damage" when parameters?.Length > 0 && parameters[0] is int damage && damage > 0 && damage <= 25 
+                "damage" when parameters?.Length > 0 && parameters[0] is int and > 0 and <= 25 
                     => ValidationResult.Valid(),
                 "damage" => ValidationResult.Invalid("Damage must be a positive integer <= 25"),
                 _ => ValidationResult.Invalid($"Unknown operation: {operation}")
             };
         }
 
+        /// <summary>
+        /// Validates health modification parameters for partner-level plugins.
+        /// Partners can only make changes up to 25 health points from current value.
+        /// </summary>
         private bool ValidateHealthModification(object[] parameters)
         {
             if (parameters?.Length > 0 && parameters[0] is int newHealth)
@@ -135,8 +141,8 @@ namespace WotCI.Security
             return operation switch
             {
                 "read" or "get_gold" => true, // All can read
-                "add_gold" => _trustLevel >= PluginTrustLevel.Partner && ValidateGoldAmount(parameters, 1000),
-                "remove_gold" => _trustLevel >= PluginTrustLevel.System, // Only system can remove gold
+                "add_gold" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel) && ValidateGoldAmount(parameters, 1000),
+                "remove_gold" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.System, _trustLevel), // Only system can remove gold
                 _ => false
             };
         }
@@ -157,10 +163,10 @@ namespace WotCI.Security
             return operation switch
             {
                 "read" or "get_gold" => ValidationResult.Valid(),
-                "add_gold" when parameters?.Length > 0 && parameters[0] is int amount && amount > 0 && amount <= 1000 
+                "add_gold" when parameters?.Length > 0 && parameters[0] is int and > 0 and <= 1000 
                     => ValidationResult.Valid(),
                 "add_gold" => ValidationResult.Invalid("Gold amount must be a positive integer <= 1000"),
-                "remove_gold" when parameters?.Length > 0 && parameters[0] is int amount && amount > 0 
+                "remove_gold" when parameters?.Length > 0 && parameters[0] is int and > 0 
                     => ValidationResult.Valid(),
                 "remove_gold" => ValidationResult.Invalid("Remove amount must be a positive integer"),
                 _ => ValidationResult.Invalid($"Unknown operation: {operation}")
@@ -169,7 +175,7 @@ namespace WotCI.Security
 
         private bool ValidateGoldAmount(object[] parameters, int maxAmount)
         {
-            return parameters?.Length > 0 && parameters[0] is int amount && amount > 0 && amount <= maxAmount;
+            return parameters?.Length > 0 && parameters[0] is int amount and > 0 && amount <= maxAmount;
         }
 
         private object ExecuteAddGold(object[] parameters)
@@ -220,8 +226,8 @@ namespace WotCI.Security
             return operation switch
             {
                 "get_stats" => true, // All can read stats
-                "modify_damage" => _trustLevel >= PluginTrustLevel.Partner,
-                "trigger_event" => _trustLevel >= PluginTrustLevel.System,
+                "modify_damage" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel),
+                "trigger_event" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.System, _trustLevel),
                 _ => false
             };
         }
@@ -248,8 +254,7 @@ namespace WotCI.Security
             return operation switch
             {
                 "get_stats" => ValidationResult.Valid(),
-                "modify_damage" when parameters?.Length >= 2 && parameters[0] is int damage && parameters[1] is double multiplier 
-                    && multiplier >= 0.1 && multiplier <= 2.0 
+                "modify_damage" when parameters is [int damage, double and >= 0.1 and <= 2.0, ..] 
                     => ValidationResult.Valid(),
                 "modify_damage" => ValidationResult.Invalid("Requires damage (int) and multiplier (0.1-2.0)"),
                 "trigger_event" when parameters?.Length > 0 && parameters[0] is string eventType 
@@ -261,7 +266,7 @@ namespace WotCI.Security
 
         private object ExecuteModifyDamage(object[] parameters)
         {
-            if (parameters?.Length >= 2 && parameters[0] is int damage && parameters[1] is double multiplier)
+            if (parameters is [int damage, double multiplier, ..])
             {
                 var modifiedDamage = (int)(damage * multiplier);
                 return new { originalDamage = damage, multiplier = multiplier, modifiedDamage = modifiedDamage };
@@ -302,7 +307,7 @@ namespace WotCI.Security
         {
             return operation switch
             {
-                "read_all" => _trustLevel >= PluginTrustLevel.Partner,
+                "read_all" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel),
                 "read_filtered" => true, // All can read filtered state
                 "get_snapshot" => true, // All can get immutable snapshots
                 _ => false
@@ -354,7 +359,7 @@ namespace WotCI.Security
                 if (param is string key && state.ContainsKey(key))
                 {
                     // Only allow safe keys for user-level plugins
-                    if (_trustLevel >= PluginTrustLevel.Partner || IsSafeKey(key))
+                    if (PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel) || IsSafeKey(key))
                     {
                         filtered[key] = state[key];
                     }
@@ -369,7 +374,7 @@ namespace WotCI.Security
             var state = _game.GetGameState();
             
             // Create immutable snapshot with appropriate filtering
-            var filteredState = _trustLevel >= PluginTrustLevel.Partner 
+            var filteredState = PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel) 
                 ? state 
                 : state.Where(kvp => IsSafeKey(kvp.Key)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 

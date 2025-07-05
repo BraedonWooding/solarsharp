@@ -1,15 +1,7 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.Security;
-using SolarSharp.Interpreter.DataTypes;
 using Spectre.Console;
 
 namespace WotCI
@@ -202,16 +194,16 @@ namespace WotCI
         {
             return pluginInfo.TrustLevel switch
             {
-                PluginTrustLevel.User => SecurityConfiguration.CreateIsolated()
-                    .WithTimeout(TimeSpan.FromSeconds(SolarSharp.Interpreter.Security.SecurityConstants.Plugins.UserPluginTimeoutSeconds))
-                    .WithMemoryLimit(SolarSharp.Interpreter.Security.SecurityConstants.Plugins.UserPluginMemoryLimitMB)
-                    .WithInstructionLimit(SolarSharp.Interpreter.Security.SecurityConstants.Plugins.UserPluginInstructionLimit),
+                PluginTrustLevel.User => SecurityConfiguration.Isolated()
+                    .WithTimeout(TimeSpan.FromSeconds(SecurityConstants.Plugins.UserPluginTimeoutSeconds))
+                    .WithMemoryLimitMB(SecurityConstants.Plugins.UserPluginMemoryLimitMB)
+                    .WithInstructionLimit(SecurityConstants.Plugins.UserPluginInstructionLimit),
                     
-                PluginTrustLevel.Partner => SecurityConfiguration.CreateDesktop()
-                    .WithTimeout(TimeSpan.FromMinutes(SolarSharp.Interpreter.Security.SecurityConstants.Plugins.PartnerPluginTimeoutMinutes))
-                    .WithMemoryLimit(SolarSharp.Interpreter.Security.SecurityConstants.Plugins.PartnerPluginMemoryLimitMB),
+                PluginTrustLevel.Partner => new SecurityConfiguration()
+                    .WithTimeout(TimeSpan.FromMinutes(SecurityConstants.Plugins.PartnerPluginTimeoutMinutes))
+                    .WithMemoryLimitMB(SecurityConstants.Plugins.PartnerPluginMemoryLimitMB),
                     
-                PluginTrustLevel.System => SecurityConfiguration.CreateTrustedAutomation(),
+                PluginTrustLevel.System => SecurityConfiguration.Automation(),
                 
                 _ => throw new ArgumentOutOfRangeException()
             };
@@ -219,14 +211,14 @@ namespace WotCI
 
         private void SetupGameApi(Script script, PluginTrustLevel trustLevel)
         {
-            var api = new SolarSharp.Interpreter.DataTypes.Table(script);
-            
-            // Basic API available to all plugins
-            api["print"] = (Action<string>)(msg => 
-                AnsiConsole.MarkupLine($"[cyan][Plugin][/] {msg}"));
-            
-            api["log"] = (Action<string>)(msg => 
-                AnsiConsole.MarkupLine($"[dim][{DateTime.Now:HH:mm:ss}][/] {msg}"));
+            var api = new SolarSharp.Interpreter.DataTypes.Table(script)
+            {
+                // Basic API available to all plugins
+                ["print"] = (Action<string>)(msg => 
+                    AnsiConsole.MarkupLine($"[cyan][Plugin][/] {msg}")),
+                ["log"] = (Action<string>)(msg => 
+                    AnsiConsole.MarkupLine($"[dim][{DateTime.Now:HH:mm:ss}][/] {msg}"))
+            };
 
             // Game state access (read-only for users, read-write for partners)
             if (trustLevel >= PluginTrustLevel.Partner)
@@ -313,7 +305,7 @@ namespace WotCI
                     }
                     
                     // Use async delay instead of Thread.Sleep
-                    await Task.Delay(SolarSharp.Interpreter.Security.SecurityConstants.Plugins.PluginUpdateInterval, cancellationToken);
+                    await Task.Delay(SecurityConstants.Plugins.PluginUpdateInterval, cancellationToken);
                 }
             }
             catch (OperationCanceledException)

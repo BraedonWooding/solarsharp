@@ -1,7 +1,4 @@
 using System;
-using System.Text.RegularExpressions;
-using System.IO;
-using System.Linq;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -11,51 +8,44 @@ namespace SolarSharp.Interpreter.Security
     public static class FileAccessExtensions
     {
         /// <summary>
-        /// Converts a string to FileAccess enum
+        /// Converts a string to FilePermissions enum
         /// </summary>
-        public static FileAccess ParseFileAccess(this string value)
+        public static FilePermissions ParseFilePermissions(this string value)
         {
             if (string.IsNullOrEmpty(value))
-                return FileAccess.SandboxedReadWrite; // Default
+                return FilePermissions.SandboxedReadWrite; // Default
 
-            return value.ToLowerInvariant() switch
-            {
-                "none" => FileAccess.None,
-                "read" => FileAccess.Read,
-                "readwrite" => FileAccess.ReadWrite,
-                "sandboxedreadwrite" => FileAccess.SandboxedReadWrite,
-                _ => FileAccess.SandboxedReadWrite // Default fallback
-            };
+            if (Enum.TryParse<FilePermissions>(value, true, out var result))
+                return result;
+
+            return FilePermissions.SandboxedReadWrite; // Default fallback
         }
 
         /// <summary>
         /// Converts a string to DirectoryAccess enum
         /// </summary>
-        public static DirectoryAccess ParseDirectoryAccess(this string value)
+        public static DirectoryPermissions ParseDirectoryAccess(this string value)
         {
             if (string.IsNullOrEmpty(value))
-                return DirectoryAccess.ListAndCreateFiles; // Default
+                return DirectoryPermissions.ListAndCreateFiles; // Default
 
-            return value.ToLowerInvariant() switch
-            {
-                "none" => DirectoryAccess.None,
-                "list" => DirectoryAccess.List,
-                "listandcreatefiles" => DirectoryAccess.ListAndCreateFiles,
-                _ => DirectoryAccess.ListAndCreateFiles // Default fallback
-            };
+            if (Enum.TryParse<DirectoryPermissions>(value, true, out var result))
+                return result;
+
+            return DirectoryPermissions.ListAndCreateFiles; // Default fallback
         }
 
         /// <summary>
-        /// Converts FileAccess enum to string representation
+        /// Converts FilePermissions enum to string representation
         /// </summary>
-        public static string ToManifestString(this FileAccess access)
+        public static string ToManifestString(this FilePermissions access)
         {
             return access switch
             {
-                FileAccess.None => "none",
-                FileAccess.Read => "read",
-                FileAccess.ReadWrite => "readwrite",
-                FileAccess.SandboxedReadWrite => "sandboxedreadwrite",
+                FilePermissions.None => "none",
+                FilePermissions.Read => "read",
+                FilePermissions.ReadWrite => "readwrite",
+                FilePermissions.SandboxedReadWrite => "sandboxedreadwrite",
                 _ => "sandboxedreadwrite"
             };
         }
@@ -63,13 +53,13 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Converts DirectoryAccess enum to string representation
         /// </summary>
-        public static string ToManifestString(this DirectoryAccess access)
+        public static string ToManifestString(this DirectoryPermissions permissions)
         {
-            return access switch
+            return permissions switch
             {
-                DirectoryAccess.None => "none",
-                DirectoryAccess.List => "list",
-                DirectoryAccess.ListAndCreateFiles => "listandcreatefiles",
+                DirectoryPermissions.None => "none",
+                DirectoryPermissions.List => "list",
+                DirectoryPermissions.ListAndCreateFiles => "listandcreatefiles",
                 _ => "listandcreatefiles"
             };
         }
@@ -79,44 +69,7 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public static bool MatchesWildcard(this string path, string pattern)
         {
-            if (string.IsNullOrEmpty(pattern))
-                return false;
-
-            if (pattern == "**")
-                return true;
-
-            // Normalize paths
-            var normalizedPath = path.Replace('\\', '/');
-            var normalizedPattern = pattern.Replace('\\', '/');
-
-            // Handle directory patterns ending with /**
-            if (normalizedPattern.EndsWith("/**"))
-            {
-                var prefix = normalizedPattern.Substring(0, normalizedPattern.Length - 3);
-                return normalizedPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
-            }
-
-            // Convert wildcard pattern to regex
-            string regexPattern;
-            if (normalizedPattern.StartsWith("**/"))
-            {
-                // Handle special case for **/* patterns (matches files at any level including root)
-                var afterDoubleStars = normalizedPattern.Substring(3); // Remove "**/
-                var escapedAfter = Regex.Escape(afterDoubleStars)
-                    .Replace("\\*", "[^/]*")
-                    .Replace("\\?", "[^/]");
-                regexPattern = "^(.*/)?" + escapedAfter + "$";
-            }
-            else
-            {
-                // Standard wildcard conversion
-                regexPattern = "^" + Regex.Escape(normalizedPattern)
-                    .Replace("\\*\\*", ".*")              // ** matches any characters including /
-                    .Replace("\\*", "[^/]*")              // * matches any characters except /
-                    .Replace("\\?", "[^/]") + "$";        // ? matches single character except /
-            }
-
-            return Regex.IsMatch(normalizedPath, regexPattern, RegexOptions.IgnoreCase);
+            return GlobMatcher.MatchesPattern(path, pattern);
         }
 
         /// <summary>
@@ -124,45 +77,20 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public static string[] GetMatchingFiles(this string pattern, string baseDirectory)
         {
-            if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(baseDirectory))
-                return new string[0];
-
-            try
-            {
-                if (!Directory.Exists(baseDirectory))
-                    return new string[0];
-
-                // Use AllDirectories if pattern contains ** or has directory separators
-                var searchOption = (pattern.Contains("**") || pattern.Contains('/') || pattern.Contains('\\')) 
-                    ? SearchOption.AllDirectories 
-                    : SearchOption.TopDirectoryOnly;
-                
-                // Get all files and filter by pattern matching
-                return Directory.GetFiles(baseDirectory, "*", searchOption)
-                    .Where(file => {
-                        // Get relative path from base directory and normalize separators
-                        var relativePath = Path.GetRelativePath(baseDirectory, file).Replace('\\', '/');
-                        return relativePath.MatchesWildcard(pattern);
-                    })
-                    .ToArray();
-            }
-            catch
-            {
-                return new string[0];
-            }
+            return GlobMatcher.GetMatchingFiles(pattern, baseDirectory);
         }
 
         /// <summary>
         /// Validates that file access is compatible with directory access
         /// </summary>
-        public static bool IsCompatibleWith(this FileAccess fileAccess, DirectoryAccess directoryAccess)
+        public static bool IsCompatibleWith(this FilePermissions fileAccess, DirectoryPermissions directoryPermissions)
         {
             // Can't access files in directories with no access
-            if (directoryAccess == DirectoryAccess.None)
-                return fileAccess == FileAccess.None;
+            if (directoryPermissions == DirectoryPermissions.None)
+                return fileAccess == FilePermissions.None;
 
             // Can't create files in directories without create permissions
-            if (fileAccess >= FileAccess.SandboxedReadWrite && directoryAccess < DirectoryAccess.ListAndCreateFiles)
+            if (fileAccess == FilePermissions.SandboxedReadWrite && !PermissionChecks.HasDirectoryPermission(DirectoryPermissions.ListAndCreateFiles, directoryPermissions))
                 return false;
 
             return true;

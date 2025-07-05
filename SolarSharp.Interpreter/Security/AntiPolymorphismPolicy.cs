@@ -18,9 +18,15 @@ namespace SolarSharp.Interpreter.Security
         public bool PreventLuaFileWrites { get; set; } = true;
 
         /// <summary>
-        /// Prevent dynamic code loading (loadstring, load, etc.)
+        /// Prevent external string execution (DoString, LoadString from external code)
         /// </summary>
-        public bool PreventDynamicCode { get; set; } = true;
+        public bool PreventRunString { get; set; } = false;
+
+        /// <summary>
+        /// Prevent internal dynamic code loading (loadstring, load, eval from Lua scripts)
+        /// </summary>
+        public bool PreventInternalDynamicCode { get; set; } = true;
+
 
         /// <summary>
         /// Require all scripts to be from signed sources
@@ -30,7 +36,7 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Extensions that are read-only (cannot be written to)
         /// </summary>
-        public List<string> ReadOnlyExtensions { get; set; } = new List<string> { ".lua", ".luac" };
+        public List<string> ReadOnlyExtensions { get; set; } = new List<string> { ".lua" };
 
         /// <summary>
         /// Extensions that are blocked from any access
@@ -47,8 +53,7 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public List<string> ProtectedFiles { get; set; } = new List<string> 
         { 
-            "Manifest.json", 
-            ".luamanifest"
+            "Manifest.json"
         };
     }
 }

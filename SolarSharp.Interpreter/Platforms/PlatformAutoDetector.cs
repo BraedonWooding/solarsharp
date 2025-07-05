@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
-using SolarSharp.Interpreter.Loaders;
 using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Loaders;
 
 namespace SolarSharp.Interpreter.Platforms
 {

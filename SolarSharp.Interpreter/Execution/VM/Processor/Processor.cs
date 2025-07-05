@@ -23,8 +23,6 @@ namespace SolarSharp.Interpreter.Execution.VM
         private bool m_CanYield = true;
         private int m_SavedInstructionPtr = -1;
         private readonly DebugContext m_Debug;
-        private long m_InstructionCount = 0;
-        private int m_CallDepth = 0;
 
 
         public Processor(Script script, Table globalContext, ByteCode byteCode)
@@ -91,10 +89,6 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                 try
                 {
-                    // Reset counters for new execution
-                    m_InstructionCount = 0;
-                    m_CallDepth = 0;
-                    
                     int entrypoint = PushClrToScriptStackFrame(CallStackItemFlags.CallEntryPoint, function, args);
                     return Processing_Loop(entrypoint);
                 }
@@ -156,8 +150,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             m_Parent?.m_CoroutinesStack.RemoveAt(m_Parent.m_CoroutinesStack.Count - 1);
 
-            if (m_ExecutionNesting == 0 && m_Debug != null && m_Debug.DebuggerEnabled
-                && m_Debug.DebuggerAttached != null)
+            if (m_ExecutionNesting == 0 && m_Debug is { DebuggerEnabled: true, DebuggerAttached: not null })
             {
                 m_Debug.DebuggerAttached.SignalExecutionEnded();
             }
@@ -174,7 +167,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private void EnterProcessor()
         {
-            int threadID = GetThreadId();
+            var threadID = GetThreadId();
 
             if (m_OwningThreadID >= 0 && m_OwningThreadID != threadID && m_Script.Options.CheckThreadAccess)
             {
@@ -196,32 +189,21 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private void CheckResourceLimits()
         {
-            // Check if script has security configuration and resource controller
-            if (!m_Script.IsSecure())
-                return;
-
             var resourceController = m_Script.ResourceController();
-            if (resourceController != null)
-            {
-                // Update instruction count
-                resourceController.UpdateInstructionCount(m_InstructionCount);
-                
-                // Update call depth
-                resourceController.UpdateCallDepth(m_CallDepth);
-                
-                // Check all resource limits
-                resourceController.CheckResourceLimits();
-            }
+            // Check all resource limits
+            resourceController?.CheckResourceLimits();
         }
 
         internal void IncrementCallDepth()
         {
-            m_CallDepth++;
+            var resourceController = m_Script.ResourceController();
+            resourceController?.EnterFunction();
         }
 
         internal void DecrementCallDepth()
         {
-            m_CallDepth--;
+            var resourceController = m_Script.ResourceController();
+            resourceController?.ExitFunction();
         }
     }
 }

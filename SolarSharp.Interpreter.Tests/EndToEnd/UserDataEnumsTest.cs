@@ -1,7 +1,7 @@
 ﻿using System;
+using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop;
-using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -12,7 +12,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         Quattro = 4,
         Cinque = 5,
         TantaRoba = short.MaxValue,
-        PocaRoba = short.MinValue,
+        PocaRoba = short.MinValue
     }
 
     [Flags]
@@ -27,13 +27,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("IntegrationTest")]
     public class UserDataEnumsTests
     {
         public class EnumOverloadsTestClass
         {
             public string MyMethod(MyEnum enm)
             {
-                return "[" + enm.ToString() + "]";
+                return "[" + enm + "]";
             }
 
             public string MyMethod(MyFlags enm)
@@ -43,7 +45,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public string MyMethod2(MyEnum enm)
             {
-                return "(" + enm.ToString() + ")";
+                return "(" + enm + ")";
             }
 
             public string MyMethodB(bool b)
@@ -80,7 +82,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("o", UserData.Create(obj));
 
-            DynValue v = S.DoString("return " + code);
+            var v = S.DoString("return " + code);
 
             Assert.Multiple(() =>
             {
@@ -185,7 +187,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             RunTestOverload("o:MyMethod(o:getF() .. MyFlags.Due)", "6");
         }
-
-
     }
 }

@@ -302,7 +302,7 @@ namespace SolarSharp.Interpreter.DataTypes
             if (key.Type == DataType.Number)
             {
                 int idx = GetIntegralKey(key.Number);
-                if (idx >= 0 && idx < MAX_INT_KEY_ARRAY)
+                if (idx is >= 0 and < MAX_INT_KEY_ARRAY)
                 {
                     return ArraySet(idx, value, invokeMetaMethods);
                 }
@@ -402,7 +402,7 @@ namespace SolarSharp.Interpreter.DataTypes
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DynValue Get(int key)
         {
-            if (key < MAX_INT_KEY_ARRAY && key >= 0)
+            if (key is < MAX_INT_KEY_ARRAY and >= 0)
                 return key < ArraySegment.Length ? (ArraySegment[key] ?? DynValue.Nil) : DynValue.Nil;
             return Get(DynValue.NewNumber(key));
         }
@@ -416,7 +416,7 @@ namespace SolarSharp.Interpreter.DataTypes
             if (key.Type == DataType.Number)
             {
                 int idx = GetIntegralKey(key.Number);
-                if (idx > 0 && idx < MAX_INT_KEY_ARRAY) return Get(idx);
+                if (idx is > 0 and < MAX_INT_KEY_ARRAY) return Get(idx);
             }
 
             return ValueMap.GetValueOrDefault(key) ?? DynValue.Nil;
@@ -433,7 +433,7 @@ namespace SolarSharp.Interpreter.DataTypes
             if (key == null)
                 return null;
 
-            if (key is int v && v < MAX_INT_KEY_ARRAY)
+            if (key is int v and < MAX_INT_KEY_ARRAY)
                 return Get(v);
 
             return Get(DynValue.FromObject(OwnerScript, key));
@@ -473,8 +473,7 @@ namespace SolarSharp.Interpreter.DataTypes
             }
 
             bool skipFinding = false;
-            if (v.Type == DataType.Number && GetIntegralKey(v.Number) is var n
-                && n >= 0 && n < MAX_INT_KEY_ARRAY)
+            if (v.Type == DataType.Number && GetIntegralKey(v.Number) is var n and >= 0 and < MAX_INT_KEY_ARRAY)
             {
                 if (!wasNil && n >= ArraySegment.Length)
                 {

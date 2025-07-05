@@ -1,11 +1,12 @@
 ﻿using System;
-using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop.Attributes;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class ProxyObjectsTests
     {
         public class Proxy
@@ -27,10 +28,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             UserData.RegisterProxyType<Proxy, Random>(r => new Proxy(r));
 
-            Script S = new();
-
-            S.Globals["R"] = new Random();
-            S.Globals["func"] = (Action<Random>)(r => { Assert.That(r, Is.Not.Null); Assert.That(r, Is.Not.EqualTo(null)); });
+            Script S = new()
+            {
+                Globals =
+                {
+                    ["R"] = new Random(),
+                    ["func"] = (Action<Random>)(r => { Assert.That(r, Is.Not.Null); Assert.That(r, Is.Not.EqualTo(null)); })
+                }
+            };
 
             S.DoString(@"
 				x = R.GetValue();

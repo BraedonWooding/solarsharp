@@ -1,9 +1,7 @@
-using System;
-using System.Collections.Generic;
 using SolarSharp.Interpreter;
-using SolarSharp.Interpreter.Security;
 using SolarSharp.Interpreter.Communication;
 using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Security;
 using WotCI.Security;
 
 namespace WotCI.API
@@ -216,7 +214,7 @@ namespace WotCI.API
                     throw new ArgumentException("Handler must be a function");
 
                 // Create a wrapper that converts between C# and Lua
-                Func<ScriptMessage, System.Threading.Tasks.Task<ScriptMessage?>> wrappedHandler = (msg) =>
+                Func<ScriptMessage, Task<ScriptMessage?>> wrappedHandler = (msg) =>
                 {
                     try
                     {
@@ -226,16 +224,16 @@ namespace WotCI.API
                         if (result.Type == DataType.Table)
                         {
                             var responseData = ConvertTableFromLua(result.Table);
-                            return System.Threading.Tasks.Task.FromResult<ScriptMessage?>(msg.CreateResponse(responseData));
+                            return Task.FromResult<ScriptMessage?>(msg.CreateResponse(responseData));
                         }
                         
-                        return System.Threading.Tasks.Task.FromResult<ScriptMessage?>(null); // No response
+                        return Task.FromResult<ScriptMessage?>(null); // No response
                     }
                     catch (Exception ex)
                     {
                         _auditor?.LogSecurityViolation($"Message handler error: {ex.Message}", 
                             SecurityEventType.UnauthorizedOperation, ex);
-                        return System.Threading.Tasks.Task.FromResult<ScriptMessage?>(null);
+                        return Task.FromResult<ScriptMessage?>(null);
                     }
                 };
 
@@ -278,7 +276,7 @@ namespace WotCI.API
                 if (args.Count < 1) return DynValue.Nil;
                 
                 var seconds = Math.Min(args[0].Number, 5.0); // Max 5 second wait
-                System.Threading.Thread.Sleep((int)(seconds * 1000));
+                Thread.Sleep((int)(seconds * 1000));
                 
                 return DynValue.Nil;
             });
@@ -359,14 +357,16 @@ namespace WotCI.API
 
         private DynValue ConvertMessageToLua(ScriptMessage message, Script script)
         {
-            var table = new Table(script);
-            table["id"] = DynValue.NewString(message.Id);
-            table["type"] = DynValue.NewString(message.Type);
-            table["from"] = DynValue.NewString(message.FromScript);
-            table["to"] = DynValue.NewString(message.ToScript ?? "");
-            table["timestamp"] = DynValue.NewString(message.Timestamp.ToString("yyyy-MM-dd HH:mm:ss"));
-            table["data"] = ConvertDictionaryToLua(message.Data, script);
-            
+            var table = new Table(script)
+            {
+                ["id"] = DynValue.NewString(message.Id),
+                ["type"] = DynValue.NewString(message.Type),
+                ["from"] = DynValue.NewString(message.FromScript),
+                ["to"] = DynValue.NewString(message.ToScript ?? ""),
+                ["timestamp"] = DynValue.NewString(message.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")),
+                ["data"] = ConvertDictionaryToLua(message.Data, script)
+            };
+
             return DynValue.NewTable(table);
         }
     }
@@ -456,7 +456,7 @@ namespace WotCI.API
             if (parameters?.Length > 2 && 
                 parameters[0] is string messageType && 
                 parameters[1] is string scriptId && 
-                parameters[2] is Func<ScriptMessage, System.Threading.Tasks.Task<ScriptMessage>> handler)
+                parameters[2] is Func<ScriptMessage, Task<ScriptMessage>> handler)
             {
                 _messageBus.Subscribe(messageType, scriptId, handler);
                 return true;

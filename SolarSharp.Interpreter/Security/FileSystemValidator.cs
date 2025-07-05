@@ -21,7 +21,7 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Validates file access according to security policy
         /// </summary>
-        public void ValidateFileAccess(string path, FileOperation operation)
+        public void ValidateFilePermissions(string path, FileOperation operation)
         {
             // Normalize path separators first to ensure cross-platform compatibility
             var normalizedPath = path.Replace('\\', Path.DirectorySeparatorChar);
@@ -35,7 +35,7 @@ namespace SolarSharp.Interpreter.Security
             }
             catch (Exception ex)
             {
-                throw new FileAccessViolationException($"Invalid path: {path}", "ValidateFileAccess", ex);
+                throw new FilePermissionViolationException($"Invalid path: {path}", "ValidateFileAccess", ex);
             }
             
             // Check if the resolved path escapes allowed boundaries
@@ -52,7 +52,7 @@ namespace SolarSharp.Interpreter.Security
             // Check for hidden files
             if (!_security.AllowHiddenFiles && IsHiddenFile(displayPath))
             {
-                throw new FileAccessViolationException(
+                throw new FilePermissionViolationException(
                     $"Hidden files are not allowed: {path}",
                     "ValidateFileAccess",
                     path);
@@ -61,20 +61,20 @@ namespace SolarSharp.Interpreter.Security
             // Check for symbolic links
             if (!_security.AllowSymbolicLinks && IsSymbolicLink(displayPath))
             {
-                throw new FileAccessViolationException(
+                throw new FilePermissionViolationException(
                     $"Symbolic links are not allowed: {path}",
                     "ValidateFileAccess",
                     path);
             }
 
             // Check if file operation is allowed based on new access model
-            if (!_security.IsFileOperationAllowed(displayPath, operation))
+            if (!_security.IsFileOperationPermitted(displayPath, operation))
             {
-                var fileAccess = _security.GetFileAccess(displayPath);
+                var fileAccess = _security.GetFilePermissions(displayPath);
                 var directory = Path.GetDirectoryName(displayPath);
-                var dirAccess = _security.GetDirectoryAccess(directory);
+                var dirAccess = _security.GetDirectoryPermissions(directory);
 
-                throw new FileAccessViolationException(
+                throw new FilePermissionViolationException(
                     $"File operation '{operation}' not allowed. File access: {fileAccess}, Directory access: {dirAccess}, Path: {path}",
                     
                     "ValidateFileAccess",
@@ -105,7 +105,7 @@ namespace SolarSharp.Interpreter.Security
             }
             catch (Exception ex)
             {
-                throw new FileAccessViolationException($"Invalid path: {path}", "ValidateDirectoryAccess", ex);
+                throw new FilePermissionViolationException($"Invalid path: {path}", "ValidateDirectoryAccess", ex);
             }
             
             // Check if the resolved path escapes allowed boundaries
@@ -118,14 +118,14 @@ namespace SolarSharp.Interpreter.Security
             }
 
             var displayPath = resolvedPath.Replace('\\', '/');
-            var dirAccess = _security.GetDirectoryAccess(displayPath);
+            var dirAccess = _security.GetDirectoryPermissions(displayPath);
 
             switch (operation)
             {
                 case DirectoryOperation.List:
-                    if (dirAccess < DirectoryAccess.List)
+                    if (dirAccess < DirectoryPermissions.List)
                     {
-                        throw new FileAccessViolationException(
+                        throw new FilePermissionViolationException(
                             $"Directory listing not allowed. Access level: {dirAccess}, Path: {path}",
                             "ValidateDirectoryAccess",
                             path);
@@ -133,9 +133,9 @@ namespace SolarSharp.Interpreter.Security
                     break;
 
                 case DirectoryOperation.Create:
-                    if (dirAccess < DirectoryAccess.ListAndCreateFiles)
+                    if (dirAccess < DirectoryPermissions.ListAndCreateFiles)
                     {
-                        throw new FileAccessViolationException(
+                        throw new FilePermissionViolationException(
                             $"Directory creation not allowed. Access level: {dirAccess}, Path: {path}",
                             "ValidateDirectoryAccess", 
                             path);
@@ -243,7 +243,7 @@ namespace SolarSharp.Interpreter.Security
                     var fileInfo = new FileInfo(path);
                     if (fileInfo.Length > _security.MaxFileSize)
                     {
-                        throw new FileAccessViolationException(
+                        throw new FilePermissionViolationException(
                             $"File exceeds maximum size limit ({_security.MaxFileSize} bytes): {path}",
                             
                             "ValidateFileSize",
@@ -257,7 +257,7 @@ namespace SolarSharp.Interpreter.Security
             }
             catch (Exception ex)
             {
-                throw new FileAccessViolationException(
+                throw new FilePermissionViolationException(
                     $"Cannot check file size: {path}",
                     
                     "ValidateFileSize",

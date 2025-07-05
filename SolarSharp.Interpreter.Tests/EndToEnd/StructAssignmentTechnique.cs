@@ -1,9 +1,11 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using NUnit.Framework;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("IntegrationTest")]
     public class StructAssignmentTechnique
     {
         public struct Vector3
@@ -58,7 +60,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         //	descr.AddMember("Position", new 
 
 
-        //	Script S = new Script(StringExecution.True);
+        //	Script S = new Script();
 
         //	Transform T = new Transform();
 

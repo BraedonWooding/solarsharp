@@ -1,7 +1,7 @@
-﻿using SolarSharp.Interpreter.DataTypes;
+﻿using System;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
-using System;
 #pragma warning disable IDE0060 // Remove unused parameter
 
 namespace SolarSharp.Interpreter.CoreLib

@@ -4,16 +4,38 @@ using System.IO;
 using System.Text.Json;
 using NUnit.Framework;
 using SolarSharp.Interpreter.Security;
-using SolarSharp.Interpreter.Security.Manifest;
-using FileAccess = SolarSharp.Interpreter.Security.FileAccess;
+using SolarSharp.Interpreter.Security.Manifests;
 
 namespace SolarSharp.Interpreter.Tests.Units
 {
+    /// <summary>
+    ///     Tests for manifest-based file access control and wildcard pattern matching.
+    /// </summary>
+    /// <remarks>
+    ///     This test suite validates the file access control system that allows manifests
+    ///     to define fine-grained permissions using wildcard patterns. Key features tested:
+    ///     Wildcard Pattern Support:
+    ///     - Basic wildcards: *.txt, *.lua
+    ///     - Directory patterns: scripts/*.lua, config/*
+    ///     - Recursive patterns: **/*.txt (all subdirectories)
+    ///     - Complex patterns: modules/*/*.lua
+    ///     Access Control Levels:
+    ///     - FileAccess: none, read, write, readwrite, sandboxedreadwrite
+    ///     - DirectoryAccess: none, list, listandcreatefiles
+    ///     Integration Points:
+    ///     - ManifestPolicy file/directory permissions
+    ///     - SecurityConfiguration overrides
+    ///     - FileSystemValidator enforcement
+    ///     These tests ensure that file access can be controlled declaratively
+    ///     through manifests, providing a flexible and secure permission system.
+    ///     Test isolation: NonParallelizable - Uses shared file system for temp directories
+    ///     Dependencies: Requires file system access for testing file permissions
+    /// </remarks>
     [TestFixture]
+    [Category("SecurityTest")]
+    [NonParallelizable] // Uses shared file system
     public class ManifestFileAccessTests
     {
-        private string _tempDir;
-
         [SetUp]
         public void Setup()
         {
@@ -24,12 +46,23 @@ namespace SolarSharp.Interpreter.Tests.Units
         [TearDown]
         public void TearDown()
         {
-            if (Directory.Exists(_tempDir))
-            {
-                Directory.Delete(_tempDir, true);
-            }
+            if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, true);
         }
 
+        private string _tempDir;
+
+        /// <summary>
+        ///     Tests that ManifestPolicy correctly stores and converts file access permissions.
+        /// </summary>
+        /// <remarks>
+        ///     ManifestPolicy uses string representations of permissions for JSON serialization.
+        ///     This test verifies:
+        ///     - String values are correctly stored
+        ///     - Conversion to SecurityOverrides maintains correct enum values
+        ///     - Both file and directory permissions are handled
+        ///     The string-to-enum mapping ensures manifests remain human-readable while
+        ///     maintaining type safety in the security system.
+        /// </remarks>
         [Test]
         public void ManifestPolicy_SupportsFileAccessPermissions()
         {
@@ -53,15 +86,28 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             Assert.Multiple(() =>
             {
-                Assert.That(overrides.DefaultFileAccess, Is.EqualTo(FileAccess.Read));
-                Assert.That(overrides.DefaultDirectoryAccess, Is.EqualTo(DirectoryAccess.List));
-                Assert.That(overrides.FilePermissions["/app/config.txt"], Is.EqualTo(FileAccess.Read));
-                Assert.That(overrides.FilePermissions["/app/data.db"], Is.EqualTo(FileAccess.ReadWrite));
-                Assert.That(overrides.DirectoryPermissions["/app/logs"], Is.EqualTo(DirectoryAccess.ListAndCreateFiles));
-                Assert.That(overrides.DirectoryPermissions["/app/temp"], Is.EqualTo(DirectoryAccess.None));
+                Assert.That(overrides.DefaultFileAccess, Is.EqualTo(FilePermissions.Read));
+                Assert.That(overrides.DefaultDirectoryAccess, Is.EqualTo(DirectoryPermissions.List));
+                Assert.That(overrides.FilePermissions["/app/config.txt"], Is.EqualTo(FilePermissions.Read));
+                Assert.That(overrides.FilePermissions["/app/data.db"], Is.EqualTo(FilePermissions.ReadWrite));
+                Assert.That(overrides.DirectoryPermissions["/app/logs"],
+                    Is.EqualTo(DirectoryPermissions.ListAndCreateFiles));
+                Assert.That(overrides.DirectoryPermissions["/app/temp"], Is.EqualTo(DirectoryPermissions.None));
             });
         }
 
+        /// <summary>
+        ///     Tests that ManifestFileEntry can specify both file and directory access levels.
+        /// </summary>
+        /// <remarks>
+        ///     ManifestFileEntry allows specifying different permissions for:
+        ///     - Files matching the pattern (FileAccess)
+        ///     - Directories in the pattern path (DirectoryAccess)
+        ///     This granular control allows scenarios like:
+        ///     - Read files but not list directories
+        ///     - Create files in specific directories
+        ///     - Full access to certain file types
+        /// </remarks>
         [Test]
         public void ManifestFileEntry_SupportsFileAndDirectoryAccess()
         {
@@ -79,6 +125,18 @@ namespace SolarSharp.Interpreter.Tests.Units
             });
         }
 
+        /// <summary>
+        ///     Tests JSON serialization round-trip for manifests with file permissions.
+        /// </summary>
+        /// <remarks>
+        ///     Validates that manifests with file access rules:
+        ///     - Serialize to valid JSON
+        ///     - Deserialize back to equivalent objects
+        ///     - Preserve all permission settings
+        ///     - Maintain wildcard patterns
+        ///     This ensures manifests can be saved, loaded, and transmitted without
+        ///     losing security configuration information.
+        /// </remarks>
         [Test]
         public void Manifest_SerializesFileAccessCorrectly()
         {
@@ -96,7 +154,7 @@ namespace SolarSharp.Interpreter.Tests.Units
                 },
                 Files = new Dictionary<string, ManifestFileEntry>
                 {
-                    ["scripts/*.lua"] = new ManifestFileEntry
+                    ["scripts/*.lua"] = new()
                     {
                         FileAccess = "sandboxedreadwrite",
                         DirectoryAccess = "listandcreatefiles"
@@ -117,6 +175,17 @@ namespace SolarSharp.Interpreter.Tests.Units
             });
         }
 
+        /// <summary>
+        ///     Tests basic wildcard pattern matching for file paths.
+        /// </summary>
+        /// <remarks>
+        ///     Basic wildcard patterns include:
+        ///     - *.ext: Matches any file with the extension
+        ///     - filename.*: Matches file with any extension
+        ///     - Exact matches without wildcards
+        ///     The matching is case-insensitive to handle different filesystems
+        ///     consistently across platforms.
+        /// </remarks>
         [Test]
         public void WildcardMatching_BasicPatterns()
         {
@@ -133,6 +202,16 @@ namespace SolarSharp.Interpreter.Tests.Units
             });
         }
 
+        /// <summary>
+        ///     Tests wildcard matching for directory-based patterns.
+        /// </summary>
+        /// <remarks>
+        ///     Directory patterns allow controlling access by location:
+        ///     - dir/*.ext: Files with extension in specific directory
+        ///     - dir/*: All files in directory (but not subdirectories)
+        ///     This enables organizing permissions by directory structure,
+        ///     such as allowing writes only to an output directory.
+        /// </remarks>
         [Test]
         public void WildcardMatching_DirectoryPatterns()
         {
@@ -145,6 +224,17 @@ namespace SolarSharp.Interpreter.Tests.Units
             });
         }
 
+        /// <summary>
+        ///     Tests recursive wildcard patterns using ** notation.
+        /// </summary>
+        /// <remarks>
+        ///     The ** pattern matches any number of directory levels:
+        ///     - **/*.txt: All .txt files in any subdirectory
+        ///     - scripts/**: All files under scripts/ recursively
+        ///     - **/test/*.lua: test.lua files in any test directory
+        ///     This is powerful for applying permissions to entire directory trees
+        ///     while maintaining pattern-based filtering.
+        /// </remarks>
         [Test]
         public void WildcardMatching_RecursivePatterns()
         {
@@ -158,6 +248,16 @@ namespace SolarSharp.Interpreter.Tests.Units
             });
         }
 
+        /// <summary>
+        ///     Tests complex multi-level wildcard patterns.
+        /// </summary>
+        /// <remarks>
+        ///     Complex patterns combine multiple wildcards:
+        ///     - modules/*/*.lua: Lua files exactly two levels deep
+        ///     - src/**/*.tsx: TSX files at any depth under src/
+        ///     These patterns enable precise permission control for
+        ///     specific project structures and naming conventions.
+        /// </remarks>
         [Test]
         public void WildcardMatching_ComplexPatterns()
         {
@@ -170,6 +270,16 @@ namespace SolarSharp.Interpreter.Tests.Units
             });
         }
 
+        /// <summary>
+        ///     Tests that wildcard matching is case-insensitive.
+        /// </summary>
+        /// <remarks>
+        ///     Case-insensitive matching ensures consistent behavior across:
+        ///     - Windows (case-insensitive filesystem)
+        ///     - Linux/Unix (case-sensitive filesystem)
+        ///     - macOS (case-insensitive by default)
+        ///     This prevents security bypasses through case variations.
+        /// </remarks>
         [Test]
         public void WildcardMatching_CaseInsensitive()
         {
@@ -181,6 +291,17 @@ namespace SolarSharp.Interpreter.Tests.Units
             });
         }
 
+        /// <summary>
+        ///     Tests file enumeration using wildcard patterns.
+        /// </summary>
+        /// <remarks>
+        ///     GetMatchingFiles() returns all files in a directory that match
+        ///     a wildcard pattern. This is useful for:
+        ///     - Batch processing operations
+        ///     - Validating pattern effectiveness
+        ///     - Implementing directory listings with filters
+        ///     The test verifies that the correct files are found and returned.
+        /// </remarks>
         [Test]
         public void GetMatchingFiles_FindsFilesWithWildcards()
         {
@@ -201,6 +322,18 @@ namespace SolarSharp.Interpreter.Tests.Units
             });
         }
 
+        /// <summary>
+        ///     Tests recursive file search with ** wildcard patterns.
+        /// </summary>
+        /// <remarks>
+        ///     Recursive search finds files at any depth in the directory tree.
+        ///     This test creates a nested structure and verifies all matching
+        ///     files are found regardless of depth.
+        ///     Important for:
+        ///     - Project-wide file operations
+        ///     - Security policy validation
+        ///     - Build system integration
+        /// </remarks>
         [Test]
         public void GetMatchingFiles_RecursiveSearch()
         {
@@ -216,6 +349,18 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(allLuaFiles.Length, Is.EqualTo(3));
         }
 
+        /// <summary>
+        ///     Tests that ManifestAutoLoader correctly creates security overrides from manifests.
+        /// </summary>
+        /// <remarks>
+        ///     The auto-loader converts manifest file permissions into SecurityOverrides:
+        ///     1. Reads manifest from script location
+        ///     2. Parses file/directory permissions
+        ///     3. Creates SecurityConfigurationOverrides
+        ///     4. Returns overrides for script execution
+        ///     This bridges the gap between declarative manifest permissions
+        ///     and runtime security enforcement.
+        /// </remarks>
         [Test]
         public void ManifestAutoLoader_AppliesFileAccessFromManifest()
         {
@@ -239,37 +384,47 @@ namespace SolarSharp.Interpreter.Tests.Units
                 }
             };
 
-            File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(manifestPath,
+                JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }));
 
             // Test manifest discovery and override creation
             var scriptPath = Path.Combine(_tempDir, "test.lua");
-            var overrides = ManifestAutoLoader.CreateOverridesFromManifest(scriptPath);
+            var baseConfig = SecurityConfiguration.Isolated();
+            var overrides = ManifestAutoLoader.CreateOverridesFromManifest(scriptPath, baseConfig);
 
             if (overrides != null)
             {
-                Assert.That(overrides.DefaultFileAccess, Is.EqualTo(FileAccess.Read));
+                Assert.That(overrides.DefaultFileAccess, Is.EqualTo(FilePermissions.Read));
 
                 if (overrides.FilePermissions != null)
-                {
                     Assert.Multiple(() =>
                     {
                         Assert.That(overrides.FilePermissions.ContainsKey("config.txt"), Is.True);
-                        Assert.That(overrides.FilePermissions["config.txt"], Is.EqualTo(FileAccess.Read));
-                        Assert.That(overrides.FilePermissions["data.db"], Is.EqualTo(FileAccess.ReadWrite));
+                        Assert.That(overrides.FilePermissions["config.txt"], Is.EqualTo(FilePermissions.Read));
+                        Assert.That(overrides.FilePermissions["data.db"], Is.EqualTo(FilePermissions.ReadWrite));
                     });
-                }
 
                 if (overrides.DirectoryPermissions != null)
-                {
                     Assert.Multiple(() =>
                     {
                         Assert.That(overrides.DirectoryPermissions.ContainsKey("logs"), Is.True);
-                        Assert.That(overrides.DirectoryPermissions["logs"], Is.EqualTo(DirectoryAccess.ListAndCreateFiles));
+                        Assert.That(overrides.DirectoryPermissions["logs"],
+                            Is.EqualTo(DirectoryPermissions.ListAndCreateFiles));
                     });
-                }
             }
         }
 
+        /// <summary>
+        ///     Tests that ManifestFileEntry preserves wildcard patterns correctly.
+        /// </summary>
+        /// <remarks>
+        ///     ManifestFileEntry stores:
+        ///     - Pattern: The wildcard pattern for matching
+        ///     - FileAccess: Permission level for matched files
+        ///     - DirectoryAccess: Permission level for directories
+        ///     This test ensures patterns are preserved exactly as specified,
+        ///     including complex wildcards, for accurate matching.
+        /// </remarks>
         [Test]
         public void ManifestFileEntry_WithWildcardPatterns()
         {
@@ -277,13 +432,13 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Files = new Dictionary<string, ManifestFileEntry>
                 {
-                    ["scripts/*.lua"] = new ManifestFileEntry
+                    ["scripts/*.lua"] = new()
                     {
                         Pattern = "scripts/*.lua",
                         FileAccess = "sandboxedreadwrite",
                         DirectoryAccess = "listandcreatefiles"
                     },
-                    ["config/**"] = new ManifestFileEntry
+                    ["config/**"] = new()
                     {
                         Pattern = "config/**",
                         FileAccess = "read",
@@ -304,22 +459,33 @@ namespace SolarSharp.Interpreter.Tests.Units
             });
         }
 
+        /// <summary>
+        ///     Tests application of manifest overrides to SecurityConfiguration.
+        /// </summary>
+        /// <remarks>
+        ///     SecurityConfigurationOverrides can modify a base configuration:
+        ///     - Sets default file/directory access
+        ///     - Adds specific path permissions
+        ///     - Overrides base configuration settings
+        ///     This test verifies the override mechanism works correctly,
+        ///     allowing manifests to customize security policies.
+        /// </remarks>
         [Test]
         public void SecurityConfiguration_AppliesManifestOverrides()
         {
             var baseConfig = new SecurityConfiguration();
             var overrides = new SecurityConfigurationOverrides
             {
-                DefaultFileAccess = FileAccess.Read,
-                FilePermissions = new Dictionary<string, FileAccess>
+                DefaultFileAccess = FilePermissions.Read,
+                FilePermissions = new Dictionary<string, FilePermissions>
                 {
-                    ["/app/secure.txt"] = FileAccess.None,
-                    ["/app/data.db"] = FileAccess.ReadWrite
+                    ["/app/secure.txt"] = FilePermissions.None,
+                    ["/app/data.db"] = FilePermissions.ReadWrite
                 },
-                DirectoryPermissions = new Dictionary<string, DirectoryAccess>
+                DirectoryPermissions = new Dictionary<string, DirectoryPermissions>
                 {
-                    ["/app/logs"] = DirectoryAccess.ListAndCreateFiles,
-                    ["/app/temp"] = DirectoryAccess.None
+                    ["/app/logs"] = DirectoryPermissions.ListAndCreateFiles,
+                    ["/app/temp"] = DirectoryPermissions.None
                 }
             };
 
@@ -327,14 +493,34 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             Assert.Multiple(() =>
             {
-                Assert.That(result.FileSystem.DefaultFileAccess, Is.EqualTo(FileAccess.Read));
-                Assert.That(result.FileSystem.GetFileAccess("/app/secure.txt"), Is.EqualTo(FileAccess.None));
-                Assert.That(result.FileSystem.GetFileAccess("/app/data.db"), Is.EqualTo(FileAccess.ReadWrite));
-                Assert.That(result.FileSystem.GetDirectoryAccess("/app/logs"), Is.EqualTo(DirectoryAccess.ListAndCreateFiles));
-                Assert.That(result.FileSystem.GetDirectoryAccess("/app/temp"), Is.EqualTo(DirectoryAccess.None));
+                Assert.That(result.FileSystem.DefaultFilePermissions, Is.EqualTo(FilePermissions.Read));
+                Assert.That(result.FileSystem.GetFilePermissions("/app/secure.txt"), Is.EqualTo(FilePermissions.None));
+                Assert.That(result.FileSystem.GetFilePermissions("/app/data.db"),
+                    Is.EqualTo(FilePermissions.ReadWrite));
+                Assert.That(result.FileSystem.GetDirectoryPermissions("/app/logs"),
+                    Is.EqualTo(DirectoryPermissions.ListAndCreateFiles));
+                Assert.That(result.FileSystem.GetDirectoryPermissions("/app/temp"),
+                    Is.EqualTo(DirectoryPermissions.None));
             });
         }
 
+        /// <summary>
+        ///     Tests the complete workflow from manifest definition to security validation.
+        /// </summary>
+        /// <remarks>
+        ///     This integration test validates the entire pipeline:
+        ///     1. Create manifest with mixed file permissions
+        ///     2. Convert to SecurityOverrides
+        ///     3. Apply to SecurityConfiguration
+        ///     4. Use FileSystemValidator to check operations
+        ///     Validates that:
+        ///     - Wildcard patterns work correctly
+        ///     - Different permission levels are enforced
+        ///     - Read/write/delete operations are properly controlled
+        ///     - Directory operations respect permissions
+        ///     This ensures the declarative manifest permissions translate into
+        ///     actual runtime security enforcement.
+        /// </remarks>
         [Test]
         public void CompleteWorkflow_ManifestToSecurityValidation()
         {
@@ -375,25 +561,40 @@ namespace SolarSharp.Interpreter.Tests.Units
             var validator = new FileSystemValidator(finalConfig.FileSystem);
 
             // Test various file operations
-            Assert.DoesNotThrow(() => validator.ValidateFileAccess("scripts/main.lua", FileOperation.Read));
-            Assert.DoesNotThrow(() => validator.ValidateFileAccess("scripts/main.lua", FileOperation.Create));
-            Assert.Throws<FileAccessViolationException>(() => validator.ValidateFileAccess("scripts/main.lua", FileOperation.Delete));
+            Assert.DoesNotThrow(() => validator.ValidateFilePermissions("scripts/main.lua", FileOperation.Read));
+            Assert.DoesNotThrow(() => validator.ValidateFilePermissions("scripts/main.lua", FileOperation.Create));
+            Assert.Throws<FilePermissionViolationException>(() =>
+                validator.ValidateFilePermissions("scripts/main.lua", FileOperation.Delete));
 
-            Assert.DoesNotThrow(() => validator.ValidateFileAccess("config/app.json", FileOperation.Read));
-            Assert.Throws<FileAccessViolationException>(() => validator.ValidateFileAccess("config/app.json", FileOperation.Write));
+            Assert.DoesNotThrow(() => validator.ValidateFilePermissions("config/app.json", FileOperation.Read));
+            Assert.Throws<FilePermissionViolationException>(() =>
+                validator.ValidateFilePermissions("config/app.json", FileOperation.Write));
 
-            Assert.DoesNotThrow(() => validator.ValidateFileAccess("data/users.db", FileOperation.Read));
-            Assert.DoesNotThrow(() => validator.ValidateFileAccess("data/users.db", FileOperation.Write));
-            Assert.DoesNotThrow(() => validator.ValidateFileAccess("data/users.db", FileOperation.Delete));
+            Assert.DoesNotThrow(() => validator.ValidateFilePermissions("data/users.db", FileOperation.Read));
+            Assert.DoesNotThrow(() => validator.ValidateFilePermissions("data/users.db", FileOperation.Write));
+            Assert.DoesNotThrow(() => validator.ValidateFilePermissions("data/users.db", FileOperation.Delete));
 
             // Test directory operations
             Assert.DoesNotThrow(() => validator.ValidateDirectoryAccess("logs", DirectoryOperation.List));
             Assert.DoesNotThrow(() => validator.ValidateDirectoryAccess("logs", DirectoryOperation.Create));
 
-            Assert.Throws<FileAccessViolationException>(() => validator.ValidateDirectoryAccess("temp", DirectoryOperation.List));
-            Assert.Throws<FileAccessViolationException>(() => validator.ValidateDirectoryAccess("temp", DirectoryOperation.Create));
+            Assert.Throws<FilePermissionViolationException>(() =>
+                validator.ValidateDirectoryAccess("temp", DirectoryOperation.List));
+            Assert.Throws<FilePermissionViolationException>(() =>
+                validator.ValidateDirectoryAccess("temp", DirectoryOperation.Create));
         }
 
+        /// <summary>
+        ///     Tests graceful handling of empty or null patterns.
+        /// </summary>
+        /// <remarks>
+        ///     Edge case testing ensures the system doesn't crash with:
+        ///     - Empty string patterns
+        ///     - Null patterns
+        ///     - Invalid pattern syntax
+        ///     These should return false for matches or empty results,
+        ///     never throw exceptions.
+        /// </remarks>
         [Test]
         public void EmptyOrNullPatterns_HandleGracefully()
         {
@@ -407,16 +608,40 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(emptyResult.Length, Is.EqualTo(0));
         }
 
+        /// <summary>
+        ///     Tests that invalid paths are handled without exceptions.
+        /// </summary>
+        /// <remarks>
+        ///     FileSystemSecurity should handle:
+        ///     - Empty paths
+        ///     - Null paths
+        ///     - Malformed paths
+        ///     Returns appropriate defaults rather than crashing,
+        ///     ensuring robust error handling.
+        /// </remarks>
         [Test]
         public void InvalidPaths_HandleGracefully()
         {
             var fs = new FileSystemSecurity();
 
             // Should not throw for invalid paths, but return appropriate defaults
-            Assert.DoesNotThrow(() => fs.GetFileAccess(""));
-            Assert.DoesNotThrow(() => fs.GetDirectoryAccess(""));
+            Assert.DoesNotThrow(() => fs.GetFilePermissions(""));
+            Assert.DoesNotThrow(() => fs.GetDirectoryPermissions(""));
         }
 
+        /// <summary>
+        ///     Tests that the ** pattern matches all files and directories.
+        /// </summary>
+        /// <remarks>
+        ///     The ** pattern is a universal matcher that matches:
+        ///     - Any file at any depth
+        ///     - Any directory at any depth
+        ///     - Empty paths
+        ///     Useful for:
+        ///     - Granting universal access (dangerous)
+        ///     - Denying all access when combined with 'none'
+        ///     - Testing and development scenarios
+        /// </remarks>
         [Test]
         public void UniversalPattern_MatchesEverything()
         {

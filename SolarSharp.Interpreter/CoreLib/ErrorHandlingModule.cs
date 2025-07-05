@@ -1,8 +1,8 @@
-﻿using SolarSharp.Interpreter.DataTypes;
+﻿using System.Collections.Generic;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
-using System.Collections.Generic;
 
 namespace SolarSharp.Interpreter.CoreLib
 {

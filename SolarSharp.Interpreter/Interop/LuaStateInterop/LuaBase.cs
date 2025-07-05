@@ -1,9 +1,10 @@
 ﻿// Disable warnings about XML documentation
 #pragma warning disable 1591
 
+using System;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
-using System;
+using SolarSharp.Interpreter.Security;
 using lua_Integer = System.Int32;
 
 namespace SolarSharp.Interpreter.Interop.LuaStateInterop
@@ -21,34 +22,34 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
     /// </summary>
     public partial class LuaBase
     {
-        protected const int LUA_TNONE = -1;
-        protected const int LUA_TNIL = 0;
-        protected const int LUA_TBOOLEAN = 1;
-        protected const int LUA_TLIGHTUSERDATA = 2;
-        protected const int LUA_TNUMBER = 3;
-        protected const int LUA_TSTRING = 4;
-        protected const int LUA_TTABLE = 5;
-        protected const int LUA_TFUNCTION = 6;
-        protected const int LUA_TUSERDATA = 7;
-        protected const int LUA_TTHREAD = 8;
+        protected const lua_Integer LUA_TNONE = -1;
+        protected const lua_Integer LUA_TNIL = 0;
+        protected const lua_Integer LUA_TBOOLEAN = 1;
+        protected const lua_Integer LUA_TLIGHTUSERDATA = 2;
+        protected const lua_Integer LUA_TNUMBER = 3;
+        protected const lua_Integer LUA_TSTRING = 4;
+        protected const lua_Integer LUA_TTABLE = 5;
+        protected const lua_Integer LUA_TFUNCTION = 6;
+        protected const lua_Integer LUA_TUSERDATA = 7;
+        protected const lua_Integer LUA_TTHREAD = 8;
 
-        protected const int LUA_MULTRET = -1;
+        protected const lua_Integer LUA_MULTRET = -1;
 
         protected const string LUA_INTFRMLEN = "l";
 
-        protected static DynValue GetArgument(LuaState L, lua_Integer pos)
+        protected static DynValue GetArgument(LuaState l, lua_Integer pos)
         {
-            return L.At(pos);
+            return l.At(pos);
         }
 
-        protected static DynValue ArgAsType(LuaState L, lua_Integer pos, DataType type, bool allowNil = false)
+        protected static DynValue ArgAsType(LuaState l, lua_Integer pos, DataType type, bool allowNil = false)
         {
-            return GetArgument(L, pos).CheckType(L.FunctionName, type, pos - 1, allowNil ? TypeValidationFlags.AllowNil | TypeValidationFlags.AutoConvert : TypeValidationFlags.AutoConvert);
+            return GetArgument(l, pos).CheckType(l.FunctionName, type, pos - 1, allowNil ? TypeValidationFlags.AllowNil | TypeValidationFlags.AutoConvert : TypeValidationFlags.AutoConvert);
         }
 
-        protected static lua_Integer LuaType(LuaState L, lua_Integer p)
+        protected static lua_Integer LuaType(LuaState l, lua_Integer p)
         {
-            switch (GetArgument(L, p).Type)
+            switch (GetArgument(l, p).Type)
             {
                 case DataType.Void:
                     return LUA_TNONE;
@@ -78,21 +79,21 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             }
         }
 
-        protected static string LuaLCheckLString(LuaState L, lua_Integer argNum, out uint l)
+        protected static string LuaLCheckLString(LuaState luaState, lua_Integer argNum, out uint l)
         {
-            string str = ArgAsType(L, argNum, DataType.String, false).String;
+            var str = ArgAsType(luaState, argNum, DataType.String, false).String;
             l = (uint)str.Length;
             return str;
         }
 
-        protected static void LuaPushInteger(LuaState L, lua_Integer val)
+        protected static void LuaPushInteger(LuaState l, lua_Integer val)
         {
-            L.Push(DynValue.NewNumber(val));
+            l.Push(DynValue.NewNumber(val));
         }
 
-        protected static lua_Integer LuaToBoolean(LuaState L, lua_Integer p)
+        protected static lua_Integer LuaToBoolean(LuaState l, lua_Integer p)
         {
-            return GetArgument(L, p).CastToBool() ? 1 : 0;
+            return GetArgument(l, p).CastToBool() ? 1 : 0;
         }
 
         protected static string LuaToLString(LuaState luaState, lua_Integer p, out uint l)
@@ -102,7 +103,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
         protected static string LuaToString(LuaState luaState, lua_Integer p)
         {
-            return LuaLCheckLString(luaState, p, out uint l);
+            return LuaLCheckLString(luaState, p, out var l);
         }
 
         protected static void LuaLAddValue(LuaLBuffer b)
@@ -112,7 +113,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
         protected static void LuaLAddLString(LuaLBuffer b, CharPtr s, uint p)
         {
-            b.StringBuilder.Append(s.ToString((int)p));
+            b.StringBuilder.Append(s.ToString((lua_Integer)p));
         }
 
         protected static void LuaLAddString(LuaLBuffer b, string s)
@@ -121,36 +122,36 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         }
 
 
-        protected static lua_Integer LuaLOptInteger(LuaState L, lua_Integer pos, lua_Integer def)
+        protected static lua_Integer LuaLOptInteger(LuaState l, lua_Integer pos, lua_Integer def)
         {
-            DynValue v = ArgAsType(L, pos, DataType.Number, true);
+            var v = ArgAsType(l, pos, DataType.Number, true);
 
             if (v.IsNil())
                 return def;
             else
-                return (int)v.Number;
+                return (lua_Integer)v.Number;
         }
 
-        protected static lua_Integer LuaLCheckInteger(LuaState L, lua_Integer pos)
+        protected static lua_Integer LuaLCheckInteger(LuaState l, lua_Integer pos)
         {
-            DynValue v = ArgAsType(L, pos, DataType.Number, false);
-            return (int)v.Number;
+            var v = ArgAsType(l, pos, DataType.Number, false);
+            return (lua_Integer)v.Number;
         }
 
-        protected static void LuaLArgCheck(LuaState L, bool condition, lua_Integer argNum, string message)
+        protected static void LuaLArgCheck(LuaState l, bool condition, lua_Integer argNum, string message)
         {
             if (!condition)
-                LuaLArgError(L, argNum, message);
+                LuaLArgError(l, argNum, message);
         }
 
-        protected static lua_Integer LuaLCheckInt(LuaState L, lua_Integer argNum)
+        protected static lua_Integer LuaLCheckInt(LuaState l, lua_Integer argNum)
         {
-            return LuaLCheckInteger(L, argNum);
+            return LuaLCheckInteger(l, argNum);
         }
 
-        protected static lua_Integer LuaGetTop(LuaState L)
+        protected static lua_Integer LuaGetTop(LuaState l)
         {
-            return L.Count;
+            return l.Count;
         }
 
         protected static lua_Integer LuaLError(LuaState luaState, string message, params object[] args)
@@ -163,27 +164,45 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             b.StringBuilder.Append(p);
         }
 
-        protected static void LuaLBuffInit(LuaState L, LuaLBuffer b)
+        protected static void LuaLBuffInit(LuaState l, LuaLBuffer b)
         {
         }
 
-        protected static void LuaPushLiteral(LuaState L, string literalString)
+        protected static void LuaPushLiteral(LuaState l, string literalString)
         {
-            L.Push(DynValue.NewString(literalString));
+            l.Push(DynValue.NewString(literalString));
         }
 
         protected static void LuaLPushResult(LuaLBuffer b)
         {
-            LuaPushLiteral(b.LuaState, b.StringBuilder.ToString());
+            // SolarSharp modification: Check string length before creating
+            var result = b.StringBuilder.ToString();
+            var luaState = b.LuaState;
+            var script = luaState.ExecutionContext.GetScript();
+            if (script.IsAuthorizedToRun())
+            {
+                var resourceController = script.ResourceController();
+                resourceController?.CheckStringLength(result.Length);
+            }
+            
+            LuaPushLiteral(luaState, result);
         }
 
-        protected static void LuaPushLString(LuaState L, CharPtr s, uint len)
+        protected static void LuaPushLString(LuaState l, CharPtr s, uint len)
         {
-            string ss = s.ToString((int)len);
-            L.Push(DynValue.NewString(ss));
+            // SolarSharp modification: Check string length before creating
+            var script = l.ExecutionContext.GetScript();
+            if (script.IsAuthorizedToRun())
+            {
+                var resourceController = script.ResourceController();
+                resourceController?.CheckStringLength((lua_Integer)len);
+            }
+            
+            var ss = s.ToString((lua_Integer)len);
+            l.Push(DynValue.NewString(ss));
         }
 
-        protected static void LuaLCheckStack(LuaState L, lua_Integer n, string message)
+        protected static void LuaLCheckStack(LuaState l, lua_Integer n, string message)
         {
             // nop ?
         }
@@ -194,9 +213,9 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         }
 
 
-        protected static void LuaPushNil(LuaState L)
+        protected static void LuaPushNil(LuaState l)
         {
-            L.Push(DynValue.Nil);
+            l.Push(DynValue.Nil);
         }
 
         protected static void LuaAssert(bool p)
@@ -208,66 +227,66 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             //	throw new InternalErrorException("LuaAssert failed!");
         }
 
-        protected static string LuaLTypeName(LuaState L, lua_Integer p)
+        protected static string LuaLTypeName(LuaState l, lua_Integer p)
         {
-            return L.At(p).Type.ToErrorTypeString();
+            return l.At(p).Type.ToErrorTypeString();
         }
 
-        protected static lua_Integer LuaIsString(LuaState L, lua_Integer p)
+        protected static lua_Integer LuaIsString(LuaState l, lua_Integer p)
         {
-            var v = L.At(p);
+            var v = l.At(p);
             return (v.Type == DataType.String || v.Type == DataType.Number) ? 1 : 0;
         }
 
-        protected static void LuaPop(LuaState L, lua_Integer p)
+        protected static void LuaPop(LuaState l, lua_Integer p)
         {
-            for (int i = 0; i < p; i++)
-                L.Pop();
+            for (var i = 0; i < p; i++)
+                l.Pop();
         }
 
-        protected static void LuaGetTable(LuaState L, lua_Integer p)
+        protected static void LuaGetTable(LuaState l, lua_Integer p)
         {
             // DEBT: this should call metamethods, now it performs raw access
-            DynValue key = L.Pop();
-            DynValue table = L.At(p);
+            var key = l.Pop();
+            var table = l.At(p);
 
             if (table.Type != DataType.Table)
                 throw new NotImplementedException();
 
             var v = table.Table.Get(key);
-            L.Push(v);
+            l.Push(v);
         }
 
-        protected static int LuaLOptInt(LuaState L, lua_Integer pos, lua_Integer def)
+        protected static lua_Integer LuaLOptInt(LuaState l, lua_Integer pos, lua_Integer def)
         {
-            return LuaLOptInteger(L, pos, def);
+            return LuaLOptInteger(l, pos, def);
         }
 
-        protected static CharPtr LuaLCheckString(LuaState L, lua_Integer p)
+        protected static CharPtr LuaLCheckString(LuaState l, lua_Integer p)
         {
-            return LuaLCheckLString(L, p, out uint dummy);
+            return LuaLCheckLString(l, p, out var dummy);
         }
 
-        protected static string LuaLCheckStringStr(LuaState L, lua_Integer p)
+        protected static string LuaLCheckStringStr(LuaState l, lua_Integer p)
         {
-            return LuaLCheckLString(L, p, out uint dummy);
+            return LuaLCheckLString(l, p, out var dummy);
         }
 
-        protected static void LuaLArgError(LuaState L, lua_Integer arg, string p)
+        protected static void LuaLArgError(LuaState l, lua_Integer arg, string p)
         {
-            throw ScriptRuntimeException.BadArgument(arg - 1, L.FunctionName, p);
+            throw ScriptRuntimeException.BadArgument(arg - 1, l.FunctionName, p);
         }
 
-        protected static double LuaLCheckNumber(LuaState L, lua_Integer pos)
+        protected static double LuaLCheckNumber(LuaState l, lua_Integer pos)
         {
-            DynValue v = ArgAsType(L, pos, DataType.Number, false);
+            var v = ArgAsType(l, pos, DataType.Number, false);
             return v.Number;
         }
 
-        protected static void LuaPushValue(LuaState L, lua_Integer arg)
+        protected static void LuaPushValue(LuaState l, lua_Integer arg)
         {
-            DynValue v = L.At(arg);
-            L.Push(v);
+            var v = l.At(arg);
+            l.Push(v);
         }
 
 
@@ -282,19 +301,19 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         /// pushed onto the stack in direct order (the first result is pushed first), so that after the call the last result is on
         /// the top of the stack.
         /// </summary>
-        /// <param name="L">The LuaState</param>
+        /// <param name="l">The LuaState</param>
         /// <param name="nargs">The number of arguments.</param>
         /// <param name="nresults">The number of expected results.</param>
         /// <exception cref="System.NotImplementedException"></exception>
-        protected static void LuaCall(LuaState L, lua_Integer nargs, lua_Integer nresults = LUA_MULTRET)
+        protected static void LuaCall(LuaState l, lua_Integer nargs, lua_Integer nresults = LUA_MULTRET)
         {
-            DynValue[] args = L.GetTopArray(nargs);
+            var args = l.GetTopArray(nargs);
 
-            L.Discard(nargs);
+            l.Discard(nargs);
 
-            DynValue func = L.Pop();
+            var func = l.Pop();
 
-            DynValue ret = L.ExecutionContext.Call(func, args);
+            var ret = l.ExecutionContext.Call(func, args);
 
             if (nresults != 0)
             {
@@ -303,18 +322,18 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                     nresults = (ret.Type == DataType.Tuple) ? ret.Tuple.Length : 1;
                 }
 
-                DynValue[] vals = (ret.Type == DataType.Tuple) ? ret.Tuple : new DynValue[1] { ret };
+                var vals = (ret.Type == DataType.Tuple) ? ret.Tuple : new DynValue[1] { ret };
 
-                int copied = 0;
+                var copied = 0;
 
-                for (int i = 0; i < vals.Length && copied < nresults; i++, copied++)
+                for (var i = 0; i < vals.Length && copied < nresults; i++, copied++)
                 {
-                    L.Push(vals[i]);
+                    l.Push(vals[i]);
                 }
 
                 while (copied < nresults)
                 {
-                    L.Push(DynValue.Nil);
+                    l.Push(DynValue.Nil);
                 }
             }
         }

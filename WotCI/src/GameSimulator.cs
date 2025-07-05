@@ -1,12 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.DataTypes;
 using Spectre.Console;
 
 namespace WotCI
 {
+    /// <summary>
+    /// Core game simulation engine for the "Wrath of the CI King" demonstration.
+    /// Manages game state, plugin integration, and provides a secure API surface for plugins
+    /// to interact with game mechanics. Handles player stats, game progression, and plugin lifecycle.
+    /// </summary>
     public class GameSimulator
     {
         private readonly Dictionary<string, Script> _plugins = new();
@@ -171,7 +173,7 @@ return {
                 
                 // End of day
                 _gameState["day"] = day + 1;
-                System.Threading.Thread.Sleep(10); // Minimal delay for testing
+                Thread.Sleep(10); // Minimal delay for testing
             }
 
             // Game over
@@ -335,42 +337,41 @@ Plugins Active: {string.Join(", ", _plugins.Keys)}
 
         public virtual SolarSharp.Interpreter.DataTypes.Table CreateApi()
         {
-            var api = new SolarSharp.Interpreter.DataTypes.Table(null);
-            
-            // Game state getters
-            api["getPlayerHealth"] = DynValue.NewCallback((ctx, args) => DynValue.NewNumber(GetPlayerHealth()));
-            api["getPlayerGold"] = DynValue.NewCallback((ctx, args) => DynValue.NewNumber(GetPlayerGold()));
-            api["getDay"] = DynValue.NewCallback((ctx, args) => DynValue.NewNumber(GetDay()));
-            api["getEnemiesDefeated"] = DynValue.NewCallback((ctx, args) => DynValue.NewNumber(GetEnemiesDefeated()));
-            
-            // Game actions
-            api["print"] = DynValue.NewCallback((ctx, args) => 
+            var api = new SolarSharp.Interpreter.DataTypes.Table(null)
             {
-                if (args.Count > 0)
-                    _console.WriteLine($"[Plugin] {args[0].CastToString()}");
-                return DynValue.Nil;
-            });
-            api["giveGold"] = DynValue.NewCallback((ctx, args) => 
-            {
-                if (args.Count > 0)
-                    GiveGold((int)args[0].Number);
-                return DynValue.Nil;
-            });
-            api["heal"] = DynValue.NewCallback((ctx, args) => 
-            {
-                if (args.Count > 0)
+                // Game state getters
+                ["getPlayerHealth"] = DynValue.NewCallback((ctx, args) => DynValue.NewNumber(GetPlayerHealth())),
+                ["getPlayerGold"] = DynValue.NewCallback((ctx, args) => DynValue.NewNumber(GetPlayerGold())),
+                ["getDay"] = DynValue.NewCallback((ctx, args) => DynValue.NewNumber(GetDay())),
+                ["getEnemiesDefeated"] = DynValue.NewCallback((ctx, args) => DynValue.NewNumber(GetEnemiesDefeated())),
+                // Game actions
+                ["print"] = DynValue.NewCallback((ctx, args) => 
                 {
-                    var health = GetPlayerHealth() + (int)args[0].Number;
-                    SetPlayerHealth(health);
-                }
-                return DynValue.Nil;
-            });
-            
-            // Event registration
-            api["onCombat"] = DynValue.Nil;
-            api["onShop"] = DynValue.Nil;
-            api["onDayEnd"] = DynValue.Nil;
-            
+                    if (args.Count > 0)
+                        _console.WriteLine($"[Plugin] {args[0].CastToString()}");
+                    return DynValue.Nil;
+                }),
+                ["giveGold"] = DynValue.NewCallback((ctx, args) => 
+                {
+                    if (args.Count > 0)
+                        GiveGold((int)args[0].Number);
+                    return DynValue.Nil;
+                }),
+                ["heal"] = DynValue.NewCallback((ctx, args) => 
+                {
+                    if (args.Count > 0)
+                    {
+                        var health = GetPlayerHealth() + (int)args[0].Number;
+                        SetPlayerHealth(health);
+                    }
+                    return DynValue.Nil;
+                }),
+                // Event registration
+                ["onCombat"] = DynValue.Nil,
+                ["onShop"] = DynValue.Nil,
+                ["onDayEnd"] = DynValue.Nil
+            };
+
             return api;
         }
     }

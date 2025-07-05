@@ -176,4 +176,11 @@ $RECYCLE.BIN/
 # Visual Studio backup files
 *.sln.bak
 *.sln.DotSettings.user
+
+# Test output and temp files
+TestResults/
+*test_output*
+*nunit_random_seed*
+
+# Game demo artifacts (if not intended for production)
 /game/saves/autosave.sav

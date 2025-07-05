@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -176,24 +175,33 @@ namespace SolarSharp.Interpreter.Communication
             var responses = new List<ScriptMessage>();
             var startTime = DateTime.UtcNow;
 
-            if (_subscriptions.TryGetValue(message.Type, out var subscribers))
+            // Find all matching subscriptions (including wildcards)
+            var matchingHandlers = new List<(string subscriberId, Func<ScriptMessage, Task<ScriptMessage>> handler)>();
+            
+            foreach (var (subscriptionType, subscribers) in _subscriptions)
             {
-                var tasks = new List<Task<ScriptMessage>>();
-
-                foreach (var (subscriberId, handler) in subscribers.ToList())
+                if (IsMessageTypeMatch(subscriptionType, message.Type))
                 {
-                    // Check if subscriber can receive from sender
-                    if (_scripts.TryGetValue(subscriberId, out var receiverPolicy))
+                    foreach (var (subscriberId, handler) in subscribers.ToList())
                     {
-                        if (!CanReceiveFromSender(receiverPolicy, message.FromScript))
+                        // Check if subscriber can receive from sender
+                        if (_scripts.TryGetValue(subscriberId, out var receiverPolicy))
                         {
-                            continue; // Skip this subscriber
+                            if (!CanReceiveFromSender(receiverPolicy, message.FromScript))
+                            {
+                                continue; // Skip this subscriber
+                            }
                         }
+
+                        matchingHandlers.Add((subscriberId, handler));
                     }
-
-                    tasks.Add(HandleMessageSafely(handler, message, subscriberId));
                 }
+            }
 
+            // Execute all matching handlers
+            if (matchingHandlers.Any())
+            {
+                var tasks = matchingHandlers.Select(h => HandleMessageSafely(h.handler, message, h.subscriberId));
                 var results = await Task.WhenAll(tasks);
                 responses.AddRange(results.Where(r => r != null));
             }
@@ -201,7 +209,7 @@ namespace SolarSharp.Interpreter.Communication
             RecordMessageStats(message, DateTime.UtcNow - startTime);
 
             _auditor?.LogCapabilityUsage("message_bus", "publish", 
-                new object[] { message.Type, message.FromScript, subscribers?.Count ?? 0 }, 
+                new object[] { message.Type, message.FromScript, matchingHandlers.Count }, 
                 responses.Count, true);
 
             return responses;
@@ -249,9 +257,20 @@ namespace SolarSharp.Interpreter.Communication
                 }
             }
 
-            // Find a handler for the target script
-            if (_subscriptions.TryGetValue(message.Type, out var subscribers) && 
-                subscribers.TryGetValue(targetScriptId, out var handler))
+            // Find a handler for the target script (including wildcard subscriptions)
+            Func<ScriptMessage, Task<ScriptMessage>> handler = null;
+            
+            foreach (var (subscriptionType, subscribers) in _subscriptions)
+            {
+                if (IsMessageTypeMatch(subscriptionType, message.Type) && 
+                    subscribers.TryGetValue(targetScriptId, out var foundHandler))
+                {
+                    handler = foundHandler;
+                    break;
+                }
+            }
+
+            if (handler != null)
             {
                 var startTime = DateTime.UtcNow;
                 var response = await HandleMessageSafely(handler, message, targetScriptId);
@@ -381,6 +400,22 @@ namespace SolarSharp.Interpreter.Communication
         private bool CanReceiveFromSender(ScriptCommunicationPolicy policy, string senderScript)
         {
             return policy.AllowedSenders.Contains("*") || policy.AllowedSenders.Contains(senderScript);
+        }
+
+        private bool IsMessageTypeMatch(string subscriptionPattern, string messageType)
+        {
+            // Exact match
+            if (subscriptionPattern == messageType)
+                return true;
+
+            // Wildcard match (e.g., "game.*" matches "game.event", "game.update", etc.)
+            if (subscriptionPattern.EndsWith("*"))
+            {
+                var prefix = subscriptionPattern.Substring(0, subscriptionPattern.Length - 1);
+                return messageType.StartsWith(prefix);
+            }
+
+            return false;
         }
 
         private int EstimateMessageSize(ScriptMessage message)

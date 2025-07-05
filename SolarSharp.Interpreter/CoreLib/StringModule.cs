@@ -6,6 +6,7 @@ using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.CoreLib
 {
@@ -103,7 +104,7 @@ namespace SolarSharp.Interpreter.CoreLib
 
         private static int Unicode2Ascii(int i)
         {
-            if (i >= 0 && i <= 255)
+            if (i is >= 0 and <= 255)
                 return i;
 
             return '?';
@@ -208,6 +209,24 @@ namespace SolarSharp.Interpreter.CoreLib
             string sep = arg_sep.IsNotNil() ? arg_sep.String : null;
 
             int count = (int)arg_n.Number;
+            
+            // Check potential string length before creating
+            var script = _.GetScript();
+            if (script.IsAuthorizedToRun())
+            {
+                var resourceController = script.ResourceController();
+                if (resourceController != null)
+                {
+                    // Calculate total length including separators
+                    int totalLength = arg_s.String.Length * count;
+                    if (sep != null && count > 1)
+                    {
+                        totalLength += sep.Length * (count - 1);
+                    }
+                    resourceController.CheckStringLength(totalLength);
+                }
+            }
+            
             StringBuilder result = new(arg_s.String.Length * count);
 
             for (int i = 0; i < count; ++i)

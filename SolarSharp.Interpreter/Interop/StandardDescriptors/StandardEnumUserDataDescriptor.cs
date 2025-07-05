@@ -70,7 +70,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
 
             var attrs = Framework.Do.GetCustomAttributes(Type, typeof(FlagsAttribute), true);
 
-            if (attrs != null && attrs.Length > 0)
+            if (attrs is { Length: > 0 })
             {
                 IsFlags = true;
 

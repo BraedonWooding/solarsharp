@@ -2,35 +2,34 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using FluentAssertions;
+using NUnit.Framework;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.DataTypes;
 using Spectre.Console.Testing;
-using Xunit;
-using WotCI;
 
 namespace WotCI.Tests
 {
+    [TestFixture]
+    [Category("IntegrationTest")]
     public class GameSimulatorTests
     {
-        private readonly TestConsole _console;
-        private readonly GameSimulator _game;
+        private TestConsole _console;
+        private GameSimulator _game;
 
-        public GameSimulatorTests()
+        [SetUp]
+        public void SetUp()
         {
             _console = new TestConsole();
             _game = new GameSimulator(_console);
         }
 
-        [Fact]
+        [Test]
         public void Initialize_SetsUpInitialGameState()
         {
-            // Act
-            _game.Initialize();
+                        _game.Initialize();
 
-            // Assert
-            var gameState = _game.GetGameState();
+                        var gameState = _game.GetGameState();
             gameState.Should().ContainKey("player_health");
             gameState.Should().ContainKey("player_gold");
             gameState.Should().ContainKey("day");
@@ -45,17 +44,14 @@ namespace WotCI.Tests
             _console.Output.Should().Contain("Starting with 100 health and 50 gold");
         }
 
-        [Fact]
+        [Test]
         public void CreateApi_ReturnsTableWithAllFunctions()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
 
-            // Act
-            var api = _game.CreateApi();
+                        var api = _game.CreateApi();
 
-            // Assert
-            api.Should().NotBeNull();
+                        api.Should().NotBeNull();
             api.Should().BeOfType<Table>();
             
             // Check state getters exist
@@ -75,22 +71,25 @@ namespace WotCI.Tests
             api.Get("onDayEnd").Should().NotBeNull();
         }
 
-        [Fact]
+        [Test]
         public void GameApi_GetterFunctions_ReturnCorrectValues()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
             _game.GetGameState()["player_health"] = 75;
             _game.GetGameState()["player_gold"] = 123;
             _game.GetGameState()["day"] = 5;
             _game.GetGameState()["enemies_defeated"] = 10;
             
             var api = _game.CreateApi();
-            var script = new Script();
-            script.Globals["api"] = api;
+            var script = new Script
+            {
+                Globals =
+                {
+                    ["api"] = api
+                }
+            };
 
-            // Act & Assert
-            var health = script.DoString("return api.getPlayerHealth()").Number;
+                        var health = script.DoString("return api.getPlayerHealth()").Number;
             health.Should().Be(75);
 
             var gold = script.DoString("return api.getPlayerGold()").Number;
@@ -103,124 +102,118 @@ namespace WotCI.Tests
             enemies.Should().Be(10);
         }
 
-        [Fact]
+        [Test]
         public void GameApi_GiveGold_IncreasesGold()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
             var api = _game.CreateApi();
-            var script = new Script();
-            script.Globals["api"] = api;
+            var script = new Script
+            {
+                Globals =
+                {
+                    ["api"] = api
+                }
+            };
 
-            // Act
-            script.DoString("api.giveGold(25)");
+                        script.DoString("api.giveGold(25)");
 
-            // Assert
-            _game.GetGameState()["player_gold"].Should().Be(75); // 50 + 25
+                        _game.GetGameState()["player_gold"].Should().Be(75); // 50 + 25
         }
 
-        [Fact]
+        [Test]
         public void GameApi_Heal_IncreasesHealthWithCap()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
             _game.GetGameState()["player_health"] = 80;
             var api = _game.CreateApi();
-            var script = new Script();
-            script.Globals["api"] = api;
+            var script = new Script
+            {
+                Globals =
+                {
+                    ["api"] = api
+                }
+            };
 
-            // Act - Small heal
+            // Small heal
             script.DoString("api.heal(15)");
 
-            // Assert
-            _game.GetGameState()["player_health"].Should().Be(95);
+                        _game.GetGameState()["player_health"].Should().Be(95);
 
-            // Act - Large heal (should cap at 100)
+            // Large heal (should cap at 100)
             script.DoString("api.heal(20)");
 
-            // Assert
-            _game.GetGameState()["player_health"].Should().Be(100);
+                        _game.GetGameState()["player_health"].Should().Be(100);
         }
 
-        [Fact]
+        [Test]
         public void GameApi_Print_OutputsWithPluginPrefix()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
             var api = _game.CreateApi();
-            var script = new Script();
-            script.Globals["api"] = api;
+            var script = new Script
+            {
+                Globals =
+                {
+                    ["api"] = api
+                }
+            };
 
-            // Act
-            script.DoString("api.print('Test message from plugin')");
+                        script.DoString("api.print('Test message from plugin')");
 
-            // Assert
-            _console.Output.Should().Contain("[Plugin] Test message from plugin");
+                        _console.Output.Should().Contain("[Plugin] Test message from plugin");
         }
 
-        [Fact]
+        [Test]
         public void Run_SimulatesGameDays()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
 
-            // Act
-            _game.Run();
+                        _game.Run();
 
-            // Assert
-            var output = _console.Output;
+                        var output = _console.Output;
             output.Should().Contain("🌅 Day 1 begins");
             output.Should().Contain("🌅 Day 2 begins");
             output.Should().Contain("🌅 Day 3 begins");
             output.Should().Contain("🎮 Game Over!");
         }
 
-        [Fact]
+        [Test]
         public void Run_SimulatesCombatEvents()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
 
-            // Act
-            _game.Run();
+                        _game.Run();
 
-            // Assert
-            var output = _console.Output;
+                        var output = _console.Output;
             output.Should().Contain("⚔️ Combat encounter!");
             output.Should().Contain("Enemy attacks!");
             output.Should().Contain("Enemy attacks!");
             output.Should().Contain("damage");
         }
 
-        [Fact]
+        [Test]
         public void Run_SimulatesRandomEvents()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
 
-            // Act
-            _game.Run();
+                        _game.Run();
 
-            // Assert
-            var output = _console.Output;
+                        var output = _console.Output;
             // Should contain at least one of these events
             (output.Contains("💰 Shop event!") ||
              output.Contains("🎨 Rendering frame") ||
              output.Contains("🔊 Playing sound")).Should().BeTrue();
         }
 
-        [Fact]
+        [Test]
         public void Run_EndsWhenHealthReachesZero()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
             _game.GetGameState()["player_health"] = 1; // Minimum health to ensure death on first hit
 
-            // Act
-            _game.Run();
+                        _game.Run();
 
-            // Assert
-            var output = _console.Output;
+                        var output = _console.Output;
             output.Should().Contain("💀 You died!");
             output.Should().Contain("🎮 Game Over!");
             
@@ -228,31 +221,32 @@ namespace WotCI.Tests
             finalHealth.Should().BeLessOrEqualTo(0);
         }
 
-        [Fact]
+        [Test]
         public void Run_TracksEnemiesDefeated()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
 
-            // Act
-            _game.Run();
+                        _game.Run();
 
-            // Assert
-            var enemiesDefeated = (int)_game.GetGameState()["enemies_defeated"];
+                        var enemiesDefeated = (int)_game.GetGameState()["enemies_defeated"];
             enemiesDefeated.Should().BeGreaterThan(0);
         }
 
-        [Fact]
+        [Test]
         public void EventCallbacks_CanBeRegisteredThroughApi()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
             var api = _game.CreateApi();
             
             // Create a simple Lua script that registers callbacks
-            var script = new Script();
-            script.Globals["game"] = api;
-            
+            var script = new Script
+            {
+                Globals =
+                {
+                    ["game"] = api
+                }
+            };
+
             script.DoString(@"
                 game.onCombat = function(health, damage)
                     print('Combat callback: health=' .. health .. ', damage=' .. damage)
@@ -263,22 +257,18 @@ namespace WotCI.Tests
             // Note: In the actual implementation, the game would need to check
             // and call these callbacks. This test verifies the API structure.
 
-            // Assert
-            api.Get("onCombat").Type.Should().Be(DataType.Function);
+                        api.Get("onCombat").Type.Should().Be(DataType.Function);
         }
 
-        [Fact]
+        [Test]
         public void GetGameState_ReturnsCurrentState()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
             _game.GetGameState()["custom_value"] = "test";
 
-            // Act
-            var state = _game.GetGameState();
+                        var state = _game.GetGameState();
 
-            // Assert
-            state.Should().ContainKey("player_health");
+                        state.Should().ContainKey("player_health");
             state.Should().ContainKey("player_gold");
             state.Should().ContainKey("day");
             state.Should().ContainKey("enemies_defeated");
@@ -286,23 +276,20 @@ namespace WotCI.Tests
             state["custom_value"].Should().Be("test");
         }
 
-        [Fact]
+        [Test]
         public void GameSimulation_ProducesRealisticOutput()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
 
-            // Act
-            _game.Run();
+                        _game.Run();
 
-            // Assert
-            var output = _console.Output;
+                        var output = _console.Output;
             
             // Check for variety of events
-            var combatCount = CountOccurrences(output, "⚔️ Combat encounter!");
-            var shopCount = CountOccurrences(output, "💰 Shop event!");
-            var renderCount = CountOccurrences(output, "🎨 Rendering frame");
-            var soundCount = CountOccurrences(output, "🔊 Playing sound");
+            var combatCount = output.Split("⚔️ Combat encounter!").Length - 1;
+            var shopCount = output.Split("💰 Shop event!").Length - 1;
+            var renderCount = output.Split("🎨 Rendering frame").Length - 1;
+            var soundCount = output.Split("🔊 Playing sound").Length - 1;
             
             // Should have multiple events of different types
             combatCount.Should().BeGreaterThan(0);
@@ -313,11 +300,10 @@ namespace WotCI.Tests
             output.Should().Contain("Day 2");
         }
 
-        [Fact]
+        [Test]
         public void PluginEnumeration_ShouldDiscoverExistingPlugins()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
 
             // Get the WotCI project directory
             var currentDir = Directory.GetCurrentDirectory();
@@ -333,7 +319,7 @@ namespace WotCI.Tests
                 Path.Combine(pluginsDir, "segfault-studios")
             };
 
-            // Act - Try to enumerate plugins
+            // Try to enumerate plugins
             var discoveredPlugins = new List<string>();
             
             // Check user plugins
@@ -353,7 +339,7 @@ namespace WotCI.Tests
                 }
             }
 
-            // Assert - We should discover the sample plugins
+            // We should discover the sample plugins
             discoveredPlugins.Should().NotBeEmpty("Expected to find at least some plugins in the WotCI demo");
             
             // Verify specific expected plugins exist
@@ -369,20 +355,19 @@ namespace WotCI.Tests
             }
         }
 
-        [Fact] 
+        [Test] 
         public void PluginManager_ShouldDetectWorkingDirectoryIssue()
         {
-            // Arrange
-            _game.Initialize();
+                        _game.Initialize();
             
-            // Act - Try to create a PluginManager with the current working directory
+            // Try to create a PluginManager with the current working directory
             // This should reveal the working directory issue
             try
             {
                 var pluginManager = new PluginManager(_game);
                 var availablePlugins = pluginManager.GetAvailablePlugins();
                 
-                // Assert - This should detect the issue where plugins aren't found
+                // This should detect the issue where plugins aren't found
                 // because PluginManager uses relative paths from the wrong working directory
                 availablePlugins.Should().NotBeEmpty(
                     "PluginManager should find plugins, but it's likely using the wrong working directory. " +
@@ -400,16 +385,5 @@ namespace WotCI.Tests
             }
         }
 
-        private int CountOccurrences(string text, string pattern)
-        {
-            int count = 0;
-            int index = 0;
-            while ((index = text.IndexOf(pattern, index, StringComparison.Ordinal)) != -1)
-            {
-                count++;
-                index += pattern.Length;
-            }
-            return count;
-        }
     }
 }

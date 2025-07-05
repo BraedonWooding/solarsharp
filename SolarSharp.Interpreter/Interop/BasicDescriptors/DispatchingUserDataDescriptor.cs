@@ -268,7 +268,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         {
             List<IOverloadableMemberDescriptor> methods = UserData.GetExtensionMethodsByNameAndType(indexName, Type);
 
-            if (methods != null && methods.Count > 0)
+            if (methods is { Count: > 0 })
             {
                 var ext = new OverloadedMethodMemberDescriptor(indexName, Type);
                 ext.SetExtensionMethodsSnapshot(UserData.GetExtensionMethodsChangeVersion(), methods);

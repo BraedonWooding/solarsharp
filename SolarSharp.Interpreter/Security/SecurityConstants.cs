@@ -1,5 +1,3 @@
-using System;
-
 namespace SolarSharp.Interpreter.Security
 {
     /// <summary>

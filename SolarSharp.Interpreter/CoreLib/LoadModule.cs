@@ -1,7 +1,8 @@
-﻿using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.DataTypes;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.CoreLib
 {
@@ -71,6 +72,15 @@ namespace SolarSharp.Interpreter.CoreLib
             try
             {
                 Script S = executionContext.GetScript();
+                
+                // Check if internal dynamic code is prevented
+                if (S.IsInternalDynamicCodePrevented())
+                {
+                    throw new UnauthorizedProcessExecutionException(
+                        "Internal dynamic code loading is disabled. Set PreventInternalDynamicCode to false in the manifest policy to enable.",
+                        "load"
+                    );
+                }
                 DynValue ld = args[0];
                 string script = "";
 
@@ -138,6 +148,15 @@ namespace SolarSharp.Interpreter.CoreLib
             try
             {
                 Script S = executionContext.GetScript();
+                
+                // Check if internal dynamic code is prevented
+                if (S.IsInternalDynamicCodePrevented())
+                {
+                    throw new UnauthorizedProcessExecutionException(
+                        "Internal dynamic code loading is disabled. Set PreventInternalDynamicCode to false in the manifest policy to enable.",
+                        "loadfile"
+                    );
+                }
                 DynValue filename = args.AsType(0, "loadfile", DataType.String, false);
                 DynValue env = args.AsType(2, "loadfile", DataType.Table, true);
 

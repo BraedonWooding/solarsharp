@@ -26,7 +26,7 @@ namespace SolarSharp.Interpreter.CoreLib
 
             // Security check: Block metatables that contain potentially dangerous patterns
             // Only enforce this in isolated/restricted security contexts
-            if (metatable?.Table != null && executionContext.GetScript().IsSecure())
+            if (metatable?.Table != null && executionContext.GetScript().IsAuthorizedToRun())
             {
                 var securityConfig = executionContext.GetScript().SecurityConfiguration();
                 

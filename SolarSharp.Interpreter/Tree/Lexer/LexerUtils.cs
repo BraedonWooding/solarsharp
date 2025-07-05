@@ -101,11 +101,11 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         public static int HexDigit2Value(char c)
         {
-            if (c >= '0' && c <= '9')
+            if (c is >= '0' and <= '9')
                 return c - '0';
-            else if (c >= 'A' && c <= 'F')
+            else if (c is >= 'A' and <= 'F')
                 return 10 + (c - 'A');
-            else if (c >= 'a' && c <= 'f')
+            else if (c is >= 'a' and <= 'f')
                 return 10 + (c - 'a');
             else
                 throw new InternalErrorException("invalid hex digit near '{0}'", c);
@@ -113,7 +113,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         public static bool CharIsDigit(char c)
         {
-            return c >= '0' && c <= '9';
+            return c is >= '0' and <= '9';
         }
 
         public static bool CharIsHexDigit(char c)

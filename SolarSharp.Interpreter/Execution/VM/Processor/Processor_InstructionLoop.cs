@@ -6,6 +6,7 @@ using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Interop.PredefinedUserData;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Execution.VM
 {
@@ -32,11 +33,16 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                     ++instructionPtr;
                     
-                    // Resource limit checking
-                    if (++m_InstructionCount % RESOURCE_CHECK_INTERVAL == 0)
+                    // Always check authorization and track instruction execution
+                    if (!m_Script.IsAuthorizedToRun())
                     {
-                        CheckResourceLimits();
+                        throw new UnauthorizedProcessExecutionException(
+                            "Script execution denied - no valid SecurityConfiguration", 
+                            "InstructionExecution");
                     }
+                    
+                    var resourceController = m_Script.ResourceController();
+                    resourceController?.IncrementInstructionCount();
 
                     switch (i.OpCode)
                     {
@@ -160,6 +166,13 @@ namespace SolarSharp.Interpreter.Execution.VM
                         case OpCode.NewTable:
                             // we pass the hints we got from the instruction args
                             m_ValueStack.Push(DynValue.NewTable(m_Script, i.NumVal, i.NumVal2));
+                            
+                            // Track table creation for resource limits
+                            if (m_Script.IsAuthorizedToRun())
+                            {
+                                var tableResourceController = m_Script.ResourceController();
+                                tableResourceController?.IncrementTableCount();
+                            }
                             break;
                         case OpCode.IterPrep:
                             ExecIterPrep();
@@ -978,7 +991,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             DynValue l = m_ValueStack.Pop().ToScalar();
 
             // first we do a brute force equals over the references
-            if (object.ReferenceEquals(r, l))
+            if (ReferenceEquals(r, l))
             {
                 m_ValueStack.Push(DynValue.True);
                 return instructionPtr;
@@ -1102,7 +1115,16 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             if (rs != null && ls != null)
             {
-                m_ValueStack.Push(DynValue.NewString(ls + rs));
+                string result = ls + rs;
+                
+                // Check string length limit
+                if (m_Script.IsAuthorizedToRun())
+                {
+                    var stringResourceController = m_Script.ResourceController();
+                    stringResourceController?.CheckStringLength(result.Length);
+                }
+                
+                m_ValueStack.Push(DynValue.NewString(result));
                 return instructionPtr;
             }
             else

@@ -1,6 +1,6 @@
-﻿using SolarSharp.Interpreter.Errors;
+﻿using System.Collections.Generic;
+using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
-using System.Collections.Generic;
 
 namespace SolarSharp.Interpreter.Debugging
 {

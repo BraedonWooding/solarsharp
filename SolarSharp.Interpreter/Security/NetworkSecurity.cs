@@ -63,6 +63,17 @@ namespace SolarSharp.Interpreter.Security
             RequestTimeout = TimeSpan.FromMinutes(5),
             MaxResponseSize = 100 * 1024 * 1024 // 100MB
         };
+
+        /// <summary>
+        /// Creates a configuration with limited access to specific hosts
+        /// </summary>
+        public static NetworkSecurity LimitedAccess(params string[] allowedHosts) => new()
+        {
+            AllowAccess = true,
+            AllowedOperations = NetworkOperations.HttpGet | NetworkOperations.HttpPost,
+            AllowedHosts = new List<string>(allowedHosts),
+            AllowedPorts = new List<int> { 80, 443 }
+        };
     }
 
     /// <summary>

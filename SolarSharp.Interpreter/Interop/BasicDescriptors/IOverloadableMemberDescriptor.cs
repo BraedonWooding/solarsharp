@@ -1,6 +1,6 @@
-﻿using SolarSharp.Interpreter.DataTypes;
+﻿using System;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Execution;
-using System;
 
 namespace SolarSharp.Interpreter.Interop.BasicDescriptors
 {

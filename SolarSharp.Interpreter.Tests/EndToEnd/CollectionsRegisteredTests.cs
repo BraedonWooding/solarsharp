@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
-using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("IntegrationTest")]
     public class CollectionsRegisteredTests
     {
         public class RegCollItem
@@ -75,7 +77,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 s.Globals["o"] = obj;
                 s.Globals["ctor"] = UserData.CreateStatic<RegCollItem>();
 
-                DynValue res = s.DoString(code);
+                var res = s.DoString(code);
 
                 asserts(res, obj);
             }

@@ -1,55 +1,28 @@
-﻿using SolarSharp.Interpreter.Security;
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Modules;
 using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class BinaryDumpTests
     {
-        private static DynValue Script_RunString(string script)
-        {
-            Script s1 = new(StringExecution.True);
-            DynValue v1 = s1.LoadString(script);
-
-            using MemoryStream ms = new();
-            s1.Dump(v1, ms);
-            ms.Seek(0, SeekOrigin.Begin);
-
-            Script s2 = new(StringExecution.True);
-            DynValue func = s2.LoadStream(ms);
-            return func.Function.Call();
-        }
-
-        private static DynValue Script_LoadFunc(string script, string funcname)
-        {
-            Script s1 = new(StringExecution.True);
-            _ = s1.DoString(script);
-            DynValue func = s1.Globals.Get(funcname);
-
-            using MemoryStream ms = new();
-            s1.Dump(func, ms);
-            ms.Seek(0, SeekOrigin.Begin);
-
-            Script s2 = new(StringExecution.True);
-            return s2.LoadStream(ms);
-        }
 
         [Test]
         public void BinDump_ChunkDump()
         {
-            string script = @"
+            const string script = @"
 				local chunk = load('return 81;');
 				local str = string.dump(chunk);
 				local fn = load(str);
 				return fn(9);
 			";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script(new SecurityConfiguration().AllowInternalDynamicCode()).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -61,13 +34,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void BinDump_StringDump()
         {
-            string script = @"
+            var script = @"
 				local str = string.dump(function(n) return n * n; end);
 				local fn = load(str);
 				return fn(9);
 			";
 
-            DynValue res = new Script(StringExecution.True).DoString(script);
+            var res = new Script(new SecurityConfiguration().AllowInternalDynamicCode()).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -79,7 +52,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void BinDump_StandardDumpFunc()
         {
-            string script = @"
+            var script = @"
 				function fact(n)
 					return n * 24;
 				end
@@ -88,8 +61,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				
 			";
 
-            DynValue fact = Script_LoadFunc(script, "fact");
-            DynValue res = fact.Function.Call(5);
+            var s1 = new Script(new SecurityConfiguration().AllowInternalDynamicCode());
+            s1.DoString(script);
+            var func = s1.Globals.Get("fact");
+            
+            using var ms = new MemoryStream();
+            s1.Dump(func, ms);
+            ms.Seek(0, SeekOrigin.Begin);
+            
+            var s2 = new Script(new SecurityConfiguration().AllowInternalDynamicCode());
+            var fact = s2.LoadStream(ms);
+            var res = fact.Function.Call(5);
 
             Assert.Multiple(() =>
             {
@@ -101,16 +83,25 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void BinDump_FactorialDumpFunc()
         {
-            string script = @"
+            var script = @"
 				function fact(n)
 					if (n == 0) then return 1; end
 					return fact(n - 1) * n;
 				end
 			";
 
-            DynValue fact = Script_LoadFunc(script, "fact");
+            var s1 = new Script(new SecurityConfiguration().AllowInternalDynamicCode());
+            s1.DoString(script);
+            var func = s1.Globals.Get("fact");
+            
+            using var ms = new MemoryStream();
+            s1.Dump(func, ms);
+            ms.Seek(0, SeekOrigin.Begin);
+            
+            var s2 = new Script(new SecurityConfiguration().AllowInternalDynamicCode());
+            var fact = s2.LoadStream(ms);
             fact.Function.OwnerScript.Globals.Set("fact", fact);
-            DynValue res = fact.Function.Call(5);
+            var res = fact.Function.Call(5);
 
             Assert.Multiple(() =>
             {
@@ -122,7 +113,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void BinDump_FactorialDumpFuncGlobal()
         {
-            string script = @"
+            var script = @"
 				x = 0
 
 				function fact(n)
@@ -131,10 +122,19 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				end
 			";
 
-            DynValue fact = Script_LoadFunc(script, "fact");
+            var s1 = new Script(new SecurityConfiguration().AllowInternalDynamicCode());
+            s1.DoString(script);
+            var func = s1.Globals.Get("fact");
+            
+            using var ms = new MemoryStream();
+            s1.Dump(func, ms);
+            ms.Seek(0, SeekOrigin.Begin);
+            
+            var s2 = new Script(new SecurityConfiguration().AllowInternalDynamicCode());
+            var fact = s2.LoadStream(ms);
             fact.Function.OwnerScript.Globals.Set("fact", fact);
             fact.Function.OwnerScript.Globals.Set("x", DynValue.NewNumber(0));
-            DynValue res = fact.Function.Call(5);
+            var res = fact.Function.Call(5);
 
             Assert.Multiple(() =>
             {
@@ -147,7 +147,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void BinDump_FactorialDumpFuncUpvalue()
         {
-            string script = @"
+            var script = @"
 				local x = 0
 
 				function fact(n)
@@ -156,13 +156,25 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				end
 			";
 
-            Assert.Throws<ArgumentException>(() => Script_LoadFunc(script, "fact"));
+            Assert.Throws<ArgumentException>(() => 
+            {
+                var s1 = new Script(new SecurityConfiguration().AllowInternalDynamicCode());
+                s1.DoString(script);
+                var func = s1.Globals.Get("fact");
+                
+                using var ms = new MemoryStream();
+                s1.Dump(func, ms);
+                ms.Seek(0, SeekOrigin.Begin);
+                
+                var s2 = new Script(new SecurityConfiguration().AllowInternalDynamicCode());
+                s2.LoadStream(ms);
+            });
         }
 
         [Test]
         public void BinDump_FactorialClosure()
         {
-            string script = @"
+            var script = @"
 local x = 5;
 
 function fact(n)
@@ -181,7 +193,7 @@ y = y + fact(5);
 return y;
 ";
 
-            DynValue res = Script_RunString(script);
+            var res = new Script(new SecurityConfiguration().AllowInternalDynamicCode()).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -193,7 +205,7 @@ return y;
         [Test]
         public void BinDump_ClosureOnParam()
         {
-            string script = @"
+            var script = @"
 				local function g (z)
 				  local function f(a)
 					return a + z;
@@ -203,7 +215,7 @@ return y;
 
 				return (g(3)(2));";
 
-            DynValue res = Script_RunString(script);
+            var res = new Script(new SecurityConfiguration().AllowInternalDynamicCode()).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -215,7 +227,7 @@ return y;
         [Test]
         public void BinDump_NestedUpvalues()
         {
-            string script = @"
+            var script = @"
 	local y = y;
 
 	local x = 0;
@@ -234,7 +246,7 @@ return y;
 	return 10 * m.t.dojob();
 								";
 
-            DynValue res = Script_RunString(script);
+            var res = new Script(new SecurityConfiguration().AllowInternalDynamicCode()).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -247,7 +259,7 @@ return y;
         [Test]
         public void BinDump_NestedOutOfScopeUpvalues()
         {
-            string script = @"
+            var script = @"
 
 	function X()
 		local y = y;
@@ -273,7 +285,7 @@ return y;
 	return 10 * Q.t.dojob();
 								";
 
-            DynValue res = Script_RunString(script);
+            var res = new Script(new SecurityConfiguration().AllowInternalDynamicCode()).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -287,7 +299,7 @@ return y;
         {
             List<Table> list = new();
 
-            string script = @"
+            var script = @"
 				function print_env()
 				  print(_ENV)
 				end
@@ -309,17 +321,21 @@ return y;
 
 				sandbox()";
 
-            Script S = new();
-
-            S.Globals["print"] = (Action<Table>)(t => list.Add(t));
+            Script S = new(new SecurityConfiguration().AllowInternalDynamicCode())
+            {
+	            Globals =
+	            {
+		            ["print"] = (Action<Table>)(t => list.Add(t))
+	            }
+            };
 
             S.DoString(script);
 
             Assert.That(list, Has.Count.EqualTo(6));
 
-            int[] eqs = new int[] { 0, 1, 1, 0, 1, 1 };
+            var eqs = new int[] { 0, 1, 1, 0, 1, 1 };
 
-            for (int i = 0; i < 6; i++)
+            for (var i = 0; i < 6; i++)
                 Assert.That(list[i], Is.EqualTo(list[eqs[i]]));
         }
     }
