@@ -27,8 +27,8 @@ namespace SolarSharp.Interpreter.Diagnostics.PerformanceCounters
             }
         }
 
-        private int m_Count = 0;
-        private long m_Elapsed = 0;
+        private int m_Count;
+        private long m_Elapsed;
         private readonly PerformanceCounter m_Counter;
 
         public GlobalPerformanceStopwatch(PerformanceCounter perfcounter)
@@ -49,13 +49,13 @@ namespace SolarSharp.Interpreter.Diagnostics.PerformanceCounters
 
         public PerformanceResult GetResult()
         {
-            return new PerformanceResult()
+            return new PerformanceResult
             {
                 Type = PerformanceCounterType.TimeMilliseconds,
                 Global = false,
                 Name = m_Counter.ToString(),
                 Instances = m_Count,
-                Counter = m_Elapsed
+                Counter = m_Elapsed,
             };
         }
     }

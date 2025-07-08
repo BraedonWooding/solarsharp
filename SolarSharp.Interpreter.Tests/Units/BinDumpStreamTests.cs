@@ -18,25 +18,39 @@ namespace SolarSharp.Interpreter.Tests.Units
     ///     Dependencies: None
     /// </remarks>
     [TestFixture]
-    [Category("DataStructureTest")]
+    [Category("VM.Unit")]
     public class BinDumpStreamTests
     {
         [Test]
         public void BinDumpBinaryStreams_TestIntWrites()
         {
-            var values = new[] { 0, 1, -1, 10, -10, 32767, 32768, -32767, -32768, int.MinValue, int.MaxValue };
-
-            using MemoryStream ms_orig = new();
-            UndisposableStream ms = new(ms_orig);
-
-            using (BinDumpBinaryWriter bdbw = new(ms, Encoding.UTF8))
+            var values = new[]
             {
-                for (var i = 0; i < values.Length; i++) bdbw.Write(values[i]);
+                0,
+                1,
+                -1,
+                10,
+                -10,
+                32767,
+                32768,
+                -32767,
+                -32768,
+                int.MinValue,
+                int.MaxValue,
+            };
+
+            using var ms_orig = new MemoryStream();
+            var ms = new UndisposableStream(ms_orig);
+
+            using (var bdbw = new BinDumpBinaryWriter(ms, Encoding.UTF8))
+            {
+                for (var i = 0; i < values.Length; i++)
+                    bdbw.Write(values[i]);
             }
 
             ms.Seek(0, SeekOrigin.Begin);
 
-            using BinDumpBinaryReader bdbr = new(ms, Encoding.UTF8);
+            using var bdbr = new BinDumpBinaryReader(ms, Encoding.UTF8);
             for (var i = 0; i < values.Length; i++)
             {
                 var v = bdbr.ReadInt32();
@@ -47,19 +61,31 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void BinDumpBinaryStreams_TestUIntWrites()
         {
-            var values = new uint[] { 0, 1, 0x7F, 10, 0x7E, 32767, 32768, uint.MinValue, uint.MaxValue };
-
-            using MemoryStream ms_orig = new();
-            UndisposableStream ms = new(ms_orig);
-
-            using (BinDumpBinaryWriter bdbw = new(ms, Encoding.UTF8))
+            var values = new uint[]
             {
-                for (var i = 0; i < values.Length; i++) bdbw.Write(values[i]);
+                0,
+                1,
+                0x7F,
+                10,
+                0x7E,
+                32767,
+                32768,
+                uint.MinValue,
+                uint.MaxValue,
+            };
+
+            using var ms_orig = new MemoryStream();
+            var ms = new UndisposableStream(ms_orig);
+
+            using (var bdbw = new BinDumpBinaryWriter(ms, Encoding.UTF8))
+            {
+                for (var i = 0; i < values.Length; i++)
+                    bdbw.Write(values[i]);
             }
 
             ms.Seek(0, SeekOrigin.Begin);
 
-            using BinDumpBinaryReader bdbr = new(ms, Encoding.UTF8);
+            using var bdbr = new BinDumpBinaryReader(ms, Encoding.UTF8);
             for (var i = 0; i < values.Length; i++)
             {
                 var v = bdbr.ReadUInt32();
@@ -67,23 +93,23 @@ namespace SolarSharp.Interpreter.Tests.Units
             }
         }
 
-
         [Test]
         public void BinDumpBinaryStreams_TestStringWrites()
         {
             var values = new[] { "hello", "you", "fool", "hello", "I", "love", "you" };
 
-            using MemoryStream ms_orig = new();
-            UndisposableStream ms = new(ms_orig);
+            using var ms_orig = new MemoryStream();
+            var ms = new UndisposableStream(ms_orig);
 
-            using (BinDumpBinaryWriter bdbw = new(ms, Encoding.UTF8))
+            using (var bdbw = new BinDumpBinaryWriter(ms, Encoding.UTF8))
             {
-                for (var i = 0; i < values.Length; i++) bdbw.Write(values[i]);
+                for (var i = 0; i < values.Length; i++)
+                    bdbw.Write(values[i]);
             }
 
             ms.Seek(0, SeekOrigin.Begin);
 
-            using BinDumpBinaryReader bdbr = new(ms, Encoding.UTF8);
+            using var bdbr = new BinDumpBinaryReader(ms, Encoding.UTF8);
             for (var i = 0; i < values.Length; i++)
             {
                 var v = bdbr.ReadString();

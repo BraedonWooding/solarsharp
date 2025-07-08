@@ -13,36 +13,45 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 {
     internal class FunctionDefinitionExpression : Expression, IClosureBuilder
     {
-        private readonly SymbolRef[] m_ParamNames = null;
+        private readonly SymbolRef[] m_ParamNames;
         private readonly Statement m_Statement;
         private readonly RuntimeScopeFrame m_StackFrame;
-        private readonly List<SymbolRef> m_Closure = new();
-        private bool m_HasVarArgs = false;
-        private Instruction m_ClosureInstruction = null;
+        private readonly List<SymbolRef> m_Closure = new List<SymbolRef>();
+        private bool m_HasVarArgs;
+        private Instruction m_ClosureInstruction;
         private readonly bool m_UsesGlobalEnv;
         private readonly SymbolRef m_Env;
         private readonly SourceRef m_Begin;
         private SourceRef m_End;
 
         public FunctionDefinitionExpression(ScriptLoadingContext lcontext, bool usesGlobalEnv)
-            : this(lcontext, false, usesGlobalEnv, false)
-        { }
+            : this(lcontext, false, usesGlobalEnv, false) { }
 
-        public FunctionDefinitionExpression(ScriptLoadingContext lcontext, bool pushSelfParam, bool isLambda)
-            : this(lcontext, pushSelfParam, false, isLambda)
-        { }
+        public FunctionDefinitionExpression(
+            ScriptLoadingContext lcontext,
+            bool pushSelfParam,
+            bool isLambda
+        )
+            : this(lcontext, pushSelfParam, false, isLambda) { }
 
-
-        private FunctionDefinitionExpression(ScriptLoadingContext lcontext, bool pushSelfParam, bool usesGlobalEnv, bool isLambda)
+        private FunctionDefinitionExpression(
+            ScriptLoadingContext lcontext,
+            bool pushSelfParam,
+            bool usesGlobalEnv,
+            bool isLambda
+        )
             : base(lcontext)
         {
             if (m_UsesGlobalEnv = usesGlobalEnv)
                 CheckTokenType(lcontext, TokenType.Function);
 
             // here lexer should be at the '(' or at the '|'
-            Token openRound = CheckTokenType(lcontext, isLambda ? TokenType.Lambda : TokenType.Brk_Open_Round);
+            var openRound = CheckTokenType(
+                lcontext,
+                isLambda ? TokenType.Lambda : TokenType.Brk_Open_Round
+            );
 
-            List<string> paramnames = BuildParamList(lcontext, pushSelfParam, openRound, isLambda);
+            var paramnames = BuildParamList(lcontext, pushSelfParam, openRound, isLambda);
             // here lexer is at first token of body
 
             m_Begin = openRound.GetSourceRefUpTo(lcontext.Lexer.Current);
@@ -67,29 +76,30 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
             lcontext.Source.Refs.Add(m_Begin);
             lcontext.Source.Refs.Add(m_End);
-
         }
-
 
         private Statement CreateLambdaBody(ScriptLoadingContext lcontext)
         {
-            Token start = lcontext.Lexer.Current;
-            Expression e = Expr(lcontext);
-            Token end = lcontext.Lexer.Current;
-            SourceRef sref = start.GetSourceRefUpTo(end);
+            var start = lcontext.Lexer.Current;
+            var e = Expr(lcontext);
+            var end = lcontext.Lexer.Current;
+            var sref = start.GetSourceRefUpTo(end);
             Statement s = new ReturnStatement(lcontext, e, sref);
             return s;
         }
-
 
         private Statement CreateBody(ScriptLoadingContext lcontext)
         {
             Statement s = new CompositeStatement(lcontext);
 
             if (lcontext.Lexer.Current.Type != TokenType.End)
-                throw new SyntaxErrorException(lcontext.Lexer.Current, "'end' expected near '{0}'", lcontext.Lexer.Current.Text)
+                throw new SyntaxErrorException(
+                    lcontext.Lexer.Current,
+                    "'end' expected near '{0}'",
+                    lcontext.Lexer.Current.Text
+                )
                 {
-                    IsPrematureStreamTermination = lcontext.Lexer.Current.Type == TokenType.Eof
+                    IsPrematureStreamTermination = lcontext.Lexer.Current.Type == TokenType.Eof,
                 };
 
             m_End = lcontext.Lexer.Current.GetSourceRef();
@@ -98,11 +108,16 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             return s;
         }
 
-        private List<string> BuildParamList(ScriptLoadingContext lcontext, bool pushSelfParam, Token openBracketToken, bool isLambda)
+        private List<string> BuildParamList(
+            ScriptLoadingContext lcontext,
+            bool pushSelfParam,
+            Token openBracketToken,
+            bool isLambda
+        )
         {
-            TokenType closeToken = isLambda ? TokenType.Lambda : TokenType.Brk_Close_Round;
+            var closeToken = isLambda ? TokenType.Lambda : TokenType.Brk_Close_Round;
 
-            List<string> paramnames = new();
+            var paramnames = new List<string>();
 
             // method decls with ':' must push an implicit 'self' param
             if (pushSelfParam)
@@ -110,7 +125,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
             while (lcontext.Lexer.Current.Type != closeToken)
             {
-                Token t = lcontext.Lexer.Current;
+                var t = lcontext.Lexer.Current;
 
                 if (t.Type == TokenType.Name)
                 {
@@ -147,14 +162,14 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
         private SymbolRef[] DefineArguments(List<string> paramnames, ScriptLoadingContext lcontext)
         {
-            HashSet<string> names = new();
+            var names = new HashSet<string>();
 
-            SymbolRef[] ret = new SymbolRef[paramnames.Count];
+            var ret = new SymbolRef[paramnames.Count];
 
-            for (int i = paramnames.Count - 1; i >= 0; i--)
+            for (var i = paramnames.Count - 1; i >= 0; i--)
             {
                 if (!names.Add(paramnames[i]))
-                    paramnames[i] = paramnames[i] + "@" + i.ToString();
+                    paramnames[i] = paramnames[i] + "@" + i;
 
                 ret[i] = lcontext.Scope.DefineLocal(paramnames[i]);
             }
@@ -164,7 +179,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
         public SymbolRef CreateUpvalue(BuildTimeScope scope, SymbolRef symbol)
         {
-            for (int i = 0; i < m_Closure.Count; i++)
+            for (var i = 0; i < m_Closure.Count; i++)
             {
                 if (m_Closure[i].i_Name == symbol.i_Name)
                 {
@@ -184,25 +199,27 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
         public override DynValue Eval(ScriptExecutionContext context)
         {
-            throw new DynamicExpressionException("Dynamic Expressions cannot define new functions.");
+            throw new DynamicExpressionException(
+                "Dynamic Expressions cannot define new functions."
+            );
         }
 
         public int CompileBody(ByteCode bc, string friendlyName)
         {
-            string funcName = friendlyName ?? "<" + m_Begin.FormatLocation(bc.Script, true) + ">";
+            var funcName = friendlyName ?? "<" + m_Begin.FormatLocation(bc.Script, true) + ">";
 
             bc.PushSourceRef(m_Begin);
 
-            Instruction I = bc.Emit_Jump(OpCode.Jump, -1);
+            var I = bc.Emit_Jump(OpCode.Jump, -1);
 
-            Instruction meta = bc.Emit_Meta(funcName, OpCodeMetadataType.FunctionEntrypoint);
-            int metaip = bc.GetJumpPointForLastInstruction();
+            var meta = bc.Emit_Meta(funcName, OpCodeMetadataType.FunctionEntrypoint);
+            var metaip = bc.GetJumpPointForLastInstruction();
 
             bc.Emit_BeginFn(m_StackFrame);
 
             bc.LoopTracker.Loops.Push(new LoopBoundary());
 
-            int entryPoint = bc.GetJumpPointForLastInstruction();
+            var entryPoint = bc.GetJumpPointForLastInstruction();
 
             if (m_UsesGlobalEnv)
             {
@@ -235,19 +252,18 @@ namespace SolarSharp.Interpreter.Tree.Expressions
         {
             using (bc.EnterSource(m_Begin))
             {
-                SymbolRef[] symbs = m_Closure
-                    //.Select((s, idx) => s.CloneLocalAndSetFrame(m_ClosureFrames[idx]))
-                    .ToArray();
+                var symbs = m_Closure
+                //.Select((s, idx) => s.CloneLocalAndSetFrame(m_ClosureFrames[idx]))
+                .ToArray();
 
                 m_ClosureInstruction = bc.Emit_Closure(symbs, bc.GetJumpPointForNextInstruction());
-                int ops = afterDecl();
+                var ops = afterDecl();
 
                 m_ClosureInstruction.NumVal += 2 + ops;
             }
 
             return CompileBody(bc, friendlyName);
         }
-
 
         public override void Compile(ByteCode bc)
         {

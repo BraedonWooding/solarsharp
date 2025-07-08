@@ -17,7 +17,10 @@ namespace SolarSharp.Interpreter.Security
         private readonly EnvironmentEmulationPolicy _policy;
         private readonly List<string> _allowedVariables;
 
-        public EnvironmentEmulator(EnvironmentEmulationPolicy policy, List<string> allowedVariables = null)
+        public EnvironmentEmulator(
+            EnvironmentEmulationPolicy policy,
+            List<string> allowedVariables = null
+        )
         {
             _policy = policy ?? throw new ArgumentNullException(nameof(policy));
             _emulatedVariables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -25,7 +28,7 @@ namespace SolarSharp.Interpreter.Security
             _blockedPatterns = new List<Regex>();
             _passthroughPatterns = new List<Regex>();
             _allowedVariables = allowedVariables ?? new List<string>();
-            
+
             Initialize();
         }
 
@@ -48,7 +51,7 @@ namespace SolarSharp.Interpreter.Security
             // In sandboxed mode, check if variable is in the allowed list
             if (_policy.Mode == EnvironmentMode.Sandboxed && _allowedVariables.Count > 0)
             {
-                bool isAllowed = false;
+                var isAllowed = false;
                 foreach (var pattern in _allowedVariables)
                 {
                     if (IsMatch(variableName, pattern))
@@ -57,7 +60,7 @@ namespace SolarSharp.Interpreter.Security
                         break;
                     }
                 }
-                
+
                 if (!isAllowed)
                 {
                     return null;
@@ -65,7 +68,7 @@ namespace SolarSharp.Interpreter.Security
             }
 
             // Check if we have an emulated value
-            if (_emulatedVariables.TryGetValue(variableName, out string emulatedValue))
+            if (_emulatedVariables.TryGetValue(variableName, out var emulatedValue))
                 return emulatedValue;
 
             // Check if variable is allowed to pass through
@@ -73,7 +76,9 @@ namespace SolarSharp.Interpreter.Security
                 return Environment.GetEnvironmentVariable(variableName);
 
             // Default: block unknown variables in sandboxed mode
-            return _policy.Mode == EnvironmentMode.Sandboxed ? null : Environment.GetEnvironmentVariable(variableName);
+            return _policy.Mode == EnvironmentMode.Sandboxed
+                ? null
+                : Environment.GetEnvironmentVariable(variableName);
         }
 
         /// <summary>
@@ -122,10 +127,10 @@ namespace SolarSharp.Interpreter.Security
         {
             // Initialize blocked patterns for security-critical variables
             InitializeBlockedPatterns();
-            
+
             // Initialize emulated variables based on policy
             InitializeEmulatedVariables();
-            
+
             // Initialize passthrough variables and patterns
             InitializePassthroughVariables();
         }
@@ -138,28 +143,32 @@ namespace SolarSharp.Interpreter.Security
             if (_policy.BlockDangerousVariables)
             {
                 // Dynamic loader variables (Unix/Linux/macOS)
-                blockedPatterns.AddRange(new[]
-                {
-                    @"^DYLD_.*",           // macOS dynamic loader
-                    @"^LD_.*",             // Linux dynamic loader
-                    @"^LIBPATH$",          // AIX library path
-                    @"^SHLIB_PATH$",       // HP-UX shared library path
-                    @"^_$",                // Last executed command
-                    @"^IFS$",              // Shell field separator
-                    @"^PS[1-4]$",          // Shell prompts (can execute code)
-                    @"^PATH_.*",           // Shell path variables
-                    @"^BASH_.*",           // Bash-specific variables
-                    @"^SHELL_.*",          // Shell-specific variables
-                });
+                blockedPatterns.AddRange(
+                    new[]
+                    {
+                        @"^DYLD_.*", // macOS dynamic loader
+                        @"^LD_.*", // Linux dynamic loader
+                        @"^LIBPATH$", // AIX library path
+                        @"^SHLIB_PATH$", // HP-UX shared library path
+                        @"^_$", // Last executed command
+                        @"^IFS$", // Shell field separator
+                        @"^PS[1-4]$", // Shell prompts (can execute code)
+                        @"^PATH_.*", // Shell path variables
+                        @"^BASH_.*", // Bash-specific variables
+                        @"^SHELL_.*", // Shell-specific variables
+                    }
+                );
 
                 // Windows-specific dangerous variables
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    blockedPatterns.AddRange(new[]
-                    {
-                        @"^PATHEXT$",      // Executable extensions
-                        @"^COMSPEC$",      // Command processor
-                    });
+                    blockedPatterns.AddRange(
+                        new[]
+                        {
+                            @"^PATHEXT$", // Executable extensions
+                            @"^COMSPEC$", // Command processor
+                        }
+                    );
                 }
             }
 
@@ -174,7 +183,11 @@ namespace SolarSharp.Interpreter.Security
             {
                 try
                 {
-                    _blockedPatterns.Add(new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled));
+                    // Convert wildcard patterns to regex
+                    var regexPattern = ConvertWildcardToRegex(pattern);
+                    _blockedPatterns.Add(
+                        new Regex(regexPattern, RegexOptions.IgnoreCase | RegexOptions.Compiled)
+                    );
                 }
                 catch (ArgumentException)
                 {
@@ -200,10 +213,10 @@ namespace SolarSharp.Interpreter.Security
                 _emulatedVariables["TEMP"] = _policy.SandboxTemp ?? "/sandbox/temp"; // Windows
                 _emulatedVariables["PWD"] = _policy.WorkingDirectory ?? "/workspace";
                 _emulatedVariables["OLDPWD"] = _policy.WorkingDirectory ?? "/workspace";
-                
+
                 // Safe PATH with limited binaries
                 _emulatedVariables["PATH"] = _policy.SandboxPath ?? "/sandbox/bin:/usr/bin:/bin";
-                
+
                 // Sandbox identification
                 _emulatedVariables["SANDBOX_MODE"] = "true";
                 _emulatedVariables["SOLARSHARP_SANDBOX"] = "true";
@@ -224,10 +237,23 @@ namespace SolarSharp.Interpreter.Security
             // Safe variables that can be passed through
             var safeVariables = new[]
             {
-                "LANG", "LANGUAGE", "LC_ALL", "LC_CTYPE", "LC_NUMERIC", "LC_TIME",
-                "LC_COLLATE", "LC_MONETARY", "LC_MESSAGES", "LC_PAPER", "LC_NAME",
-                "LC_ADDRESS", "LC_TELEPHONE", "LC_MEASUREMENT", "LC_IDENTIFICATION",
-                "TZ", "TIMEZONE"
+                "LANG",
+                "LANGUAGE",
+                "LC_ALL",
+                "LC_CTYPE",
+                "LC_NUMERIC",
+                "LC_TIME",
+                "LC_COLLATE",
+                "LC_MONETARY",
+                "LC_MESSAGES",
+                "LC_PAPER",
+                "LC_NAME",
+                "LC_ADDRESS",
+                "LC_TELEPHONE",
+                "LC_MEASUREMENT",
+                "LC_IDENTIFICATION",
+                "TZ",
+                "TIMEZONE",
             };
 
             foreach (var variable in safeVariables)
@@ -251,7 +277,11 @@ namespace SolarSharp.Interpreter.Security
                 {
                     try
                     {
-                        _passthroughPatterns.Add(new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled));
+                        // Convert wildcard patterns to regex
+                        var regexPattern = ConvertWildcardToRegex(pattern);
+                        _passthroughPatterns.Add(
+                            new Regex(regexPattern, RegexOptions.IgnoreCase | RegexOptions.Compiled)
+                        );
                     }
                     catch (ArgumentException)
                     {
@@ -286,42 +316,51 @@ namespace SolarSharp.Interpreter.Security
 
             return false;
         }
-        
+
+        private string ConvertWildcardToRegex(string pattern)
+        {
+            // Escape special regex characters except *
+            var escaped = Regex.Escape(pattern);
+            // Convert wildcard * to regex .*
+            return "^" + escaped.Replace("\\*", ".*") + "$";
+        }
+
         private bool IsMatch(string value, string pattern)
         {
             // Simple wildcard matching
             if (pattern.EndsWith("*"))
             {
-                string prefix = pattern.Substring(0, pattern.Length - 1);
+                var prefix = pattern.Substring(0, pattern.Length - 1);
                 return value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
             }
-            else if (pattern.StartsWith("*"))
+            if (pattern.StartsWith("*"))
             {
-                string suffix = pattern.Substring(1);
+                var suffix = pattern.Substring(1);
                 return value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase);
             }
-            else if (pattern.Contains("*"))
+            if (pattern.Contains("*"))
             {
                 // Split on * and check if all parts are present in order
-                string[] parts = pattern.Split('*');
-                int currentIndex = 0;
-                for (int i = 0; i < parts.Length; i++)
+                var parts = pattern.Split('*');
+                var currentIndex = 0;
+                for (var i = 0; i < parts.Length; i++)
                 {
                     if (string.IsNullOrEmpty(parts[i]))
                         continue;
-                        
-                    int index = value.IndexOf(parts[i], currentIndex, StringComparison.OrdinalIgnoreCase);
+
+                    var index = value.IndexOf(
+                        parts[i],
+                        currentIndex,
+                        StringComparison.OrdinalIgnoreCase
+                    );
                     if (index == -1)
                         return false;
-                        
+
                     currentIndex = index + parts[i].Length;
                 }
                 return true;
             }
-            else
-            {
-                return string.Equals(value, pattern, StringComparison.OrdinalIgnoreCase);
-            }
+            return string.Equals(value, pattern, StringComparison.OrdinalIgnoreCase);
         }
     }
 
@@ -332,17 +371,18 @@ namespace SolarSharp.Interpreter.Security
     {
         public EnvironmentMode Mode { get; set; } = EnvironmentMode.Passthrough;
         public bool BlockDangerousVariables { get; set; } = true;
-        
+
         // Sandbox settings
         public string SandboxHome { get; set; } = "/sandbox/home";
         public string SandboxUser { get; set; } = "sandbox_user";
         public string SandboxTemp { get; set; } = "/sandbox/temp";
         public string SandboxPath { get; set; } = "/sandbox/bin:/usr/bin:/bin";
         public string WorkingDirectory { get; set; } = "/workspace";
-        
+
         // Variable lists
         public List<string> BlockedVariables { get; set; } = new List<string>();
-        public Dictionary<string, string> EmulatedVariables { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> EmulatedVariables { get; set; } =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public List<string> PassthroughVariables { get; set; } = new List<string>();
         public List<string> PassthroughPatterns { get; set; } = new List<string>();
     }
@@ -356,15 +396,15 @@ namespace SolarSharp.Interpreter.Security
         /// Pass through all environment variables (least secure)
         /// </summary>
         Passthrough,
-        
+
         /// <summary>
         /// Sandboxed mode with emulated variables and strict filtering
         /// </summary>
         Sandboxed,
-        
+
         /// <summary>
         /// Isolated mode with no access to host environment
         /// </summary>
-        Isolated
+        Isolated,
     }
 }

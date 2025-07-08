@@ -1,75 +1,111 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
 using NUnit.Framework;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.OpenSsl;
 using SolarSharp.Interpreter.Security;
 using SolarSharp.Interpreter.Security.Manifests;
 
 namespace SolarSharp.Interpreter.Tests.Units
 {
     /// <summary>
-    ///     Tests for complex hierarchical manifest structures including tree-like dependency resolution,
-    ///     policy inheritance, conflict resolution, and security isolation between branches.
+    ///     Tests for manifest behavior in directory hierarchies.
+    ///     Verifies that manifests are self-contained and directory-isolated,
+    ///     with no support for includes or cross-directory references.
     /// </summary>
     [TestFixture]
-    [Category("SecurityTest")]
-    [Category("IntegrationTest")]
+    [Category("Security.Manifest")]
+    [Category("Manifest.Integration")]
     public class HierarchicalManifestTests
     {
         [SetUp]
         public void Setup()
         {
-            _tempDir = Path.Combine(Path.GetTempPath(), $"solarsharp_hierarchy_test_{Guid.NewGuid()}");
+            _tempDir = Path.Combine(
+                Path.GetTempPath(),
+                $"solarsharp_hierarchy_test_{Guid.NewGuid()}"
+            );
             Directory.CreateDirectory(_tempDir);
 
-            // Create keys for different authority levels
-            _orgRootKey = RSA.Create(2048);
-            _projectLeadKey = RSA.Create(2048);
-            _developerKey = RSA.Create(2048);
-            _untrustedKey = RSA.Create(2048);
+            // Load pre-generated test keys from filesystem
+            var testKeysPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestKeys");
 
-            _orgRootKeyPem = Convert.ToBase64String(_orgRootKey.ExportSubjectPublicKeyInfo());
-            _projectLeadKeyPem = Convert.ToBase64String(_projectLeadKey.ExportSubjectPublicKeyInfo());
-            _developerKeyPem = Convert.ToBase64String(_developerKey.ExportSubjectPublicKeyInfo());
-            _untrustedKeyPem = Convert.ToBase64String(_untrustedKey.ExportSubjectPublicKeyInfo());
+            // Use RSA 2048 key for org root
+            _orgRootKey = LoadPrivateKey(Path.Combine(testKeysPath, "rsa-2048.pem"));
 
-            // Add keys to trust store with different authority levels
-            ManifestTrustStore.AddTrustedKey($"-----BEGIN PUBLIC KEY-----\n{_orgRootKeyPem}\n-----END PUBLIC KEY-----");
-            ManifestTrustStore.AddTrustedKey(
-                $"-----BEGIN PUBLIC KEY-----\n{_projectLeadKeyPem}\n-----END PUBLIC KEY-----");
-            ManifestTrustStore.AddTrustedKey(
-                $"-----BEGIN PUBLIC KEY-----\n{_developerKeyPem}\n-----END PUBLIC KEY-----");
+            // Generate other keys dynamically to ensure they're different
+            var projectLeadKeyPair = ManifestSigner.CreateKeyPair();
+            _projectLeadKey = projectLeadKeyPair.Private;
+            var developerKeyPair = ManifestSigner.CreateKeyPair();
+            _developerKey = developerKeyPair.Private;
+            var untrustedKeyPair = ManifestSigner.CreateKeyPair();
+            _untrustedKey = untrustedKeyPair.Private;
+
+            // Use ManifestSigner to export public keys to ensure consistent format
+            _orgRootKeyPem = ManifestSigner.ExportPublicKey(_orgRootKey);
+            _projectLeadKeyPem = ManifestSigner.ExportPublicKey(_projectLeadKey);
+            _developerKeyPem = ManifestSigner.ExportPublicKey(_developerKey);
+            _untrustedKeyPem = ManifestSigner.ExportPublicKey(_untrustedKey);
+
+            // Note: Scripts will be configured individually in each test method
+        }
+
+        private AsymmetricKeyParameter LoadPrivateKey(string path)
+        {
+            using (var reader = new StreamReader(path))
+            {
+                var pemReader = new PemReader(reader);
+                var keyPair = pemReader.ReadObject();
+
+                if (keyPair is AsymmetricCipherKeyPair pair)
+                    return pair.Private;
+                if (keyPair is AsymmetricKeyParameter key)
+                    return key;
+                throw new InvalidOperationException($"Unable to load private key from {path}");
+            }
         }
 
         [TearDown]
         public void Cleanup()
         {
-            if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, true);
+            if (Directory.Exists(_tempDir))
+                Directory.Delete(_tempDir, true);
 
-            _orgRootKey?.Dispose();
-            _projectLeadKey?.Dispose();
-            _developerKey?.Dispose();
-            _untrustedKey?.Dispose();
+            // BouncyCastle keys don't implement IDisposable
+            _orgRootKey = null;
+            _projectLeadKey = null;
+            _developerKey = null;
+            _untrustedKey = null;
 
-            // Clear the trust store to avoid test pollution
-            ManifestTrustStore.ClearTrustedKeys();
+            // Trust stores are now per-Script instance, no global cleanup needed
         }
 
         private string _tempDir;
 
         // Different authority keys for testing complex scenarios
-        private RSA _orgRootKey; // Organization root authority
-        private RSA _projectLeadKey; // Project lead authority
-        private RSA _developerKey; // Developer authority
-        private RSA _untrustedKey; // Untrusted/revoked key
+        private AsymmetricKeyParameter _orgRootKey; // Organization root authority
+        private AsymmetricKeyParameter _projectLeadKey; // Project lead authority
+        private AsymmetricKeyParameter _developerKey; // Developer authority
+        private AsymmetricKeyParameter _untrustedKey; // Untrusted/revoked key
 
         private string _orgRootKeyPem;
         private string _projectLeadKeyPem;
         private string _developerKeyPem;
         private string _untrustedKeyPem;
 
+        /// <summary>
+        /// Creates a Script configured with trusted organizational keys
+        /// </summary>
+        private Script CreateScriptWithTrustedKeys()
+        {
+            var script = new Script(Examples.DesktopBasePolicySet);
+            script.LoadKey(_orgRootKeyPem);
+            script.LoadKey(_projectLeadKeyPem);
+            script.LoadKey(_developerKeyPem);
+            return script;
+        }
+
+        [Category("Manifest.Unit")]
         [Test]
         public void TestMultiLevelProjectHierarchy()
         {
@@ -77,10 +113,11 @@ namespace SolarSharp.Interpreter.Tests.Units
             // /project (org root signed)
             //   /frontend (project lead signed)
             //     /components (developer signed)
-            //       /ui (untrusted)
+            //       /ui (unsigned)
             //   /backend (project lead signed)
             //     /api (developer signed)
-            //     /database (untrusted)
+            //     /database (unsigned)
+            // Each directory has its own self-contained manifest
 
             var projectDir = Path.Combine(_tempDir, "project");
             var frontendDir = Path.Combine(projectDir, "frontend");
@@ -98,8 +135,9 @@ namespace SolarSharp.Interpreter.Tests.Units
             Directory.CreateDirectory(apiDir);
             Directory.CreateDirectory(databaseDir);
 
-            // Organization root manifest
-            var orgManifestContent = @"{
+            // Organization root manifest (self-contained)
+            var orgManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""description"": ""Organization root manifest"",
                 ""policy"": {
@@ -107,87 +145,97 @@ namespace SolarSharp.Interpreter.Tests.Units
                     ""maxMemoryMB"": 500,
                     ""allowedModules"": [""basic"", ""string"", ""math"", ""table"", ""io""],
                     ""capabilities"": [""FileRead"", ""FileWrite""]
-                },
-                ""includes"": [""frontend/LuaManifest.json"", ""backend/LuaManifest.json""]
+                }
             }";
 
             var signedOrgManifest = SignContent(orgManifestContent, _orgRootKey);
             File.WriteAllText(Path.Combine(projectDir, "LuaManifest.json"), signedOrgManifest);
 
-            // Frontend manifest (project lead signed)
-            var frontendManifestContent = @"{
+            // Frontend manifest (project lead signed, self-contained)
+            var frontendManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""description"": ""Frontend team manifest"",
                 ""policy"": {
                     ""timeoutMs"": 60000,
                     ""allowedModules"": [""basic"", ""string"", ""math""]
-                },
-                ""includes"": [""components/LuaManifest.json""]
+                }
             }";
 
             var signedFrontendManifest = SignContent(frontendManifestContent, _projectLeadKey);
-            File.WriteAllText(Path.Combine(frontendDir, "LuaManifest.json"), signedFrontendManifest);
+            File.WriteAllText(
+                Path.Combine(frontendDir, "LuaManifest.json"),
+                signedFrontendManifest
+            );
 
-            // Components manifest (developer signed)
-            var componentsManifestContent = @"{
+            // Components manifest (developer signed, self-contained)
+            var componentsManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""description"": ""UI components manifest"",
                 ""policy"": {
                     ""timeoutMs"": 30000,
                     ""capabilities"": [""FileRead""]
-                },
-                ""includes"": [""ui/LuaManifest.json""]
-            }";
-
-            var signedComponentsManifest = SignContent(componentsManifestContent, _developerKey);
-            File.WriteAllText(Path.Combine(componentsDir, "LuaManifest.json"), signedComponentsManifest);
-
-            // UI manifest (untrusted - can only tighten)
-            var uiManifestContent = @"{
-                ""version"": ""1.0"",
-                ""description"": ""UI specific configuration"",
-                ""policy"": {
-                    ""timeoutMs"": 15000
                 }
             }";
 
+            var signedComponentsManifest = SignContent(componentsManifestContent, _developerKey);
+            File.WriteAllText(
+                Path.Combine(componentsDir, "LuaManifest.json"),
+                signedComponentsManifest
+            );
+
+            // UI manifest (unsigned V2.0, self-contained)
+            var uiManifestContent = CreateUnsignedV2Manifest(
+                "UI specific configuration",
+                timeoutMs: 15000,
+                allowedModules: new[] { "basic", "string" }
+            );
+
             File.WriteAllText(Path.Combine(uiDir, "LuaManifest.json"), uiManifestContent);
 
-            // Backend manifest (project lead signed)
-            var backendManifestContent = @"{
+            // Backend manifest (project lead signed, self-contained)
+            var backendManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""description"": ""Backend team manifest"",
                 ""policy"": {
-                    ""capabilities"": [""FileRead"", ""FileWrite""]
-                },
-                ""includes"": [""api/LuaManifest.json"", ""database/LuaManifest.json""]
+                    ""timeoutMs"": 120000,
+                    ""capabilities"": [""FileRead"", ""FileWrite""],
+                    ""allowedModules"": [""basic"", ""string"", ""math"", ""io""]
+                }
             }";
 
             var signedBackendManifest = SignContent(backendManifestContent, _projectLeadKey);
             File.WriteAllText(Path.Combine(backendDir, "LuaManifest.json"), signedBackendManifest);
 
-            // API manifest (developer signed)
-            var apiManifestContent = @"{
+            // API manifest (developer signed, self-contained)
+            var apiManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""description"": ""API configuration"",
                 ""policy"": {
-                    ""allowedModules"": [""basic"", ""string"", ""io""]
+                    ""timeoutMs"": 60000,
+                    ""allowedModules"": [""basic"", ""string"", ""io""],
+                    ""capabilities"": [""FileRead"", ""FileWrite""]
                 }
             }";
 
             var signedApiManifest = SignContent(apiManifestContent, _developerKey);
             File.WriteAllText(Path.Combine(apiDir, "LuaManifest.json"), signedApiManifest);
 
-            // Database manifest (untrusted - can only tighten constraints)
-            var databaseManifestContent = @"{
-                ""version"": ""1.0"",
-                ""description"": ""Database scripts configuration"",
-                ""policy"": {
-                    ""timeoutMs"": 30000
-                }
-            }";
+            // Database manifest (unsigned V2.0, self-contained)
+            var databaseManifestContent = CreateUnsignedV2Manifest(
+                "Database scripts configuration",
+                timeoutMs: 30000,
+                allowedModules: new[] { "basic", "string" },
+                capabilities: new[] { "FileRead" }
+            );
 
-            File.WriteAllText(Path.Combine(databaseDir, "LuaManifest.json"), databaseManifestContent);
+            File.WriteAllText(
+                Path.Combine(databaseDir, "LuaManifest.json"),
+                databaseManifestContent
+            );
 
             // Test scripts in different parts of hierarchy
             var uiScriptPath = Path.Combine(uiDir, "test.lua");
@@ -199,46 +247,30 @@ namespace SolarSharp.Interpreter.Tests.Units
             var databaseScriptPath = Path.Combine(databaseDir, "test.lua");
             File.WriteAllText(databaseScriptPath, "return 'database hierarchy works'");
 
-            // All should work with proper hierarchy resolution
-            var uiResult = Script.RunFile(uiScriptPath);
+            // Each script uses its own directory's manifest only
+            var script = CreateScriptWithTrustedKeys();
+
+            var uiResult = script.DoFile(uiScriptPath);
             Assert.That(uiResult.String, Is.EqualTo("ui hierarchy works"));
 
-            var apiResult = Script.RunFile(apiScriptPath);
+            var apiResult = script.DoFile(apiScriptPath);
             Assert.That(apiResult.String, Is.EqualTo("api hierarchy works"));
 
-            var databaseResult = Script.RunFile(databaseScriptPath);
+            var databaseResult = script.DoFile(databaseScriptPath);
             Assert.That(databaseResult.String, Is.EqualTo("database hierarchy works"));
         }
 
+        [Category("Manifest.Unit")]
         [Test]
         public void TestCrossDirectoryManifestIncludes()
         {
-            // Test complex include patterns across directory boundaries
-            var sharedDir = Path.Combine(_tempDir, "shared");
+            // Test that manifests with includes are rejected at signing time
             var moduleADir = Path.Combine(_tempDir, "moduleA");
-            var moduleBDir = Path.Combine(_tempDir, "moduleB");
-            var testDir = Path.Combine(_tempDir, "test");
-
-            Directory.CreateDirectory(sharedDir);
             Directory.CreateDirectory(moduleADir);
-            Directory.CreateDirectory(moduleBDir);
-            Directory.CreateDirectory(testDir);
 
-            // Shared configuration manifest
-            var sharedManifestContent = @"{
-                ""version"": ""1.0"",
-                ""description"": ""Shared configuration for all modules"",
-                ""policy"": {
-                    ""timeoutMs"": 60000,
-                    ""allowedModules"": [""basic"", ""string"", ""math""]
-                }
-            }";
-
-            var signedSharedManifest = SignContent(sharedManifestContent, _orgRootKey);
-            File.WriteAllText(Path.Combine(sharedDir, "LuaManifest.json"), signedSharedManifest);
-
-            // Module A manifest (includes shared) - use same key
-            var moduleAManifestContent = @"{
+            // Try to create a manifest with includes - should be rejected during signing
+            var manifestWithIncludes =
+                @"{
                 ""version"": ""1.0"",
                 ""description"": ""Module A configuration"",
                 ""policy"": {
@@ -247,85 +279,80 @@ namespace SolarSharp.Interpreter.Tests.Units
                 ""includes"": [""../shared/LuaManifest.json""]
             }";
 
-            var signedmoduleAManifest = SignContent(moduleAManifestContent, _orgRootKey);
-            File.WriteAllText(Path.Combine(moduleADir, "LuaManifest.json"), signedmoduleAManifest);
+            // Signing should fail because includes are not supported
+            var ex = Assert.Throws<ManifestFormatException>(() =>
+                SignContent(manifestWithIncludes, _orgRootKey)
+            );
+            Assert.That(ex.Message, Does.Contain("includes are not supported"));
 
-            // Module B manifest (includes shared) - use same key
-            var moduleBManifestContent = @"{
+            // Now create a valid self-contained manifest without includes
+            var validModuleAManifest =
+                @"{
                 ""version"": ""1.0"",
-                ""description"": ""Module B configuration"",
+                ""description"": ""Module A configuration"",
                 ""policy"": {
-                    ""capabilities"": [""FileWrite""]
-                },
-                ""includes"": [""../shared/LuaManifest.json""]
+                    ""capabilities"": [""FileRead""],
+                    ""allowedModules"": [""basic"", ""string""]
+                }
             }";
 
-            var signedmoduleBManifest = SignContent(moduleBManifestContent, _orgRootKey);
-            File.WriteAllText(Path.Combine(moduleBDir, "LuaManifest.json"), signedmoduleBManifest);
+            var signedValidModuleA = SignContent(validModuleAManifest, _orgRootKey);
+            File.WriteAllText(Path.Combine(moduleADir, "LuaManifest.json"), signedValidModuleA);
 
-            // Test manifest (includes both modules) - use same key
-            var testManifestContent = @"{
-                ""version"": ""1.0"",
-                ""description"": ""Test configuration"",
-                ""policy"": {
-                    ""timeoutMs"": 30000
-                },
-                ""includes"": [""../moduleA/LuaManifest.json"", ""../moduleB/LuaManifest.json""]
-            }";
+            // Create test script
+            var moduleAScriptPath = Path.Combine(moduleADir, "test.lua");
+            File.WriteAllText(moduleAScriptPath, "return 'moduleA test'");
 
-            var signedtestManifest = SignContent(testManifestContent, _orgRootKey);
-            File.WriteAllText(Path.Combine(testDir, "LuaManifest.json"), signedtestManifest);
-
-            var scriptPath = Path.Combine(testDir, "test.lua");
-            File.WriteAllText(scriptPath, "return 'cross-directory includes work'");
-
-            // Should resolve complex cross-directory includes
-            var result = Script.RunFile(scriptPath);
-            Assert.That(result.String, Is.EqualTo("cross-directory includes work"));
+            // Now it should work with the self-contained manifest
+            var script = CreateScriptWithTrustedKeys();
+            var result = script.DoFile(moduleAScriptPath);
+            Assert.That(result.String, Is.EqualTo("moduleA test"));
         }
 
+        [Category("Manifest.Unit")]
         [Test]
         public void TestConflictingManifestPolicyResolution()
         {
-            // Test how conflicting policies are resolved in hierarchical manifests
+            // Test that each directory uses only its own manifest policy
             var level1Dir = Path.Combine(_tempDir, "level1");
             var level2Dir = Path.Combine(level1Dir, "level2");
 
             Directory.CreateDirectory(level1Dir);
             Directory.CreateDirectory(level2Dir);
 
-            // Root manifest with permissive policy
-            var rootManifestContent = @"{
+            // Root manifest with permissive policy (self-contained)
+            var rootManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""timeoutMs"": 300000,
                     ""maxMemoryMB"": 500,
-                    ""allowedModules"": [""basic"", ""string"", ""math"", ""table"", ""io"", ""os""],
+                    ""allowedModules"": [""basic"", ""string"", ""math"", ""table"", ""io""],
                     ""capabilities"": [""FileRead"", ""FileWrite"", ""NetworkAccess""]
-                },
-                ""includes"": [""level1/LuaManifest.json""]
+                }
             }";
 
             var signedrootManifest = SignContent(rootManifestContent, _orgRootKey);
             File.WriteAllText(Path.Combine(_tempDir, "LuaManifest.json"), signedrootManifest);
 
-            // Level 1 manifest with conflicting restrictive policy (signed - can override)
-            var level1ManifestContent = @"{
+            // Level 1 manifest with different policy (self-contained)
+            var level1ManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""timeoutMs"": 10000,
                     ""maxMemoryMB"": 50,
                     ""allowedModules"": [""basic"", ""string""],
                     ""capabilities"": [""FileRead""]
-                },
-                ""includes"": [""level2/LuaManifest.json""]
+                }
             }";
 
             var signedLevel1Manifest = SignContent(level1ManifestContent, _projectLeadKey);
             File.WriteAllText(Path.Combine(level1Dir, "LuaManifest.json"), signedLevel1Manifest);
 
-            // Level 2 manifest tries to override back to permissive (signed - should work)
-            var level2ManifestContent = @"{
+            // Level 2 manifest with its own policy (self-contained)
+            var level2ManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""timeoutMs"": 200000,
@@ -338,61 +365,90 @@ namespace SolarSharp.Interpreter.Tests.Units
             var signedLevel2Manifest = SignContent(level2ManifestContent, _developerKey);
             File.WriteAllText(Path.Combine(level2Dir, "LuaManifest.json"), signedLevel2Manifest);
 
-            var scriptPath = Path.Combine(level2Dir, "test.lua");
-            File.WriteAllText(scriptPath, "return 'conflict resolution works'");
+            // Create test scripts in each directory
+            var rootScriptPath = Path.Combine(_tempDir, "test.lua");
+            File.WriteAllText(rootScriptPath, "return 'root script'");
 
-            // Should use the most recent signed manifest's policy
-            var result = Script.RunFile(scriptPath);
-            Assert.That(result.String, Is.EqualTo("conflict resolution works"));
+            var level1ScriptPath = Path.Combine(level1Dir, "test.lua");
+            File.WriteAllText(level1ScriptPath, "return 'level1 script'");
+
+            var level2ScriptPath = Path.Combine(level2Dir, "test.lua");
+            File.WriteAllText(level2ScriptPath, "return 'level2 script'");
+
+            // Each script uses only its own directory's manifest
+            var script = CreateScriptWithTrustedKeys();
+
+            var rootResult = script.DoFile(rootScriptPath);
+            Assert.That(rootResult.String, Is.EqualTo("root script"));
+
+            var level1Result = script.DoFile(level1ScriptPath);
+            Assert.That(level1Result.String, Is.EqualTo("level1 script"));
+
+            var level2Result = script.DoFile(level2ScriptPath);
+            Assert.That(level2Result.String, Is.EqualTo("level2 script"));
+
+            // Each directory's manifest is independent - no inheritance or conflict resolution
         }
 
+        [Category("Manifest.Unit")]
         [Test]
         public void TestUntrustedManifestConflictHandling()
         {
-            // Test that untrusted manifests can only make things more restrictive
+            // Test that unsigned manifests work independently in their own directories
             var restrictiveDir = Path.Combine(_tempDir, "restrictive");
             Directory.CreateDirectory(restrictiveDir);
 
-            // Root manifest with moderate permissions (signed)
-            var rootManifestContent = @"{
+            // Root manifest with moderate permissions (signed, self-contained)
+            var rootManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""timeoutMs"": 60000,
                     ""maxMemoryMB"": 100,
                     ""allowedModules"": [""basic"", ""string"", ""math"", ""io""],
                     ""capabilities"": [""FileRead"", ""FileWrite""]
-                },
-                ""includes"": [""restrictive/LuaManifest.json""]
+                }
             }";
 
             var signedrootManifest = SignContent(rootManifestContent, _orgRootKey);
             File.WriteAllText(Path.Combine(_tempDir, "LuaManifest.json"), signedrootManifest);
 
-            // Untrusted manifest tries to be both more and less restrictive
-            var restrictiveManifestContent = @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 30000,
-                    ""maxMemoryMB"": 50,
-                    ""allowedModules"": [""basic""],
-                    ""capabilities"": [""FileRead"", ""NetworkAccess""]
-                }
-            }";
+            // Unsigned V2.0 manifest in subdirectory (self-contained)
+            var restrictiveManifestContent = CreateUnsignedV2Manifest(
+                "Restrictive configuration",
+                timeoutMs: 30000,
+                maxMemoryMB: 50,
+                allowedModules: new[] { "basic", "string" },
+                capabilities: new[] { "FileRead" }
+            );
 
-            File.WriteAllText(Path.Combine(restrictiveDir, "LuaManifest.json"), restrictiveManifestContent);
+            File.WriteAllText(
+                Path.Combine(restrictiveDir, "LuaManifest.json"),
+                restrictiveManifestContent
+            );
 
-            var scriptPath = Path.Combine(restrictiveDir, "test.lua");
-            File.WriteAllText(scriptPath, "return 'untrusted restriction test'");
+            // Create test scripts
+            var rootScriptPath = Path.Combine(_tempDir, "test.lua");
+            File.WriteAllText(rootScriptPath, "return 'root script with signed manifest'");
 
-            // Should apply only the more restrictive parts, ignore less restrictive
-            var result = Script.RunFile(scriptPath);
-            Assert.That(result.String, Is.EqualTo("untrusted restriction test"));
+            var restrictiveScriptPath = Path.Combine(restrictiveDir, "test.lua");
+            File.WriteAllText(restrictiveScriptPath, "return 'unsigned manifest test'");
+
+            // Root directory script uses signed manifest
+            var script = CreateScriptWithTrustedKeys();
+            var result1 = script.DoFile(rootScriptPath);
+            Assert.That(result1.String, Is.EqualTo("root script with signed manifest"));
+
+            // Subdirectory script uses unsigned manifest - fallback policy applies
+            var result2 = script.DoFile(restrictiveScriptPath);
+            Assert.That(result2.String, Is.EqualTo("unsigned manifest test"));
         }
 
+        [Category("Manifest.Unit")]
         [Test]
         public void TestBranchIsolationInManifestTree()
         {
-            // Test that different branches of manifest tree don't interfere with each other
+            // Test that different directory branches are completely isolated
             var branch1Dir = Path.Combine(_tempDir, "branch1");
             var branch2Dir = Path.Combine(_tempDir, "branch2");
             var branch1SubDir = Path.Combine(branch1Dir, "sub");
@@ -403,56 +459,72 @@ namespace SolarSharp.Interpreter.Tests.Units
             Directory.CreateDirectory(branch1SubDir);
             Directory.CreateDirectory(branch2SubDir);
 
-            // Root manifest includes both branches
-            var rootManifestContent = @"{
+            // Root manifest (self-contained)
+            var rootManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
-                    ""allowedModules"": [""basic"", ""string""]
-                },
-                ""includes"": [""branch1/LuaManifest.json"", ""branch2/LuaManifest.json""]
+                    ""allowedModules"": [""basic"", ""string""],
+                    ""timeoutMs"": 60000
+                }
             }";
 
             var signedrootManifest = SignContent(rootManifestContent, _orgRootKey);
             File.WriteAllText(Path.Combine(_tempDir, "LuaManifest.json"), signedrootManifest);
 
-            // Branch 1: high security
-            var branch1ManifestContent = @"{
+            // Branch 1: high security (self-contained)
+            var branch1ManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""timeoutMs"": 10000,
                     ""maxMemoryMB"": 10,
-                    ""capabilities"": [""FileRead""]
-                },
-                ""includes"": [""sub/LuaManifest.json""]
+                    ""capabilities"": [""FileRead""],
+                    ""allowedModules"": [""basic""]
+                }
             }";
 
             var signedBranch1Manifest = SignContent(branch1ManifestContent, _projectLeadKey);
             File.WriteAllText(Path.Combine(branch1Dir, "LuaManifest.json"), signedBranch1Manifest);
 
-            // Branch 2: lower security
-            var branch2ManifestContent = @"{
+            // Branch 2: lower security (self-contained)
+            var branch2ManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""timeoutMs"": 120000,
                     ""maxMemoryMB"": 200,
-                    ""capabilities"": [""FileRead"", ""FileWrite"", ""NetworkAccess""]
-                },
-                ""includes"": [""sub/LuaManifest.json""]
+                    ""capabilities"": [""FileRead"", ""FileWrite"", ""NetworkAccess""],
+                    ""allowedModules"": [""basic"", ""string"", ""math"", ""io""]
+                }
             }";
 
             var signedBranch2Manifest = SignContent(branch2ManifestContent, _projectLeadKey);
             File.WriteAllText(Path.Combine(branch2Dir, "LuaManifest.json"), signedBranch2Manifest);
 
-            // Identical sub-manifests in both branches
-            var subManifestContent = @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 60000
-                }
-            }";
+            // Different sub-manifests in each branch (unsigned V2.0)
+            var branch1SubManifestContent = CreateUnsignedV2Manifest(
+                "Branch 1 sub-configuration",
+                timeoutMs: 5000,
+                maxMemoryMB: 5,
+                allowedModules: new[] { "basic" }
+            );
 
-            File.WriteAllText(Path.Combine(branch1SubDir, "LuaManifest.json"), subManifestContent);
-            File.WriteAllText(Path.Combine(branch2SubDir, "LuaManifest.json"), subManifestContent);
+            var branch2SubManifestContent = CreateUnsignedV2Manifest(
+                "Branch 2 sub-configuration",
+                timeoutMs: 60000,
+                maxMemoryMB: 100,
+                allowedModules: new[] { "basic", "string", "math" }
+            );
+
+            File.WriteAllText(
+                Path.Combine(branch1SubDir, "LuaManifest.json"),
+                branch1SubManifestContent
+            );
+            File.WriteAllText(
+                Path.Combine(branch2SubDir, "LuaManifest.json"),
+                branch2SubManifestContent
+            );
 
             // Scripts in each branch
             var branch1ScriptPath = Path.Combine(branch1SubDir, "test.lua");
@@ -461,18 +533,23 @@ namespace SolarSharp.Interpreter.Tests.Units
             var branch2ScriptPath = Path.Combine(branch2SubDir, "test.lua");
             File.WriteAllText(branch2ScriptPath, "return 'branch2 isolated'");
 
-            // Both should work but with different security contexts
-            var branch1Result = Script.RunFile(branch1ScriptPath);
+            // Each branch is completely isolated with its own manifest
+            var script = CreateScriptWithTrustedKeys();
+
+            var branch1Result = script.DoFile(branch1ScriptPath);
             Assert.That(branch1Result.String, Is.EqualTo("branch1 isolated"));
 
-            var branch2Result = Script.RunFile(branch2ScriptPath);
+            var branch2Result = script.DoFile(branch2ScriptPath);
             Assert.That(branch2Result.String, Is.EqualTo("branch2 isolated"));
+
+            // The manifests in each branch are completely independent
         }
 
+        [Category("Manifest.Unit")]
         [Test]
         public void TestUntrustedBranchContainment()
         {
-            // Test that an untrusted branch doesn't compromise the entire tree
+            // Test that untrusted manifests in one directory don't affect others
             var trustedDir = Path.Combine(_tempDir, "trusted");
             var untrustedDir = Path.Combine(_tempDir, "untrusted");
             var trustedSubDir = Path.Combine(trustedDir, "sub");
@@ -483,41 +560,78 @@ namespace SolarSharp.Interpreter.Tests.Units
             Directory.CreateDirectory(trustedSubDir);
             Directory.CreateDirectory(untrustedSubDir);
 
-            // Trusted root manifest (only includes trusted branch)
-            var trustedRootManifestContent = @"{
+            // Trusted manifest (self-contained)
+            var trustedRootManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
-                    ""capabilities"": [""FileRead""]
-                },
-                ""includes"": [""sub/LuaManifest.json""]
-            }";
-
-            var signedTrustedRootManifest = SignContent(trustedRootManifestContent, _orgRootKey);
-            File.WriteAllText(Path.Combine(trustedDir, "LuaManifest.json"), signedTrustedRootManifest);
-
-            // Untrusted root manifest (only includes untrusted branch) 
-            var untrustedRootManifestContent = @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""capabilities"": [""FileWrite"", ""NetworkAccess""]
-                },
-                ""includes"": [""sub/LuaManifest.json""]
-            }";
-
-            var signedUntrustedRootManifest = SignContent(untrustedRootManifestContent, _untrustedKey);
-            File.WriteAllText(Path.Combine(untrustedDir, "LuaManifest.json"), signedUntrustedRootManifest);
-
-
-            // Sub-manifests
-            var subManifestContent = @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 30000
+                    ""capabilities"": [""FileRead""],
+                    ""allowedModules"": [""basic"", ""string""]
                 }
             }";
 
-            File.WriteAllText(Path.Combine(trustedSubDir, "LuaManifest.json"), subManifestContent);
-            File.WriteAllText(Path.Combine(untrustedSubDir, "LuaManifest.json"), subManifestContent);
+            var signedTrustedRootManifest = SignContent(trustedRootManifestContent, _orgRootKey);
+            File.WriteAllText(
+                Path.Combine(trustedDir, "LuaManifest.json"),
+                signedTrustedRootManifest
+            );
+
+            // Untrusted manifest signed with untrusted key (self-contained)
+            var untrustedRootManifestContent =
+                @"{
+                ""version"": ""1.0"",
+                ""policy"": {
+                    ""capabilities"": [""FileWrite"", ""NetworkAccess""],
+                    ""allowedModules"": [""basic"", ""string"", ""io""]
+                }
+            }";
+
+            var signedUntrustedRootManifest = SignContent(
+                untrustedRootManifestContent,
+                _untrustedKey
+            );
+            File.WriteAllText(
+                Path.Combine(untrustedDir, "LuaManifest.json"),
+                signedUntrustedRootManifest
+            );
+
+            // Sub-manifests (self-contained and signed)
+            var trustedSubManifestContent =
+                @"{
+                ""version"": ""1.0"",
+                ""policy"": {
+                    ""timeoutMs"": 30000,
+                    ""capabilities"": [""FileRead""],
+                    ""allowedModules"": [""basic""]
+                }
+            }";
+
+            var untrustedSubManifestContent =
+                @"{
+                ""version"": ""1.0"",
+                ""policy"": {
+                    ""timeoutMs"": 30000,
+                    ""capabilities"": [""FileWrite""],
+                    ""allowedModules"": [""basic"", ""string""]
+                }
+            }";
+
+            // Sign the trusted sub-manifest with a trusted key
+            var signedTrustedSubManifest = SignContent(trustedSubManifestContent, _developerKey);
+            File.WriteAllText(
+                Path.Combine(trustedSubDir, "LuaManifest.json"),
+                signedTrustedSubManifest
+            );
+
+            // Sign the untrusted sub-manifest with the untrusted key
+            var signedUntrustedSubManifest = SignContent(
+                untrustedSubManifestContent,
+                _untrustedKey
+            );
+            File.WriteAllText(
+                Path.Combine(untrustedSubDir, "LuaManifest.json"),
+                signedUntrustedSubManifest
+            );
 
             // Scripts
             var trustedScriptPath = Path.Combine(trustedSubDir, "test.lua");
@@ -526,14 +640,29 @@ namespace SolarSharp.Interpreter.Tests.Units
             var untrustedScriptPath = Path.Combine(untrustedSubDir, "test.lua");
             File.WriteAllText(untrustedScriptPath, "return 'should not work'");
 
-            // Trusted branch should work
-            var trustedResult = Script.RunFile(trustedScriptPath);
+            // Trusted branch works with signed manifest
+            var trustedScript = CreateScriptWithTrustedKeys();
+            var trustedResult = trustedScript.DoFile(trustedScriptPath);
             Assert.That(trustedResult.String, Is.EqualTo("trusted branch works"));
 
-            // Untrusted branch should be rejected due to untrusted key signature
-            Assert.Throws<ManifestSignatureException>(() => Script.RunFile(untrustedScriptPath));
+            // Untrusted branch fails due to untrusted key
+            var untrustedScript = CreateScriptWithTrustedKeys();
+            // Since the manifest is signed with an untrusted key, it should fail verification
+            var ex = Assert.Throws<ManifestSignatureException>(() =>
+                untrustedScript.DoFile(untrustedScriptPath)
+            );
+            Assert.That(
+                ex.Message,
+                Does.Contain("untrusted key")
+                    .Or.Contain("not trusted")
+                    .Or.Contain("verification failed")
+            );
+
+            // Each directory is isolated - untrusted manifest in one directory
+            // doesn't affect scripts in other directories
         }
 
+        [Category("Manifest.Unit")]
         [Test]
         public void TestLargeManifestTreePerformance()
         {
@@ -545,7 +674,8 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             // Place script at deepest level
             var deepestPath = _tempDir;
-            for (var i = 0; i < maxDepth; i++) deepestPath = Path.Combine(deepestPath, "branch_0");
+            for (var i = 0; i < maxDepth; i++)
+                deepestPath = Path.Combine(deepestPath, "branch_0");
 
             var scriptPath = Path.Combine(deepestPath, "test.lua");
             File.WriteAllText(scriptPath, "return 'large tree performance test'");
@@ -553,57 +683,71 @@ namespace SolarSharp.Interpreter.Tests.Units
             var startTime = DateTime.UtcNow;
 
             // Should resolve large tree without excessive delay
-            var result = Script.RunFile(scriptPath);
+            var script = CreateScriptWithTrustedKeys();
+            var result = script.DoFile(scriptPath);
 
             var elapsed = DateTime.UtcNow - startTime;
 
             Assert.Multiple(() =>
             {
                 Assert.That(result.String, Is.EqualTo("large tree performance test"));
-                Assert.That(elapsed.TotalSeconds, Is.LessThan(10), "Large manifest tree resolution took too long");
+                Assert.That(
+                    elapsed.TotalSeconds,
+                    Is.LessThan(10),
+                    "Large manifest tree resolution took too long"
+                );
             });
         }
 
+        [Category("Manifest.Unit")]
         [Test]
         public void TestManifestCacheEfficiency()
         {
-            // Test that manifest resolution is cached and efficient for repeated access
+            // Test that manifest loading is cached and efficient for repeated access
             var level1Dir = Path.Combine(_tempDir, "level1");
             var level2Dir = Path.Combine(level1Dir, "level2");
 
             Directory.CreateDirectory(level1Dir);
             Directory.CreateDirectory(level2Dir);
 
-            // Create manifests
-            var rootManifestContent = @"{
+            // Create manifests (self-contained)
+            var rootManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
-                    ""capabilities"": [""FileRead""]
-                },
-                ""includes"": [""level1/LuaManifest.json""]
+                    ""capabilities"": [""FileRead""],
+                    ""allowedModules"": [""basic"", ""string""]
+                }
             }";
 
             var signedrootManifest = SignContent(rootManifestContent, _orgRootKey);
             File.WriteAllText(Path.Combine(_tempDir, "LuaManifest.json"), signedrootManifest);
 
-            var level1ManifestContent = @"{
+            var level1ManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
-                    ""timeoutMs"": 30000
-                },
-                ""includes"": [""level2/LuaManifest.json""]
-            }";
-
-            File.WriteAllText(Path.Combine(level1Dir, "LuaManifest.json"), level1ManifestContent);
-
-            var level2ManifestContent = @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""maxMemoryMB"": 50
+                    ""timeoutMs"": 30000,
+                    ""capabilities"": [""FileRead""],
+                    ""allowedModules"": [""basic"", ""string"", ""math""]
                 }
             }";
 
-            File.WriteAllText(Path.Combine(level2Dir, "LuaManifest.json"), level2ManifestContent);
+            var signedLevel1Manifest = SignContent(level1ManifestContent, _projectLeadKey);
+            File.WriteAllText(Path.Combine(level1Dir, "LuaManifest.json"), signedLevel1Manifest);
+
+            var level2ManifestContent =
+                @"{
+                ""version"": ""1.0"",
+                ""policy"": {
+                    ""maxMemoryMB"": 50,
+                    ""timeoutMs"": 20000,
+                    ""allowedModules"": [""basic""]
+                }
+            }";
+
+            var signedLevel2Manifest = SignContent(level2ManifestContent, _developerKey);
+            File.WriteAllText(Path.Combine(level2Dir, "LuaManifest.json"), signedLevel2Manifest);
 
             // Create multiple scripts in the same directory
             var scriptPaths = new string[10];
@@ -615,24 +759,31 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             var startTime = DateTime.UtcNow;
 
-            // Run all scripts - manifest resolution should be cached
+            // Run all scripts - manifest loading should be cached per directory
+            var script = CreateScriptWithTrustedKeys();
             for (var i = 0; i < 10; i++)
             {
-                var result = Script.RunFile(scriptPaths[i]);
+                var result = script.DoFile(scriptPaths[i]);
                 Assert.That(result.String, Is.EqualTo($"script {i}"));
             }
 
             var elapsed = DateTime.UtcNow - startTime;
 
-            // Should be fast due to caching
-            Assert.That(elapsed.TotalSeconds, Is.LessThan(5), "Cached manifest resolution was too slow");
+            // Should be fast due to caching (manifest loaded once per directory)
+            Assert.That(
+                elapsed.TotalSeconds,
+                Is.LessThan(5),
+                "Cached manifest loading was too slow"
+            );
         }
 
+        [Category("Manifest.Unit")]
         [Test]
         public void TestMissingIncludedManifest()
         {
-            // Test behavior when included manifest doesn't exist
-            var rootManifestContent = @"{
+            // Test that manifests with includes are rejected at signing time
+            var rootManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""capabilities"": [""FileRead""]
@@ -640,22 +791,41 @@ namespace SolarSharp.Interpreter.Tests.Units
                 ""includes"": [""nonexistent/LuaManifest.json"", ""also_missing/LuaManifest.json""]
             }";
 
-            var signedrootManifest = SignContent(rootManifestContent, _orgRootKey);
-            File.WriteAllText(Path.Combine(_tempDir, "LuaManifest.json"), signedrootManifest);
+            // Should reject manifest with includes during signing
+            var ex = Assert.Throws<ManifestFormatException>(() =>
+                SignContent(rootManifestContent, _orgRootKey)
+            );
+            Assert.That(ex.Message, Does.Contain("includes are not supported"));
+
+            // Create valid manifest without includes
+            var validManifestContent =
+                @"{
+                ""version"": ""1.0"",
+                ""policy"": {
+                    ""capabilities"": [""FileRead""],
+                    ""allowedModules"": [""basic"", ""string""]
+                }
+            }";
+
+            var signedValidManifest = SignContent(validManifestContent, _orgRootKey);
+            File.WriteAllText(Path.Combine(_tempDir, "LuaManifest.json"), signedValidManifest);
 
             var scriptPath = Path.Combine(_tempDir, "test.lua");
-            File.WriteAllText(scriptPath, "return 'missing includes test'");
+            File.WriteAllText(scriptPath, "return 'includes test'");
 
-            // Should handle missing includes gracefully
-            var result = Script.RunFile(scriptPath);
-            Assert.That(result.String, Is.EqualTo("missing includes test"));
+            // Now it should work
+            var script = CreateScriptWithTrustedKeys();
+            var result = script.DoFile(scriptPath);
+            Assert.That(result.String, Is.EqualTo("includes test"));
         }
 
+        [Category("Manifest.Unit")]
         [Test]
         public void TestManifestWithMalformedIncludes()
         {
-            // Test that malformed include paths are properly blocked
-            var rootManifestContent = @"{
+            // Test that manifests with any includes are rejected at signing time
+            var rootManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""capabilities"": [""FileRead""]
@@ -663,61 +833,98 @@ namespace SolarSharp.Interpreter.Tests.Units
                 ""includes"": [""../../etc/passwd"", ""../../../windows/system32/config/sam"", ""valid/path/LuaManifest.json""]
             }";
 
-            var signedrootManifest = SignContent(rootManifestContent, _orgRootKey);
-            File.WriteAllText(Path.Combine(_tempDir, "LuaManifest.json"), signedrootManifest);
+            // Should throw ManifestFormatException at signing time since includes are not supported
+            var ex = Assert.Throws<ManifestFormatException>(() =>
+                SignContent(rootManifestContent, _orgRootKey)
+            );
+            Assert.That(ex.Message, Does.Contain("includes are not supported"));
+
+            // Create valid manifest without includes for positive test
+            var validManifestContent =
+                @"{
+                ""version"": ""1.0"",
+                ""policy"": {
+                    ""capabilities"": [""FileRead""],
+                    ""allowedModules"": [""basic"", ""string""]
+                }
+            }";
+
+            var signedValidManifest = SignContent(validManifestContent, _orgRootKey);
+            File.WriteAllText(Path.Combine(_tempDir, "LuaManifest.json"), signedValidManifest);
 
             var scriptPath = Path.Combine(_tempDir, "test.lua");
-            File.WriteAllText(scriptPath, "return 'malformed includes test'");
+            File.WriteAllText(scriptPath, "return 'no includes test'");
 
-            // Should throw PathTraversalException for malicious include paths
-            Assert.Throws<PathTraversalException>(() => Script.RunFile(scriptPath));
+            // Should work with valid manifest
+            var script = CreateScriptWithTrustedKeys();
+            var result = script.DoFile(scriptPath);
+            Assert.That(result.String, Is.EqualTo("no includes test"));
         }
 
+        [Category("Manifest.Unit")]
         [Test]
         public void TestManifestVersionMismatch()
         {
-            // Test handling of different manifest versions in hierarchy
+            // Test handling of different manifest versions in different directories
             var level1Dir = Path.Combine(_tempDir, "level1");
             Directory.CreateDirectory(level1Dir);
 
-            // Root manifest (version 1.0)
-            var rootManifestContent = @"{
+            // Root manifest (version 1.0, self-contained)
+            var rootManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
-                    ""capabilities"": [""FileRead""]
-                },
-                ""includes"": [""level1/LuaManifest.json""]
+                    ""capabilities"": [""FileRead""],
+                    ""allowedModules"": [""basic"", ""string""]
+                }
             }";
 
             var signedrootManifest = SignContent(rootManifestContent, _orgRootKey);
             File.WriteAllText(Path.Combine(_tempDir, "LuaManifest.json"), signedrootManifest);
 
-            // Child manifest (version 2.0 - hypothetical future version)
-            var level1ManifestContent = @"{
+            // Child manifest (also version 1.0, self-contained)
+            var level1ManifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""timeoutMs"": 30000,
+                    ""allowedModules"": [""basic"", ""string"", ""math""],
                     ""futureFeature"": ""enabled""
                 }
             }";
 
-            File.WriteAllText(Path.Combine(level1Dir, "LuaManifest.json"), level1ManifestContent);
+            var signedLevel1Manifest = SignContent(level1ManifestContent, _projectLeadKey);
+            File.WriteAllText(Path.Combine(level1Dir, "LuaManifest.json"), signedLevel1Manifest);
 
-            var scriptPath = Path.Combine(level1Dir, "test.lua");
-            File.WriteAllText(scriptPath, "return 'version mismatch test'");
+            // Create test scripts
+            var rootScriptPath = Path.Combine(_tempDir, "test.lua");
+            File.WriteAllText(rootScriptPath, "return 'root version test'");
 
-            // Should handle version differences gracefully
-            var result = Script.RunFile(scriptPath);
-            Assert.That(result.String, Is.EqualTo("version mismatch test"));
+            var level1ScriptPath = Path.Combine(level1Dir, "test.lua");
+            File.WriteAllText(level1ScriptPath, "return 'level1 version test'");
+
+            // Each directory uses its own manifest, regardless of version
+            var script = CreateScriptWithTrustedKeys();
+
+            var rootResult = script.DoFile(rootScriptPath);
+            Assert.That(rootResult.String, Is.EqualTo("root version test"));
+
+            var level1Result = script.DoFile(level1ScriptPath);
+            Assert.That(level1Result.String, Is.EqualTo("level1 version test"));
+
+            // Manifests are completely independent - no version conflict possible
         }
 
-        private void CreateManifestTree(string baseDir, string relativePath, int currentDepth, int maxDepth,
-            int branchFactor)
+        private void CreateManifestTree(
+            string baseDir,
+            string relativePath,
+            int currentDepth,
+            int maxDepth,
+            int branchFactor
+        )
         {
             var currentDir = Path.Combine(baseDir, relativePath);
             Directory.CreateDirectory(currentDir);
-
-            var includes = new List<string>();
 
             if (currentDepth < maxDepth)
                 for (var i = 0; i < branchFactor; i++)
@@ -727,40 +934,118 @@ namespace SolarSharp.Interpreter.Tests.Units
                         ? branchName
                         : Path.Combine(relativePath, branchName);
 
-                    CreateManifestTree(baseDir, branchPath, currentDepth + 1, maxDepth, branchFactor);
-                    includes.Add($"{branchName}/LuaManifest.json");
+                    CreateManifestTree(
+                        baseDir,
+                        branchPath,
+                        currentDepth + 1,
+                        maxDepth,
+                        branchFactor
+                    );
                 }
 
-            var manifestContent = $@"{{
+            // Create self-contained manifest for each directory
+            var manifestContent =
+                $@"{{
                 ""version"": ""1.0"",
                 ""description"": ""Generated manifest at depth {currentDepth}"",
                 ""policy"": {{
                     ""timeoutMs"": {30000 + currentDepth * 1000},
-                    ""maxMemoryMB"": {10 + currentDepth * 5}
-                }}";
+                    ""maxMemoryMB"": {10 + currentDepth * 5},
+                    ""allowedModules"": [""basic"", ""string""],
+                    ""capabilities"": [""FileRead""]
+                }}
+            }}";
 
-            if (includes.Any())
-            {
-                var includesJson = string.Join(", ", includes.Select(i => $"\"{i}\""));
-                manifestContent += $@",
-                ""includes"": [{includesJson}]";
-            }
-
-            manifestContent += "}";
-
-            // Sign root manifest only
-            if (currentDepth == 0)
-            {
-                var signature = SignContent(manifestContent, _orgRootKey);
-                manifestContent = signature;
-            }
+            // Sign all manifests in the tree
+            var signature = SignContent(
+                manifestContent,
+                currentDepth == 0 ? _orgRootKey : _projectLeadKey
+            );
+            manifestContent = signature;
 
             File.WriteAllText(Path.Combine(currentDir, "LuaManifest.json"), manifestContent);
         }
 
-        private string SignContent(string content, RSA key)
+        private string SignContent(string content, AsymmetricKeyParameter key)
         {
             return ManifestSigner.SignManifestJson(content, key);
+        }
+
+        private string CreateUnsignedV2Manifest(
+            string description,
+            int? timeoutMs = null,
+            int? maxMemoryMB = null,
+            string[] allowedModules = null,
+            string[] capabilities = null
+        )
+        {
+            var manifestObj = new
+            {
+                version = "2.0",
+                manifest_id = $"test-manifest-{Guid.NewGuid():N}",
+                signed_content = new[]
+                {
+                    new
+                    {
+                        key_id = "",
+                        signature = "",
+                        packages = new
+                        {
+                            test_package = new
+                            {
+                                files = new { },
+                                metadata = new
+                                {
+                                    name = "test",
+                                    version = "1.0.0",
+                                    description = description,
+                                },
+                            },
+                        },
+                        policies = new[]
+                        {
+                            new
+                            {
+                                packages = new[] { "test_package" },
+                                selector = ":file",
+                                grant = new
+                                {
+                                    modules = allowedModules ?? Array.Empty<string>(),
+                                    capabilities = capabilities ?? Array.Empty<string>(),
+                                },
+                                restrict = new
+                                {
+                                    timeout = timeoutMs.HasValue
+                                        ? $"{timeoutMs.Value / 1000}s"
+                                        : "30s",
+                                    max_memory = maxMemoryMB.HasValue
+                                        ? $"{maxMemoryMB.Value}MB"
+                                        : "",
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+
+            var json = System.Text.Json.JsonSerializer.Serialize(
+                manifestObj,
+                new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                }
+            );
+
+            // Fix property names that need hyphens
+            json = json.Replace("\"signedContent\"", "\"signed-content\"");
+            json = json.Replace("\"keyId\"", "\"key-id\"");
+            json = json.Replace("\"manifestId\"", "\"manifest-id\"");
+            json = json.Replace("\"maxMemory\"", "\"max-memory\"");
+            json = json.Replace("\"testPackage\"", "\"test-package\"");
+            json = json.Replace("\"test_lua\"", "\"test.lua\"");
+
+            return json;
         }
     }
 }

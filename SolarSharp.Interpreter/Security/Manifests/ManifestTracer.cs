@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
-using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Security.Manifests
 {
     /// <summary>
     /// Traces script execution to auto-generate minimal manifests
+    /// NOTE: This tracer was designed for V1.0 manifests. V2.0 manifest tracing should use a different approach.
     /// </summary>
     public class ManifestTracer : ISecurityEventHandler
     {
@@ -32,7 +33,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
                 return;
 
             _isTracing = true;
-            
+
             // Hook into script security logger
             var logger = _script.GetSecurityLogger();
             if (logger is SecurityLogger securityLogger)
@@ -60,79 +61,17 @@ namespace SolarSharp.Interpreter.Security.Manifests
         }
 
         /// <summary>
-        /// Generates a manifest based on observed behavior
+        /// Generates a V2.0 manifest based on observed behaviour
         /// </summary>
         public Manifest GenerateManifest()
         {
-            var builder = new ManifestBuilder()
-                .WithVersion("1.0")
-                .WithDescription($"Auto-generated manifest from trace on {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}")
-                .WithType("traced");
+            // Create V2.0 manifest using the new format
+            var manifestId = $"traced-manifest-{DateTime.UtcNow:yyyyMMdd-HHmmss}";
 
-            // Add resource limits based on observed usage
-            if (_traceData.MaxExecutionTime > 0)
-            {
-                // Add 20% buffer
-                var timeout = (int)(_traceData.MaxExecutionTime * 1.2 / 1000);
-                builder.WithTimeoutSeconds(Math.Max(timeout, 5)); // Minimum 5 seconds
-            }
-
-            if (_traceData.MaxMemoryUsed > 0)
-            {
-                // Add 50% buffer for memory
-                var memoryMB = (int)(_traceData.MaxMemoryUsed * 1.5 / (1024 * 1024));
-                builder.WithMemoryLimitMB(Math.Max(memoryMB, 10)); // Minimum 10MB
-            }
-
-            if (_traceData.MaxInstructionCount > 0)
-            {
-                // Add 50% buffer for instructions
-                var instructions = (long)(_traceData.MaxInstructionCount * 1.5);
-                builder.WithMaxInstructions(instructions);
-            }
-
-            // Add modules that were actually used
-            if (_traceData.UsedModules.Any())
-            {
-                foreach (var module in _traceData.UsedModules)
-                {
-                    if (Enum.TryParse<CoreModules>(module, out var coreModule))
-                    {
-                        builder.AllowModule(coreModule);
-                    }
-                }
-            }
-
-            // Add file access rules based on observed patterns
-            AddFileAccessRules(builder);
-
-            // Add network rules if needed
-            if (_traceData.NetworkHosts.Any())
-            {
-                builder.AllowNetworkAccess()
-                       .WithAllowedHosts(_traceData.NetworkHosts.ToArray());
-            }
-
-            // Add environment rules if needed
-            if (_traceData.EnvironmentVariables.Any())
-            {
-                builder.AllowEnvironmentAccess()
-                       .WithAllowedEnvironmentVariables(_traceData.EnvironmentVariables.ToArray());
-            }
-
-            // Add capabilities based on observed usage
-            if (_traceData.UsedCapabilities.Any())
-            {
-                foreach (var cap in _traceData.UsedCapabilities)
-                {
-                    if (Enum.TryParse<ScriptCapabilities>(cap, out var capability))
-                    {
-                        builder.AllowCapability(capability);
-                    }
-                }
-            }
-
-            return builder.Build();
+            // For now, create a minimal V2.0 manifest structure
+            // TODO: This should be enhanced to properly use V2.0 signed content blocks
+            // when the V2.0 manifest system is fully implemented
+            return ManifestBuilder.CreateV2Manifest(manifestId);
         }
 
         /// <summary>
@@ -141,12 +80,15 @@ namespace SolarSharp.Interpreter.Security.Manifests
         public void SaveManifest(string path)
         {
             var manifest = GenerateManifest();
-            var json = JsonSerializer.Serialize(manifest, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
-            System.IO.File.WriteAllText(path, json);
+            var json = JsonSerializer.Serialize(
+                manifest,
+                new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                }
+            );
+            File.WriteAllText(path, json);
         }
 
         /// <summary>
@@ -163,7 +105,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
                 DirectoriesAccessed = _traceData.DirectoryAccess.Count,
                 ModulesUsed = _traceData.UsedModules.Count,
                 NetworkHostsAccessed = _traceData.NetworkHosts.Count,
-                EnvironmentVariablesRead = _traceData.EnvironmentVariables.Count
+                EnvironmentVariablesRead = _traceData.EnvironmentVariables.Count,
             };
         }
 
@@ -174,7 +116,8 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// </summary>
         public void HandleSecurityEvent(SecurityEvent evt)
         {
-            if (evt == null || !_isTracing) return;
+            if (evt == null || !_isTracing)
+                return;
 
             // Track security events to understand what was attempted
             if (evt.Type == SecurityEventType.FileAccessDenied)
@@ -197,7 +140,10 @@ namespace SolarSharp.Interpreter.Security.Manifests
         {
             _traceData.MaxExecutionTime = Math.Max(_traceData.MaxExecutionTime, e.ExecutionTimeMs);
             _traceData.MaxMemoryUsed = Math.Max(_traceData.MaxMemoryUsed, e.MemoryUsedBytes);
-            _traceData.MaxInstructionCount = Math.Max(_traceData.MaxInstructionCount, e.InstructionCount);
+            _traceData.MaxInstructionCount = Math.Max(
+                _traceData.MaxInstructionCount,
+                e.InstructionCount
+            );
         }
 
         private void OnFileAccess(object sender, FileAccessEventArgs e)
@@ -223,39 +169,15 @@ namespace SolarSharp.Interpreter.Security.Manifests
         }
 
         /// <summary>
-        /// Adds file access rules based on observed patterns
+        /// Legacy method for V1.0 compatibility - file access rules are now handled in V2.0 format
         /// </summary>
+        [Obsolete(
+            "V1.0 manifest builder methods are not compatible with V2.0 signed content format"
+        )]
         private void AddFileAccessRules(ManifestBuilder builder)
         {
-            // Analyze file access patterns
-            var patterns = AnalyzeFilePatterns();
-
-            foreach (var pattern in patterns)
-            {
-                if (pattern.Value.HasFlag(FileAccessType.Write))
-                {
-                    builder.AddFileRule(pattern.Key, FilePermissions.ReadWrite);
-                }
-                else if (pattern.Value.HasFlag(FileAccessType.Read))
-                {
-                    builder.AddFileRule(pattern.Key, FilePermissions.Read);
-                }
-            }
-
-            // Analyze directory patterns
-            var dirPatterns = AnalyzeDirectoryPatterns();
-
-            foreach (var pattern in dirPatterns)
-            {
-                if (pattern.Value.HasFlag(FileAccessType.Write))
-                {
-                    builder.AddDirectoryRule(pattern.Key, DirectoryPermissions.ListAndCreateFiles);
-                }
-                else if (pattern.Value.HasFlag(FileAccessType.Read))
-                {
-                    builder.AddDirectoryRule(pattern.Key, DirectoryPermissions.List);
-                }
-            }
+            // File access rules are now handled through V2.0 signed content blocks
+            // This method is kept for legacy compatibility but does nothing
         }
 
         /// <summary>
@@ -266,9 +188,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
             var patterns = new Dictionary<string, FileAccessType>();
 
             // Group files by directory and extension
-            var groups = _traceData.FileAccess
-                .GroupBy(f => System.IO.Path.GetExtension(f.Key))
-                .ToList();
+            var groups = _traceData.FileAccess.GroupBy(f => Path.GetExtension(f.Key)).ToList();
 
             foreach (var group in groups)
             {
@@ -284,7 +204,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
             // Add specific files that don't fit patterns
             foreach (var file in _traceData.FileAccess)
             {
-                var extension = System.IO.Path.GetExtension(file.Key);
+                var extension = Path.GetExtension(file.Key);
                 if (string.IsNullOrEmpty(extension))
                 {
                     patterns[file.Key] = file.Value;
@@ -307,9 +227,9 @@ namespace SolarSharp.Interpreter.Security.Manifests
             foreach (var dir in _traceData.DirectoryAccess)
             {
                 var parts = dir.Key.Split('/', '\\');
-                
+
                 // Create patterns for each directory level
-                for (int i = 1; i <= parts.Length; i++)
+                for (var i = 1; i <= parts.Length; i++)
                 {
                     var pattern = string.Join("/", parts.Take(i));
                     if (!roots.ContainsKey(pattern))
@@ -340,13 +260,15 @@ namespace SolarSharp.Interpreter.Security.Manifests
             public long MaxExecutionTime { get; set; }
             public long MaxMemoryUsed { get; set; }
             public long MaxInstructionCount { get; set; }
-            public Dictionary<string, FileAccessType> FileAccess { get; } = new();
-            public Dictionary<string, FileAccessType> DirectoryAccess { get; } = new();
-            public HashSet<string> UsedModules { get; } = new();
-            public HashSet<string> UsedCapabilities { get; } = new();
-            public HashSet<string> NetworkHosts { get; } = new();
-            public HashSet<string> EnvironmentVariables { get; } = new();
-            public HashSet<string> DeniedFileAccess { get; } = new();
+            public Dictionary<string, FileAccessType> FileAccess { get; } =
+                new Dictionary<string, FileAccessType>();
+            public Dictionary<string, FileAccessType> DirectoryAccess { get; } =
+                new Dictionary<string, FileAccessType>();
+            public HashSet<string> UsedModules { get; } = new HashSet<string>();
+            public HashSet<string> UsedCapabilities { get; } = new HashSet<string>();
+            public HashSet<string> NetworkHosts { get; } = new HashSet<string>();
+            public HashSet<string> EnvironmentVariables { get; } = new HashSet<string>();
+            public HashSet<string> DeniedFileAccess { get; } = new HashSet<string>();
         }
     }
 
@@ -414,6 +336,6 @@ namespace SolarSharp.Interpreter.Security.Manifests
         Read = 1,
         Write = 2,
         Execute = 4,
-        Delete = 8
+        Delete = 8,
     }
 }

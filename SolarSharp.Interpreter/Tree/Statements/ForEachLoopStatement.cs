@@ -17,22 +17,24 @@ namespace SolarSharp.Interpreter.Tree.Statements
         private readonly IVariable[] m_NameExps;
         private readonly Expression m_RValues;
         private readonly Statement m_Block;
-        private readonly SourceRef m_RefFor, m_RefEnd;
+        private readonly SourceRef m_RefFor,
+            m_RefEnd;
 
-        public ForEachLoopStatement(ScriptLoadingContext lcontext, Token firstNameToken, Token forToken)
+        public ForEachLoopStatement(
+            ScriptLoadingContext lcontext,
+            Token firstNameToken,
+            Token forToken
+        )
             : base(lcontext)
         {
-            //	for namelist in explist do block end | 		
+            //	for namelist in explist do block end |
 
-            List<string> names = new()
-            {
-                firstNameToken.Text
-            };
+            var names = new List<string> { firstNameToken.Text };
 
             while (lcontext.Lexer.Current.Type == TokenType.Comma)
             {
                 lcontext.Lexer.Next();
-                Token name = CheckTokenType(lcontext, TokenType.Name);
+                var name = CheckTokenType(lcontext, TokenType.Name);
                 names.Add(name.Text);
             }
 
@@ -42,9 +44,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
             lcontext.Scope.PushBlock();
 
-            m_Names = names
-                .Select(n => lcontext.Scope.TryDefineLocal(n))
-                .ToArray();
+            m_Names = names.Select(n => lcontext.Scope.TryDefineLocal(n)).ToArray();
 
             m_NameExps = m_Names
                 .Select(s => new SymbolRefExpression(lcontext, s))
@@ -63,17 +63,13 @@ namespace SolarSharp.Interpreter.Tree.Statements
             lcontext.Source.Refs.Add(m_RefEnd);
         }
 
-
         public override void Compile(ByteCode bc)
         {
             //for var_1, ···, var_n in explist do block end
 
             bc.PushSourceRef(m_RefFor);
 
-            Loop L = new()
-            {
-                Scope = m_StackFrame
-            };
+            var L = new Loop { Scope = m_StackFrame };
             bc.LoopTracker.Loops.Push(L);
 
             // get iterator tuple
@@ -83,7 +79,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
             bc.Emit_IterPrep();
 
             // loop start - stack : iterator-tuple
-            int start = bc.GetJumpPointForNextInstruction();
+            var start = bc.GetJumpPointForNextInstruction();
             bc.Emit_Enter(m_StackFrame);
 
             // expand the tuple - stack : iterator-tuple, f, var, s
@@ -93,7 +89,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
             bc.Emit_Call(2, "for..in");
 
             // perform assignment of iteration result- stack : iterator-tuple, iteration result
-            for (int i = 0; i < m_NameExps.Length; i++)
+            for (var i = 0; i < m_NameExps.Length; i++)
                 m_NameExps[i].CompileAssignment(bc, 0, i);
 
             // pops  - stack : iterator-tuple
@@ -120,21 +116,19 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
             bc.LoopTracker.Loops.Pop();
 
-            int exitpointLoopExit = bc.GetJumpPointForNextInstruction();
+            var exitpointLoopExit = bc.GetJumpPointForNextInstruction();
             bc.Emit_Leave(m_StackFrame);
 
-            int exitpointBreaks = bc.GetJumpPointForNextInstruction();
+            var exitpointBreaks = bc.GetJumpPointForNextInstruction();
 
             bc.Emit_Pop();
 
-            foreach (Instruction i in L.BreakJumps)
+            foreach (var i in L.BreakJumps)
                 i.NumVal = exitpointBreaks;
 
             endjump.NumVal = exitpointLoopExit;
 
             bc.PopSourceRef();
         }
-
-
     }
 }

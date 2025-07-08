@@ -7,8 +7,13 @@ namespace SolarSharp.Interpreter.Compatibility.Frameworks.Base
 {
     internal abstract class FrameworkClrBase : FrameworkReflectionBase
     {
-        private readonly BindingFlags BINDINGFLAGS_MEMBER = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-        private readonly BindingFlags BINDINGFLAGS_INNERCLASS = BindingFlags.Public | BindingFlags.NonPublic;
+        private readonly BindingFlags BINDINGFLAGS_MEMBER =
+            BindingFlags.Public
+            | BindingFlags.NonPublic
+            | BindingFlags.Instance
+            | BindingFlags.Static;
+        private readonly BindingFlags BINDINGFLAGS_INNERCLASS =
+            BindingFlags.Public | BindingFlags.NonPublic;
 
         public override MethodInfo GetAddMethod(EventInfo ei)
         {
@@ -80,7 +85,6 @@ namespace SolarSharp.Interpreter.Compatibility.Frameworks.Base
             return pi.GetSetMethod(true);
         }
 
-
         public override bool IsAssignableFrom(Type current, Type toCompare)
         {
             return GetTypeInfoFromType(current).IsAssignableFrom(toCompare);
@@ -91,7 +95,6 @@ namespace SolarSharp.Interpreter.Compatibility.Frameworks.Base
             return GetTypeInfoFromType(t).IsInstanceOfType(o);
         }
 
-
         public override MethodInfo GetMethod(Type resourcesType, string name, Type[] types)
         {
             return GetTypeInfoFromType(resourcesType).GetMethod(name, types);
@@ -101,7 +104,6 @@ namespace SolarSharp.Interpreter.Compatibility.Frameworks.Base
         {
             return asm.GetTypes();
         }
-
     }
 }
 

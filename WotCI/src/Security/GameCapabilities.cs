@@ -1,3 +1,4 @@
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Security;
 
 namespace WotCI.Security
@@ -10,30 +11,39 @@ namespace WotCI.Security
     /// - Partner: Can heal and modify health (with limits)
     /// - System: Can damage player (full system access)
     /// </summary>
-    public class HealthCapability : ScriptCapabilityBase
+    public class HealthCapability(
+        GameSimulator game,
+        PluginTrustLevel trustLevel,
+        ISecurityAuditor? auditor = null
+    ) : ScriptCapabilityBase("health", auditor)
     {
-        private readonly GameSimulator _game;
-        private readonly PluginTrustLevel _trustLevel;
-        private static readonly HashSet<string> _supportedOps = new HashSet<string> { "read", "modify", "heal", "damage" };
+        private readonly GameSimulator _game =
+            game ?? throw new ArgumentNullException(nameof(game));
+        private static readonly HashSet<string> SupportedOps = ["read", "modify", "heal", "damage"];
 
-        public HealthCapability(GameSimulator game, PluginTrustLevel trustLevel, ISecurityAuditor? auditor = null) 
-            : base("health", auditor)
+        public override IReadOnlyCollection<string> SupportedOperations
         {
-            _game = game ?? throw new ArgumentNullException(nameof(game));
-            _trustLevel = trustLevel;
+            get { return SupportedOps; }
         }
-
-        public override IReadOnlyCollection<string> SupportedOperations => _supportedOps;
 
         protected override bool IsOperationAllowed(string operation, object[] parameters)
         {
             return operation switch
             {
                 "read" => true, // All trust levels can read health
-                "heal" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel), // Partners can heal
-                "modify" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel) && ValidateHealthModification(parameters),
-                "damage" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.System, _trustLevel), // Only system can damage
-                _ => false
+                "heal" => PluginPermissionChecks.HasPluginTrustLevel(
+                    PluginTrustLevel.Partner,
+                    trustLevel
+                ), // Partners can heal
+                "modify" => PluginPermissionChecks.HasPluginTrustLevel(
+                    PluginTrustLevel.Partner,
+                    trustLevel
+                ) && ValidateHealthModification(parameters),
+                "damage" => PluginPermissionChecks.HasPluginTrustLevel(
+                    PluginTrustLevel.System,
+                    trustLevel
+                ), // Only system can damage
+                _ => false,
             };
         }
 
@@ -45,7 +55,7 @@ namespace WotCI.Security
                 "heal" => ExecuteHeal(parameters),
                 "modify" => ExecuteModify(parameters),
                 "damage" => ExecuteDamage(parameters),
-                _ => throw new InvalidOperationException($"Unknown operation: {operation}")
+                _ => throw new InvalidOperationException($"Unknown operation: {operation}"),
             };
         }
 
@@ -54,16 +64,16 @@ namespace WotCI.Security
             return operation switch
             {
                 "read" => ValidationResult.Valid(),
-                "heal" when parameters?.Length > 0 && parameters[0] is int and > 0 and <= 50 
-                    => ValidationResult.Valid(),
+                "heal" when parameters?.Length > 0 && parameters[0] is int and > 0 and <= 50 =>
+                    ValidationResult.Valid(),
                 "heal" => ValidationResult.Invalid("Heal amount must be a positive integer <= 50"),
-                "modify" when parameters?.Length > 0 && parameters[0] is int and >= 0 and <= 100 
-                    => ValidationResult.Valid(),
+                "modify" when parameters?.Length > 0 && parameters[0] is int and >= 0 and <= 100 =>
+                    ValidationResult.Valid(),
                 "modify" => ValidationResult.Invalid("Health must be an integer between 0 and 100"),
-                "damage" when parameters?.Length > 0 && parameters[0] is int and > 0 and <= 25 
-                    => ValidationResult.Valid(),
+                "damage" when parameters?.Length > 0 && parameters[0] is int and > 0 and <= 25 =>
+                    ValidationResult.Valid(),
                 "damage" => ValidationResult.Invalid("Damage must be a positive integer <= 25"),
-                _ => ValidationResult.Invalid($"Unknown operation: {operation}")
+                _ => ValidationResult.Invalid($"Unknown operation: {operation}"),
             };
         }
 
@@ -89,7 +99,12 @@ namespace WotCI.Security
                 var currentHealth = _game.GetPlayerHealth();
                 var newHealth = Math.Min(100, currentHealth + amount);
                 _game.SetPlayerHealth(newHealth);
-                return new { oldHealth = currentHealth, newHealth = newHealth, healed = newHealth - currentHealth };
+                return new
+                {
+                    oldHealth = currentHealth,
+                    newHealth,
+                    healed = newHealth - currentHealth,
+                };
             }
             throw new ArgumentException("Invalid heal parameters");
         }
@@ -100,7 +115,7 @@ namespace WotCI.Security
             {
                 var oldHealth = _game.GetPlayerHealth();
                 _game.SetPlayerHealth(newHealth);
-                return new { oldHealth = oldHealth, newHealth = newHealth };
+                return new { oldHealth, newHealth };
             }
             throw new ArgumentException("Invalid modify parameters");
         }
@@ -112,7 +127,12 @@ namespace WotCI.Security
                 var currentHealth = _game.GetPlayerHealth();
                 var newHealth = Math.Max(0, currentHealth - damage);
                 _game.SetPlayerHealth(newHealth);
-                return new { oldHealth = currentHealth, newHealth = newHealth, damaged = currentHealth - newHealth };
+                return new
+                {
+                    oldHealth = currentHealth,
+                    newHealth,
+                    damaged = currentHealth - newHealth,
+                };
             }
             throw new ArgumentException("Invalid damage parameters");
         }
@@ -121,29 +141,41 @@ namespace WotCI.Security
     /// <summary>
     /// Game-specific capability for inventory management
     /// </summary>
-    public class InventoryCapability : ScriptCapabilityBase
+    public class InventoryCapability(
+        GameSimulator game,
+        PluginTrustLevel trustLevel,
+        ISecurityAuditor? auditor = null
+    ) : ScriptCapabilityBase("inventory", auditor)
     {
-        private readonly GameSimulator _game;
-        private readonly PluginTrustLevel _trustLevel;
-        private static readonly HashSet<string> _supportedOps = new HashSet<string> { "read", "add_gold", "remove_gold", "get_gold" };
+        private readonly GameSimulator _game =
+            game ?? throw new ArgumentNullException(nameof(game));
+        private static readonly HashSet<string> SupportedOps =
+        [
+            "read",
+            "add_gold",
+            "remove_gold",
+            "get_gold",
+        ];
 
-        public InventoryCapability(GameSimulator game, PluginTrustLevel trustLevel, ISecurityAuditor? auditor = null) 
-            : base("inventory", auditor)
+        public override IReadOnlyCollection<string> SupportedOperations
         {
-            _game = game ?? throw new ArgumentNullException(nameof(game));
-            _trustLevel = trustLevel;
+            get { return SupportedOps; }
         }
-
-        public override IReadOnlyCollection<string> SupportedOperations => _supportedOps;
 
         protected override bool IsOperationAllowed(string operation, object[] parameters)
         {
             return operation switch
             {
                 "read" or "get_gold" => true, // All can read
-                "add_gold" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel) && ValidateGoldAmount(parameters, 1000),
-                "remove_gold" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.System, _trustLevel), // Only system can remove gold
-                _ => false
+                "add_gold" => PluginPermissionChecks.HasPluginTrustLevel(
+                    PluginTrustLevel.Partner,
+                    trustLevel
+                ) && ValidateGoldAmount(parameters, 1000),
+                "remove_gold" => PluginPermissionChecks.HasPluginTrustLevel(
+                    PluginTrustLevel.System,
+                    trustLevel
+                ), // Only system can remove gold
+                _ => false,
             };
         }
 
@@ -154,7 +186,7 @@ namespace WotCI.Security
                 "read" or "get_gold" => new { gold = _game.GetPlayerGold() },
                 "add_gold" => ExecuteAddGold(parameters),
                 "remove_gold" => ExecuteRemoveGold(parameters),
-                _ => throw new InvalidOperationException($"Unknown operation: {operation}")
+                _ => throw new InvalidOperationException($"Unknown operation: {operation}"),
             };
         }
 
@@ -163,19 +195,26 @@ namespace WotCI.Security
             return operation switch
             {
                 "read" or "get_gold" => ValidationResult.Valid(),
-                "add_gold" when parameters?.Length > 0 && parameters[0] is int and > 0 and <= 1000 
-                    => ValidationResult.Valid(),
-                "add_gold" => ValidationResult.Invalid("Gold amount must be a positive integer <= 1000"),
-                "remove_gold" when parameters?.Length > 0 && parameters[0] is int and > 0 
-                    => ValidationResult.Valid(),
-                "remove_gold" => ValidationResult.Invalid("Remove amount must be a positive integer"),
-                _ => ValidationResult.Invalid($"Unknown operation: {operation}")
+                "add_gold"
+                    when parameters?.Length > 0 && parameters[0] is int and > 0 and <= 1000 =>
+                    ValidationResult.Valid(),
+                "add_gold" => ValidationResult.Invalid(
+                    "Gold amount must be a positive integer <= 1000"
+                ),
+                "remove_gold" when parameters?.Length > 0 && parameters[0] is int and > 0 =>
+                    ValidationResult.Valid(),
+                "remove_gold" => ValidationResult.Invalid(
+                    "Remove amount must be a positive integer"
+                ),
+                _ => ValidationResult.Invalid($"Unknown operation: {operation}"),
             };
         }
 
         private bool ValidateGoldAmount(object[] parameters, int maxAmount)
         {
-            return parameters?.Length > 0 && parameters[0] is int amount and > 0 && amount <= maxAmount;
+            return parameters?.Length > 0
+                && parameters[0] is int amount and > 0
+                && amount <= maxAmount;
         }
 
         private object ExecuteAddGold(object[] parameters)
@@ -185,7 +224,12 @@ namespace WotCI.Security
                 var oldGold = _game.GetPlayerGold();
                 _game.GiveGold(amount);
                 var newGold = _game.GetPlayerGold();
-                return new { oldGold = oldGold, newGold = newGold, added = amount };
+                return new
+                {
+                    oldGold,
+                    newGold,
+                    added = amount,
+                };
             }
             throw new ArgumentException("Invalid add gold parameters");
         }
@@ -197,7 +241,12 @@ namespace WotCI.Security
                 var oldGold = _game.GetPlayerGold();
                 _game.GiveGold(-amount); // Remove by giving negative
                 var newGold = _game.GetPlayerGold();
-                return new { oldGold = oldGold, newGold = newGold, removed = oldGold - newGold };
+                return new
+                {
+                    oldGold,
+                    newGold,
+                    removed = oldGold - newGold,
+                };
             }
             throw new ArgumentException("Invalid remove gold parameters");
         }
@@ -206,29 +255,40 @@ namespace WotCI.Security
     /// <summary>
     /// Game-specific capability for combat mechanics
     /// </summary>
-    public class CombatCapability : ScriptCapabilityBase
+    public class CombatCapability(
+        GameSimulator game,
+        PluginTrustLevel trustLevel,
+        ISecurityAuditor? auditor = null
+    ) : ScriptCapabilityBase("combat", auditor)
     {
-        private readonly GameSimulator _game;
-        private readonly PluginTrustLevel _trustLevel;
-        private static readonly HashSet<string> _supportedOps = new HashSet<string> { "get_stats", "modify_damage", "trigger_event" };
+        private readonly GameSimulator _game =
+            game ?? throw new ArgumentNullException(nameof(game));
+        private static readonly HashSet<string> SupportedOps =
+        [
+            "get_stats",
+            "modify_damage",
+            "trigger_event",
+        ];
 
-        public CombatCapability(GameSimulator game, PluginTrustLevel trustLevel, ISecurityAuditor? auditor = null) 
-            : base("combat", auditor)
+        public override IReadOnlyCollection<string> SupportedOperations
         {
-            _game = game ?? throw new ArgumentNullException(nameof(game));
-            _trustLevel = trustLevel;
+            get { return SupportedOps; }
         }
-
-        public override IReadOnlyCollection<string> SupportedOperations => _supportedOps;
 
         protected override bool IsOperationAllowed(string operation, object[] parameters)
         {
             return operation switch
             {
                 "get_stats" => true, // All can read stats
-                "modify_damage" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel),
-                "trigger_event" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.System, _trustLevel),
-                _ => false
+                "modify_damage" => PluginPermissionChecks.HasPluginTrustLevel(
+                    PluginTrustLevel.Partner,
+                    trustLevel
+                ),
+                "trigger_event" => PluginPermissionChecks.HasPluginTrustLevel(
+                    PluginTrustLevel.System,
+                    trustLevel
+                ),
+                _ => false,
             };
         }
 
@@ -236,16 +296,16 @@ namespace WotCI.Security
         {
             return operation switch
             {
-                "get_stats" => new 
-                { 
+                "get_stats" => new
+                {
                     health = _game.GetPlayerHealth(),
                     gold = _game.GetPlayerGold(),
                     day = _game.GetDay(),
-                    enemies_defeated = _game.GetEnemiesDefeated()
+                    enemies_defeated = _game.GetEnemiesDefeated(),
                 },
                 "modify_damage" => ExecuteModifyDamage(parameters),
                 "trigger_event" => ExecuteTriggerEvent(parameters),
-                _ => throw new InvalidOperationException($"Unknown operation: {operation}")
+                _ => throw new InvalidOperationException($"Unknown operation: {operation}"),
             };
         }
 
@@ -254,13 +314,15 @@ namespace WotCI.Security
             return operation switch
             {
                 "get_stats" => ValidationResult.Valid(),
-                "modify_damage" when parameters is [int damage, double and >= 0.1 and <= 2.0, ..] 
-                    => ValidationResult.Valid(),
-                "modify_damage" => ValidationResult.Invalid("Requires damage (int) and multiplier (0.1-2.0)"),
-                "trigger_event" when parameters?.Length > 0 && parameters[0] is string eventType 
-                    => ValidationResult.Valid(),
+                "modify_damage" when parameters is [int damage, double and >= 0.1 and <= 2.0, ..] =>
+                    ValidationResult.Valid(),
+                "modify_damage" => ValidationResult.Invalid(
+                    "Requires damage (int) and multiplier (0.1-2.0)"
+                ),
+                "trigger_event" when parameters?.Length > 0 && parameters[0] is string eventType =>
+                    ValidationResult.Valid(),
                 "trigger_event" => ValidationResult.Invalid("Requires event type (string)"),
-                _ => ValidationResult.Invalid($"Unknown operation: {operation}")
+                _ => ValidationResult.Invalid($"Unknown operation: {operation}"),
             };
         }
 
@@ -269,7 +331,12 @@ namespace WotCI.Security
             if (parameters is [int damage, double multiplier, ..])
             {
                 var modifiedDamage = (int)(damage * multiplier);
-                return new { originalDamage = damage, multiplier = multiplier, modifiedDamage = modifiedDamage };
+                return new
+                {
+                    originalDamage = damage,
+                    multiplier,
+                    modifiedDamage,
+                };
             }
             throw new ArgumentException("Invalid modify damage parameters");
         }
@@ -279,7 +346,12 @@ namespace WotCI.Security
             if (parameters?.Length > 0 && parameters[0] is string eventType)
             {
                 // This would trigger game events - for demo purposes, just log
-                return new { eventType = eventType, triggered = true, timestamp = DateTime.UtcNow };
+                return new
+                {
+                    eventType,
+                    triggered = true,
+                    timestamp = DateTime.UtcNow,
+                };
             }
             throw new ArgumentException("Invalid trigger event parameters");
         }
@@ -288,29 +360,37 @@ namespace WotCI.Security
     /// <summary>
     /// Game-specific capability for game state access
     /// </summary>
-    public class GameStateCapability : ScriptCapabilityBase
+    public class GameStateCapability(
+        GameSimulator game,
+        PluginTrustLevel trustLevel,
+        ISecurityAuditor? auditor = null
+    ) : ScriptCapabilityBase("gamestate", auditor)
     {
-        private readonly GameSimulator _game;
-        private readonly PluginTrustLevel _trustLevel;
-        private static readonly HashSet<string> _supportedOps = new HashSet<string> { "read_all", "read_filtered", "get_snapshot" };
+        private readonly GameSimulator _game =
+            game ?? throw new ArgumentNullException(nameof(game));
+        private static readonly HashSet<string> SupportedOps =
+        [
+            "read_all",
+            "read_filtered",
+            "get_snapshot",
+        ];
 
-        public GameStateCapability(GameSimulator game, PluginTrustLevel trustLevel, ISecurityAuditor? auditor = null) 
-            : base("gamestate", auditor)
+        public override IReadOnlyCollection<string> SupportedOperations
         {
-            _game = game ?? throw new ArgumentNullException(nameof(game));
-            _trustLevel = trustLevel;
+            get { return SupportedOps; }
         }
-
-        public override IReadOnlyCollection<string> SupportedOperations => _supportedOps;
 
         protected override bool IsOperationAllowed(string operation, object[] parameters)
         {
             return operation switch
             {
-                "read_all" => PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel),
+                "read_all" => PluginPermissionChecks.HasPluginTrustLevel(
+                    PluginTrustLevel.Partner,
+                    trustLevel
+                ),
                 "read_filtered" => true, // All can read filtered state
                 "get_snapshot" => true, // All can get immutable snapshots
-                _ => false
+                _ => false,
             };
         }
 
@@ -321,7 +401,7 @@ namespace WotCI.Security
                 "read_all" => _game.GetGameState(),
                 "read_filtered" => ExecuteReadFiltered(parameters),
                 "get_snapshot" => ExecuteGetSnapshot(parameters),
-                _ => throw new InvalidOperationException($"Unknown operation: {operation}")
+                _ => throw new InvalidOperationException($"Unknown operation: {operation}"),
             };
         }
 
@@ -332,14 +412,14 @@ namespace WotCI.Security
                 "read_all" => ValidationResult.Valid(),
                 "read_filtered" => ValidationResult.Valid(), // Any parameters are acceptable for filtering
                 "get_snapshot" => ValidationResult.Valid(),
-                _ => ValidationResult.Invalid($"Unknown operation: {operation}")
+                _ => ValidationResult.Invalid($"Unknown operation: {operation}"),
             };
         }
 
         private object ExecuteReadFiltered(object[] parameters)
         {
             var state = _game.GetGameState();
-            
+
             // If no filter parameters, return safe subset
             if (parameters == null || parameters.Length == 0)
             {
@@ -348,7 +428,7 @@ namespace WotCI.Security
                     ["player_health"] = state.GetValueOrDefault("player_health", 100),
                     ["player_gold"] = state.GetValueOrDefault("player_gold", 0),
                     ["day"] = state.GetValueOrDefault("day", 1),
-                    ["enemies_defeated"] = state.GetValueOrDefault("enemies_defeated", 0)
+                    ["enemies_defeated"] = state.GetValueOrDefault("enemies_defeated", 0),
                 };
             }
 
@@ -359,7 +439,12 @@ namespace WotCI.Security
                 if (param is string key && state.ContainsKey(key))
                 {
                     // Only allow safe keys for user-level plugins
-                    if (PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel) || IsSafeKey(key))
+                    if (
+                        PluginPermissionChecks.HasPluginTrustLevel(
+                            PluginTrustLevel.Partner,
+                            trustLevel
+                        ) || IsSafeKey(key)
+                    )
                     {
                         filtered[key] = state[key];
                     }
@@ -372,18 +457,30 @@ namespace WotCI.Security
         private object ExecuteGetSnapshot(object[] parameters)
         {
             var state = _game.GetGameState();
-            
-            // Create immutable snapshot with appropriate filtering
-            var filteredState = PluginPermissionChecks.HasPluginTrustLevel(PluginTrustLevel.Partner, _trustLevel) 
-                ? state 
-                : state.Where(kvp => IsSafeKey(kvp.Key)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
-            return new SolarSharp.Interpreter.DataTypes.ReadOnlyScriptState(filteredState);
+            // Create immutable snapshot with appropriate filtering
+            var filteredState = PluginPermissionChecks.HasPluginTrustLevel(
+                PluginTrustLevel.Partner,
+                trustLevel
+            )
+                ? state
+                : state
+                    .Where(kvp => IsSafeKey(kvp.Key))
+                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            return new ReadOnlyScriptState(filteredState);
         }
 
         private bool IsSafeKey(string key)
         {
-            var safeKeys = new[] { "player_health", "player_gold", "day", "enemies_defeated", "game_time" };
+            var safeKeys = new[]
+            {
+                "player_health",
+                "player_gold",
+                "day",
+                "enemies_defeated",
+                "game_time",
+            };
             return safeKeys.Contains(key);
         }
     }

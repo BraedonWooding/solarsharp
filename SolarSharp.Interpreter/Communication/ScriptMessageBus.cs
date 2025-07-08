@@ -15,20 +15,34 @@ namespace SolarSharp.Interpreter.Communication
     /// </summary>
     public class ScriptMessageBus : IScriptMessageBus, IDisposable
     {
-        private readonly ConcurrentDictionary<string, ScriptCommunicationPolicy> _scripts = new();
-        private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, Func<ScriptMessage, Task<ScriptMessage>>>> _subscriptions = new();
-        private readonly ConcurrentDictionary<string, SemaphoreSlim> _rateLimiters = new();
+        private readonly ConcurrentDictionary<string, ScriptCommunicationPolicy> _scripts =
+            new ConcurrentDictionary<string, ScriptCommunicationPolicy>();
+        private readonly ConcurrentDictionary<
+            string,
+            ConcurrentDictionary<string, Func<ScriptMessage, Task<ScriptMessage>>>
+        > _subscriptions =
+            new ConcurrentDictionary<
+                string,
+                ConcurrentDictionary<string, Func<ScriptMessage, Task<ScriptMessage>>>
+            >();
+        private readonly ConcurrentDictionary<string, SemaphoreSlim> _rateLimiters =
+            new ConcurrentDictionary<string, SemaphoreSlim>();
         private readonly ISecurityAuditor _auditor;
-        private readonly MessageBusStats _stats = new();
+        private readonly MessageBusStats _stats = new MessageBusStats();
         private readonly Timer _cleanupTimer;
         private readonly object _statsLock = new object();
 
         public ScriptMessageBus(ISecurityAuditor auditor = null)
         {
             _auditor = auditor;
-            
+
             // Start cleanup timer to remove expired messages and reset rate limiters
-            _cleanupTimer = new Timer(CleanupCallback, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+            _cleanupTimer = new Timer(
+                CleanupCallback,
+                null,
+                TimeSpan.FromMinutes(1),
+                TimeSpan.FromMinutes(1)
+            );
         }
 
         public void RegisterScript(string scriptId, ScriptCommunicationPolicy policy)
@@ -40,14 +54,23 @@ namespace SolarSharp.Interpreter.Communication
                 throw new ArgumentNullException(nameof(policy));
 
             _scripts[scriptId] = policy;
-            _rateLimiters[scriptId] = new SemaphoreSlim(policy.MaxMessagesPerMinute, policy.MaxMessagesPerMinute);
+            _rateLimiters[scriptId] = new SemaphoreSlim(
+                policy.MaxMessagesPerMinute,
+                policy.MaxMessagesPerMinute
+            );
 
             lock (_statsLock)
             {
                 _stats.ActiveScripts = _scripts.Count;
             }
 
-            _auditor?.LogCapabilityUsage("message_bus", "register_script", new object[] { scriptId }, null, true);
+            _auditor?.LogCapabilityUsage(
+                "message_bus",
+                "register_script",
+                new object[] { scriptId },
+                null,
+                true
+            );
         }
 
         public void UnregisterScript(string scriptId)
@@ -63,7 +86,7 @@ namespace SolarSharp.Interpreter.Communication
 
             // Remove script registration
             _scripts.TryRemove(scriptId, out _);
-            
+
             if (_rateLimiters.TryRemove(scriptId, out var rateLimiter))
             {
                 rateLimiter.Dispose();
@@ -74,13 +97,26 @@ namespace SolarSharp.Interpreter.Communication
                 _stats.ActiveScripts = _scripts.Count;
             }
 
-            _auditor?.LogCapabilityUsage("message_bus", "unregister_script", new object[] { scriptId }, null, true);
+            _auditor?.LogCapabilityUsage(
+                "message_bus",
+                "unregister_script",
+                new object[] { scriptId },
+                null,
+                true
+            );
         }
 
-        public void Subscribe(string messageType, string scriptId, Func<ScriptMessage, Task<ScriptMessage>> handler)
+        public void Subscribe(
+            string messageType,
+            string scriptId,
+            Func<ScriptMessage, Task<ScriptMessage>> handler
+        )
         {
             if (string.IsNullOrEmpty(messageType))
-                throw new ArgumentException("Message type cannot be null or empty", nameof(messageType));
+                throw new ArgumentException(
+                    "Message type cannot be null or empty",
+                    nameof(messageType)
+                );
 
             if (string.IsNullOrEmpty(scriptId))
                 throw new ArgumentException("Script ID cannot be null or empty", nameof(scriptId));
@@ -90,16 +126,26 @@ namespace SolarSharp.Interpreter.Communication
 
             // Check if script is registered
             if (!_scripts.ContainsKey(scriptId))
-                throw new InvalidOperationException($"Script '{scriptId}' is not registered with the message bus");
+                throw new InvalidOperationException(
+                    $"Script '{scriptId}' is not registered with the message bus"
+                );
 
             // Check subscription permissions
             var policy = _scripts[scriptId];
             if (!CanReceiveMessageType(policy, messageType))
             {
-                throw new MissingCapabilityException($"Script '{scriptId}' is not allowed to receive messages of type '{messageType}'", "Subscribe", scriptId, messageType);
+                throw new MissingCapabilityException(
+                    $"Script '{scriptId}' is not allowed to receive messages of type '{messageType}'",
+                    "Subscribe",
+                    scriptId,
+                    messageType
+                );
             }
 
-            var subscribers = _subscriptions.GetOrAdd(messageType, _ => new ConcurrentDictionary<string, Func<ScriptMessage, Task<ScriptMessage>>>());
+            var subscribers = _subscriptions.GetOrAdd(
+                messageType,
+                _ => new ConcurrentDictionary<string, Func<ScriptMessage, Task<ScriptMessage>>>()
+            );
             subscribers[scriptId] = handler;
 
             lock (_statsLock)
@@ -107,7 +153,13 @@ namespace SolarSharp.Interpreter.Communication
                 _stats.TotalSubscriptions = _subscriptions.Values.Sum(s => s.Count);
             }
 
-            _auditor?.LogCapabilityUsage("message_bus", "subscribe", new object[] { messageType, scriptId }, null, true);
+            _auditor?.LogCapabilityUsage(
+                "message_bus",
+                "subscribe",
+                new object[] { messageType, scriptId },
+                null,
+                true
+            );
         }
 
         public void Unsubscribe(string messageType, string scriptId)
@@ -118,7 +170,7 @@ namespace SolarSharp.Interpreter.Communication
             if (_subscriptions.TryGetValue(messageType, out var subscribers))
             {
                 subscribers.TryRemove(scriptId, out _);
-                
+
                 // Remove empty subscription lists
                 if (subscribers.IsEmpty)
                 {
@@ -131,7 +183,13 @@ namespace SolarSharp.Interpreter.Communication
                 _stats.TotalSubscriptions = _subscriptions.Values.Sum(s => s.Count);
             }
 
-            _auditor?.LogCapabilityUsage("message_bus", "unsubscribe", new object[] { messageType, scriptId }, null, true);
+            _auditor?.LogCapabilityUsage(
+                "message_bus",
+                "unsubscribe",
+                new object[] { messageType, scriptId },
+                null,
+                true
+            );
         }
 
         public async Task<IReadOnlyList<ScriptMessage>> PublishAsync(ScriptMessage message)
@@ -146,7 +204,11 @@ namespace SolarSharp.Interpreter.Communication
                 {
                     _stats.PolicyViolations++;
                 }
-                throw new MissingCapabilityException($"Message validation failed: {validationResult.ErrorMessage}", "Validation", validationResult.ErrorMessage);
+                throw new MissingCapabilityException(
+                    $"Message validation failed: {validationResult.ErrorMessage}",
+                    "Validation",
+                    validationResult.ErrorMessage
+                );
             }
 
             // Check if sender can send this message type
@@ -158,7 +220,12 @@ namespace SolarSharp.Interpreter.Communication
                     {
                         _stats.PolicyViolations++;
                     }
-                    throw new MissingCapabilityException($"Script '{message.FromScript}' is not allowed to send messages of type '{message.Type}'", "PublishAsync", message.FromScript, message.Type);
+                    throw new MissingCapabilityException(
+                        $"Script '{message.FromScript}' is not allowed to send messages of type '{message.Type}'",
+                        "PublishAsync",
+                        message.FromScript,
+                        message.Type
+                    );
                 }
 
                 // Rate limiting
@@ -168,7 +235,11 @@ namespace SolarSharp.Interpreter.Communication
                     {
                         _stats.DroppedMessages++;
                     }
-                    throw new ResourceLimitExceededException($"Rate limit exceeded for script '{message.FromScript}'", "MessageBus", message.FromScript);
+                    throw new ResourceLimitExceededException(
+                        $"Rate limit exceeded for script '{message.FromScript}'",
+                        "MessageBus",
+                        message.FromScript
+                    );
                 }
             }
 
@@ -176,8 +247,9 @@ namespace SolarSharp.Interpreter.Communication
             var startTime = DateTime.UtcNow;
 
             // Find all matching subscriptions (including wildcards)
-            var matchingHandlers = new List<(string subscriberId, Func<ScriptMessage, Task<ScriptMessage>> handler)>();
-            
+            var matchingHandlers =
+                new List<(string subscriberId, Func<ScriptMessage, Task<ScriptMessage>> handler)>();
+
             foreach (var (subscriptionType, subscribers) in _subscriptions)
             {
                 if (IsMessageTypeMatch(subscriptionType, message.Type))
@@ -201,27 +273,39 @@ namespace SolarSharp.Interpreter.Communication
             // Execute all matching handlers
             if (matchingHandlers.Any())
             {
-                var tasks = matchingHandlers.Select(h => HandleMessageSafely(h.handler, message, h.subscriberId));
+                var tasks = matchingHandlers.Select(h =>
+                    HandleMessageSafely(h.handler, message, h.subscriberId)
+                );
                 var results = await Task.WhenAll(tasks);
                 responses.AddRange(results.Where(r => r != null));
             }
 
             RecordMessageStats(message, DateTime.UtcNow - startTime);
 
-            _auditor?.LogCapabilityUsage("message_bus", "publish", 
-                new object[] { message.Type, message.FromScript, matchingHandlers.Count }, 
-                responses.Count, true);
+            _auditor?.LogCapabilityUsage(
+                "message_bus",
+                "publish",
+                new object[] { message.Type, message.FromScript, matchingHandlers.Count },
+                responses.Count,
+                true
+            );
 
             return responses;
         }
 
-        public async Task<ScriptMessage> SendDirectAsync(ScriptMessage message, string targetScriptId)
+        public async Task<ScriptMessage> SendDirectAsync(
+            ScriptMessage message,
+            string targetScriptId
+        )
         {
             if (message == null)
                 throw new ArgumentNullException(nameof(message));
 
             if (string.IsNullOrEmpty(targetScriptId))
-                throw new ArgumentException("Target script ID cannot be null or empty", nameof(targetScriptId));
+                throw new ArgumentException(
+                    "Target script ID cannot be null or empty",
+                    nameof(targetScriptId)
+                );
 
             message.ToScript = targetScriptId;
 
@@ -232,7 +316,11 @@ namespace SolarSharp.Interpreter.Communication
                 {
                     _stats.PolicyViolations++;
                 }
-                throw new MissingCapabilityException($"Message validation failed: {validationResult.ErrorMessage}", "Validation", validationResult.ErrorMessage);
+                throw new MissingCapabilityException(
+                    $"Message validation failed: {validationResult.ErrorMessage}",
+                    "Validation",
+                    validationResult.ErrorMessage
+                );
             }
 
             // Check communication permissions
@@ -244,7 +332,12 @@ namespace SolarSharp.Interpreter.Communication
                     {
                         _stats.PolicyViolations++;
                     }
-                    throw new MissingCapabilityException($"Script '{message.FromScript}' is not allowed to send direct messages to '{targetScriptId}'", "SendDirectAsync", message.FromScript, targetScriptId);
+                    throw new MissingCapabilityException(
+                        $"Script '{message.FromScript}' is not allowed to send direct messages to '{targetScriptId}'",
+                        "SendDirectAsync",
+                        message.FromScript,
+                        targetScriptId
+                    );
                 }
 
                 if (!await CheckRateLimit(message.FromScript))
@@ -253,17 +346,23 @@ namespace SolarSharp.Interpreter.Communication
                     {
                         _stats.DroppedMessages++;
                     }
-                    throw new ResourceLimitExceededException($"Rate limit exceeded for script '{message.FromScript}'", "MessageBus", message.FromScript);
+                    throw new ResourceLimitExceededException(
+                        $"Rate limit exceeded for script '{message.FromScript}'",
+                        "MessageBus",
+                        message.FromScript
+                    );
                 }
             }
 
             // Find a handler for the target script (including wildcard subscriptions)
             Func<ScriptMessage, Task<ScriptMessage>> handler = null;
-            
+
             foreach (var (subscriptionType, subscribers) in _subscriptions)
             {
-                if (IsMessageTypeMatch(subscriptionType, message.Type) && 
-                    subscribers.TryGetValue(targetScriptId, out var foundHandler))
+                if (
+                    IsMessageTypeMatch(subscriptionType, message.Type)
+                    && subscribers.TryGetValue(targetScriptId, out var foundHandler)
+                )
                 {
                     handler = foundHandler;
                     break;
@@ -274,28 +373,34 @@ namespace SolarSharp.Interpreter.Communication
             {
                 var startTime = DateTime.UtcNow;
                 var response = await HandleMessageSafely(handler, message, targetScriptId);
-                
+
                 RecordMessageStats(message, DateTime.UtcNow - startTime);
 
-                _auditor?.LogCapabilityUsage("message_bus", "send_direct", 
-                    new object[] { message.Type, message.FromScript, targetScriptId }, 
-                    response != null, true);
+                _auditor?.LogCapabilityUsage(
+                    "message_bus",
+                    "send_direct",
+                    new object[] { message.Type, message.FromScript, targetScriptId },
+                    response != null,
+                    true
+                );
 
                 return response;
             }
 
-            throw new InvalidOperationException($"No handler found for message type '{message.Type}' on script '{targetScriptId}'");
+            throw new InvalidOperationException(
+                $"No handler found for message type '{message.Type}' on script '{targetScriptId}'"
+            );
         }
 
         public IReadOnlyDictionary<string, IReadOnlyList<string>> GetSubscriptions()
         {
             var result = new Dictionary<string, IReadOnlyList<string>>();
-            
+
             foreach (var (messageType, subscribers) in _subscriptions)
             {
                 result[messageType] = subscribers.Keys.ToList();
             }
-            
+
             return result;
         }
 
@@ -315,7 +420,7 @@ namespace SolarSharp.Interpreter.Communication
                     PolicyViolations = _stats.PolicyViolations,
                     FirstMessage = _stats.FirstMessage,
                     LastMessage = _stats.LastMessage,
-                    AverageProcessingTime = _stats.AverageProcessingTime
+                    AverageProcessingTime = _stats.AverageProcessingTime,
                 };
             }
         }
@@ -336,39 +441,48 @@ namespace SolarSharp.Interpreter.Communication
             {
                 var messageSize = EstimateMessageSize(message);
                 if (messageSize > policy.MaxMessageSize)
-                    return MessageValidationResult.Invalid($"Message size ({messageSize}) exceeds limit ({policy.MaxMessageSize})");
+                    return MessageValidationResult.Invalid(
+                        $"Message size ({messageSize}) exceeds limit ({policy.MaxMessageSize})"
+                    );
 
                 // Check signature if required
                 if (policy.RequireSignature && string.IsNullOrEmpty(message.Signature))
-                    return MessageValidationResult.Invalid("Message signature required but not provided");
+                    return MessageValidationResult.Invalid(
+                        "Message signature required but not provided"
+                    );
             }
 
             return MessageValidationResult.Valid();
         }
 
-        private async Task<ScriptMessage> HandleMessageSafely(Func<ScriptMessage, Task<ScriptMessage>> handler, 
-            ScriptMessage message, string handlerId)
+        private async Task<ScriptMessage> HandleMessageSafely(
+            Func<ScriptMessage, Task<ScriptMessage>> handler,
+            ScriptMessage message,
+            string handlerId
+        )
         {
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)); // 30-second timeout
                 var task = handler(message);
-                
+
                 if (await Task.WhenAny(task, Task.Delay(Timeout.Infinite, cts.Token)) == task)
                 {
                     return await task;
                 }
-                else
-                {
-                    _auditor?.LogSecurityViolation($"Message handler timeout for script '{handlerId}'", 
-                        SecurityEventType.ExecutionTimeout);
-                    return null;
-                }
+                _auditor?.LogSecurityViolation(
+                    $"Message handler timeout for script '{handlerId}'",
+                    SecurityEventType.ExecutionTimeout
+                );
+                return null;
             }
             catch (Exception ex)
             {
-                _auditor?.LogSecurityViolation($"Message handler error for script '{handlerId}': {ex.Message}", 
-                    SecurityEventType.UnauthorizedOperation, ex);
+                _auditor?.LogSecurityViolation(
+                    $"Message handler error for script '{handlerId}': {ex.Message}",
+                    SecurityEventType.UnauthorizedOperation,
+                    ex
+                );
                 return null;
             }
         }
@@ -389,17 +503,20 @@ namespace SolarSharp.Interpreter.Communication
 
         private bool CanReceiveMessageType(ScriptCommunicationPolicy policy, string messageType)
         {
-            return policy.CanReceiveTypes.Contains("*") || policy.CanReceiveTypes.Contains(messageType);
+            return policy.CanReceiveTypes.Contains("*")
+                || policy.CanReceiveTypes.Contains(messageType);
         }
 
         private bool CanSendToTarget(ScriptCommunicationPolicy policy, string targetScript)
         {
-            return policy.AllowedTargets.Contains("*") || policy.AllowedTargets.Contains(targetScript);
+            return policy.AllowedTargets.Contains("*")
+                || policy.AllowedTargets.Contains(targetScript);
         }
 
         private bool CanReceiveFromSender(ScriptCommunicationPolicy policy, string senderScript)
         {
-            return policy.AllowedSenders.Contains("*") || policy.AllowedSenders.Contains(senderScript);
+            return policy.AllowedSenders.Contains("*")
+                || policy.AllowedSenders.Contains(senderScript);
         }
 
         private bool IsMessageTypeMatch(string subscriptionPattern, string messageType)
@@ -436,17 +553,23 @@ namespace SolarSharp.Interpreter.Communication
             lock (_statsLock)
             {
                 _stats.TotalMessagesProcessed++;
-                _stats.MessagesByType[message.Type] = _stats.MessagesByType.GetValueOrDefault(message.Type, 0) + 1;
-                _stats.MessagesByScript[message.FromScript] = _stats.MessagesByScript.GetValueOrDefault(message.FromScript, 0) + 1;
-                
+                _stats.MessagesByType[message.Type] =
+                    _stats.MessagesByType.GetValueOrDefault(message.Type, 0) + 1;
+                _stats.MessagesByScript[message.FromScript] =
+                    _stats.MessagesByScript.GetValueOrDefault(message.FromScript, 0) + 1;
+
                 if (_stats.FirstMessage == default)
                     _stats.FirstMessage = DateTime.UtcNow;
-                    
+
                 _stats.LastMessage = DateTime.UtcNow;
 
                 // Update average processing time
-                var totalTime = _stats.AverageProcessingTime.Ticks * (_stats.TotalMessagesProcessed - 1) + processingTime.Ticks;
-                _stats.AverageProcessingTime = new TimeSpan(totalTime / _stats.TotalMessagesProcessed);
+                var totalTime =
+                    _stats.AverageProcessingTime.Ticks * (_stats.TotalMessagesProcessed - 1)
+                    + processingTime.Ticks;
+                _stats.AverageProcessingTime = new TimeSpan(
+                    totalTime / _stats.TotalMessagesProcessed
+                );
             }
         }
 
@@ -462,7 +585,7 @@ namespace SolarSharp.Interpreter.Communication
                         // Release all tokens back to the rate limiter
                         var currentCount = rateLimiter.CurrentCount;
                         var toRelease = Math.Max(0, policy.MaxMessagesPerMinute - currentCount);
-                        
+
                         if (toRelease > 0)
                         {
                             rateLimiter.Release(toRelease);
@@ -472,20 +595,23 @@ namespace SolarSharp.Interpreter.Communication
             }
             catch (Exception ex)
             {
-                _auditor?.LogSecurityViolation($"Message bus cleanup error: {ex.Message}", 
-                    SecurityEventType.UnauthorizedOperation, ex);
+                _auditor?.LogSecurityViolation(
+                    $"Message bus cleanup error: {ex.Message}",
+                    SecurityEventType.UnauthorizedOperation,
+                    ex
+                );
             }
         }
 
         public void Dispose()
         {
             _cleanupTimer?.Dispose();
-            
+
             foreach (var rateLimiter in _rateLimiters.Values)
             {
                 rateLimiter?.Dispose();
             }
-            
+
             _rateLimiters.Clear();
         }
     }

@@ -8,7 +8,7 @@ using SolarSharp.Interpreter.Execution;
 namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public class LuaState
     {
@@ -17,12 +17,16 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         public ScriptExecutionContext ExecutionContext { get; private set; }
         public string FunctionName { get; private set; }
 
-        internal LuaState(ScriptExecutionContext executionContext, CallbackArguments args, string functionName)
+        internal LuaState(
+            ScriptExecutionContext executionContext,
+            CallbackArguments args,
+            string functionName
+        )
         {
             ExecutionContext = executionContext;
             m_Stack = new List<DynValue>(16);
 
-            for (int i = 0; i < args.Count; i++)
+            for (var i = 0; i < args.Count; i++)
                 m_Stack.Add(args[i]);
 
             FunctionName = functionName;
@@ -63,33 +67,27 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
         public DynValue[] GetTopArray(int num)
         {
-            DynValue[] rets = new DynValue[num];
+            var rets = new DynValue[num];
 
-            for (int i = 0; i < num; i++)
+            for (var i = 0; i < num; i++)
                 rets[num - i - 1] = Top(i);
 
             return rets;
         }
 
-
         public DynValue GetReturnValue(int retvals)
         {
             if (retvals == 0)
                 return DynValue.Nil;
-            else if (retvals == 1)
+            if (retvals == 1)
                 return Top();
-            else
-            {
-                DynValue[] rets = GetTopArray(retvals);
-                return DynValue.NewTupleNested(rets);
-            }
+            var rets = GetTopArray(retvals);
+            return DynValue.NewTupleNested(rets);
         }
-
-
 
         public void Discard(int nargs)
         {
-            for (int i = 0; i < nargs; i++)
+            for (var i = 0; i < nargs; i++)
                 m_Stack.RemoveAt(m_Stack.Count - 1);
         }
     }

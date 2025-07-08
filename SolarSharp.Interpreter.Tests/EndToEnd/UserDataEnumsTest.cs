@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -12,7 +13,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         Quattro = 4,
         Cinque = 5,
         TantaRoba = short.MaxValue,
-        PocaRoba = short.MinValue
+        PocaRoba = short.MinValue,
     }
 
     [Flags]
@@ -22,13 +23,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         Due = 2,
         Quattro = 4,
         Cinque = 5,
-        Otto = 8
+        Otto = 8,
     }
-
 
     [TestFixture]
     [NonParallelizable] // Uses global UserData registration
-    [Category("IntegrationTest")]
+    [Category("VM.Integration")]
     public class UserDataEnumsTests
     {
         public class EnumOverloadsTestClass
@@ -64,12 +64,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
         }
 
-
         private static void RunTestOverload(string code, string expected)
         {
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            EnumOverloadsTestClass obj = new();
+            var obj = new EnumOverloadsTestClass();
 
             UserData.RegisterType<EnumOverloadsTestClass>(InteropAccessMode.Reflection);
 
@@ -90,7 +89,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(v.String, Is.EqualTo(expected));
             });
         }
-
 
         [Test]
         public void Interop_Enum_Simple()
@@ -117,7 +115,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             RunTestOverload("o:MyMethod2(5)", "(Cinque)");
         }
 
-
         [Test]
         public void Interop_Enum_Flags_Or()
         {
@@ -139,7 +136,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Enum_Flags_Not()
         {
-            RunTestOverload("o:MyMethod(MyFlags.flagsAnd(MyFlags.Cinque, MyFlags.flagsNot(MyFlags.Uno)))", "4");
+            RunTestOverload(
+                "o:MyMethod(MyFlags.flagsAnd(MyFlags.Cinque, MyFlags.flagsNot(MyFlags.Uno)))",
+                "4"
+            );
         }
 
         [Test]
@@ -159,7 +159,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             RunTestOverload("o:MyMethod(MyFlags.Uno .. MyFlags.Due)", "3");
         }
-
 
         [Test]
         public void Interop_Enum_Flags_HasAll()

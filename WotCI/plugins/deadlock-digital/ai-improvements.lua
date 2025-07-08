@@ -6,7 +6,7 @@ local AIImprovements = {}
 
 -- Plugin state
 local ai_state = {
-    enemy_behaviors = {},
+    enemy_behaviours = {},
     learning_data = {},
     difficulty_scaling = 1.0
 }
@@ -21,8 +21,8 @@ function initialize()
         save_file:close()
         game.log("Loaded AI learning data")
     else
-        -- Initialize default behaviors
-        ai_state.enemy_behaviors = {
+        -- Initialize default behaviours
+        ai_state.enemy_behaviours = {
             aggressive = 0.3,
             defensive = 0.4,
             tactical = 0.3
@@ -47,14 +47,14 @@ function on_combat(player_health, incoming_damage)
         game.log("AI: Increasing difficulty - player is too strong")
     end
     
-    -- Select AI behavior
-    local behavior = select_behavior()
+    -- Select AI behaviour
+    local behaviour = select_behaviour()
     local modified_damage = incoming_damage
     
-    if behavior == "aggressive" then
+    if behaviour == "aggressive" then
         modified_damage = math.floor(incoming_damage * 1.3 * ai_state.difficulty_scaling)
         game.log("AI: Aggressive attack!")
-    elseif behavior == "defensive" then
+    elseif behaviour == "defensive" then
         modified_damage = math.floor(incoming_damage * 0.7 * ai_state.difficulty_scaling)
         game.log("AI: Defensive stance")
     else -- tactical
@@ -68,14 +68,14 @@ function on_combat(player_health, incoming_damage)
     return modified_damage
 end
 
-function select_behavior()
+function select_behaviour()
     local roll = math.random()
     local cumulative = 0
     
-    for behavior, chance in pairs(ai_state.enemy_behaviors) do
+    for behaviour, chance in pairs(ai_state.enemy_behaviours) do
         cumulative = cumulative + chance
         if roll <= cumulative then
-            return behavior
+            return behaviour
         end
     end
     

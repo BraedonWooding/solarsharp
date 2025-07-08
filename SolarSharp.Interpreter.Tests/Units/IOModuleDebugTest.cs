@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Security.Operations;
 
 namespace SolarSharp.Interpreter.Tests.Units
 {
@@ -13,7 +13,7 @@ namespace SolarSharp.Interpreter.Tests.Units
     ///     Dependencies: None
     /// </remarks>
     [TestFixture]
-    [Category("InteropTest")]
+    [Category("Module.Unit")]
     [NonParallelizable] // Modifies global state
     public class IoModuleDebugTest
     {
@@ -26,28 +26,43 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     that scripts can access the IO module when it should be available based on
         ///     the security configuration's AllowedModules settings.
         /// </remarks>
+        [Category("Module.Unit")]
         [Test]
         public void TestIoModuleAvailability()
         {
-            // Test 1: CreateDataProcessing
-            var config1 = SecurityConfiguration.DataProcessing();
-            Assert.That(config1.AllowedModules.HasFlag(CoreModules.IO), Is.True,
-                "CreateDataProcessing should include IO module in AllowedModules");
+            // Test 1: Create a PolicySet where default policy includes IO
+            var policyWithIo = Examples.DataProcessingSecurityPolicy;
+            var policySet1 = new PolicySetBuilder()
+                .DefinePolicy("default", policyWithIo)
+                .WithDefaultPolicy("default")
+                .Build();
+            var basePolicySet1Result = BasePolicySetFactory.Create(policySet1);
+            Assert.That(
+                basePolicySet1Result.IsSuccess,
+                Is.True,
+                basePolicySet1Result.IsFailure
+                    ? $"Failed to create base policy set: {basePolicySet1Result.Error}"
+                    : "Base policy set creation should succeed"
+            );
+            var basePolicySet1 = basePolicySet1Result.Value;
 
-            var script1 = new Script(config1.AllowRunString().AllowInternalDynamicCode());
+            var script1 = new Script(basePolicySet1);
             var result1 = script1.DoString("return io");
-            Assert.That(result1.Type, Is.Not.EqualTo(DataType.Nil),
-                "IO module should be available with CreateDataProcessing");
+            Assert.That(
+                result1.Type,
+                Is.Not.EqualTo(DataType.Nil),
+                "IO module should be available when default policy includes IO"
+            );
 
-            // Test 2: Desktop (new SecurityConfiguration())
-            var config2 = new SecurityConfiguration();
-            Assert.That(config2.AllowedModules.HasFlag(CoreModules.IO), Is.True,
-                "Desktop configuration should include IO module in AllowedModules");
-
-            var script2 = new Script(config2.AllowRunString().AllowInternalDynamicCode());
+            // Test 2: Desktop (default policy includes IO)
+            var basePolicySet2 = Examples.DesktopBasePolicySet;
+            var script2 = new Script(basePolicySet2);
             var result2 = script2.DoString("return io");
-            Assert.That(result2.Type, Is.Not.EqualTo(DataType.Nil),
-                "IO module should be available with Desktop configuration");
+            Assert.That(
+                result2.Type,
+                Is.Not.EqualTo(DataType.Nil),
+                "IO module should be available with Desktop configuration"
+            );
         }
     }
 }

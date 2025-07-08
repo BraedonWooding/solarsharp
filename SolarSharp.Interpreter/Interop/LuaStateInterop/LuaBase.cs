@@ -4,7 +4,6 @@
 using System;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.Security;
 using lua_Integer = System.Int32;
 
 namespace SolarSharp.Interpreter.Interop.LuaStateInterop
@@ -12,8 +11,8 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
     /// <summary>
     /// Classes using the classic interface should inherit from this class.
     /// This class defines only static methods and is really meant to be used only
-    /// from C# and not other .NET languages. 
-    /// 
+    /// from C# and not other .NET languages.
+    ///
     /// For easier operation they should also define:
     ///		using ptrdiff_t = System.Int32;
     ///		using lua_Integer = System.Int32;
@@ -42,9 +41,22 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             return l.At(pos);
         }
 
-        protected static DynValue ArgAsType(LuaState l, lua_Integer pos, DataType type, bool allowNil = false)
+        protected static DynValue ArgAsType(
+            LuaState l,
+            lua_Integer pos,
+            DataType type,
+            bool allowNil = false
+        )
         {
-            return GetArgument(l, pos).CheckType(l.FunctionName, type, pos - 1, allowNil ? TypeValidationFlags.AllowNil | TypeValidationFlags.AutoConvert : TypeValidationFlags.AutoConvert);
+            return GetArgument(l, pos)
+                .CheckType(
+                    l.FunctionName,
+                    type,
+                    pos - 1,
+                    allowNil
+                        ? TypeValidationFlags.AllowNil | TypeValidationFlags.AutoConvert
+                        : TypeValidationFlags.AutoConvert
+                );
         }
 
         protected static lua_Integer LuaType(LuaState l, lua_Integer p)
@@ -81,7 +93,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
         protected static string LuaLCheckLString(LuaState luaState, lua_Integer argNum, out uint l)
         {
-            var str = ArgAsType(luaState, argNum, DataType.String, false).String;
+            var str = ArgAsType(luaState, argNum, DataType.String).String;
             l = (uint)str.Length;
             return str;
         }
@@ -118,9 +130,8 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
         protected static void LuaLAddString(LuaLBuffer b, string s)
         {
-            b.StringBuilder.Append(s.ToString());
+            b.StringBuilder.Append(s);
         }
-
 
         protected static lua_Integer LuaLOptInteger(LuaState l, lua_Integer pos, lua_Integer def)
         {
@@ -128,17 +139,21 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
             if (v.IsNil())
                 return def;
-            else
-                return (lua_Integer)v.Number;
+            return (lua_Integer)v.Number;
         }
 
         protected static lua_Integer LuaLCheckInteger(LuaState l, lua_Integer pos)
         {
-            var v = ArgAsType(l, pos, DataType.Number, false);
+            var v = ArgAsType(l, pos, DataType.Number);
             return (lua_Integer)v.Number;
         }
 
-        protected static void LuaLArgCheck(LuaState l, bool condition, lua_Integer argNum, string message)
+        protected static void LuaLArgCheck(
+            LuaState l,
+            bool condition,
+            lua_Integer argNum,
+            string message
+        )
         {
             if (!condition)
                 LuaLArgError(l, argNum, message);
@@ -154,7 +169,11 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             return l.Count;
         }
 
-        protected static lua_Integer LuaLError(LuaState luaState, string message, params object[] args)
+        protected static lua_Integer LuaLError(
+            LuaState luaState,
+            string message,
+            params object[] args
+        )
         {
             throw new ScriptRuntimeException(message, args);
         }
@@ -164,9 +183,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             b.StringBuilder.Append(p);
         }
 
-        protected static void LuaLBuffInit(LuaState l, LuaLBuffer b)
-        {
-        }
+        protected static void LuaLBuffInit(LuaState l, LuaLBuffer b) { }
 
         protected static void LuaPushLiteral(LuaState l, string literalString)
         {
@@ -184,7 +201,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                 var resourceController = script.ResourceController();
                 resourceController?.CheckStringLength(result.Length);
             }
-            
+
             LuaPushLiteral(luaState, result);
         }
 
@@ -197,7 +214,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                 var resourceController = script.ResourceController();
                 resourceController?.CheckStringLength((lua_Integer)len);
             }
-            
+
             var ss = s.ToString((lua_Integer)len);
             l.Push(DynValue.NewString(ss));
         }
@@ -212,7 +229,6 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             return "'" + p + "'";
         }
 
-
         protected static void LuaPushNil(LuaState l)
         {
             l.Push(DynValue.Nil);
@@ -220,7 +236,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
         protected static void LuaAssert(bool p)
         {
-            // ??! 
+            // ??!
             // A lot of KopiLua methods fall here in valid state!
 
             //if (!p)
@@ -279,7 +295,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
         protected static double LuaLCheckNumber(LuaState l, lua_Integer pos)
         {
-            var v = ArgAsType(l, pos, DataType.Number, false);
+            var v = ArgAsType(l, pos, DataType.Number);
             return v.Number;
         }
 
@@ -288,7 +304,6 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             var v = l.At(arg);
             l.Push(v);
         }
-
 
         /// <summary>
         /// Calls a function.
@@ -305,7 +320,11 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         /// <param name="nargs">The number of arguments.</param>
         /// <param name="nresults">The number of expected results.</param>
         /// <exception cref="System.NotImplementedException"></exception>
-        protected static void LuaCall(LuaState l, lua_Integer nargs, lua_Integer nresults = LUA_MULTRET)
+        protected static void LuaCall(
+            LuaState l,
+            lua_Integer nargs,
+            lua_Integer nresults = LUA_MULTRET
+        )
         {
             var args = l.GetTopArray(nargs);
 

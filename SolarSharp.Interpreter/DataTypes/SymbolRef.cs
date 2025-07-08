@@ -8,8 +8,6 @@ namespace SolarSharp.Interpreter.DataTypes
     /// </summary>
     public class SymbolRef
     {
-        private static readonly SymbolRef s_DefaultEnv = new() { i_Type = SymbolRefType.DefaultEnv };
-
         // Fields are internal - direct access by the executor was a 10% improvement at profiling here!
         internal SymbolRefType i_Type;
         internal SymbolRef i_Env;
@@ -19,25 +17,40 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Gets the type of this symbol reference
         /// </summary>
-        public SymbolRefType Type { get { return i_Type; } }
+        public SymbolRefType Type
+        {
+            get { return i_Type; }
+        }
+
         /// <summary>
         /// Gets the index of this symbol in its scope context
         /// </summary>
-        public int Index { get { return i_Index; } }
+        public int Index
+        {
+            get { return i_Index; }
+        }
+
         /// <summary>
         /// Gets the name of this symbol
         /// </summary>
-        public string Name { get { return i_Name; } }
+        public string Name
+        {
+            get { return i_Name; }
+        }
+
         /// <summary>
         /// Gets the environment this symbol refers to (for global symbols only)
         /// </summary>
-        public SymbolRef Environment { get { return i_Env; } }
-
+        public SymbolRef Environment
+        {
+            get { return i_Env; }
+        }
 
         /// <summary>
         /// Gets the default _ENV.
         /// </summary>
-        public static SymbolRef DefaultEnv { get { return s_DefaultEnv; } }
+        public static SymbolRef DefaultEnv { get; } =
+            new SymbolRef { i_Type = SymbolRefType.DefaultEnv };
 
         /// <summary>
         /// Creates a new symbol reference pointing to a global var
@@ -47,7 +60,13 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public static SymbolRef Global(string name, SymbolRef envSymbol)
         {
-            return new SymbolRef() { i_Index = -1, i_Type = SymbolRefType.Global, i_Env = envSymbol, i_Name = name };
+            return new SymbolRef
+            {
+                i_Index = -1,
+                i_Type = SymbolRefType.Global,
+                i_Env = envSymbol,
+                i_Name = name,
+            };
         }
 
         /// <summary>
@@ -59,7 +78,12 @@ namespace SolarSharp.Interpreter.DataTypes
         internal static SymbolRef Local(string name, int index)
         {
             //Debug.Assert(index >= 0, "Symbol Index < 0");
-            return new SymbolRef() { i_Index = index, i_Type = SymbolRefType.Local, i_Name = name };
+            return new SymbolRef
+            {
+                i_Index = index,
+                i_Type = SymbolRefType.Local,
+                i_Name = name,
+            };
         }
 
         /// <summary>
@@ -71,7 +95,12 @@ namespace SolarSharp.Interpreter.DataTypes
         internal static SymbolRef Upvalue(string name, int index)
         {
             //Debug.Assert(index >= 0, "Symbol Index < 0");
-            return new SymbolRef() { i_Index = index, i_Type = SymbolRefType.Upvalue, i_Name = name };
+            return new SymbolRef
+            {
+                i_Index = index,
+                i_Type = SymbolRefType.Upvalue,
+                i_Name = name,
+            };
         }
 
         /// <summary>
@@ -84,11 +113,9 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             if (i_Type == SymbolRefType.DefaultEnv)
                 return "(default _ENV)";
-            else
             if (i_Type == SymbolRefType.Global)
                 return string.Format("{2} : {0} / {1}", i_Type, i_Env, i_Name);
-            else
-                return string.Format("{2} : {0}[{1}]", i_Type, i_Index, i_Name);
+            return string.Format("{2} : {0}[{1}]", i_Type, i_Index, i_Name);
         }
 
         /// <summary>
@@ -102,15 +129,15 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Reads a symbolref from a binary stream 
+        /// Reads a symbolref from a binary stream
         /// </summary>
         internal static SymbolRef ReadBinary(BinaryReader br)
         {
-            SymbolRef that = new()
+            var that = new SymbolRef
             {
                 i_Type = (SymbolRefType)br.ReadByte(),
                 i_Index = br.ReadInt32(),
-                i_Name = br.ReadString()
+                i_Name = br.ReadString(),
             };
             return that;
         }
@@ -125,7 +152,7 @@ namespace SolarSharp.Interpreter.DataTypes
 
         internal void ReadBinaryEnv(BinaryReader br, SymbolRef[] symbolRefs)
         {
-            int idx = br.ReadInt32();
+            var idx = br.ReadInt32();
 
             if (idx >= 0)
                 i_Env = symbolRefs[idx];

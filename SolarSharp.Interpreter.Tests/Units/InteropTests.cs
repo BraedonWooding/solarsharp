@@ -15,7 +15,7 @@ namespace SolarSharp.Interpreter.Tests.Units
     ///     Dependencies: None
     /// </remarks>
     [TestFixture]
-    [Category("InteropTest")]
+    [Category("VM.Unit")]
     public class InteropTests
     {
         [Test]

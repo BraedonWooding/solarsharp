@@ -2,17 +2,19 @@ using Spectre.Console;
 
 namespace WotCI
 {
-    class Program
+    internal static class Program
     {
-        static async Task<int> Main(string[] args)
+        private static async Task<int> Main(string[] args)
         {
             // Show the game header
             var titlePanel = new Panel(new FigletText("WotCI").Centered().Color(Color.Gold1))
                 .Border(BoxBorder.Double)
                 .BorderColor(Color.Gold1);
             AnsiConsole.Write(titlePanel);
-            
-            var subtitlePanel = new Panel(new Markup("[bold]Wrath of the CI King - ProgressQuest Style Game[/]").Centered())
+
+            var subtitlePanel = new Panel(
+                new Markup("[bold]Wrath of the CI King - ProgressQuest Style Game[/]").Centered()
+            )
                 .Border(BoxBorder.Rounded)
                 .BorderColor(Color.Blue);
             AnsiConsole.Write(subtitlePanel);
@@ -21,9 +23,9 @@ namespace WotCI
             // Initialize game components
             var game = new GameSimulator();
             game.Initialize();
-            
+
             var pluginManager = new PluginManager(game);
-            
+
             try
             {
                 // Start the main game loop with integrated menu system
@@ -32,7 +34,7 @@ namespace WotCI
             }
             finally
             {
-                pluginManager?.Dispose();
+                pluginManager.Dispose();
             }
         }
 

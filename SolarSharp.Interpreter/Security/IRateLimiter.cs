@@ -54,7 +54,8 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Per-operation limits (optional)
         /// </summary>
-        public Dictionary<string, int> OperationLimits { get; set; } = new();
+        public Dictionary<string, int> OperationLimits { get; set; } =
+            new Dictionary<string, int>();
 
         /// <summary>
         /// Whether to use a sliding window (true) or fixed window (false)
@@ -73,9 +74,16 @@ namespace SolarSharp.Interpreter.Security
         public TimeSpan Window { get; set; }
         public DateTime WindowStart { get; set; }
         public DateTime LastOperation { get; set; }
-        public Dictionary<string, int> OperationCounts { get; set; } = new();
-        public bool IsAtLimit => CurrentCount >= MaxOperations;
-        public double UtilizationPercentage => MaxOperations > 0 ? (double)CurrentCount / MaxOperations * 100 : 0;
+        public Dictionary<string, int> OperationCounts { get; set; } =
+            new Dictionary<string, int>();
+        public bool IsAtLimit
+        {
+            get { return CurrentCount >= MaxOperations; }
+        }
+        public double UtilizationPercentage
+        {
+            get { return MaxOperations > 0 ? (double)CurrentCount / MaxOperations * 100 : 0; }
+        }
     }
 
     /// <summary>
@@ -83,9 +91,15 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class SlidingWindowRateLimiter : IRateLimiter
     {
-        private readonly ConcurrentDictionary<string, RateLimitConfig> _configs = new();
-        private readonly ConcurrentDictionary<string, List<DateTime>> _operations = new();
-        private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, List<DateTime>>> _operationSpecific = new();
+        private readonly ConcurrentDictionary<string, RateLimitConfig> _configs =
+            new ConcurrentDictionary<string, RateLimitConfig>();
+        private readonly ConcurrentDictionary<string, List<DateTime>> _operations =
+            new ConcurrentDictionary<string, List<DateTime>>();
+        private readonly ConcurrentDictionary<
+            string,
+            ConcurrentDictionary<string, List<DateTime>>
+        > _operationSpecific =
+            new ConcurrentDictionary<string, ConcurrentDictionary<string, List<DateTime>>>();
         private readonly object _lockObject = new object();
         private readonly ISecurityAuditor _auditor;
 
@@ -120,21 +134,37 @@ namespace SolarSharp.Interpreter.Security
                 // Check overall limit
                 if (currentCount >= config.MaxOperations)
                 {
-                    _auditor?.LogRateLimitViolation(resource, currentCount, config.MaxOperations, config.Window);
+                    _auditor?.LogRateLimitViolation(
+                        resource,
+                        currentCount,
+                        config.MaxOperations,
+                        config.Window
+                    );
                     return false;
                 }
 
                 // Check operation-specific limit if specified
-                if (!string.IsNullOrEmpty(operation) && config.OperationLimits.TryGetValue(operation, out var operationLimit))
+                if (
+                    !string.IsNullOrEmpty(operation)
+                    && config.OperationLimits.TryGetValue(operation, out var operationLimit)
+                )
                 {
-                    var opSpecific = _operationSpecific.GetOrAdd(resource, _ => new ConcurrentDictionary<string, List<DateTime>>());
+                    var opSpecific = _operationSpecific.GetOrAdd(
+                        resource,
+                        _ => new ConcurrentDictionary<string, List<DateTime>>()
+                    );
                     var opOperations = opSpecific.GetOrAdd(operation, _ => new List<DateTime>());
-                    
+
                     CleanupExpiredOperations(opOperations, config.Window);
-                    
+
                     if (opOperations.Count >= operationLimit)
                     {
-                        _auditor?.LogRateLimitViolation($"{resource}.{operation}", opOperations.Count, operationLimit, config.Window);
+                        _auditor?.LogRateLimitViolation(
+                            $"{resource}.{operation}",
+                            opOperations.Count,
+                            operationLimit,
+                            config.Window
+                        );
                         return false;
                     }
                 }
@@ -159,7 +189,10 @@ namespace SolarSharp.Interpreter.Security
                 // Record operation-specific if specified
                 if (!string.IsNullOrEmpty(operation))
                 {
-                    var opSpecific = _operationSpecific.GetOrAdd(resource, _ => new ConcurrentDictionary<string, List<DateTime>>());
+                    var opSpecific = _operationSpecific.GetOrAdd(
+                        resource,
+                        _ => new ConcurrentDictionary<string, List<DateTime>>()
+                    );
                     var opOperations = opSpecific.GetOrAdd(operation, _ => new List<DateTime>());
                     opOperations.Add(now);
                 }
@@ -185,7 +218,7 @@ namespace SolarSharp.Interpreter.Security
                     MaxOperations = config.MaxOperations,
                     Window = config.Window,
                     WindowStart = DateTime.UtcNow - config.Window,
-                    LastOperation = operations.Any() ? operations.Last() : default(DateTime)
+                    LastOperation = operations.Any() ? operations.Last() : default(DateTime),
                 };
 
                 // Add operation-specific counts
@@ -242,33 +275,34 @@ namespace SolarSharp.Interpreter.Security
         public static IRateLimiter CreateConservative(ISecurityAuditor auditor = null)
         {
             var limiter = new SlidingWindowRateLimiter(auditor);
-            
+
             // File operations
-            limiter.Configure("file", new RateLimitConfig
-            {
-                MaxOperations = 50,
-                Window = TimeSpan.FromMinutes(1),
-                OperationLimits = new Dictionary<string, int>
+            limiter.Configure(
+                "file",
+                new RateLimitConfig
                 {
-                    ["read"] = 30,
-                    ["write"] = 10,
-                    ["delete"] = 5
+                    MaxOperations = 50,
+                    Window = TimeSpan.FromMinutes(1),
+                    OperationLimits = new Dictionary<string, int>
+                    {
+                        ["read"] = 30,
+                        ["write"] = 10,
+                        ["delete"] = 5,
+                    },
                 }
-            });
+            );
 
             // Network operations
-            limiter.Configure("network", new RateLimitConfig
-            {
-                MaxOperations = 20,
-                Window = TimeSpan.FromMinutes(1)
-            });
+            limiter.Configure(
+                "network",
+                new RateLimitConfig { MaxOperations = 20, Window = TimeSpan.FromMinutes(1) }
+            );
 
             // Process execution
-            limiter.Configure("process", new RateLimitConfig
-            {
-                MaxOperations = 5,
-                Window = TimeSpan.FromMinutes(1)
-            });
+            limiter.Configure(
+                "process",
+                new RateLimitConfig { MaxOperations = 5, Window = TimeSpan.FromMinutes(1) }
+            );
 
             return limiter;
         }
@@ -279,27 +313,23 @@ namespace SolarSharp.Interpreter.Security
         public static IRateLimiter CreateDevelopment(ISecurityAuditor auditor = null)
         {
             var limiter = new SlidingWindowRateLimiter(auditor);
-            
-            limiter.Configure("file", new RateLimitConfig
-            {
-                MaxOperations = 200,
-                Window = TimeSpan.FromMinutes(1)
-            });
 
-            limiter.Configure("network", new RateLimitConfig
-            {
-                MaxOperations = 100,
-                Window = TimeSpan.FromMinutes(1)
-            });
+            limiter.Configure(
+                "file",
+                new RateLimitConfig { MaxOperations = 200, Window = TimeSpan.FromMinutes(1) }
+            );
 
-            limiter.Configure("process", new RateLimitConfig
-            {
-                MaxOperations = 20,
-                Window = TimeSpan.FromMinutes(1)
-            });
+            limiter.Configure(
+                "network",
+                new RateLimitConfig { MaxOperations = 100, Window = TimeSpan.FromMinutes(1) }
+            );
+
+            limiter.Configure(
+                "process",
+                new RateLimitConfig { MaxOperations = 20, Window = TimeSpan.FromMinutes(1) }
+            );
 
             return limiter;
         }
     }
 }
-

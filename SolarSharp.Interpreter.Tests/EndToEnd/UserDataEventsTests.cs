@@ -1,6 +1,7 @@
 ﻿using System;
 using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -8,7 +9,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
     [TestFixture]
     [NonParallelizable] // Uses global UserData registration
-    [Category("IntegrationTest")]
+    [Category("VM.Integration")]
     public class UserDataEventsTests
     {
         public class SomeClass
@@ -39,7 +40,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
         }
 
-
         [Test]
         public void Interop_Event_Simple()
         {
@@ -47,23 +47,27 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script();
+            var s = new Script(Examples.DesktopBasePolicySet);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
-            {
-                invocationCount += 1;
-                return DynValue.Void;
-            });
+            s.Globals["ext"] = DynValue.NewCallback(
+                (c, a) =>
+                {
+                    invocationCount += 1;
+                    return DynValue.Void;
+                }
+            );
 
-            s.DoString(@"
+            s.DoString(
+                @"
 				function handler(o, a)
 					ext();
 				end
 
 				myobj.MyEvent.add(handler);
-				");
+				"
+            );
 
             obj.Trigger_MyEvent();
 
@@ -77,32 +81,35 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script();
+            var s = new Script(Examples.DesktopBasePolicySet);
 
             var obj = new SomeClass();
             var obj2 = new SomeClass();
             s.Globals["myobj"] = obj;
             s.Globals["myobj2"] = obj2;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
-            {
-                invocationCount += 1;
-                return DynValue.Void;
-            });
+            s.Globals["ext"] = DynValue.NewCallback(
+                (c, a) =>
+                {
+                    invocationCount += 1;
+                    return DynValue.Void;
+                }
+            );
 
-            s.DoString(@"
+            s.DoString(
+                @"
 				function handler(o, a)
 					ext();
 				end
 
 				myobj.MyEvent.add(handler);
-				");
+				"
+            );
 
             obj.Trigger_MyEvent();
             obj2.Trigger_MyEvent();
 
             Assert.That(invocationCount, Is.EqualTo(1));
         }
-
 
         [Test]
         public void Interop_Event_Multi()
@@ -111,24 +118,28 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script();
+            var s = new Script(Examples.DesktopBasePolicySet);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
-            {
-                invocationCount += 1;
-                return DynValue.Void;
-            });
+            s.Globals["ext"] = DynValue.NewCallback(
+                (c, a) =>
+                {
+                    invocationCount += 1;
+                    return DynValue.Void;
+                }
+            );
 
-            s.DoString(@"
+            s.DoString(
+                @"
 				function handler(o, a)
 					ext();
 				end
 
 				myobj.MyEvent.add(handler);
 				myobj.MyEvent.add(handler);
-				");
+				"
+            );
 
             obj.Trigger_MyEvent();
 
@@ -142,17 +153,20 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script();
+            var s = new Script(Examples.DesktopBasePolicySet);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
-            {
-                invocationCount += 1;
-                return DynValue.Void;
-            });
+            s.Globals["ext"] = DynValue.NewCallback(
+                (c, a) =>
+                {
+                    invocationCount += 1;
+                    return DynValue.Void;
+                }
+            );
 
-            s.DoString(@"
+            s.DoString(
+                @"
 				function handler(o, a)
 					ext();
 				end
@@ -162,7 +176,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj.Trigger_MyEvent();
 				myobj.MyEvent.remove(handler);
 				myobj.Trigger_MyEvent();
-				");
+				"
+            );
 
             Assert.That(invocationCount, Is.EqualTo(3));
         }
@@ -174,17 +189,20 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script();
+            var s = new Script(Examples.DesktopBasePolicySet);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
-            {
-                invocationCount += 1;
-                return DynValue.Void;
-            });
+            s.Globals["ext"] = DynValue.NewCallback(
+                (c, a) =>
+                {
+                    invocationCount += 1;
+                    return DynValue.Void;
+                }
+            );
 
-            s.DoString(@"
+            s.DoString(
+                @"
 				function handler(o, a)
 					ext();
 				end
@@ -195,7 +213,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj.MyEvent.remove(handler);
 				myobj.Trigger_MyEvent();
 				myobj.MyEvent.remove(handler);
-				");
+				"
+            );
 
             Assert.Multiple(() =>
             {
@@ -204,7 +223,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
-
         [Test]
         public void Interop_SEvent_DetachAndDeregister()
         {
@@ -212,20 +230,23 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script
+            var s = new Script(Examples.DesktopBasePolicySet)
             {
                 Globals =
                 {
                     ["myobj"] = typeof(SomeClass),
-                    ["ext"] = DynValue.NewCallback((c, a) =>
-                    {
-                        invocationCount += 1;
-                        return DynValue.Void;
-                    })
-                }
+                    ["ext"] = DynValue.NewCallback(
+                        (c, a) =>
+                        {
+                            invocationCount += 1;
+                            return DynValue.Void;
+                        }
+                    ),
+                },
             };
 
-            s.DoString(@"
+            s.DoString(
+                @"
 				function handler(o, a)
 					ext();
 				end
@@ -236,7 +257,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj.MySEvent.remove(handler);
 				myobj.Trigger_MySEvent();
 				myobj.MySEvent.remove(handler);
-				");
+				"
+            );
 
             Assert.Multiple(() =>
             {
@@ -252,20 +274,23 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script
+            var s = new Script(Examples.DesktopBasePolicySet)
             {
                 Globals =
                 {
                     ["myobj"] = typeof(SomeClass),
-                    ["ext"] = DynValue.NewCallback((c, a) =>
-                    {
-                        invocationCount += 1;
-                        return DynValue.Void;
-                    })
-                }
+                    ["ext"] = DynValue.NewCallback(
+                        (c, a) =>
+                        {
+                            invocationCount += 1;
+                            return DynValue.Void;
+                        }
+                    ),
+                },
             };
 
-            s.DoString(@"
+            s.DoString(
+                @"
 				function handler(o, a)
 					ext();
 				end
@@ -276,7 +301,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj.Trigger_MySEvent();
 				myobj.MySEvent.add(handler);
 				myobj.Trigger_MySEvent();
-			");
+			"
+            );
 
             Assert.Multiple(() =>
             {

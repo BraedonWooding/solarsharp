@@ -12,29 +12,28 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             if (values[values.Count - 1].Type == DataType.Tuple)
             {
-                int baseLen = values.Count - 1 + values[values.Count - 1].Tuple.Length;
-                DynValue[] result = new DynValue[baseLen];
+                var baseLen = values.Count - 1 + values[values.Count - 1].Tuple.Length;
+                var result = new DynValue[baseLen];
 
-                for (int i = 0; i < values.Count - 1; i++)
+                for (var i = 0; i < values.Count - 1; i++)
                 {
                     result[i] = values[i].ToScalar();
                 }
 
-                for (int i = 0; i < values[values.Count - 1].Tuple.Length; i++)
+                for (var i = 0; i < values[values.Count - 1].Tuple.Length; i++)
                 {
                     result[values.Count + i - 1] = values[values.Count - 1].Tuple[i];
                 }
 
                 if (result[^1].Type == DataType.Tuple)
                     return Internal_AdjustTuple(result);
-                else
-                    return result;
+                return result;
             }
             else
             {
-                DynValue[] result = new DynValue[values.Count];
+                var result = new DynValue[values.Count];
 
-                for (int i = 0; i < values.Count; i++)
+                for (var i = 0; i < values.Count; i++)
                 {
                     result[i] = values[i].ToScalar();
                 }
@@ -43,7 +42,11 @@ namespace SolarSharp.Interpreter.Execution.VM
             }
         }
 
-        private int Internal_InvokeUnaryMetaMethod(DynValue op1, string eventName, int instructionPtr)
+        private int Internal_InvokeUnaryMetaMethod(
+            DynValue op1,
+            string eventName,
+            int instructionPtr
+        )
         {
             DynValue m = null;
 
@@ -58,7 +61,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                 if (op1_MetaTable != null)
                 {
-                    DynValue meta1 = op1_MetaTable.Get(eventName);
+                    var meta1 = op1_MetaTable.Get(eventName);
                     if (meta1.IsNotNil())
                         m = meta1;
                 }
@@ -70,13 +73,16 @@ namespace SolarSharp.Interpreter.Execution.VM
                 m_ValueStack.Push(op1);
                 return Internal_ExecCall(1, instructionPtr);
             }
-            else
-            {
-                return -1;
-            }
+            return -1;
         }
 
-        private int Internal_InvokeBinaryMetaMethod(DynValue l, DynValue r, string eventName, int instructionPtr, DynValue extraPush = null)
+        private int Internal_InvokeBinaryMetaMethod(
+            DynValue l,
+            DynValue r,
+            string eventName,
+            int instructionPtr,
+            DynValue extraPush = null
+        )
         {
             var m = GetBinaryMetamethod(l, r, eventName);
 
@@ -90,10 +96,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 m_ValueStack.Push(r);
                 return Internal_ExecCall(2, instructionPtr);
             }
-            else
-            {
-                return -1;
-            }
+            return -1;
         }
     }
 }

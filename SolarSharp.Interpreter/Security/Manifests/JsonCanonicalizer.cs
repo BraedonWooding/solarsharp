@@ -52,7 +52,11 @@ namespace SolarSharp.Interpreter.Security.Manifests
             return element.GetRawText();
         }
 
-        private static string CanonicalizeElement(JsonElement element, string[] excludePath = null, int pathDepth = 0)
+        private static string CanonicalizeElement(
+            JsonElement element,
+            string[] excludePath = null,
+            int pathDepth = 0
+        )
         {
             switch (element.ValueKind)
             {
@@ -78,11 +82,17 @@ namespace SolarSharp.Interpreter.Security.Manifests
                     return CanonicalizeObject(element, excludePath, pathDepth);
 
                 default:
-                    throw new ArgumentException($"Unsupported JSON value kind: {element.ValueKind}");
+                    throw new ArgumentException(
+                        $"Unsupported JSON value kind: {element.ValueKind}"
+                    );
             }
         }
 
-        private static string CanonicalizeObject(JsonElement obj, string[] excludePath, int pathDepth)
+        private static string CanonicalizeObject(
+            JsonElement obj,
+            string[] excludePath,
+            int pathDepth
+        )
         {
             var sb = new StringBuilder();
             sb.Append('{');
@@ -92,8 +102,11 @@ namespace SolarSharp.Interpreter.Security.Manifests
             foreach (var prop in obj.EnumerateObject())
             {
                 // Check if this property should be excluded
-                if (excludePath != null && pathDepth < excludePath.Length && 
-                    prop.Name == excludePath[pathDepth])
+                if (
+                    excludePath != null
+                    && pathDepth < excludePath.Length
+                    && prop.Name == excludePath[pathDepth]
+                )
                 {
                     // If this is the final part of the path, skip this property
                     if (pathDepth == excludePath.Length - 1)
@@ -106,7 +119,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
             // Sort by UTF-16 code units (this is what RFC 8785 requires)
             properties.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
 
-            bool first = true;
+            var first = true;
             foreach (var (name, value) in properties)
             {
                 if (!first)
@@ -117,8 +130,11 @@ namespace SolarSharp.Interpreter.Security.Manifests
                 sb.Append(':');
 
                 // Pass the exclude path down if we're on the path
-                if (excludePath != null && pathDepth < excludePath.Length && 
-                    name == excludePath[pathDepth])
+                if (
+                    excludePath != null
+                    && pathDepth < excludePath.Length
+                    && name == excludePath[pathDepth]
+                )
                 {
                     sb.Append(CanonicalizeElement(value, excludePath, pathDepth + 1));
                 }
@@ -132,12 +148,16 @@ namespace SolarSharp.Interpreter.Security.Manifests
             return sb.ToString();
         }
 
-        private static string CanonicalizeArray(JsonElement array, string[] excludePath, int pathDepth)
+        private static string CanonicalizeArray(
+            JsonElement array,
+            string[] excludePath,
+            int pathDepth
+        )
         {
             var sb = new StringBuilder();
             sb.Append('[');
 
-            bool first = true;
+            var first = true;
             foreach (var element in array.EnumerateArray())
             {
                 if (!first)
@@ -156,7 +176,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
             var sb = new StringBuilder();
             sb.Append('"');
 
-            foreach (char c in value)
+            foreach (var c in value)
             {
                 switch (c)
                 {
@@ -211,33 +231,38 @@ namespace SolarSharp.Interpreter.Security.Manifests
                 // Handle special cases
                 if (double.IsNaN(doubleValue) || double.IsInfinity(doubleValue))
                 {
-                    throw new ArgumentException("NaN and Infinity are not allowed in canonical JSON");
+                    throw new ArgumentException(
+                        "NaN and Infinity are not allowed in canonical JSON"
+                    );
                 }
 
                 // RFC 8785 specifies ECMAScript's ToString for numbers
                 // This is complex, but for practical purposes we can use these rules:
-                
+
                 // Integer values without decimal point
-                if (doubleValue == Math.Truncate(doubleValue) && 
-                    doubleValue >= -9007199254740992 && // -(2^53)
-                    doubleValue <= 9007199254740992)    // 2^53
+                if (
+                    doubleValue == Math.Truncate(doubleValue)
+                    && doubleValue >= -9007199254740992
+                    && // -(2^53)
+                    doubleValue <= 9007199254740992
+                ) // 2^53
                 {
                     return ((long)doubleValue).ToString(CultureInfo.InvariantCulture);
                 }
 
                 // Use exponential notation for very large/small numbers
                 var str = doubleValue.ToString("G17", CultureInfo.InvariantCulture);
-                
+
                 // Ensure proper exponential notation format
                 if (str.Contains('E'))
                 {
                     var parts = str.Split('E');
                     var expPart = parts[1];
-                    
+
                     // Remove positive sign from exponent
                     if (expPart.StartsWith("+"))
                         expPart = expPart.Substring(1);
-                    
+
                     str = parts[0] + "e" + expPart.ToLowerInvariant();
                 }
 

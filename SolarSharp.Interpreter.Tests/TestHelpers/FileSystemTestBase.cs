@@ -1,42 +1,53 @@
 using System;
-using System.IO;
+using System.IO.Abstractions;
+using System.IO.Abstractions.TestingHelpers;
 using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.TestHelpers
 {
     /// <summary>
     ///     Base class for tests that require file system access.
-    ///     Provides isolated temporary directories for each test.
+    ///     Provides isolated file system abstraction for each test.
     /// </summary>
     public abstract class FileSystemTestBase
     {
         /// <summary>
-        ///     Gets the temporary directory path unique to this test instance.
+        ///     Gets the file system abstraction for testing.
         /// </summary>
-        protected string TempDir { get; private set; }
+        private IFileSystem FileSystem { get; set; }
 
         /// <summary>
-        ///     Sets up a unique temporary directory for the test.
+        ///     Gets the temporary directory path unique to this test instance.
+        /// </summary>
+        private string TempDir { get; set; }
+
+        /// <summary>
+        ///     Sets up a mock file system for the test.
         /// </summary>
         [SetUp]
         public virtual void BaseSetUp()
         {
+            // Create a mock file system for testing
+            FileSystem = new MockFileSystem();
+
             // Create unique directory for this test
-            TempDir = Path.Combine(Path.GetTempPath(),
-                $"solarsharp_test_{GetType().Name}_{TestContext.CurrentContext.Test.Name}_{Guid.NewGuid():N}");
-            Directory.CreateDirectory(TempDir);
+            TempDir = FileSystem.Path.Combine(
+                FileSystem.Path.GetTempPath(),
+                $"solarsharp_test_{GetType().Name}_{TestContext.CurrentContext.Test.Name}_{Guid.NewGuid():N}"
+            );
+            FileSystem.Directory.CreateDirectory(TempDir);
         }
 
         /// <summary>
-        ///     Cleans up the temporary directory after the test.
+        ///     Cleans up the file system after the test.
         /// </summary>
         [TearDown]
         public virtual void BaseTearDown()
         {
-            if (Directory.Exists(TempDir))
+            if (FileSystem.Directory.Exists(TempDir))
                 try
                 {
-                    Directory.Delete(TempDir, true);
+                    FileSystem.Directory.Delete(TempDir, true);
                 }
                 catch
                 {
@@ -49,8 +60,8 @@ namespace SolarSharp.Interpreter.Tests.TestHelpers
         /// </summary>
         protected string CreateSubDirectory(string name)
         {
-            var path = Path.Combine(TempDir, name);
-            Directory.CreateDirectory(path);
+            var path = FileSystem.Path.Combine(TempDir, name);
+            FileSystem.Directory.CreateDirectory(path);
             return path;
         }
 
@@ -59,8 +70,8 @@ namespace SolarSharp.Interpreter.Tests.TestHelpers
         /// </summary>
         protected string CreateFile(string filename, string content)
         {
-            var path = Path.Combine(TempDir, filename);
-            File.WriteAllText(path, content);
+            var path = FileSystem.Path.Combine(TempDir, filename);
+            FileSystem.File.WriteAllText(path, content);
             return path;
         }
     }

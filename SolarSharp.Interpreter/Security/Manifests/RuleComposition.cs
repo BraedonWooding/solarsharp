@@ -7,7 +7,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
     /// <summary>
     /// Defines how rules compose when multiple manifests are applied
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public class RuleCompositionAttribute : Attribute
     {
         /// <summary>
@@ -84,21 +84,22 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// <summary>
         /// Custom composition logic required
         /// </summary>
-        Custom
+        Custom,
     }
 
     /// <summary>
     /// Extended manifest rule with composition metadata
     /// </summary>
-    public class ComposableManifestRule : ManifestRule
+    public class TypedComposableManifestRule : ComposableManifestRule
     {
         /// <summary>
         /// Constructor that ensures Value is properly initialized
         /// </summary>
-        public ComposableManifestRule()
+        public TypedComposableManifestRule()
         {
             // Value will be built when properties are set
         }
+
         /// <summary>
         /// Timeout in milliseconds
         /// </summary>
@@ -156,13 +157,13 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// <summary>
         /// Creates a copy of this composable rule
         /// </summary>
-        public new ComposableManifestRule Clone()
+        public TypedComposableManifestRule CloneTyped()
         {
-            var clone = new ComposableManifestRule
+            var clone = new TypedComposableManifestRule
             {
+                Description = Description,
                 Scope = Scope,
                 Target = Target,
-                Metadata = Metadata != null ? new Dictionary<string, string>(Metadata) : null,
                 TimeoutMs = TimeoutMs,
                 MaxMemoryMB = MaxMemoryMB,
                 MaxInstructions = MaxInstructions,
@@ -171,36 +172,53 @@ namespace SolarSharp.Interpreter.Security.Manifests
                 CanExecute = CanExecute,
                 CanModify = CanModify,
                 AllowedOperations = AllowedOperations?.Clone() as string[],
-                DeniedOperations = DeniedOperations?.Clone() as string[]
+                DeniedOperations = DeniedOperations?.Clone() as string[],
             };
-            
+
             // Ensure Value is populated from typed properties
             clone.Value = clone.BuildValue();
             return clone;
         }
-        
+
+        /// <summary>
+        /// Implements the abstract Clone method from base class
+        /// </summary>
+        public override ManifestRule Clone()
+        {
+            return CloneTyped();
+        }
+
         /// <summary>
         /// Builds the Value property from the typed properties
         /// </summary>
         private object BuildValue()
         {
             var value = new Dictionary<string, object>();
-            
-            if (TimeoutMs.HasValue) value["timeoutMs"] = TimeoutMs.Value;
-            if (MaxMemoryMB.HasValue) value["maxMemoryMB"] = MaxMemoryMB.Value;
-            if (MaxInstructions.HasValue) value["maxInstructions"] = MaxInstructions.Value;
-            if (FileAccess.HasValue) value["fileAccess"] = FileAccess.Value.ToManifestString();
-            if (DirectoryAccess.HasValue) value["directoryAccess"] = DirectoryAccess.Value.ToManifestString();
-            if (CanExecute.HasValue) value["canExecute"] = CanExecute.Value;
-            if (CanModify.HasValue) value["canModify"] = CanModify.Value;
-            if (AllowedOperations?.Length > 0) value["allowedOperations"] = AllowedOperations;
-            if (DeniedOperations?.Length > 0) value["deniedOperations"] = DeniedOperations;
-            
+
+            if (TimeoutMs.HasValue)
+                value["timeoutMs"] = TimeoutMs.Value;
+            if (MaxMemoryMB.HasValue)
+                value["maxMemoryMB"] = MaxMemoryMB.Value;
+            if (MaxInstructions.HasValue)
+                value["maxInstructions"] = MaxInstructions.Value;
+            if (FileAccess.HasValue)
+                value["fileAccess"] = FileAccess.Value.ToString();
+            if (DirectoryAccess.HasValue)
+                value["directoryAccess"] = DirectoryAccess.Value.ToString();
+            if (CanExecute.HasValue)
+                value["canExecute"] = CanExecute.Value;
+            if (CanModify.HasValue)
+                value["canModify"] = CanModify.Value;
+            if (AllowedOperations?.Length > 0)
+                value["allowedOperations"] = AllowedOperations;
+            if (DeniedOperations?.Length > 0)
+                value["deniedOperations"] = DeniedOperations;
+
             // Return empty dictionary if no properties are set to avoid null Value
             // This ensures the rule always has a valid Value for validation
             return value.Count > 0 ? value : new Dictionary<string, object>();
         }
-        
+
         /// <summary>
         /// Updates the Value property from typed properties
         /// Call this before using the rule for validation
@@ -219,19 +237,18 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// <summary>
         /// Composes two rules based on their composition attributes
         /// </summary>
-        public static ManifestRule Compose(ManifestRule baseRule, ManifestRule overrideRule, TrustLevel trustLevel)
+        public static ManifestRule Compose(ManifestRule baseRule, ManifestRule overrideRule)
         {
-            if (baseRule == null) return overrideRule;
-            if (overrideRule == null) return baseRule;
+            if (baseRule == null)
+                return overrideRule;
+            if (overrideRule == null)
+                return baseRule;
 
-            // For trusted manifests, override completely replaces
-            if (trustLevel == TrustLevel.Trusted)
-            {
-                return overrideRule.Clone();
-            }
-
-            // For untrusted manifests, compose based on attributes
-            if (baseRule is ComposableManifestRule composableBase && overrideRule is ComposableManifestRule composableOverride)
+            // Compose based on attributes
+            if (
+                baseRule is TypedComposableManifestRule composableBase
+                && overrideRule is TypedComposableManifestRule composableOverride
+            )
             {
                 return ComposeComposableRules(composableBase, composableOverride);
             }
@@ -240,34 +257,51 @@ namespace SolarSharp.Interpreter.Security.Manifests
             return ComposeSimpleRules(baseRule, overrideRule);
         }
 
-        private static ComposableManifestRule ComposeComposableRules(ComposableManifestRule baseRule, ComposableManifestRule overrideRule)
+        private static TypedComposableManifestRule ComposeComposableRules(
+            TypedComposableManifestRule baseRule,
+            TypedComposableManifestRule overrideRule
+        )
         {
-            var result = baseRule.Clone();
+            var result = baseRule.CloneTyped();
 
             // Compose each property based on its attribute
-            var properties = typeof(ComposableManifestRule).GetProperties();
+            var properties = typeof(TypedComposableManifestRule).GetProperties();
             foreach (var prop in properties)
             {
-                var attr = prop.GetCustomAttributes(typeof(RuleCompositionAttribute), false)
-                    .FirstOrDefault() as RuleCompositionAttribute;
+                var attr =
+                    prop.GetCustomAttributes(typeof(RuleCompositionAttribute), false)
+                        .FirstOrDefault() as RuleCompositionAttribute;
 
-                if (attr == null) continue;
+                if (attr == null)
+                    continue;
 
                 var baseValue = prop.GetValue(baseRule);
                 var overrideValue = prop.GetValue(overrideRule);
 
-                if (overrideValue == null) continue;
+                if (overrideValue == null)
+                    continue;
 
-                var composedValue = ComposeValues(baseValue, overrideValue, attr.Type, attr.DefaultValue);
+                var composedValue = ComposeValues(
+                    baseValue,
+                    overrideValue,
+                    attr.Type,
+                    attr.DefaultValue
+                );
                 prop.SetValue(result, composedValue);
             }
 
             return result;
         }
 
-        private static object ComposeValues(object baseValue, object overrideValue, CompositionType type, object defaultValue)
+        private static object ComposeValues(
+            object baseValue,
+            object overrideValue,
+            CompositionType type,
+            object defaultValue
+        )
         {
-            if (baseValue == null) baseValue = defaultValue;
+            if (baseValue == null)
+                baseValue = defaultValue;
 
             switch (type)
             {
@@ -305,39 +339,50 @@ namespace SolarSharp.Interpreter.Security.Manifests
 
         private static object CompareLower(object a, object b)
         {
-            if (a == null) return b;
-            if (b == null) return a;
+            if (a == null)
+                return b;
+            if (b == null)
+                return a;
 
             // Handle zero as "no limit"
-            if (Convert.ToInt64(a) == 0) return b;
-            if (Convert.ToInt64(b) == 0) return a;
+            if (Convert.ToInt64(a) == 0)
+                return b;
+            if (Convert.ToInt64(b) == 0)
+                return a;
 
             return Convert.ToInt64(a) < Convert.ToInt64(b) ? a : b;
         }
 
         private static object CompareHigher(object a, object b)
         {
-            if (a == null) return b;
-            if (b == null) return a;
+            if (a == null)
+                return b;
+            if (b == null)
+                return a;
 
             return Convert.ToInt64(a) > Convert.ToInt64(b) ? a : b;
         }
 
         private static Array UnionLists(Array a, Array b)
         {
-            if (a == null) return b;
-            if (b == null) return a;
+            if (a == null)
+                return b;
+            if (b == null)
+                return a;
 
             var list = new HashSet<object>();
-            foreach (var item in a) list.Add(item);
-            foreach (var item in b) list.Add(item);
+            foreach (var item in a)
+                list.Add(item);
+            foreach (var item in b)
+                list.Add(item);
 
             return list.ToArray();
         }
 
         private static Array IntersectLists(Array a, Array b)
         {
-            if (a == null || b == null) return new object[0];
+            if (a == null || b == null)
+                return new object[0];
 
             var setA = new HashSet<object>(a.Cast<object>());
             var setB = new HashSet<object>(b.Cast<object>());
@@ -346,7 +391,10 @@ namespace SolarSharp.Interpreter.Security.Manifests
             return setA.ToArray();
         }
 
-        private static ManifestRule ComposeSimpleRules(ManifestRule baseRule, ManifestRule overrideRule)
+        private static ManifestRule ComposeSimpleRules(
+            ManifestRule baseRule,
+            ManifestRule overrideRule
+        )
         {
             // For simple rules, untrusted can only make more restrictive
             // This is a simplified implementation - real logic would be more complex

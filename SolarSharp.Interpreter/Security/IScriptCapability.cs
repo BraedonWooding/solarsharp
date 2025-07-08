@@ -58,13 +58,17 @@ namespace SolarSharp.Interpreter.Security
         public string ErrorMessage { get; set; } = string.Empty;
         public List<string> Warnings { get; set; } = new List<string>();
 
-        public static ValidationResult Valid() => new() { IsValid = true };
-        public static ValidationResult Invalid(string error) => new() { IsValid = false, ErrorMessage = error };
-        public static ValidationResult ValidWithWarning(string warning) => new() 
-        { 
-            IsValid = true, 
-            Warnings = new List<string> { warning } 
-        };
+        public static ValidationResult Valid() => new ValidationResult { IsValid = true };
+
+        public static ValidationResult Invalid(string error) =>
+            new ValidationResult { IsValid = false, ErrorMessage = error };
+
+        public static ValidationResult ValidWithWarning(string warning) =>
+            new ValidationResult
+            {
+                IsValid = true,
+                Warnings = new List<string> { warning },
+            };
     }
 
     /// <summary>
@@ -73,10 +77,14 @@ namespace SolarSharp.Interpreter.Security
     public class CapabilityUsageStats
     {
         public string CapabilityName { get; set; } = string.Empty;
-        public Dictionary<string, int> OperationCounts { get; set; } = new();
+        public Dictionary<string, int> OperationCounts { get; set; } =
+            new Dictionary<string, int>();
         public DateTime LastUsed { get; set; }
         public TimeSpan TotalExecutionTime { get; set; }
-        public int TotalOperations => OperationCounts.Values.Sum();
+        public int TotalOperations
+        {
+            get { return OperationCounts.Values.Sum(); }
+        }
         public int FailedOperations { get; set; }
         public int BlockedOperations { get; set; }
     }
@@ -118,24 +126,26 @@ namespace SolarSharp.Interpreter.Security
         public virtual object Execute(string operation, object[] parameters)
         {
             var startTime = DateTime.UtcNow;
-            
+
             try
             {
                 if (!IsAllowed(operation, parameters))
                 {
                     var ex = new MissingCapabilityException(
                         $"Operation '{operation}' not allowed for capability '{Name}'",
-                        operation, parameters);
-                    
+                        operation,
+                        parameters
+                    );
+
                     RecordFailedOperation(operation, ex.Message);
                     throw ex;
                 }
 
                 var result = ExecuteOperation(operation, parameters);
                 RecordSuccessfulOperation(operation, DateTime.UtcNow - startTime);
-                
+
                 _auditor?.LogCapabilityUsage(Name, operation, parameters, result, true);
-                
+
                 return result;
             }
             catch (Exception ex)
@@ -160,7 +170,7 @@ namespace SolarSharp.Interpreter.Security
                 LastUsed = _stats.LastUsed,
                 TotalExecutionTime = _stats.TotalExecutionTime,
                 FailedOperations = _stats.FailedOperations,
-                BlockedOperations = _stats.BlockedOperations
+                BlockedOperations = _stats.BlockedOperations,
             };
         }
 
@@ -176,7 +186,8 @@ namespace SolarSharp.Interpreter.Security
 
         private void RecordSuccessfulOperation(string operation, TimeSpan executionTime)
         {
-            _stats.OperationCounts[operation] = _stats.OperationCounts.GetValueOrDefault(operation, 0) + 1;
+            _stats.OperationCounts[operation] =
+                _stats.OperationCounts.GetValueOrDefault(operation, 0) + 1;
             _stats.LastUsed = DateTime.UtcNow;
             _stats.TotalExecutionTime += executionTime;
         }
@@ -190,7 +201,9 @@ namespace SolarSharp.Interpreter.Security
         private void RecordBlockedOperation(string operation, string reason)
         {
             _stats.BlockedOperations++;
-            _auditor?.LogSecurityViolation($"Capability '{Name}' blocked operation '{operation}': {reason}");
+            _auditor?.LogSecurityViolation(
+                $"Capability '{Name}' blocked operation '{operation}': {reason}"
+            );
         }
     }
 }

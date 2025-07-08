@@ -12,7 +12,7 @@ function initialize()
         name = "Game Data Analytics",
         version = "2.5", 
         certified_partner = "Segfault Studios",
-        purpose = "Player behavior analysis and audio optimization"
+        purpose = "Player behaviour analysis and audio optimization"
     }
     
     game.log("Audio analytics systems online")

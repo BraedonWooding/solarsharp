@@ -10,32 +10,28 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
     /// </summary>
     public sealed class ProxyUserDataDescriptor : IUserDataDescriptor
     {
-        private readonly IUserDataDescriptor m_ProxyDescriptor;
         private readonly IProxyFactory m_ProxyFactory;
 
-        internal ProxyUserDataDescriptor(IProxyFactory proxyFactory, IUserDataDescriptor proxyDescriptor, string friendlyName = null)
+        internal ProxyUserDataDescriptor(
+            IProxyFactory proxyFactory,
+            IUserDataDescriptor proxyDescriptor,
+            string friendlyName = null
+        )
         {
             m_ProxyFactory = proxyFactory;
             Name = friendlyName ?? proxyFactory.TargetType.Name + "::proxy";
-            m_ProxyDescriptor = proxyDescriptor;
+            InnerDescriptor = proxyDescriptor;
         }
 
         /// <summary>
         /// Gets the descriptor which describes the proxy object
         /// </summary>
-        public IUserDataDescriptor InnerDescriptor
-        {
-            get { return m_ProxyDescriptor; }
-        }
+        public IUserDataDescriptor InnerDescriptor { get; }
 
         /// <summary>
         /// Gets the name of the descriptor (usually, the name of the type described).
         /// </summary>
-        public string Name
-        {
-            get;
-            private set;
-        }
+        public string Name { get; private set; }
 
         /// <summary>
         /// Gets the type this descriptor refers to
@@ -65,7 +61,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <returns></returns>
         public DynValue Index(Script script, object obj, DynValue index, bool isDirectIndexing)
         {
-            return m_ProxyDescriptor.Index(script, Proxy(obj), index, isDirectIndexing);
+            return InnerDescriptor.Index(script, Proxy(obj), index, isDirectIndexing);
         }
 
         /// <summary>
@@ -77,9 +73,15 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <param name="value">The value to be set</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        public bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
+        public bool SetIndex(
+            Script script,
+            object obj,
+            DynValue index,
+            DynValue value,
+            bool isDirectIndexing
+        )
         {
-            return m_ProxyDescriptor.SetIndex(script, Proxy(obj), index, value, isDirectIndexing);
+            return InnerDescriptor.SetIndex(script, Proxy(obj), index, value, isDirectIndexing);
         }
 
         /// <summary>
@@ -89,7 +91,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <returns></returns>
         public string AsString(object obj)
         {
-            return m_ProxyDescriptor.AsString(Proxy(obj));
+            return InnerDescriptor.AsString(Proxy(obj));
         }
 
         /// <summary>
@@ -108,7 +110,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <returns></returns>
         public DynValue MetaIndex(Script script, object obj, string metaname)
         {
-            return m_ProxyDescriptor.MetaIndex(script, Proxy(obj), metaname);
+            return InnerDescriptor.MetaIndex(script, Proxy(obj), metaname);
         }
 
         /// <summary>

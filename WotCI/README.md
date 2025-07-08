@@ -153,7 +153,7 @@ WotCI maintains its ProgressQuest-inspired gameplay while adding sophisticated p
 **Deadlock Digital** (`/plugins/deadlock-digital/`)
 - **Combat Enhancer**: Advanced combat calculations with physics integration
 - **Loot Optimizer**: Intelligent item distribution and rarity management
-- **Boss AI**: Dynamic boss behavior patterns
+- **Boss AI**: Dynamic boss behaviour patterns
 
 **Segfault Studios** (`/plugins/segfault-studios/`)
 - **Analytics Dashboard**: Player statistics and performance metrics

@@ -6,7 +6,7 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// A class representing a script function
     /// </summary>
-    public class Closure : RefIdObject, IScriptPrivateResource
+    public class Closure : RefIdObject
     {
         /// <summary>
         /// Type of closure based on upvalues
@@ -17,39 +17,37 @@ namespace SolarSharp.Interpreter.DataTypes
             /// The closure has no upvalues (thus, technically, it's a function and not a closure!)
             /// </summary>
             None,
+
             /// <summary>
             /// The closure has _ENV as its only upvalue
             /// </summary>
             Environment,
+
             /// <summary>
             /// The closure is a "real" closure, with multiple upvalues
             /// </summary>
-            Closure
+            Closure,
         }
-
 
         /// <summary>
         /// Gets the entry point location in bytecode .
         /// </summary>
         public int EntryPointByteCodeLocation { get; private set; }
 
-
         /// <summary>
-        /// Gets the script owning this function
+        /// Gets the script that can execute this function
         /// </summary>
-        public Script OwnerScript { get; private set; }
-
+        public Script Script { get; private set; }
 
         /// <summary>
         /// Shortcut for an empty closure
         /// </summary>
-        private static readonly ClosureContext emptyClosure = new();
+        private static readonly ClosureContext emptyClosure = new ClosureContext();
 
         /// <summary>
         /// The current closure context
         /// </summary>
         internal ClosureContext ClosureContext { get; private set; }
-
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Closure"/> class.
@@ -58,13 +56,19 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="idx">The index.</param>
         /// <param name="symbols">The symbols.</param>
         /// <param name="resolvedLocals">The resolved locals.</param>
-        internal Closure(Script script, int idx, SymbolRef[] symbols, IEnumerable<DynValue> resolvedLocals)
+        internal Closure(
+            Script script,
+            int idx,
+            SymbolRef[] symbols,
+            IEnumerable<DynValue> resolvedLocals
+        )
         {
-            OwnerScript = script;
+            Script = script;
 
             EntryPointByteCodeLocation = idx;
 
-            ClosureContext = symbols.Length > 0 ? new ClosureContext(symbols, resolvedLocals) : emptyClosure;
+            ClosureContext =
+                symbols.Length > 0 ? new ClosureContext(symbols, resolvedLocals) : emptyClosure;
         }
 
         /// <summary>
@@ -74,7 +78,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
         public DynValue Call()
         {
-            return OwnerScript.Call(this);
+            return Script.Call(this);
         }
 
         /// <summary>
@@ -85,7 +89,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
         public DynValue Call(params object[] args)
         {
-            return OwnerScript.Call(this, args);
+            return Script.Call(this, args);
         }
 
         /// <summary>
@@ -96,9 +100,8 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
         public DynValue Call(params DynValue[] args)
         {
-            return OwnerScript.Call(this, args);
+            return Script.Call(this, args);
         }
-
 
         /// <summary>
         /// Gets a delegate wrapping calls to this scripted function
@@ -154,16 +157,13 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public UpvaluesType GetUpvaluesType()
         {
-            int count = GetUpvaluesCount();
+            var count = GetUpvaluesCount();
 
             if (count == 0)
                 return UpvaluesType.None;
-            else if (count == 1 && GetUpvalueName(0) == WellKnownSymbols.ENV)
+            if (count == 1 && GetUpvalueName(0) == WellKnownSymbols.ENV)
                 return UpvaluesType.Environment;
-            else
-                return UpvaluesType.Closure;
+            return UpvaluesType.Closure;
         }
-
-
     }
 }

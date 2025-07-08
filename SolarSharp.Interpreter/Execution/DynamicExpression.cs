@@ -6,7 +6,7 @@ namespace SolarSharp.Interpreter.Execution
     /// <summary>
     /// Represents a dynamic expression in the script
     /// </summary>
-    public class DynamicExpression : IScriptPrivateResource
+    public class DynamicExpression
     {
         private readonly DynamicExprExpression m_Exp;
         private readonly DynValue m_Constant;
@@ -39,8 +39,6 @@ namespace SolarSharp.Interpreter.Execution
         {
             context ??= OwnerScript.CreateDynamicExecutionContext();
 
-            this.CheckScriptOwnership(context.Value.GetScript());
-
             if (m_Constant != null)
                 return m_Constant;
 
@@ -54,12 +52,9 @@ namespace SolarSharp.Interpreter.Execution
         /// <returns></returns>
         public SymbolRef FindSymbol(ScriptExecutionContext context)
         {
-            this.CheckScriptOwnership(context.GetScript());
-
             if (m_Exp != null)
                 return m_Exp.FindDynamic(context);
-            else
-                return null;
+            return null;
         }
 
         /// <summary>
@@ -68,11 +63,7 @@ namespace SolarSharp.Interpreter.Execution
         /// <value>
         /// The script owning this resource.
         /// </value>
-        public Script OwnerScript
-        {
-            get;
-            private set;
-        }
+        public Script OwnerScript { get; private set; }
 
         /// <summary>
         /// Determines whether this instance is a constant expression
@@ -87,7 +78,7 @@ namespace SolarSharp.Interpreter.Execution
         /// Returns a hash code for this instance.
         /// </summary>
         /// <returns>
-        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
         /// </returns>
         public override int GetHashCode()
         {
@@ -108,6 +99,5 @@ namespace SolarSharp.Interpreter.Execution
 
             return o.ExpressionCode == ExpressionCode;
         }
-
     }
 }

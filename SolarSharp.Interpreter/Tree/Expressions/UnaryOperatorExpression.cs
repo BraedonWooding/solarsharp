@@ -11,13 +11,16 @@ namespace SolarSharp.Interpreter.Tree.Expressions
         private readonly Expression m_Exp;
         private readonly string m_OpText;
 
-        public UnaryOperatorExpression(ScriptLoadingContext lcontext, Expression subExpression, Token unaryOpToken)
+        public UnaryOperatorExpression(
+            ScriptLoadingContext lcontext,
+            Expression subExpression,
+            Token unaryOpToken
+        )
             : base(lcontext)
         {
             m_OpText = unaryOpToken.Text;
             m_Exp = subExpression;
         }
-
 
         public override void Compile(ByteCode bc)
         {
@@ -37,13 +40,11 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                 default:
                     throw new InternalErrorException("Unexpected unary operator '{0}'", m_OpText);
             }
-
-
         }
 
         public override DynValue Eval(ScriptExecutionContext context)
         {
-            DynValue v = m_Exp.Eval(context).ToScalar();
+            var v = m_Exp.Eval(context).ToScalar();
 
             switch (m_OpText)
             {
@@ -52,16 +53,21 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                 case "#":
                     return v.GetLength();
                 case "-":
-                    {
-                        double? d = v.CastToNumber();
+                {
+                    var d = v.CastToNumber();
 
-                        if (d.HasValue)
-                            return DynValue.NewNumber(-d.Value);
+                    if (d.HasValue)
+                        return DynValue.NewNumber(-d.Value);
 
-                        throw new DynamicExpressionException("Attempt to perform arithmetic on non-numbers.");
-                    }
+                    throw new DynamicExpressionException(
+                        "Attempt to perform arithmetic on non-numbers."
+                    );
+                }
                 default:
-                    throw new DynamicExpressionException("Unexpected unary operator '{0}'", m_OpText);
+                    throw new DynamicExpressionException(
+                        "Unexpected unary operator '{0}'",
+                        m_OpText
+                    );
             }
         }
     }

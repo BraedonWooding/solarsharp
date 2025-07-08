@@ -11,7 +11,7 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Whether any network access is allowed
         /// </summary>
-        public bool AllowAccess { get; set; } = false;
+        public bool AllowAccess { get; set; }
 
         /// <summary>
         /// Allowed network operations
@@ -21,12 +21,12 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Allowed hosts/domains (supports wildcards)
         /// </summary>
-        public List<string> AllowedHosts { get; set; } = new();
+        public List<string> AllowedHosts { get; set; } = new List<string>();
 
         /// <summary>
         /// Allowed ports (empty = all ports allowed for allowed hosts)
         /// </summary>
-        public List<int> AllowedPorts { get; set; } = new();
+        public List<int> AllowedPorts { get; set; } = new List<int>();
 
         /// <summary>
         /// Maximum request timeout
@@ -41,39 +41,42 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Creates a configuration with no network access
         /// </summary>
-        public static NetworkSecurity NoAccess() => new() { AllowAccess = false };
+        public static NetworkSecurity NoAccess() => new NetworkSecurity { AllowAccess = false };
 
         /// <summary>
         /// Creates a configuration with HTTP-only access
         /// </summary>
-        public static NetworkSecurity HttpOnly() => new()
-        {
-            AllowAccess = true,
-            AllowedOperations = NetworkOperations.HttpGet | NetworkOperations.HttpPost,
-            AllowedPorts = new List<int> { 80, 443 }
-        };
+        public static NetworkSecurity HttpOnly() =>
+            new NetworkSecurity
+            {
+                AllowAccess = true,
+                AllowedOperations = NetworkOperations.HttpGet | NetworkOperations.HttpPost,
+                AllowedPorts = new List<int> { 80, 443 },
+            };
 
         /// <summary>
         /// Creates a configuration with full network access (use with caution)
         /// </summary>
-        public static NetworkSecurity FullAccess() => new()
-        {
-            AllowAccess = true,
-            AllowedOperations = NetworkOperations.All,
-            RequestTimeout = TimeSpan.FromMinutes(5),
-            MaxResponseSize = 100 * 1024 * 1024 // 100MB
-        };
+        public static NetworkSecurity FullAccess() =>
+            new NetworkSecurity
+            {
+                AllowAccess = true,
+                AllowedOperations = NetworkOperations.All,
+                RequestTimeout = TimeSpan.FromMinutes(5),
+                MaxResponseSize = 100 * 1024 * 1024, // 100MB
+            };
 
         /// <summary>
         /// Creates a configuration with limited access to specific hosts
         /// </summary>
-        public static NetworkSecurity LimitedAccess(params string[] allowedHosts) => new()
-        {
-            AllowAccess = true,
-            AllowedOperations = NetworkOperations.HttpGet | NetworkOperations.HttpPost,
-            AllowedHosts = new List<string>(allowedHosts),
-            AllowedPorts = new List<int> { 80, 443 }
-        };
+        public static NetworkSecurity LimitedAccess(params string[] allowedHosts) =>
+            new NetworkSecurity
+            {
+                AllowAccess = true,
+                AllowedOperations = NetworkOperations.HttpGet | NetworkOperations.HttpPost,
+                AllowedHosts = new List<string>(allowedHosts),
+                AllowedPorts = new List<int> { 80, 443 },
+            };
     }
 
     /// <summary>
@@ -120,6 +123,6 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// All network operations
         /// </summary>
-        All = HttpGet | HttpPost | HttpPut | HttpDelete | TcpConnect | UdpSend
+        All = HttpGet | HttpPost | HttpPut | HttpDelete | TcpConnect | UdpSend,
     }
 }

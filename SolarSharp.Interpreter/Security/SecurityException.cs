@@ -26,7 +26,12 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Creates a new security exception with detailed information
         /// </summary>
-        protected SecurityException(string message, SecurityEventType violationType, string operation, params object[] arguments) 
+        protected SecurityException(
+            string message,
+            SecurityEventType violationType,
+            string operation,
+            params object[] arguments
+        )
             : base(message)
         {
             ViolationType = violationType;
@@ -37,7 +42,13 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Creates a new security exception with inner exception
         /// </summary>
-        protected SecurityException(string message, Exception innerException, SecurityEventType violationType, string operation, params object[] arguments) 
+        protected SecurityException(
+            string message,
+            Exception innerException,
+            SecurityEventType violationType,
+            string operation,
+            params object[] arguments
+        )
             : base(message, innerException)
         {
             ViolationType = violationType;
@@ -52,15 +63,22 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public abstract class CriticalSecurityException : SecurityException
     {
-        protected CriticalSecurityException(string message, SecurityEventType violationType, string operation, params object[] arguments) 
-            : base(message, violationType, operation, arguments)
-        {
-        }
+        protected CriticalSecurityException(
+            string message,
+            SecurityEventType violationType,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, violationType, operation, arguments) { }
 
-        protected CriticalSecurityException(string message, Exception innerException, SecurityEventType violationType, string operation, params object[] arguments) 
-            : base(message, innerException, violationType, operation, arguments)
-        {
-        }
+        protected CriticalSecurityException(
+            string message,
+            Exception innerException,
+            SecurityEventType violationType,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, innerException, violationType, operation, arguments) { }
     }
 
     /// <summary>
@@ -69,15 +87,22 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public abstract class NonCriticalSecurityException : SecurityException
     {
-        protected NonCriticalSecurityException(string message, SecurityEventType violationType, string operation, params object[] arguments) 
-            : base(message, violationType, operation, arguments)
-        {
-        }
+        protected NonCriticalSecurityException(
+            string message,
+            SecurityEventType violationType,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, violationType, operation, arguments) { }
 
-        protected NonCriticalSecurityException(string message, Exception innerException, SecurityEventType violationType, string operation, params object[] arguments) 
-            : base(message, innerException, violationType, operation, arguments)
-        {
-        }
+        protected NonCriticalSecurityException(
+            string message,
+            Exception innerException,
+            SecurityEventType violationType,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, innerException, violationType, operation, arguments) { }
     }
 
     /// <summary>
@@ -134,60 +159,100 @@ namespace SolarSharp.Interpreter.Security
         /// Environment access denied
         /// </summary>
         EnvironmentAccessDenied,
-        
+
         /// <summary>
         /// File access was denied
         /// </summary>
         FileAccessDenied,
-        
+
         /// <summary>
         /// Environment variable access
         /// </summary>
         EnvironmentAccess,
-        
+
         /// <summary>
         /// Process execution event
         /// </summary>
         ProcessExecution,
-        
+
         /// <summary>
         /// Operation completed successfully (used for learning mode tracking)
         /// </summary>
         OperationSuccess,
-        
+
         /// <summary>
         /// Capability usage event
         /// </summary>
         CapabilityUsage,
-        
+
         /// <summary>
         /// Rate limit exceeded
         /// </summary>
         RateLimitExceeded,
-        
+
         /// <summary>
         /// Capability granted to script
         /// </summary>
         CapabilityGranted,
-        
+
         /// <summary>
         /// Capability revoked from script
         /// </summary>
         CapabilityRevoked,
-        
+
         /// <summary>
         /// Security configuration changed
         /// </summary>
         SecurityConfigurationChanged,
-        
+
         /// <summary>
         /// Reflection access denied
         /// </summary>
         ReflectionAccessDenied,
-        
+
         /// <summary>
         /// Metatable violation
         /// </summary>
-        MetatableViolation
+        MetatableViolation,
+
+        /// <summary>
+        /// Eval execution was authorized
+        /// </summary>
+        EvalExecutionAuthorized,
+
+        /// <summary>
+        /// Eval execution was denied
+        /// </summary>
+        EvalExecutionDenied,
+
+        /// <summary>
+        /// Manifest was successfully validated
+        /// </summary>
+        ManifestValidated,
+
+        /// <summary>
+        /// Manifest validation failed
+        /// </summary>
+        ManifestValidationFailed,
+
+        /// <summary>
+        /// Trust store was modified (keys added/removed)
+        /// </summary>
+        TrustStoreModified,
+
+        /// <summary>
+        /// Policy resolution event
+        /// </summary>
+        PolicyResolution,
+
+        /// <summary>
+        /// Policy management event (add/remove policies)
+        /// </summary>
+        PolicyManagement,
+
+        /// <summary>
+        /// Manifest validation event
+        /// </summary>
+        ManifestValidation,
     }
 }

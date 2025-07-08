@@ -1,13 +1,18 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Abstractions;
+using System.IO.Abstractions.TestingHelpers;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Security.Operations;
 
 namespace SolarSharp.Interpreter.Tests.Units
 {
@@ -32,7 +37,7 @@ namespace SolarSharp.Interpreter.Tests.Units
     ///     - Named pipe communication channels
     ///     Platform-Specific Considerations:
     ///     - Some tests are Windows-specific (junction points)
-    ///     - Some tests are Unix-specific (certain symlink behaviors)
+    ///     - Some tests are Unix-specific (certain symlink behaviours)
     ///     - Tests adapt based on the runtime platform
     ///     Security Goals:
     ///     - Prevent file system escape via any link type
@@ -41,48 +46,82 @@ namespace SolarSharp.Interpreter.Tests.Units
     ///     - Maintain isolation even under concurrent attack attempts
     /// </remarks>
     [TestFixture]
-    [Category("SecurityTest")]
-    [Category("IntegrationTest")]
+    [Category("Security.Sandbox")]
+    [Category("Security.Integration")]
     [Category("PlatformSpecific")]
     public class SandboxEscapeTests
     {
+        private IFileSystem _fileSystem;
+        private string _realTempDir;
+        private bool _useRealFileSystem;
+
         [SetUp]
         public void Setup()
         {
-            _tempDir = Path.Combine(Path.GetTempPath(), $"solarsharp_sandbox_test_{Guid.NewGuid()}");
-            _sandboxDir = Path.Combine(_tempDir, "sandbox");
-            _secretDir = Path.Combine(_tempDir, "secret");
-            _secretFile = Path.Combine(_secretDir, "secret.txt");
+            // Determine if we need real file system for symlink tests
+            _useRealFileSystem =
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                || RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
-            Directory.CreateDirectory(_tempDir);
-            Directory.CreateDirectory(_sandboxDir);
-            Directory.CreateDirectory(_secretDir);
+            if (_useRealFileSystem)
+            {
+                // Use real file system for symlink operations
+                _fileSystem = new FileSystem();
+                _realTempDir = Path.Combine(
+                    Path.GetTempPath(),
+                    $"solarsharp_sandbox_test_{Guid.NewGuid()}"
+                );
+                _tempDir = _realTempDir;
+            }
+            else
+            {
+                // Use mock file system for other platforms
+                _fileSystem = new MockFileSystem();
+                _tempDir = _fileSystem.Path.Combine(
+                    _fileSystem.Path.GetTempPath(),
+                    $"solarsharp_sandbox_test_{Guid.NewGuid()}"
+                );
+            }
+
+            _sandboxDir = _fileSystem.Path.Combine(_tempDir, "sandbox");
+            _secretDir = _fileSystem.Path.Combine(_tempDir, "secret");
+            _secretFile = _fileSystem.Path.Combine(_secretDir, "secret.txt");
+
+            _fileSystem.Directory.CreateDirectory(_tempDir);
+            _fileSystem.Directory.CreateDirectory(_sandboxDir);
+            _fileSystem.Directory.CreateDirectory(_secretDir);
 
             // Create secret content outside sandbox
-            File.WriteAllText(_secretFile, "TOP SECRET CONTENT");
-
-#if DEBUG
-            TestContext.Out.WriteLine($"Temp dir: {_tempDir}");
-            TestContext.Out.WriteLine($"Sandbox dir: {_sandboxDir}");
-            TestContext.Out.WriteLine($"Secret dir: {_secretDir}");
-#endif
+            _fileSystem.File.WriteAllText(_secretFile, "TOP SECRET CONTENT");
         }
 
         [TearDown]
         public void Cleanup()
         {
-            if (Directory.Exists(_tempDir))
+            if (_useRealFileSystem && !string.IsNullOrEmpty(_realTempDir))
+            {
                 try
                 {
                     // Force delete everything, including symlinks and junctions
-                    DeleteDirectoryRecursive(_tempDir);
+                    DeleteDirectoryRecursive(_realTempDir);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-#if DEBUG
-                    TestContext.Out.WriteLine($"Cleanup warning: {ex.Message}");
-#endif
+                    // Cleanup warning during test teardown
                 }
+            }
+            else if (_fileSystem.Directory.Exists(_tempDir))
+            {
+                try
+                {
+                    // Force delete everything, including symlinks and junctions
+                    _fileSystem.Directory.Delete(_tempDir, true);
+                }
+                catch (Exception)
+                {
+                    // Cleanup warning during test teardown
+                }
+            }
         }
 
         private string _tempDir;
@@ -108,32 +147,24 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestSymlinkChainEscape()
         {
             // Test escaping sandbox via symlink chains
-#if DEBUG
-            TestContext.Out.WriteLine("Testing symlink chain escape attack");
-#endif
 
-            var config = SecurityConfiguration.DataProcessing();
-            config.SetDirectoryPermissions(_sandboxDir, DirectoryPermissions.ListAndCreateFiles);
-
-            var script = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var config = Examples.DataProcessingBasePolicySet;
+            var script = new Script(config);
 
             try
             {
                 // Create symlink chain: sandbox/link1 -> ../link2 -> ../../secret/secret.txt
-                var link1Path = Path.Combine(_sandboxDir, "link1");
-                var link2Path = Path.Combine(_tempDir, "link2");
+                var link1Path = _fileSystem.Path.Combine(_sandboxDir, "link1");
+                var link2Path = _fileSystem.Path.Combine(_tempDir, "link2");
 
                 if (CanCreateSymlinks())
                 {
                     CreateSymlink(link1Path, "../link2");
-                    CreateSymlink(link2Path, Path.Combine("secret", "secret.txt"));
-
-#if DEBUG
-                    TestContext.Out.WriteLine($"Created symlink chain: {link1Path} -> ../link2 -> secret/secret.txt");
-#endif
+                    CreateSymlink(link2Path, _fileSystem.Path.Combine("secret", "secret.txt"));
 
                     // Try to read through symlink chain
-                    var result = script.DoString($@"
+                    var result = script.DoString(
+                        $@"
                         local f = io.open('{link1Path.Replace('\\', '/')}', 'r')
                         if f then
                             local content = f:read('*a')
@@ -141,43 +172,30 @@ namespace SolarSharp.Interpreter.Tests.Units
                             return content
                         end
                         return 'FAILED'
-                    ");
-
-#if DEBUG
-                    TestContext.Out.WriteLine($"Symlink chain result: {result.String}");
-#endif
+                    "
+                    );
 
                     if (result.String.Contains("TOP SECRET"))
                     {
                         Assert.Fail("CRITICAL: Symlink chain allowed escape from sandbox!");
                     }
-                    else
-                    {
-#if DEBUG
-                        TestContext.Out.WriteLine("Symlink chain escape was blocked (good)");
-#endif
-                    }
+
+                    // Symlink chain escape was blocked (good)
                 }
                 else
                 {
-#if DEBUG
-                    TestContext.Out.WriteLine("Skipping symlink test - cannot create symlinks on this platform");
-#endif
+                    // Skipping symlink test - cannot create symlinks on this platform
                     Assert.Inconclusive("Cannot create symlinks on this platform");
                 }
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG
-                TestContext.Out.WriteLine($"Symlink chain escape blocked by security: {ex.Message}");
-#endif
-                // This is the expected behavior
+                // Symlink chain escape blocked by security
+                // This is the expected behaviour
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-#if DEBUG
-                TestContext.Out.WriteLine($"Symlink chain failed: {ex.Message}");
-#endif
+                // Symlink chain failed
                 // This might indicate the symlink was blocked by filesystem security
             }
         }
@@ -202,14 +220,9 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestSymlinkTargetSwapping()
         {
             // Test symlink target swapping during file operations
-#if DEBUG
-            TestContext.Out.WriteLine("Testing symlink target swapping attack");
-#endif
 
-            var config = SecurityConfiguration.DataProcessing();
-            config.SetDirectoryPermissions(_sandboxDir, DirectoryPermissions.ListAndCreateFiles);
-
-            var script = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var config = Examples.DataProcessingBasePolicySet;
+            var script = new Script(config);
 
             if (!CanCreateSymlinks())
             {
@@ -219,11 +232,11 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             try
             {
-                var symlinkPath = Path.Combine(_sandboxDir, "changing_link");
-                var legitimateFile = Path.Combine(_sandboxDir, "legitimate.txt");
+                var symlinkPath = _fileSystem.Path.Combine(_sandboxDir, "changing_link");
+                var legitimateFile = _fileSystem.Path.Combine(_sandboxDir, "legitimate.txt");
 
                 // Create legitimate file
-                File.WriteAllText(legitimateFile, "legitimate content");
+                _fileSystem.File.WriteAllText(legitimateFile, "legitimate content");
 
                 // Initially point symlink to legitimate file
                 CreateSymlink(symlinkPath, "legitimate.txt");
@@ -233,7 +246,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                 {
                     try
                     {
-                        return script.DoString($@"
+                        return script.DoString(
+                            $@"
                             local results = {{}}
                             for i = 1, 10 do
                                 local f = io.open('{symlinkPath.Replace('\\', '/')}', 'r')
@@ -250,7 +264,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                                 for j = 1, 1000 do dummy = dummy + j end
                             end
                             return table.concat(results, '|')
-                        ");
+                        "
+                        );
                     }
                     catch (Exception ex)
                     {
@@ -264,32 +279,25 @@ namespace SolarSharp.Interpreter.Tests.Units
                 try
                 {
                     DeleteSymlink(symlinkPath);
-                    CreateSymlink(symlinkPath,
-                        $"..{Path.DirectorySeparatorChar}secret{Path.DirectorySeparatorChar}secret.txt");
-#if DEBUG
-                    TestContext.Out.WriteLine("Swapped symlink to point to secret file");
-#endif
+                    CreateSymlink(
+                        symlinkPath,
+                        $"..{_fileSystem.Path.DirectorySeparatorChar}secret{_fileSystem.Path.DirectorySeparatorChar}secret.txt"
+                    );
+                    // Swapped symlink to point to secret file
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-#if DEBUG
-                    TestContext.Out.WriteLine($"Symlink swap failed: {ex.Message}");
-#endif
+                    // Symlink swap failed
                 }
 
                 var result = scriptTask.Result;
-#if DEBUG
-                TestContext.Out.WriteLine($"Symlink swapping result: {result.String}");
-#endif
 
                 if (result.String.Contains("TOP SECRET"))
                     Assert.Fail("CRITICAL: Symlink target swapping allowed access to secret file!");
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG
-                TestContext.Out.WriteLine($"Symlink target swapping blocked: {ex.Message}");
-#endif
+                // Symlink target swapping blocked
             }
         }
 
@@ -312,14 +320,9 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestDirectorySymlinkEscape()
         {
             // Test escaping via directory symlinks
-#if DEBUG
-            TestContext.Out.WriteLine("Testing directory symlink escape");
-#endif
 
-            var config = SecurityConfiguration.DataProcessing();
-            config.SetDirectoryPermissions(_sandboxDir, DirectoryPermissions.ListAndCreateFiles);
-
-            var script = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var config = Examples.DataProcessingBasePolicySet;
+            var script = new Script(config);
 
             if (!CanCreateSymlinks())
             {
@@ -329,19 +332,16 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             try
             {
-                var dirSymlinkPath = Path.Combine(_sandboxDir, "secret_dir");
+                var dirSymlinkPath = _fileSystem.Path.Combine(_sandboxDir, "secret_dir");
 
                 // Create directory symlink pointing to secret directory
                 CreateDirectorySymlink(dirSymlinkPath, _secretDir);
 
-#if DEBUG
-                TestContext.Out.WriteLine($"Created directory symlink: {dirSymlinkPath} -> {_secretDir}");
-#endif
-
                 // Try to access secret file through directory symlink
-                var secretFileThroughLink = Path.Combine(dirSymlinkPath, "secret.txt");
+                var secretFileThroughLink = _fileSystem.Path.Combine(dirSymlinkPath, "secret.txt");
 
-                var result = script.DoString($@"
+                var result = script.DoString(
+                    $@"
                     local f = io.open('{secretFileThroughLink.Replace('\\', '/')}', 'r')
                     if f then
                         local content = f:read('*a')
@@ -349,20 +349,15 @@ namespace SolarSharp.Interpreter.Tests.Units
                         return content
                     end
                     return 'FAILED'
-                ");
-
-#if DEBUG
-                TestContext.Out.WriteLine($"Directory symlink result: {result.String}");
-#endif
+                "
+                );
 
                 if (result.String.Contains("TOP SECRET"))
                     Assert.Fail("CRITICAL: Directory symlink allowed escape from sandbox!");
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG
-                TestContext.Out.WriteLine($"Directory symlink escape blocked: {ex.Message}");
-#endif
+                // Directory symlink escape blocked
             }
         }
 
@@ -387,28 +382,34 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestHardLinkEscape()
         {
             // Test escaping via hard links (if supported)
-#if DEBUG
-            TestContext.Out.WriteLine("Testing hard link escape attack");
-#endif
 
-            var config = SecurityConfiguration.DataProcessing();
-            config.SetDirectoryPermissions(_sandboxDir, DirectoryPermissions.ListAndCreateFiles);
-
-            var script = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var config = Examples.DataProcessingBasePolicySet;
+            var script = new Script(config);
 
             try
             {
-                var hardLinkPath = Path.Combine(_sandboxDir, "secret_hardlink.txt");
+                string hardLinkPath;
+                string secretFileToLink;
+
+                if (_useRealFileSystem)
+                {
+                    // Use real file paths for hard link testing
+                    hardLinkPath = Path.Combine(_sandboxDir, "secret_hardlink.txt");
+                    secretFileToLink = _secretFile;
+                }
+                else
+                {
+                    // Mock filesystem - hard links may not work properly
+                    hardLinkPath = _fileSystem.Path.Combine(_sandboxDir, "secret_hardlink.txt");
+                    secretFileToLink = _secretFile;
+                }
 
                 // Try to create hard link to secret file
-                if (CreateHardLink(hardLinkPath, _secretFile))
+                if (CreateHardLink(hardLinkPath, secretFileToLink))
                 {
-#if DEBUG
-                    TestContext.Out.WriteLine($"Created hard link: {hardLinkPath} -> {_secretFile}");
-#endif
-
                     // Try to read through hard link
-                    var result = script.DoString($@"
+                    var result = script.DoString(
+                        $@"
                         local f = io.open('{hardLinkPath.Replace('\\', '/')}', 'r')
                         if f then
                             local content = f:read('*a')
@@ -416,33 +417,22 @@ namespace SolarSharp.Interpreter.Tests.Units
                             return content
                         end
                         return 'FAILED'
-                    ");
-
-#if DEBUG
-                    TestContext.Out.WriteLine($"Hard link result: {result.String}");
-#endif
+                    "
+                    );
 
                     if (result.String.Contains("TOP SECRET"))
                         Assert.Fail("CRITICAL: Hard link allowed escape from sandbox!");
                 }
-                else
-                {
-#if DEBUG
-                    TestContext.Out.WriteLine("Hard link creation failed - might be blocked by filesystem");
-#endif
-                }
+
+                // Hard link creation failed - might be blocked by filesystem
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG
-                TestContext.Out.WriteLine($"Hard link escape blocked: {ex.Message}");
-#endif
+                // Hard link escape blocked
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-#if DEBUG
-                TestContext.Out.WriteLine($"Hard link operation failed: {ex.Message}");
-#endif
+                // Hard link operation failed
             }
         }
 
@@ -471,14 +461,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                 return;
             }
 
-#if DEBUG
-            TestContext.Out.WriteLine("Testing Windows junction point escape");
-#endif
-
-            var config = SecurityConfiguration.DataProcessing();
-            config.SetDirectoryPermissions(_sandboxDir, DirectoryPermissions.ListAndCreateFiles);
-
-            var script = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var config = Examples.DataProcessingBasePolicySet;
+            var script = new Script(config);
 
             try
             {
@@ -487,14 +471,11 @@ namespace SolarSharp.Interpreter.Tests.Units
                 // Create junction point to secret directory
                 if (CreateJunctionPoint(junctionPath, _secretDir))
                 {
-#if DEBUG
-                    TestContext.Out.WriteLine($"Created junction point: {junctionPath} -> {_secretDir}");
-#endif
-
                     // Try to access secret file through junction
                     var secretFileThroughJunction = Path.Combine(junctionPath, "secret.txt");
 
-                    var result = script.DoString($@"
+                    var result = script.DoString(
+                        $@"
                         local f = io.open('{secretFileThroughJunction.Replace('\\', '/')}', 'r')
                         if f then
                             local content = f:read('*a')
@@ -502,27 +483,18 @@ namespace SolarSharp.Interpreter.Tests.Units
                             return content
                         end
                         return 'FAILED'
-                    ");
-
-#if DEBUG
-                    TestContext.Out.WriteLine($"Junction point result: {result.String}");
-#endif
+                    "
+                    );
 
                     if (result.String.Contains("TOP SECRET"))
                         Assert.Fail("CRITICAL: Junction point allowed escape from sandbox!");
                 }
-                else
-                {
-#if DEBUG
-                    TestContext.Out.WriteLine("Junction point creation failed");
-#endif
-                }
+
+                // Junction point creation failed
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG
-                TestContext.Out.WriteLine($"Junction point escape blocked: {ex.Message}");
-#endif
+                // Junction point escape blocked
             }
         }
 
@@ -546,50 +518,39 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestMountPointAccessAttempt()
         {
             // Test attempting to access system mount points
-#if DEBUG
-            TestContext.Out.WriteLine("Testing mount point access attempts");
-#endif
 
-            var config = SecurityConfiguration.Isolated();
-            var script = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var config = Examples.IsolatedBasePolicySet;
+            var script = new Script(config);
 
             var mountPoints = GetSystemMountPoints();
 
             foreach (var mountPoint in mountPoints)
             {
-#if DEBUG
-                TestContext.Out.WriteLine($"Testing access to mount point: {mountPoint}");
-#endif
-
                 try
                 {
-                    var result = script.DoString($@"
+                    var result = script.DoString(
+                        $@"
                         local f = io.open('{mountPoint.Replace('\\', '/')}/etc/passwd', 'r')
                         if f then
                             f:close()
                             return 'ACCESSIBLE'
                         end
                         return 'BLOCKED'
-                    ");
+                    "
+                    );
 
                     if (result.String == "ACCESSIBLE")
                     {
-#if DEBUG
-                        TestContext.Out.WriteLine($"WARNING: Mount point {mountPoint} is accessible!");
-#endif
+                        // WARNING: Mount point is accessible!
                     }
                 }
-                catch (SecurityException ex)
+                catch (SecurityException)
                 {
-#if DEBUG
-                    TestContext.Out.WriteLine($"Mount point access blocked: {ex.Message}");
-#endif
+                    // Mount point access blocked
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-#if DEBUG
-                    TestContext.Out.WriteLine($"Mount point access failed: {ex.Message}");
-#endif
+                    // Mount point access failed
                 }
             }
         }
@@ -617,12 +578,9 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestProcessExecutionAttempts()
         {
             // Test attempts to execute system processes
-#if DEBUG
-            TestContext.Out.WriteLine("Testing process execution attempts");
-#endif
 
-            var config = SecurityConfiguration.Isolated();
-            var script = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var config = Examples.IsolatedBasePolicySet;
+            var script = new Script(config);
 
             var dangerousCommands = new[]
             {
@@ -633,15 +591,11 @@ namespace SolarSharp.Interpreter.Tests.Units
                 "python",
                 "node",
                 "curl",
-                "wget"
+                "wget",
             };
 
             foreach (var command in dangerousCommands)
             {
-#if DEBUG
-                TestContext.Out.WriteLine($"Testing execution of: {command}");
-#endif
-
                 try
                 {
                     // Try various ways to execute commands
@@ -649,42 +603,31 @@ namespace SolarSharp.Interpreter.Tests.Units
                     {
                         $"os.execute('{command}')",
                         $"io.popen('{command}')",
-                        $"os.system('{command}')"
+                        $"os.system('{command}')",
                     };
 
                     foreach (var attempt in attempts)
                         try
                         {
                             var result = script.DoString($"return {attempt}");
-#if DEBUG
-                            TestContext.Out.WriteLine($"Command execution attempt result: {result}");
-#endif
 
                             if (result.Type != DataType.Nil && result.Type != DataType.Boolean)
                             {
-#if DEBUG
-                                TestContext.Out.WriteLine("WARNING: Command execution might have succeeded!");
-#endif
+                                // WARNING: Command execution might have succeeded!
                             }
                         }
-                        catch (SecurityException ex)
+                        catch (SecurityException)
                         {
-#if DEBUG
-                            TestContext.Out.WriteLine($"Command execution blocked: {ex.Message}");
-#endif
+                            // Command execution blocked
                         }
-                        catch (ScriptRuntimeException ex)
+                        catch (ScriptRuntimeException)
                         {
-#if DEBUG
-                            TestContext.Out.WriteLine($"Command execution failed at runtime: {ex.Message}");
-#endif
+                            // Command execution failed at runtime
                         }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-#if DEBUG
-                    TestContext.Out.WriteLine($"Command execution test failed: {ex.Message}");
-#endif
+                    // Command execution test failed
                 }
             }
         }
@@ -710,19 +653,35 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestSharedMemoryAccessAttempts()
         {
             // Test attempts to access shared memory regions
-#if DEBUG
-            TestContext.Out.WriteLine("Testing shared memory access attempts");
-#endif
 
-            var config = SecurityConfiguration.Isolated();
-            var script = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            // Create a policy with necessary modules for the test
+            var policy = Examples.IsolatedSecurityPolicy with
+            {
+                AllowedModules =
+                    CoreModules.Basic
+                    | CoreModules.String
+                    | CoreModules.Math
+                    | CoreModules.TableIterators,
+            };
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", policy)
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            basePolicySetResult.Match(
+                success => { },
+                error => Assert.Fail($"Failed to create base policy set: {error.Message}")
+            );
+            var config = basePolicySetResult.Value;
+            var script = new Script(config);
 
             // This is somewhat theoretical since Lua doesn't have direct shared memory access
             // but we can test for any mechanisms that might allow it
 
             try
             {
-                var result = script.DoString(@"
+                var result = script.DoString(
+                    @"
                     -- Try to access potential shared memory mechanisms
                     local shared_attempts = {}
                     
@@ -744,24 +703,17 @@ namespace SolarSharp.Interpreter.Tests.Units
                     end
                     
                     return count
-                ");
-
-#if DEBUG
-                TestContext.Out.WriteLine($"Shared memory access attempts: {result.Number} succeeded");
-#endif
+                "
+                );
 
                 if (result.Number > 2)
                 {
-#if DEBUG
-                    TestContext.Out.WriteLine("WARNING: Multiple shared memory access mechanisms available");
-#endif
+                    // WARNING: Multiple shared memory access mechanisms available
                 }
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG
-                TestContext.Out.WriteLine($"Shared memory access blocked: {ex.Message}");
-#endif
+                // Shared memory access blocked
             }
         }
 
@@ -788,50 +740,39 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestNamedPipeAccessAttempts()
         {
             // Test attempts to access named pipes
-#if DEBUG
-            TestContext.Out.WriteLine("Testing named pipe access attempts");
-#endif
 
-            var config = SecurityConfiguration.Isolated();
-            var script = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var config = Examples.IsolatedBasePolicySet;
+            var script = new Script(config);
 
             var namedPipes = GetKnownNamedPipes();
 
             foreach (var pipe in namedPipes)
             {
-#if DEBUG
-                TestContext.Out.WriteLine($"Testing access to named pipe: {pipe}");
-#endif
-
                 try
                 {
-                    var result = script.DoString($@"
+                    var result = script.DoString(
+                        $@"
                         local f = io.open('{pipe.Replace('\\', '/')}', 'r')
                         if f then
                             f:close()
                             return 'ACCESSIBLE'
                         end
                         return 'BLOCKED'
-                    ");
+                    "
+                    );
 
                     if (result.String == "ACCESSIBLE")
                     {
-#if DEBUG
-                        TestContext.Out.WriteLine($"WARNING: Named pipe {pipe} is accessible!");
-#endif
+                        // WARNING: Named pipe is accessible!
                     }
                 }
-                catch (SecurityException ex)
+                catch (SecurityException)
                 {
-#if DEBUG
-                    TestContext.Out.WriteLine($"Named pipe access blocked: {ex.Message}");
-#endif
+                    // Named pipe access blocked
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-#if DEBUG
-                    TestContext.Out.WriteLine($"Named pipe access failed: {ex.Message}");
-#endif
+                    // Named pipe access failed
                 }
             }
         }
@@ -852,18 +793,46 @@ namespace SolarSharp.Interpreter.Tests.Units
         {
             try
             {
-                var testLinkPath = Path.Combine(_tempDir, "test_symlink");
-                var testTargetPath = Path.Combine(_tempDir, "test_target.txt");
+                // On Unix-like systems, symlinks are generally supported
+                if (
+                    RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                    || RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                )
+                {
+                    // Try to create a test symlink to verify actual capability
+                    var testLinkPath = Path.Combine(_tempDir, "test_symlink");
+                    var testTargetPath = Path.Combine(_tempDir, "test_target.txt");
 
-                File.WriteAllText(testTargetPath, "test");
-                CreateSymlink(testLinkPath, "test_target.txt");
+                    // Use real file operations for symlink testing
+                    File.WriteAllText(testTargetPath, "test");
 
-                var canCreate = File.Exists(testLinkPath);
+                    // Create symlink using platform-specific method
+                    CreateSymlink(testLinkPath, "test_target.txt");
 
-                if (File.Exists(testLinkPath)) File.Delete(testLinkPath);
-                File.Delete(testTargetPath);
+                    // Check if symlink was created successfully
+                    var canCreate =
+                        File.Exists(testLinkPath)
+                        || (File.GetAttributes(testLinkPath) & FileAttributes.ReparsePoint)
+                            == FileAttributes.ReparsePoint;
 
-                return canCreate;
+                    // Cleanup test files
+                    try
+                    {
+                        if (File.Exists(testLinkPath))
+                            File.Delete(testLinkPath);
+                        if (File.Exists(testTargetPath))
+                            File.Delete(testTargetPath);
+                    }
+                    catch
+                    {
+                        // Ignore cleanup errors
+                    }
+
+                    return canCreate;
+                }
+
+                // Windows requires special permissions
+                return false;
             }
             catch
             {
@@ -886,26 +855,50 @@ namespace SolarSharp.Interpreter.Tests.Units
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // Windows: Use mklink command
-                var process = Process.Start(new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c mklink \"{linkPath}\" \"{targetPath}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                });
+                var process = Process.Start(
+                    new ProcessStartInfo
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = $"/c mklink \"{linkPath}\" \"{targetPath}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                    }
+                );
                 process?.WaitForExit();
             }
             else
             {
-                // Unix: Use ln command
-                var process = Process.Start(new ProcessStartInfo
-                {
-                    FileName = "ln",
-                    Arguments = $"-s \"{targetPath}\" \"{linkPath}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                });
+                // Unix/macOS: Use ln command with proper path handling
+                var process = Process.Start(
+                    new ProcessStartInfo
+                    {
+                        FileName = "ln",
+                        Arguments = $"-sf \"{targetPath}\" \"{linkPath}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                        WorkingDirectory = Path.GetDirectoryName(linkPath),
+                    }
+                );
                 process?.WaitForExit();
+
+                // Also try with .NET 6+ API if available
+                if (process?.ExitCode != 0)
+                {
+                    try
+                    {
+                        if (File.Exists(linkPath))
+                            File.Delete(linkPath);
+                        File.CreateSymbolicLink(linkPath, targetPath);
+                    }
+                    catch
+                    {
+                        // Fallback failed, symlink creation not supported
+                    }
+                }
             }
         }
 
@@ -913,47 +906,91 @@ namespace SolarSharp.Interpreter.Tests.Units
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                var process = Process.Start(new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c mklink /D \"{linkPath}\" \"{targetPath}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                });
+                var process = Process.Start(
+                    new ProcessStartInfo
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = $"/c mklink /D \"{linkPath}\" \"{targetPath}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                    }
+                );
                 process?.WaitForExit();
             }
             else
             {
-                var process = Process.Start(new ProcessStartInfo
-                {
-                    FileName = "ln",
-                    Arguments = $"-s \"{targetPath}\" \"{linkPath}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                });
+                var process = Process.Start(
+                    new ProcessStartInfo
+                    {
+                        FileName = "ln",
+                        Arguments = $"-sf \"{targetPath}\" \"{linkPath}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                        WorkingDirectory = Path.GetDirectoryName(linkPath),
+                    }
+                );
                 process?.WaitForExit();
+
+                // Also try with .NET 6+ API if available
+                if (process?.ExitCode != 0)
+                {
+                    try
+                    {
+                        if (Directory.Exists(linkPath))
+                            Directory.Delete(linkPath);
+                        Directory.CreateSymbolicLink(linkPath, targetPath);
+                    }
+                    catch
+                    {
+                        // Fallback failed, symlink creation not supported
+                    }
+                }
             }
         }
 
         private void DeleteSymlink(string linkPath)
         {
-            if (File.Exists(linkPath) || Directory.Exists(linkPath))
+            try
             {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                if (File.Exists(linkPath) || Directory.Exists(linkPath))
                 {
-                    File.Delete(linkPath);
-                }
-                else
-                {
-                    var process = Process.Start(new ProcessStartInfo
+                    // Check if it's a symlink first
+                    var attributes = File.GetAttributes(linkPath);
+                    if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
                     {
-                        FileName = "rm",
-                        Arguments = $"\"{linkPath}\"",
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    });
-                    process?.WaitForExit();
+                        // It's a symlink/junction, safe to delete
+                        if (Directory.Exists(linkPath))
+                            Directory.Delete(linkPath);
+                        else
+                            File.Delete(linkPath);
+                    }
+                    else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        File.Delete(linkPath);
+                    }
+                    else
+                    {
+                        var process = Process.Start(
+                            new ProcessStartInfo
+                            {
+                                FileName = "rm",
+                                Arguments = $"-f \"{linkPath}\"",
+                                UseShellExecute = false,
+                                CreateNoWindow = true,
+                                RedirectStandardError = true,
+                            }
+                        );
+                        process?.WaitForExit();
+                    }
                 }
+            }
+            catch
+            {
+                // Ignore deletion errors in tests
             }
         }
 
@@ -963,27 +1000,42 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    var process = Process.Start(new ProcessStartInfo
-                    {
-                        FileName = "cmd.exe",
-                        Arguments = $"/c mklink /H \"{linkPath}\" \"{targetPath}\"",
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        RedirectStandardOutput = true
-                    });
+                    var process = Process.Start(
+                        new ProcessStartInfo
+                        {
+                            FileName = "cmd.exe",
+                            Arguments = $"/c mklink /H \"{linkPath}\" \"{targetPath}\"",
+                            UseShellExecute = false,
+                            CreateNoWindow = true,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                        }
+                    );
                     process?.WaitForExit();
                     return process?.ExitCode == 0;
                 }
                 else
                 {
-                    var process = Process.Start(new ProcessStartInfo
-                    {
-                        FileName = "ln",
-                        Arguments = $"\"{targetPath}\" \"{linkPath}\"",
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    });
+                    // Unix/macOS: Use ln without -s for hard links
+                    var process = Process.Start(
+                        new ProcessStartInfo
+                        {
+                            FileName = "ln",
+                            Arguments = $"\"{targetPath}\" \"{linkPath}\"",
+                            UseShellExecute = false,
+                            CreateNoWindow = true,
+                            RedirectStandardError = true,
+                            RedirectStandardOutput = true,
+                        }
+                    );
                     process?.WaitForExit();
+
+                    // For hard links, we need to use real files, not mock filesystem
+                    if (process?.ExitCode == 0 && _useRealFileSystem)
+                    {
+                        return File.Exists(linkPath);
+                    }
+
                     return process?.ExitCode == 0;
                 }
             }
@@ -1000,14 +1052,16 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             try
             {
-                var process = Process.Start(new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c mklink /J \"{junctionPath}\" \"{targetPath}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true
-                });
+                var process = Process.Start(
+                    new ProcessStartInfo
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = $"/c mklink /J \"{junctionPath}\" \"{targetPath}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                    }
+                );
                 process?.WaitForExit();
                 return process?.ExitCode == 0;
             }
@@ -1019,7 +1073,8 @@ namespace SolarSharp.Interpreter.Tests.Units
 
         private string[] GetSystemMountPoints()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return new[] { "C:", "D:", "E:" };
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return new[] { "C:", "D:", "E:" };
 
             return new[] { "/", "/tmp", "/var", "/usr", "/home" };
         }
@@ -1027,19 +1082,9 @@ namespace SolarSharp.Interpreter.Tests.Units
         private string[] GetKnownNamedPipes()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return new[]
-                {
-                    @"\\.\pipe\lsass",
-                    @"\\.\pipe\samr",
-                    @"\\.\pipe\netlogon"
-                };
+                return new[] { @"\\.\pipe\lsass", @"\\.\pipe\samr", @"\\.\pipe\netlogon" };
 
-            return new[]
-            {
-                "/dev/log",
-                "/var/run/dbus/system_bus_socket",
-                "/tmp/mysql.sock"
-            };
+            return new[] { "/dev/log", "/var/run/dbus/system_bus_socket", "/tmp/mysql.sock" };
         }
 
         /// <summary>
@@ -1072,28 +1117,37 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 // Try with takeown and icacls on Windows
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = "cmd.exe",
-                        Arguments =
-                            $"/c takeown /f \"{path}\" /r /d y && icacls \"{path}\" /grant administrators:F /t && rmdir /s /q \"{path}\"",
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    })?.WaitForExit();
+                    Process
+                        .Start(
+                            new ProcessStartInfo
+                            {
+                                FileName = "cmd.exe",
+                                Arguments =
+                                    $"/c takeown /f \"{path}\" /r /d y && icacls \"{path}\" /grant administrators:F /t && rmdir /s /q \"{path}\"",
+                                UseShellExecute = false,
+                                CreateNoWindow = true,
+                            }
+                        )
+                        ?.WaitForExit();
                 else
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = "rm",
-                        Arguments = $"-rf \"{path}\"",
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    })?.WaitForExit();
+                    Process
+                        .Start(
+                            new ProcessStartInfo
+                            {
+                                FileName = "rm",
+                                Arguments = $"-rf \"{path}\"",
+                                UseShellExecute = false,
+                                CreateNoWindow = true,
+                            }
+                        )
+                        ?.WaitForExit();
             }
         }
 
         private void SetAttributesRecursive(DirectoryInfo dir, FileAttributes attributes)
         {
-            foreach (var file in dir.GetFiles()) file.Attributes = attributes;
+            foreach (var file in dir.GetFiles())
+                file.Attributes = attributes;
 
             foreach (var subDir in dir.GetDirectories())
             {

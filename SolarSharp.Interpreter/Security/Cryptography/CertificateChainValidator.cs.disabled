@@ -1,0 +1,217 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using CSharpFunctionalExtensions;
+using Org.BouncyCastle.Pkix;
+using Org.BouncyCastle.Utilities.Collections;
+using Org.BouncyCastle.X509;
+using Org.BouncyCastle.X509.Store;
+
+namespace SolarSharp.Interpreter.Security.Cryptography
+{
+    /// <summary>
+    /// Pure BouncyCastle certificate chain validation for SolarSharp security infrastructure.
+    /// Provides enterprise-grade PKI validation with trust anchor verification.
+    /// </summary>
+    public static class CertificateChainValidator
+    {
+        /// <summary>
+        /// Validate a certificate chain using BouncyCastle PKIX validator.
+        /// Pure function with no side effects.
+        /// </summary>
+        /// <param name="certificate">End entity certificate to validate</param>
+        /// <param name="intermediateCertificates">Intermediate CA certificates in the chain</param>
+        /// <param name="trustedCAs">Trusted root CA certificates</param>
+        /// <returns>Success with validation result, or Failure with error details</returns>
+        public static Result<CertificateValidationResult, CryptographicError> ValidateChain(
+            X509Certificate certificate,
+            IList<X509Certificate> intermediateCertificates,
+            IList<X509Certificate> trustedCAs)
+        {
+            try
+            {
+                // Build certificate path (end entity + intermediates)
+                var certPath = BuildCertificatePath(certificate, intermediateCertificates);
+                
+                // Create trust anchors from trusted CAs
+                var trustAnchors = CreateTrustAnchors(trustedCAs);
+                
+                // Configure PKIX parameters for validation
+                var pkixParams = new PkixParameters(trustAnchors);
+                
+                // Disable revocation checking for now (can be enabled later with CRL/OCSP)
+                pkixParams.IsRevocationEnabled = false;
+                
+                // Add intermediate certificates to cert store for path building
+                if (intermediateCertificates.Count > 0)
+                {
+                    var certStore = CreateCertificateStore(intermediateCertificates);
+                    pkixParams.AddStore(certStore);
+                }
+                
+                // Perform PKIX validation
+                var validator = new PkixCertPathValidator();
+                var validationResult = validator.Validate(certPath, pkixParams);
+                
+                return Result.Success<CertificateValidationResult, CryptographicError>(
+                    new CertificateValidationResult(
+                        IsValid: true,
+                        TrustAnchor: validationResult.TrustAnchor,
+                        PolicyTree: validationResult.PolicyTree,
+                        PublicKey: validationResult.SubjectPublicKey,
+                        ValidationPath: certPath
+                    )
+                );
+            }
+            catch (PkixCertPathValidatorException ex)
+            {
+                return Result.Failure<CertificateValidationResult, CryptographicError>(
+                    new CryptographicError($"Certificate chain validation failed: {ex.Message}")
+                );
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure<CertificateValidationResult, CryptographicError>(
+                    new CryptographicError($"Unexpected error during certificate validation: {ex.Message}")
+                );
+            }
+        }
+
+        /// <summary>
+        /// Validate a single certificate against trusted CAs (without intermediate chain).
+        /// Pure function with no side effects.
+        /// </summary>
+        /// <param name="certificate">Certificate to validate</param>
+        /// <param name="trustedCAs">Trusted root CA certificates</param>
+        /// <returns>Success with validation result, or Failure with error details</returns>
+        public static Result<CertificateValidationResult, CryptographicError> ValidateCertificate(
+            X509Certificate certificate,
+            IList<X509Certificate> trustedCAs) =>
+            ValidateChain(certificate, ImmutableList<X509Certificate>.Empty, trustedCAs);
+
+        /// <summary>
+        /// Check if a certificate is directly trusted (self-signed root CA).
+        /// Pure function with no side effects.
+        /// </summary>
+        /// <param name="certificate">Certificate to check</param>
+        /// <param name="trustedCAs">Trusted root CA certificates</param>
+        /// <returns>True if certificate is directly trusted, false otherwise</returns>
+        public static bool IsDirectlyTrusted(
+            X509Certificate certificate, 
+            IList<X509Certificate> trustedCAs)
+        {
+            return trustedCAs.Any(trustedCA => trustedCA.Equals(certificate));
+        }
+
+        /// <summary>
+        /// Extract the root CA from a certificate chain.
+        /// Pure function with no side effects.
+        /// </summary>
+        /// <param name="certificate">End entity certificate</param>
+        /// <param name="intermediateCertificates">Intermediate certificates</param>
+        /// <returns>Root CA certificate if found in chain</returns>
+        public static Maybe<X509Certificate> ExtractRootCA(
+            X509Certificate certificate,
+            IList<X509Certificate> intermediateCertificates)
+        {
+            // Check if end entity is self-signed (root CA)
+            if (IsSelfSigned(certificate))
+                return Maybe<X509Certificate>.From(certificate);
+
+            // Look for self-signed certificate in intermediates
+            var rootCA = intermediateCertificates.FirstOrDefault(IsSelfSigned);
+            return rootCA != null 
+                ? Maybe<X509Certificate>.From(rootCA) 
+                : Maybe<X509Certificate>.None;
+        }
+
+        /// <summary>
+        /// Check if a certificate is self-signed.
+        /// Pure function with no side effects.
+        /// </summary>
+        private static bool IsSelfSigned(X509Certificate certificate)
+        {
+            try
+            {
+                // A certificate is self-signed if issuer equals subject
+                return certificate.IssuerDN.Equals(certificate.SubjectDN);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Build a certificate path from end entity and intermediate certificates.
+        /// Pure function with no side effects.
+        /// </summary>
+        private static PkixCertPath BuildCertificatePath(
+            X509Certificate certificate,
+            IList<X509Certificate> intermediateCertificates)
+        {
+            var certList = new List<X509Certificate> { certificate };
+            certList.AddRange(intermediateCertificates);
+            
+            return new PkixCertPath(certList);
+        }
+
+        /// <summary>
+        /// Create trust anchors from trusted CA certificates.
+        /// Pure function with no side effects.
+        /// </summary>
+        private static ISet<TrustAnchor> CreateTrustAnchors(IList<X509Certificate> trustedCAs)
+        {
+            var trustAnchors = new HashSet<TrustAnchor>();
+            
+            foreach (var trustedCA in trustedCAs)
+            {
+                // Create trust anchor with certificate and no name constraints
+                var trustAnchor = new TrustAnchor(trustedCA, null);
+                trustAnchors.Add(trustAnchor);
+            }
+            
+            return trustAnchors;
+        }
+
+        /// <summary>
+        /// Create certificate store from intermediate certificates.
+        /// Pure function with no side effects.
+        /// </summary>
+        private static object CreateCertificateStore(IList<X509Certificate> certificates)
+        {
+            var certCollection = new List<X509Certificate>(certificates);
+            return X509StoreFactory.Create("Certificate/Collection", 
+                new X509CollectionStoreParameters(certCollection));
+        }
+    }
+
+    /// <summary>
+    /// Immutable result of certificate chain validation.
+    /// </summary>
+    public sealed record CertificateValidationResult(
+        bool IsValid,
+        TrustAnchor TrustAnchor,
+        PkixPolicyNode PolicyTree,
+        Org.BouncyCastle.Crypto.AsymmetricKeyParameter PublicKey,
+        PkixCertPath ValidationPath
+    )
+    {
+        /// <summary>
+        /// Get the root CA certificate from the trust anchor.
+        /// </summary>
+        public X509Certificate RootCACertificate => TrustAnchor.TrustedCert;
+
+        /// <summary>
+        /// Get the validated certificate path as a list.
+        /// </summary>
+        public IList<X509Certificate> CertificatePath => 
+            ValidationPath.Certificates.Cast<X509Certificate>().ToList();
+
+        /// <summary>
+        /// Check if the validation result indicates a trusted certificate.
+        /// </summary>
+        public bool IsTrusted => IsValid && TrustAnchor != null;
+    }
+}

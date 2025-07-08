@@ -14,6 +14,7 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
             _publicKeyPem = Convert.ToBase64String(_signingKey.ExportSubjectPublicKeyInfo());
         }
 
+        [Category("Security.Unit")]
         [Test]
         [Ignore("Test needs to be updated for new Manifest API")]
         public void CreateZipPackage_WithValidManifest_VerifiesIntegrity()
@@ -21,7 +22,9 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
             var tempDir = Path.GetTempPath();
             var packagePath = Path.Combine(tempDir, "test-package.zip");
             var scriptContent = "print('Hello from package!')";
-            var scriptHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(scriptContent)));
+            var scriptHash = Convert.ToBase64String(
+                SHA256.HashData(Encoding.UTF8.GetBytes(scriptContent))
+            );
 
             try
             {
@@ -46,33 +49,34 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                             ["main.lua"] = new FilePolicy
                             {
                                 Hash = scriptHash,
-                                Algorithm = "SHA256"
-                            }
+                                Algorithm = "SHA256",
+                            },
                         },
                         Security = new SecurityInfo
                         {
                             PublicKey = new PublicKeyInfo
                             {
                                 Algorithm = "ECDSA-P256",
-                                Key = _publicKeyPem
-                            }
-                        }
+                                Key = _publicKeyPem,
+                            },
+                        },
                     };
 
-                    var manifestJson =
-                        System.Text.Json.JsonSerializer.Serialize(manifest, new System.Text.Json.JsonSerializerOptions
-                        {
-                            WriteIndented = true
-                        });
+                    var manifestJson = System.Text.Json.JsonSerializer.Serialize(
+                        manifest,
+                        new System.Text.Json.JsonSerializerOptions { WriteIndented = true }
+                    );
 
                     // Sign manifest
                     var canonicalJson = JsonCanonicalizer.Canonicalize(manifestJson);
-                    var signature =
-                        _signingKey.SignData(Encoding.UTF8.GetBytes(canonicalJson), HashAlgorithmName.SHA256);
+                    var signature = _signingKey.SignData(
+                        Encoding.UTF8.GetBytes(canonicalJson),
+                        HashAlgorithmName.SHA256
+                    );
                     manifest.Security.Signature = new SignatureInfo
                     {
                         Algorithm = "ECDSA-SHA256",
-                        Value = Convert.ToBase64String(signature)
+                        Value = Convert.ToBase64String(signature),
                     };
 
                     // Add manifest to package
@@ -80,23 +84,21 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                     using (var stream = manifestEntry.Open())
                     using (var writer = new StreamWriter(stream))
                     {
-                        var signedManifestJson =
-                            System.Text.Json.JsonSerializer.Serialize(manifest, new System.Text.Json.JsonSerializerOptions
-                            {
-                                WriteIndented = true
-                            });
+                        var signedManifestJson = System.Text.Json.JsonSerializer.Serialize(
+                            manifest,
+                            new System.Text.Json.JsonSerializerOptions { WriteIndented = true }
+                        );
                         writer.Write(signedManifestJson);
                     }
                 }
 
                 // Test package verification
-                var config = SecurityConfiguration.Isolated()
-                    .WithTrustStore(_trustStore);
+                var config = Examples.IsolatedBasePolicySet;
 
-                _trustStore.AddTrustedKey(_publicKeyPem, "ECDSA-P256");
+                // Trust store functionality removed in new API
 
                 // Verify package can be loaded securely
-                var script = new Script(config);
+                var script = new Script(config.PolicySet);
 
                 // Extract and verify
                 using (var archive = ZipFile.OpenRead(packagePath))
@@ -111,12 +113,14 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                         manifestContent = reader.ReadToEnd();
                     }
 
-                    var loadedManifest = System.Text.Json.JsonSerializer.Deserialize<LuaManifest>(manifestContent);
+                    var loadedManifest = System.Text.Json.JsonSerializer.Deserialize<LuaManifest>(
+                        manifestContent
+                    );
                     Assert.NotNull(loadedManifest);
 
                     // Verify signature
                     var verifier = new ManifestVerifier();
-                    Assert.True(verifier.VerifySignature(loadedManifest));
+                    Assert.That(verifier.VerifySignature(loadedManifest), Is.True);
 
                     // Verify file integrity
                     var scriptEntry = archive.GetEntry("main.lua");
@@ -129,8 +133,9 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                         actualScriptContent = reader.ReadToEnd();
                     }
 
-                    var actualHash =
-                        Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(actualScriptContent)));
+                    var actualHash = Convert.ToBase64String(
+                        SHA256.HashData(Encoding.UTF8.GetBytes(actualScriptContent))
+                    );
                     Assert.Equal(scriptHash, actualHash);
                 }
             }
@@ -141,6 +146,7 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
             }
         }
 
+        [Category("Security.Unit")]
         [Test]
         [Ignore("Test needs to be updated for new Manifest API")]
         public void ZipPackage_WithTamperedScript_FailsIntegrityCheck()
@@ -149,7 +155,9 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
             var packagePath = Path.Combine(tempDir, "tampered-package.zip");
             var originalContent = "print('Original content')";
             var tamperedContent = "print('Tampered content')";
-            var originalHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(originalContent)));
+            var originalHash = Convert.ToBase64String(
+                SHA256.HashData(Encoding.UTF8.GetBytes(originalContent))
+            );
 
             try
             {
@@ -173,48 +181,48 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                             ["main.lua"] = new FilePolicy
                             {
                                 Hash = originalHash, // Wrong hash!
-                                Algorithm = "SHA256"
-                            }
+                                Algorithm = "SHA256",
+                            },
                         },
                         Security = new SecurityInfo
                         {
                             PublicKey = new PublicKeyInfo
                             {
                                 Algorithm = "ECDSA-P256",
-                                Key = _publicKeyPem
-                            }
-                        }
+                                Key = _publicKeyPem,
+                            },
+                        },
                     };
 
-                    var manifestJson =
-                        System.Text.Json.JsonSerializer.Serialize(manifest, new System.Text.Json.JsonSerializerOptions
-                        {
-                            WriteIndented = true
-                        });
+                    var manifestJson = System.Text.Json.JsonSerializer.Serialize(
+                        manifest,
+                        new System.Text.Json.JsonSerializerOptions { WriteIndented = true }
+                    );
 
                     var canonicalJson = JsonCanonicalizer.Canonicalize(manifestJson);
-                    var signature =
-                        _signingKey.SignData(Encoding.UTF8.GetBytes(canonicalJson), HashAlgorithmName.SHA256);
+                    var signature = _signingKey.SignData(
+                        Encoding.UTF8.GetBytes(canonicalJson),
+                        HashAlgorithmName.SHA256
+                    );
                     manifest.Security.Signature = new SignatureInfo
                     {
                         Algorithm = "ECDSA-SHA256",
-                        Value = Convert.ToBase64String(signature)
+                        Value = Convert.ToBase64String(signature),
                     };
 
                     var manifestEntry = archive.CreateEntry("manifest.json");
                     using (var stream = manifestEntry.Open())
                     using (var writer = new StreamWriter(stream))
                     {
-                        var signedManifestJson =
-                            System.Text.Json.JsonSerializer.Serialize(manifest, new System.Text.Json.JsonSerializerOptions
-                            {
-                                WriteIndented = true
-                            });
+                        var signedManifestJson = System.Text.Json.JsonSerializer.Serialize(
+                            manifest,
+                            new System.Text.Json.JsonSerializerOptions { WriteIndented = true }
+                        );
                         writer.Write(signedManifestJson);
                     }
                 }
 
-                _trustStore.AddTrustedKey(_publicKeyPem, "ECDSA-P256");
+                // Trust store functionality removed in new API
 
                 // Attempt to verify tampered package
                 using (var archive = ZipFile.OpenRead(packagePath))
@@ -227,11 +235,13 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                         manifestContent = reader.ReadToEnd();
                     }
 
-                    var manifest = System.Text.Json.JsonSerializer.Deserialize<LuaManifest>(manifestContent);
+                    var manifest = System.Text.Json.JsonSerializer.Deserialize<LuaManifest>(
+                        manifestContent
+                    );
 
                     // Signature should be valid (manifest wasn't tampered)
                     var verifier = new ManifestVerifier();
-                    Assert.True(verifier.VerifySignature(manifest));
+                    Assert.That(verifier.VerifySignature(manifest), Is.True);
 
                     // File integrity should fail
                     var scriptEntry = archive.GetEntry("main.lua");
@@ -242,7 +252,9 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                         actualContent = reader.ReadToEnd();
                     }
 
-                    var actualHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(actualContent)));
+                    var actualHash = Convert.ToBase64String(
+                        SHA256.HashData(Encoding.UTF8.GetBytes(actualContent))
+                    );
                     var expectedHash = manifest.Files["main.lua"].Hash;
 
                     Assert.NotEqual(expectedHash, actualHash);
@@ -255,6 +267,7 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
             }
         }
 
+        [Category("Security.Unit")]
         [Test]
         [Ignore("Test needs to be updated for new Manifest API")]
         public void ZipPackage_WithMissingManifest_RejectsExecution()
@@ -275,8 +288,7 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                     }
                 }
 
-                var config = SecurityConfiguration.Isolated()
-                    .WithTrustStore(_trustStore);
+                var config = Examples.IsolatedBasePolicySet;
 
                 // Should reject loading package without manifest
                 using (var archive = ZipFile.OpenRead(packagePath))
@@ -295,6 +307,7 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
             }
         }
 
+        [Category("Security.Unit")]
         [Test]
         [Ignore("Test needs to be updated for new Manifest API")]
         public void ZipPackage_WithNestedDirectories_ValidatesAllFiles()
@@ -305,8 +318,12 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
             var mainScript = "require('utils.helper')";
             var helperScript = "return { greeting = 'Hello!' }";
 
-            var mainHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(mainScript)));
-            var helperHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(helperScript)));
+            var mainHash = Convert.ToBase64String(
+                SHA256.HashData(Encoding.UTF8.GetBytes(mainScript))
+            );
+            var helperHash = Convert.ToBase64String(
+                SHA256.HashData(Encoding.UTF8.GetBytes(helperScript))
+            );
 
             try
             {
@@ -334,56 +351,52 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                         Version = "1.0",
                         Files = new Dictionary<string, FilePolicy>
                         {
-                            ["main.lua"] = new FilePolicy
-                            {
-                                Hash = mainHash,
-                                Algorithm = "SHA256"
-                            },
+                            ["main.lua"] = new FilePolicy { Hash = mainHash, Algorithm = "SHA256" },
                             ["utils/helper.lua"] = new FilePolicy
                             {
                                 Hash = helperHash,
-                                Algorithm = "SHA256"
-                            }
+                                Algorithm = "SHA256",
+                            },
                         },
                         Security = new SecurityInfo
                         {
                             PublicKey = new PublicKeyInfo
                             {
                                 Algorithm = "ECDSA-P256",
-                                Key = _publicKeyPem
-                            }
-                        }
+                                Key = _publicKeyPem,
+                            },
+                        },
                     };
 
-                    var manifestJson =
-                        System.Text.Json.JsonSerializer.Serialize(manifest, new System.Text.Json.JsonSerializerOptions
-                        {
-                            WriteIndented = true
-                        });
+                    var manifestJson = System.Text.Json.JsonSerializer.Serialize(
+                        manifest,
+                        new System.Text.Json.JsonSerializerOptions { WriteIndented = true }
+                    );
 
                     var canonicalJson = JsonCanonicalizer.Canonicalize(manifestJson);
-                    var signature =
-                        _signingKey.SignData(Encoding.UTF8.GetBytes(canonicalJson), HashAlgorithmName.SHA256);
+                    var signature = _signingKey.SignData(
+                        Encoding.UTF8.GetBytes(canonicalJson),
+                        HashAlgorithmName.SHA256
+                    );
                     manifest.Security.Signature = new SignatureInfo
                     {
                         Algorithm = "ECDSA-SHA256",
-                        Value = Convert.ToBase64String(signature)
+                        Value = Convert.ToBase64String(signature),
                     };
 
                     var manifestEntry = archive.CreateEntry("manifest.json");
                     using (var stream = manifestEntry.Open())
                     using (var writer = new StreamWriter(stream))
                     {
-                        var signedManifestJson =
-                            System.Text.Json.JsonSerializer.Serialize(manifest, new System.Text.Json.JsonSerializerOptions
-                            {
-                                WriteIndented = true
-                            });
+                        var signedManifestJson = System.Text.Json.JsonSerializer.Serialize(
+                            manifest,
+                            new System.Text.Json.JsonSerializerOptions { WriteIndented = true }
+                        );
                         writer.Write(signedManifestJson);
                     }
                 }
 
-                _trustStore.AddTrustedKey(_publicKeyPem, "ECDSA-P256");
+                // Trust store functionality removed in new API
 
                 // Verify all files in package
                 using (var archive = ZipFile.OpenRead(packagePath))
@@ -396,9 +409,11 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                         manifestContent = reader.ReadToEnd();
                     }
 
-                    var manifest = System.Text.Json.JsonSerializer.Deserialize<LuaManifest>(manifestContent);
+                    var manifest = System.Text.Json.JsonSerializer.Deserialize<LuaManifest>(
+                        manifestContent
+                    );
                     var verifier = new ManifestVerifier();
-                    Assert.True(verifier.VerifySignature(manifest));
+                    Assert.That(verifier.VerifySignature(manifest), Is.True);
 
                     // Verify each file's integrity
                     foreach (var filePolicy in manifest.Files)
@@ -413,7 +428,9 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                             content = reader.ReadToEnd();
                         }
 
-                        var actualHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(content)));
+                        var actualHash = Convert.ToBase64String(
+                            SHA256.HashData(Encoding.UTF8.GetBytes(content))
+                        );
                         Assert.Equal(filePolicy.Value.Hash, actualHash);
                     }
                 }
@@ -425,6 +442,7 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
             }
         }
 
+        [Category("Security.Unit")]
         [Test]
         [Ignore("Test needs to be updated for new Manifest API")]
         public void ZipPackage_WithUnsignedFiles_RejectsExecution()
@@ -434,7 +452,9 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
 
             var scriptContent = "print('Signed script')";
             var unsignedContent = "print('Unsigned script')";
-            var scriptHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(scriptContent)));
+            var scriptHash = Convert.ToBase64String(
+                SHA256.HashData(Encoding.UTF8.GetBytes(scriptContent))
+            );
 
             try
             {
@@ -465,8 +485,8 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                             ["signed.lua"] = new FilePolicy
                             {
                                 Hash = scriptHash,
-                                Algorithm = "SHA256"
-                            }
+                                Algorithm = "SHA256",
+                            },
                             // unsigned.lua intentionally omitted
                         },
                         Security = new SecurityInfo
@@ -474,40 +494,40 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                             PublicKey = new PublicKeyInfo
                             {
                                 Algorithm = "ECDSA-P256",
-                                Key = _publicKeyPem
-                            }
-                        }
+                                Key = _publicKeyPem,
+                            },
+                        },
                     };
 
-                    var manifestJson =
-                        System.Text.Json.JsonSerializer.Serialize(manifest, new System.Text.Json.JsonSerializerOptions
-                        {
-                            WriteIndented = true
-                        });
+                    var manifestJson = System.Text.Json.JsonSerializer.Serialize(
+                        manifest,
+                        new System.Text.Json.JsonSerializerOptions { WriteIndented = true }
+                    );
 
                     var canonicalJson = JsonCanonicalizer.Canonicalize(manifestJson);
-                    var signature =
-                        _signingKey.SignData(Encoding.UTF8.GetBytes(canonicalJson), HashAlgorithmName.SHA256);
+                    var signature = _signingKey.SignData(
+                        Encoding.UTF8.GetBytes(canonicalJson),
+                        HashAlgorithmName.SHA256
+                    );
                     manifest.Security.Signature = new SignatureInfo
                     {
                         Algorithm = "ECDSA-SHA256",
-                        Value = Convert.ToBase64String(signature)
+                        Value = Convert.ToBase64String(signature),
                     };
 
                     var manifestEntry = archive.CreateEntry("manifest.json");
                     using (var stream = manifestEntry.Open())
                     using (var writer = new StreamWriter(stream))
                     {
-                        var signedManifestJson =
-                            System.Text.Json.JsonSerializer.Serialize(manifest, new System.Text.Json.JsonSerializerOptions
-                            {
-                                WriteIndented = true
-                            });
+                        var signedManifestJson = System.Text.Json.JsonSerializer.Serialize(
+                            manifest,
+                            new System.Text.Json.JsonSerializerOptions { WriteIndented = true }
+                        );
                         writer.Write(signedManifestJson);
                     }
                 }
 
-                _trustStore.AddTrustedKey(_publicKeyPem, "ECDSA-P256");
+                // Trust store functionality removed in new API
 
                 // Verify that unsigned files are detected
                 using (var archive = ZipFile.OpenRead(packagePath))
@@ -520,10 +540,14 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                         manifestContent = reader.ReadToEnd();
                     }
 
-                    var manifest = System.Text.Json.JsonSerializer.Deserialize<LuaManifest>(manifestContent);
+                    var manifest = System.Text.Json.JsonSerializer.Deserialize<LuaManifest>(
+                        manifestContent
+                    );
 
                     // Find unsigned files
-                    var allEntries = archive.Entries.Where(e => e.Name.EndsWith(".lua")).Select(e => e.FullName);
+                    var allEntries = archive
+                        .Entries.Where(e => e.Name.EndsWith(".lua"))
+                        .Select(e => e.FullName);
                     var signedFiles = manifest.Files.Keys;
                     var unsignedFiles = allEntries.Except(signedFiles).ToList();
 

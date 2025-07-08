@@ -13,7 +13,7 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
     {
         internal static DynamicExprExpression LoadDynamicExpr(Script script, SourceCode source)
         {
-            ScriptLoadingContext lcontext = CreateLoadingContext(script, source);
+            var lcontext = CreateLoadingContext(script, source);
 
             try
             {
@@ -40,13 +40,13 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
             {
                 Scope = new BuildTimeScope(),
                 Source = source,
-                Lexer = new Lexer.Lexer(source.SourceID, source.Code, true)
+                Lexer = new Lexer.Lexer(source.SourceID, source.Code, true),
             };
         }
 
         internal static int LoadChunk(Script script, SourceCode source, ByteCode bytecode)
         {
-            ScriptLoadingContext lcontext = CreateLoadingContext(script, source);
+            var lcontext = CreateLoadingContext(script, source);
             try
             {
                 Statement stat;
@@ -54,17 +54,17 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
                 using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
                     stat = new ChunkStatement(lcontext);
 
-                int beginIp = -1;
+                var beginIp = -1;
 
                 //var srcref = new SourceRef(source.SourceID);
 
                 using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
                 using (bytecode.EnterSource(null))
                 {
-                    bytecode.Emit_Nop(string.Format("Begin chunk {0}", source.Name));
+                    bytecode.Emit_Nop($"Begin chunk {source.Name}");
                     beginIp = bytecode.GetJumpPointForLastInstruction();
                     stat.Compile(bytecode);
-                    bytecode.Emit_Nop(string.Format("End chunk {0}", source.Name));
+                    bytecode.Emit_Nop($"End chunk {source.Name}");
                 }
 
                 //Debug_DumpByteCode(bytecode, source.SourceID);
@@ -79,9 +79,14 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
             }
         }
 
-        internal static int LoadFunction(Script script, SourceCode source, ByteCode bytecode, bool usesGlobalEnv)
+        internal static int LoadFunction(
+            Script script,
+            SourceCode source,
+            ByteCode bytecode,
+            bool usesGlobalEnv
+        )
         {
-            ScriptLoadingContext lcontext = CreateLoadingContext(script, source);
+            var lcontext = CreateLoadingContext(script, source);
 
             try
             {
@@ -90,16 +95,16 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
                 using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
                     fnx = new FunctionDefinitionExpression(lcontext, usesGlobalEnv);
 
-                int beginIp = -1;
+                var beginIp = -1;
 
                 //var srcref = new SourceRef(source.SourceID);
 
                 using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
                 using (bytecode.EnterSource(null))
                 {
-                    bytecode.Emit_Nop(string.Format("Begin function {0}", source.Name));
+                    bytecode.Emit_Nop($"Begin function {source.Name}");
                     beginIp = fnx.CompileBody(bytecode, source.Name);
-                    bytecode.Emit_Nop(string.Format("End function {0}", source.Name));
+                    bytecode.Emit_Nop($"End function {source.Name}");
                 }
 
                 //Debug_DumpByteCode(bytecode, source.SourceID);
@@ -112,8 +117,6 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface
                 ex.Rethrow();
                 throw;
             }
-
         }
-
     }
 }

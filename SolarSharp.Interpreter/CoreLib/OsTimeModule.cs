@@ -5,21 +5,31 @@ using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Security.FunctionBinding;
 
 namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
     /// Class implementing time related Lua functions from the 'os' module.
     /// </summary>
-    [MoonSharpModule(Namespace = "os")]
+    [SolarSharpModule(Namespace = "os")]
     public class OsTimeModule
     {
         private static readonly DateTime Time0 = DateTime.UtcNow;
-        private static readonly DateTime Epoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        private static readonly DateTime Epoch = new DateTime(
+            1970,
+            1,
+            1,
+            0,
+            0,
+            0,
+            DateTimeKind.Utc
+        );
 
         private static DynValue GetUnixTime(DateTime dateTime, DateTime? epoch = null)
         {
-            double time = (dateTime - (epoch ?? Epoch)).TotalSeconds;
+            var time = (dateTime - (epoch ?? Epoch)).TotalSeconds;
 
             if (time < 0.0)
                 return DynValue.Nil;
@@ -29,25 +39,36 @@ namespace SolarSharp.Interpreter.CoreLib
 
         private static DateTime FromUnixTime(double unixtime)
         {
-            TimeSpan ts = TimeSpan.FromSeconds(unixtime);
+            var ts = TimeSpan.FromSeconds(unixtime);
             return Epoch + ts;
         }
 
         [MoonSharpModuleMethod]
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.OS_Time,
+            requiredCapabilities: ScriptCapabilities.None,
+            description: "Get elapsed time since script execution started"
+        )]
 #pragma warning disable IDE0060 // Remove unused parameter
         public static DynValue clock(ScriptExecutionContext _, CallbackArguments _args)
 #pragma warning restore IDE0060 // Remove unused parameter
         {
             var t = GetUnixTime(DateTime.UtcNow, Time0);
-            if (t.IsNil()) return DynValue.NewNumber(0.0);
+            if (t.IsNil())
+                return DynValue.NewNumber(0.0);
             return t;
         }
 
         [MoonSharpModuleMethod]
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.OS_Time,
+            requiredCapabilities: ScriptCapabilities.None,
+            description: "Calculate difference between two timestamps"
+        )]
         public static DynValue difftime(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue t2 = args.AsType(0, "difftime", DataType.Number, false);
-            DynValue t1 = args.AsType(1, "difftime", DataType.Number, true);
+            var t2 = args.AsType(0, "difftime", DataType.Number);
+            var t1 = args.AsType(1, "difftime", DataType.Number, true);
 
             if (t1.IsNil())
                 return DynValue.NewNumber(t2.Number);
@@ -56,13 +77,18 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.OS_Time,
+            requiredCapabilities: ScriptCapabilities.None,
+            description: "Get current time or convert time table to timestamp"
+        )]
         public static DynValue time(ScriptExecutionContext _, CallbackArguments args)
         {
-            DateTime date = DateTime.UtcNow;
+            var date = DateTime.UtcNow;
 
             if (args.Count > 0)
             {
-                DynValue vt = args.AsType(0, "time", DataType.Table, true);
+                var vt = args.AsType(0, "time", DataType.Table, true);
                 if (vt.Type == DataType.Table)
                     date = ParseTimeTable(vt.Table);
             }
@@ -72,12 +98,12 @@ namespace SolarSharp.Interpreter.CoreLib
 
         private static DateTime ParseTimeTable(Table t)
         {
-            int sec = GetTimeTableField(t, "sec") ?? 0;
-            int min = GetTimeTableField(t, "min") ?? 0;
-            int hour = GetTimeTableField(t, "hour") ?? 12;
-            int? day = GetTimeTableField(t, "day");
-            int? month = GetTimeTableField(t, "month");
-            int? year = GetTimeTableField(t, "year");
+            var sec = GetTimeTableField(t, "sec") ?? 0;
+            var min = GetTimeTableField(t, "min") ?? 0;
+            var hour = GetTimeTableField(t, "hour") ?? 12;
+            var day = GetTimeTableField(t, "day");
+            var month = GetTimeTableField(t, "month");
+            var year = GetTimeTableField(t, "year");
 
             if (day == null)
                 throw new ScriptRuntimeException("field 'day' missing in date table");
@@ -91,11 +117,10 @@ namespace SolarSharp.Interpreter.CoreLib
             return new DateTime(year.Value, month.Value, day.Value, hour, min, sec);
         }
 
-
         private static int? GetTimeTableField(Table t, string key)
         {
-            DynValue v = t.Get(key);
-            double? d = v.CastToNumber();
+            var v = t.Get(key);
+            var d = v.CastToNumber();
 
             if (d.HasValue)
                 return (int)d.Value;
@@ -104,19 +129,24 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.OS_Time,
+            requiredCapabilities: ScriptCapabilities.None,
+            description: "Format timestamp as date string or table"
+        )]
         public static DynValue date(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            DateTime reference = DateTime.UtcNow;
+            var reference = DateTime.UtcNow;
 
-            DynValue vformat = args.AsType(0, "date", DataType.String, true);
-            DynValue vtime = args.AsType(1, "date", DataType.Number, true);
+            var vformat = args.AsType(0, "date", DataType.String, true);
+            var vtime = args.AsType(1, "date", DataType.Number, true);
 
-            string format = vformat.IsNil() ? "%c" : vformat.String;
+            var format = vformat.IsNil() ? "%c" : vformat.String;
 
             if (vtime.IsNotNil())
                 reference = FromUnixTime(vtime.Number);
 
-            bool isDst = false;
+            var isDst = false;
 
             if (format.StartsWith("!"))
             {
@@ -134,15 +164,14 @@ namespace SolarSharp.Interpreter.CoreLib
                 catch (TimeZoneNotFoundException)
                 {
                     // this catches a weird mono bug: https://bugzilla.xamarin.com/show_bug.cgi?id=11817
-                    // however the behavior is definitely not correct. damn.
+                    // however the behaviour is definitely not correct. damn.
                 }
 #endif
             }
 
-
             if (format == "*t")
             {
-                Table t = new(executionContext.GetScript());
+                var t = new Table();
 
                 t.Set("year", DynValue.NewNumber(reference.Year));
                 t.Set("month", DynValue.NewNumber(reference.Month));
@@ -156,15 +185,14 @@ namespace SolarSharp.Interpreter.CoreLib
 
                 return DynValue.NewTable(t);
             }
-
-            else return DynValue.NewString(StrFTime(format, reference));
+            return DynValue.NewString(StrFTime(format, reference));
         }
 
         private static string StrFTime(string format, DateTime d)
         {
             // ref: http://www.cplusplus.com/reference/ctime/strftime/
 
-            Dictionary<char, string> STANDARD_PATTERNS = new()
+            var STANDARD_PATTERNS = new Dictionary<char, string>
             {
                 { 'a', "ddd" },
                 { 'A', "dddd" },
@@ -194,14 +222,13 @@ namespace SolarSharp.Interpreter.CoreLib
                 { 'Z', "zzz" },
             };
 
+            var sb = new StringBuilder();
 
-            StringBuilder sb = new();
+            var isEscapeSequence = false;
 
-            bool isEscapeSequence = false;
-
-            for (int i = 0; i < format.Length; i++)
+            for (var i = 0; i < format.Length; i++)
             {
-                char c = format[i];
+                var c = format[i];
 
                 if (c == '%')
                 {
@@ -222,7 +249,8 @@ namespace SolarSharp.Interpreter.CoreLib
                     continue;
                 }
 
-                if (c == 'O' || c == 'E') continue; // no modifiers
+                if (c == 'O' || c == 'E')
+                    continue; // no modifiers
 
                 isEscapeSequence = false;
 
@@ -232,8 +260,9 @@ namespace SolarSharp.Interpreter.CoreLib
                 }
                 else if (c == 'e')
                 {
-                    string s = d.ToString("%d");
-                    if (s.Length < 2) s = " " + s;
+                    var s = d.ToString("%d");
+                    if (s.Length < 2)
+                        s = " " + s;
                     sb.Append(s);
                 }
                 else if (c == 'n')
@@ -254,7 +283,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 }
                 else if (c == 'u')
                 {
-                    int weekDay = (int)d.DayOfWeek;
+                    var weekDay = (int)d.DayOfWeek;
                     if (weekDay == 0)
                         weekDay = 7;
 
@@ -262,7 +291,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 }
                 else if (c == 'w')
                 {
-                    int weekDay = (int)d.DayOfWeek;
+                    var weekDay = (int)d.DayOfWeek;
                     sb.Append(weekDay);
                 }
                 else if (c == 'U')
@@ -282,7 +311,10 @@ namespace SolarSharp.Interpreter.CoreLib
                 }
                 else
                 {
-                    throw new ScriptRuntimeException("bad argument #1 to 'date' (invalid conversion specifier '{0}')", format);
+                    throw new ScriptRuntimeException(
+                        "bad argument #1 to 'date' (invalid conversion specifier '{0}')",
+                        format
+                    );
                 }
             }
 

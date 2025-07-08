@@ -24,6 +24,5 @@ namespace SolarSharp.Interpreter.Execution.Scopes
         {
             Symbols = new string[0];
         }
-
     }
 }

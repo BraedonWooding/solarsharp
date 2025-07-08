@@ -1,9 +1,14 @@
 using System;
 using System.IO;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
 using NUnit.Framework;
+using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Operators;
+using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.X509;
 
 namespace WotCI.Tests
 {
@@ -13,8 +18,8 @@ namespace WotCI.Tests
     /// used for plugin manifest signing and verification.
     /// </summary>
     [TestFixture]
-    [Category("IntegrationTest")]
-    [Category("SecurityTest")]
+    [Category("WotCI.Integration")]
+    [Category("Security.Certificate")]
     public class CertificateTests
     {
         private string _testCertsDir;
@@ -38,79 +43,107 @@ namespace WotCI.Tests
         /// <summary>
         /// Verifies that the root CA certificate generation creates a valid self-signed certificate
         /// with proper subject and issuer fields for the certificate chain.
-        /// </summary>
+        /// </summary>    [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void GenerateRootCA_CreatesValidSelfSignedCertificate()
         {
-                        var rootCa = TestCertificateHelpers.GenerateRootCA();
+            var (rootCa, rootCaKey) = TestCertificateHelpers.GenerateRootCa();
 
-                        rootCa.Should().NotBeNull();
-            rootCa.Subject.Should().Contain("CN=Broken Build Entertainment Root CA");
-            rootCa.Subject.Should().Contain("O=Broken Build Entertainment");
-            rootCa.Issuer.Should().Be(rootCa.Subject); // Self-signed
-            rootCa.HasPrivateKey.Should().BeTrue();
+            rootCa.Should().NotBeNull();
+            rootCa.SubjectDN.ToString().Should().Contain("CN=Broken Build Entertainment Root CA");
+            rootCa.SubjectDN.ToString().Should().Contain("O=Broken Build Entertainment");
+            rootCa.IssuerDN.ToString().Should().Be(rootCa.SubjectDN.ToString()); // Self-signed
+            rootCaKey.Should().NotBeNull();
+
+            // Verify this is a CA certificate by checking basic constraints
+            var basicConstraints = rootCa.GetExtensionValue(X509Extensions.BasicConstraints);
+            basicConstraints.Should().NotBeNull();
         }
 
         /// <summary>
         /// Tests partner certificate generation to ensure proper certificate chain validation.
         /// Partner certificates are signed by the root CA and used for plugin manifest signing.
-        /// </summary>
+        /// </summary>    [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void GeneratePartnerCertificate_CreatesValidSignedCertificate()
         {
-                        var rootCa = TestCertificateHelpers.GenerateRootCA();
+            var (rootCaCert, rootCaKey) = TestCertificateHelpers.GenerateRootCa();
 
-                        var partnerCert = TestCertificateHelpers.GeneratePartnerCertificate(
-                rootCa, "Test Partner", "/plugins/test-partner");
+            var (partnerCert, partnerKey) = TestCertificateHelpers.GeneratePartnerCertificate(
+                rootCaCert,
+                rootCaKey,
+                "Test Partner",
+                "/plugins/test-partner"
+            );
 
-                        partnerCert.Should().NotBeNull();
-            partnerCert.Subject.Should().Contain("CN=/plugins/test-partner");
-            partnerCert.Subject.Should().Contain("O=Test Partner");
-            partnerCert.Issuer.Should().Be(rootCa.Subject);
-            partnerCert.HasPrivateKey.Should().BeTrue();
+            partnerCert.Should().NotBeNull();
+            partnerCert.SubjectDN.ToString().Should().Contain("CN=/plugins/test-partner");
+            partnerCert.SubjectDN.ToString().Should().Contain("O=Test Partner");
+            partnerCert.IssuerDN.ToString().Should().Be(rootCaCert.SubjectDN.ToString());
+            partnerKey.Should().NotBeNull();
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void ExtractSubjectPath_ExtractsPathFromCN()
         {
-                        var rootCa = TestCertificateHelpers.GenerateRootCA();
-            var partnerCert = TestCertificateHelpers.GeneratePartnerCertificate(
-                rootCa, "Deadlock Digital", "/plugins/deadlock-digital");
+            var (rootCaCert, rootCaKey) = TestCertificateHelpers.GenerateRootCa();
+            var (partnerCert, partnerKey) = TestCertificateHelpers.GeneratePartnerCertificate(
+                rootCaCert,
+                rootCaKey,
+                "Deadlock Digital",
+                "/plugins/deadlock-digital"
+            );
 
-                        var path = ExtractSubjectPath(partnerCert);
+            var path = ExtractSubjectPath(partnerCert);
 
-                        path.Should().Be("/plugins/deadlock-digital");
+            path.Should().Be("/plugins/deadlock-digital");
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void PathConstraintValidation_AllowsMatchingPaths()
         {
-                        var rootCa = TestCertificateHelpers.GenerateRootCA();
-            var partnerCert = TestCertificateHelpers.GeneratePartnerCertificate(
-                rootCa, "Test Partner", "/plugins/test-partner");
+            var (rootCaCert, rootCaKey) = TestCertificateHelpers.GenerateRootCa();
+            var (partnerCert, partnerKey) = TestCertificateHelpers.GeneratePartnerCertificate(
+                rootCaCert,
+                rootCaKey,
+                "Test Partner",
+                "/plugins/test-partner"
+            );
             var constraint = ExtractSubjectPath(partnerCert);
 
-                        IsPathAllowed("/plugins/test-partner/script.lua", constraint).Should().BeTrue();
+            IsPathAllowed("/plugins/test-partner/script.lua", constraint).Should().BeTrue();
             IsPathAllowed("/plugins/test-partner/subfolder/file.txt", constraint).Should().BeTrue();
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void PathConstraintValidation_BlocksDifferentPaths()
         {
-                        var rootCa = TestCertificateHelpers.GenerateRootCA();
-            var partnerCert = TestCertificateHelpers.GeneratePartnerCertificate(
-                rootCa, "Test Partner", "/plugins/test-partner");
+            var (rootCaCert, rootCaKey) = TestCertificateHelpers.GenerateRootCa();
+            var (partnerCert, partnerKey) = TestCertificateHelpers.GeneratePartnerCertificate(
+                rootCaCert,
+                rootCaKey,
+                "Test Partner",
+                "/plugins/test-partner"
+            );
             var constraint = ExtractSubjectPath(partnerCert);
 
-                        IsPathAllowed("/plugins/other-partner/script.lua", constraint).Should().BeFalse();
+            IsPathAllowed("/plugins/other-partner/script.lua", constraint).Should().BeFalse();
             IsPathAllowed("/system/file.txt", constraint).Should().BeFalse();
         }
 
-        private string ExtractSubjectPath(X509Certificate2 certificate)
+        private string ExtractSubjectPath(X509Certificate certificate)
         {
-            var subject = certificate.Subject;
+            var subject = certificate.SubjectDN.ToString();
             var parts = subject.Split(',');
-            
+
             foreach (var part in parts)
             {
                 var trimmed = part.Trim();
@@ -123,7 +156,7 @@ namespace WotCI.Tests
                     }
                 }
             }
-            
+
             return null;
         }
 
@@ -142,73 +175,125 @@ namespace WotCI.Tests
 
     internal static class TestCertificateHelpers
     {
-        public static X509Certificate2 GenerateRootCA()
+        public static (
+            X509Certificate certificate,
+            AsymmetricCipherKeyPair keyPair
+        ) GenerateRootCa()
         {
-            var rsa = RSA.Create(4096);
-            var request = new CertificateRequest(
-                "CN=Broken Build Entertainment Root CA, O=Broken Build Entertainment, C=US",
-                rsa,
-                HashAlgorithmName.SHA256,
-                RSASignaturePadding.Pkcs1);
+            // Generate RSA key pair
+            var keyGenerator = new RsaKeyPairGenerator();
+            keyGenerator.Init(new KeyGenerationParameters(new SecureRandom(), 2048));
+            var keyPair = keyGenerator.GenerateKeyPair();
 
-            // Root CA extensions
-            request.CertificateExtensions.Add(
-                new X509BasicConstraintsExtension(true, true, 1, true));
-            
-            request.CertificateExtensions.Add(
-                new X509KeyUsageExtension(
-                    X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign,
-                    true));
+            // Create certificate generator
+            var certGenerator = new X509V3CertificateGenerator();
 
-            request.CertificateExtensions.Add(
-                new X509SubjectKeyIdentifierExtension(request.PublicKey, false));
+            // Set certificate properties
+            var subject = new X509Name(
+                "CN=Broken Build Entertainment Root CA, O=Broken Build Entertainment, C=US"
+            );
+            certGenerator.SetSubjectDN(subject);
+            certGenerator.SetIssuerDN(subject); // Self-signed
+            certGenerator.SetSerialNumber(GenerateSerialNumber());
+            certGenerator.SetNotBefore(DateTime.UtcNow.AddDays(-1));
+            certGenerator.SetNotAfter(DateTime.UtcNow.AddYears(1));
+            certGenerator.SetPublicKey(keyPair.Public);
 
-            var certificate = request.CreateSelfSigned(
-                DateTimeOffset.UtcNow.AddDays(-1),
-                DateTimeOffset.UtcNow.AddYears(10));
+            // Add basic constraints extension (CA=true)
+            certGenerator.AddExtension(
+                X509Extensions.BasicConstraints,
+                true, // critical
+                new BasicConstraints(true) // isCA=true
+            );
 
-            return new X509Certificate2(certificate.Export(X509ContentType.Pfx), "", 
-                X509KeyStorageFlags.Exportable);
+            // Add key usage extension
+            certGenerator.AddExtension(
+                X509Extensions.KeyUsage,
+                false, // not critical
+                new KeyUsage(KeyUsage.KeyCertSign | KeyUsage.CrlSign)
+            );
+
+            // Sign certificate with its own private key (self-signed)
+            var signatureFactory = new Asn1SignatureFactory(
+                "SHA256WithRSA",
+                keyPair.Private,
+                new SecureRandom()
+            );
+            var certificate = certGenerator.Generate(signatureFactory);
+
+            return (certificate, keyPair);
         }
 
-        public static X509Certificate2 GeneratePartnerCertificate(
-            X509Certificate2 rootCa, string partnerName, string pathConstraint)
+        public static (
+            X509Certificate certificate,
+            AsymmetricCipherKeyPair keyPair
+        ) GeneratePartnerCertificate(
+            X509Certificate rootCaCertificate,
+            AsymmetricCipherKeyPair rootCaKeyPair,
+            string partnerName,
+            string pathConstraint
+        )
         {
-            var rsa = RSA.Create(2048);
-            var request = new CertificateRequest(
-                $"CN={pathConstraint}, O={partnerName}, C=US",
-                rsa,
-                HashAlgorithmName.SHA256,
-                RSASignaturePadding.Pkcs1);
+            // Generate RSA key pair for partner certificate
+            var keyGenerator = new RsaKeyPairGenerator();
+            keyGenerator.Init(new KeyGenerationParameters(new SecureRandom(), 2048));
+            var partnerKeyPair = keyGenerator.GenerateKeyPair();
 
-            // Partner certificate extensions
-            request.CertificateExtensions.Add(
-                new X509BasicConstraintsExtension(false, false, 0, true));
-            
-            request.CertificateExtensions.Add(
-                new X509KeyUsageExtension(
-                    X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyAgreement,
-                    true));
+            // Create certificate generator
+            var certGenerator = new X509V3CertificateGenerator();
 
-            request.CertificateExtensions.Add(
-                new X509SubjectKeyIdentifierExtension(request.PublicKey, false));
+            // Set certificate properties
+            var subject = new X509Name($"CN={pathConstraint}, O={partnerName}, C=US");
+            certGenerator.SetSubjectDN(subject);
+            certGenerator.SetIssuerDN(rootCaCertificate.SubjectDN); // Signed by root CA
+            certGenerator.SetSerialNumber(GenerateSerialNumber());
+            certGenerator.SetNotBefore(DateTime.UtcNow.AddDays(-1));
+            certGenerator.SetNotAfter(DateTime.UtcNow.AddYears(5));
+            certGenerator.SetPublicKey(partnerKeyPair.Public);
 
-            var serialNumber = new byte[16];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(serialNumber);
-            }
+            // Add basic constraints extension (CA=false)
+            certGenerator.AddExtension(
+                X509Extensions.BasicConstraints,
+                true, // critical
+                new BasicConstraints(false) // isCA=false
+            );
 
-            var certificate = request.Create(
-                rootCa,
-                DateTimeOffset.UtcNow.AddDays(-1),
-                DateTimeOffset.UtcNow.AddYears(5),
-                serialNumber);
+            // Add key usage extension
+            certGenerator.AddExtension(
+                X509Extensions.KeyUsage,
+                true, // critical
+                new KeyUsage(KeyUsage.DigitalSignature | KeyUsage.KeyAgreement)
+            );
 
-            // Export and reimport to avoid keychain issues on macOS
-            var pfxBytes = certificate.CopyWithPrivateKey(rsa).Export(X509ContentType.Pfx);
-            return new X509Certificate2(pfxBytes, "", 
-                X509KeyStorageFlags.Exportable);
+            // Add subject key identifier
+            certGenerator.AddExtension(
+                X509Extensions.SubjectKeyIdentifier,
+                false, // not critical
+                new SubjectKeyIdentifier(
+                    SubjectPublicKeyInfoFactory
+                        .CreateSubjectPublicKeyInfo(partnerKeyPair.Public)
+                        .GetEncoded()
+                )
+            );
+
+            // Sign certificate with root CA private key
+            var signatureFactory = new Asn1SignatureFactory(
+                "SHA256WithRSA",
+                rootCaKeyPair.Private,
+                new SecureRandom()
+            );
+            var certificate = certGenerator.Generate(signatureFactory);
+
+            return (certificate, partnerKeyPair);
+        }
+
+        private static BigInteger GenerateSerialNumber()
+        {
+            var serialBytes = new byte[16];
+            new SecureRandom().NextBytes(serialBytes);
+            // Ensure positive serial number
+            serialBytes[0] &= 0x7f;
+            return new BigInteger(serialBytes);
         }
     }
 }

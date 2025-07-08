@@ -15,7 +15,11 @@ namespace SolarSharp.Interpreter.Communication
         /// <param name="messageType">The type of message to subscribe to.</param>
         /// <param name="scriptId">The identifier of the script subscribing to the message.</param>
         /// <param name="handler">The function to handle messages of the specified type.</param>
-        void Subscribe(string messageType, string scriptId, Func<ScriptMessage, Task<ScriptMessage>> handler);
+        void Subscribe(
+            string messageType,
+            string scriptId,
+            Func<ScriptMessage, Task<ScriptMessage>> handler
+        );
 
         /// <summary>
         /// Unsubscribes a script from messages of a specific type
@@ -97,7 +101,7 @@ namespace SolarSharp.Interpreter.Communication
         /// <summary>
         /// Represents the data associated with an entity or operation.
         /// </summary>
-        public Dictionary<string, object> Data { get; set; } = new();
+        public Dictionary<string, object> Data { get; set; } = new Dictionary<string, object>();
 
         /// <summary>
         /// The date and time when the message was created or last modified
@@ -128,7 +132,7 @@ namespace SolarSharp.Interpreter.Communication
         /// <summary>
         /// Custom headers associated with the message
         /// </summary>
-        public Dictionary<string, string> Headers { get; set; } = new();
+        public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
 
         /// <summary>
         /// Digital signature used to verify the authenticity and integrity of data
@@ -150,14 +154,17 @@ namespace SolarSharp.Interpreter.Communication
                 ToScript = FromScript,
                 Data = responseData ?? new Dictionary<string, object>(),
                 CorrelationId = Id,
-                Priority = Priority
+                Priority = Priority,
             };
         }
 
         /// <summary>
         /// Indicates whether the current object or element has expired.
         /// </summary>
-        public bool IsExpired => TTL.HasValue && DateTime.UtcNow - Timestamp > TTL.Value;
+        public bool IsExpired
+        {
+            get { return TTL.HasValue && DateTime.UtcNow - Timestamp > TTL.Value; }
+        }
     }
 
     /// <summary>
@@ -184,7 +191,7 @@ namespace SolarSharp.Interpreter.Communication
         /// Represents the highest level of message priority, indicating that the message
         /// requires immediate attention and processing.
         /// </summary>
-        Critical = 3
+        Critical = 3,
     }
 
     /// <summary>
@@ -201,22 +208,22 @@ namespace SolarSharp.Interpreter.Communication
         /// <summary>
         /// Indicates whether the types can be sent based on current configurations or restrictions.
         /// </summary>
-        public HashSet<string> CanSendTypes { get; set; } = new();
+        public HashSet<string> CanSendTypes { get; set; } = new HashSet<string>();
 
         /// <summary>
         /// Defines the set of message types that the script is allowed to receive.
         /// </summary>
-        public HashSet<string> CanReceiveTypes { get; set; } = new();
+        public HashSet<string> CanReceiveTypes { get; set; } = new HashSet<string>();
 
         /// <summary>
         /// Specifies a set of target script identifiers that the script is allowed to communicate with.
         /// </summary>
-        public HashSet<string> AllowedTargets { get; set; } = new();
+        public HashSet<string> AllowedTargets { get; set; } = new HashSet<string>();
 
         /// <summary>
         /// Specifies a set of scripts that are allowed to send messages to the script associated with this communication policy.
         /// </summary>
-        public HashSet<string> AllowedSenders { get; set; } = new();
+        public HashSet<string> AllowedSenders { get; set; } = new HashSet<string>();
 
         /// <summary>
         /// Specifies the maximum allowable size for a message.
@@ -231,7 +238,7 @@ namespace SolarSharp.Interpreter.Communication
         /// <summary>
         /// Indicates whether messages must include a valid signature for validation.
         /// </summary>
-        public bool RequireSignature { get; set; } = false;
+        public bool RequireSignature { get; set; }
 
         /// <summary>
         /// Indicates whether audit logging is enabled for the communication policy.
@@ -254,7 +261,7 @@ namespace SolarSharp.Interpreter.Communication
                 AllowedSenders = new HashSet<string> { "*" },
                 MaxMessageSize = 10 * 1024 * 1024, // 10MB
                 MaxMessagesPerMinute = 1000,
-                RequireSignature = false
+                RequireSignature = false,
             };
         }
 
@@ -271,13 +278,13 @@ namespace SolarSharp.Interpreter.Communication
                 MaxMessageSize = 64 * 1024, // 64KB
                 MaxMessagesPerMinute = 10,
                 RequireSignature = true,
-                EnableAuditLogging = true
+                EnableAuditLogging = true,
             };
         }
     }
 
     /// <summary>
-    /// Provides statistics and metrics for monitoring the performance and behavior
+    /// Provides statistics and metrics for monitoring the performance and behaviour
     /// of a message bus system.
     /// </summary>
     public class MessageBusStats
@@ -300,12 +307,13 @@ namespace SolarSharp.Interpreter.Communication
         /// <summary>
         /// Tracks the count of processed messages categorized by their type.
         /// </summary>
-        public Dictionary<string, int> MessagesByType { get; set; } = new();
+        public Dictionary<string, int> MessagesByType { get; set; } = new Dictionary<string, int>();
 
         /// <summary>
         /// Tracks the count of messages processed per originating script.
         /// </summary>
-        public Dictionary<string, int> MessagesByScript { get; set; } = new();
+        public Dictionary<string, int> MessagesByScript { get; set; } =
+            new Dictionary<string, int>();
 
         /// <summary>
         /// Represents the count of messages that were dropped or not processed.
@@ -363,19 +371,21 @@ namespace SolarSharp.Interpreter.Communication
         /// <summary>
         /// List of warnings associated with the validation result.
         /// </summary>
-        public List<string> Warnings { get; set; } = new();
+        public List<string> Warnings { get; set; } = new List<string>();
 
         /// <summary>
         /// Represents a successful message validation result.
         /// </summary>
         /// <returns>A valid message validation result with no errors or warnings.</returns>
-        public static MessageValidationResult Valid() => new() { IsValid = true };
+        public static MessageValidationResult Valid() =>
+            new MessageValidationResult { IsValid = true };
 
         /// <summary>
         /// Creates an invalid message validation result with the specified error message.
         /// </summary>
         /// <param name="error">The error message indicating why the message is invalid.</param>
         /// <returns>A <see cref="MessageValidationResult"/> instance representing an invalid state with the given error message.</returns>
-        public static MessageValidationResult Invalid(string error) => new() { IsValid = false, ErrorMessage = error };
+        public static MessageValidationResult Invalid(string error) =>
+            new MessageValidationResult { IsValid = false, ErrorMessage = error };
     }
 }

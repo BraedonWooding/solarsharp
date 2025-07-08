@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Reflection;
 using System.Text;
 using SolarSharp.Interpreter.DataTypes;
@@ -23,7 +24,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (obj is DynValue)
                 return (DynValue)obj;
 
-            Type t = obj.GetType();
+            var t = obj.GetType();
 
             if (obj is bool)
                 return DynValue.NewBoolean((bool)obj);
@@ -40,7 +41,6 @@ namespace SolarSharp.Interpreter.Interop.Converters
             return null;
         }
 
-
         /// <summary>
         /// Tries to convert a CLR object to a MoonSharp value, using "simple" logic.
         /// Does NOT throw on failure.
@@ -53,8 +53,9 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (obj is DynValue)
                 return (DynValue)obj;
 
-
-            var converter = Script.GlobalOptions.CustomConverters.GetClrToScriptCustomConversion(obj.GetType());
+            var converter = Script.GlobalOptions.CustomConverters.GetClrToScriptCustomConversion(
+                obj.GetType()
+            );
             if (converter != null)
             {
                 var v = converter(script, obj);
@@ -62,7 +63,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
                     return v;
             }
 
-            Type t = obj.GetType();
+            var t = obj.GetType();
 
             if (obj is bool)
                 return DynValue.NewBoolean((bool)obj);
@@ -84,50 +85,55 @@ namespace SolarSharp.Interpreter.Interop.Converters
 
             if (obj is Delegate)
             {
-                Delegate d = (Delegate)obj;
-
+                var d = (Delegate)obj;
 
 #if NETFX_CORE
-				MethodInfo mi = d.GetMethodInfo();
+                MethodInfo mi = d.GetMethodInfo();
 #else
-                MethodInfo mi = d.Method;
+                var mi = d.Method;
 #endif
 
                 if (CallbackFunction.CheckCallbackSignature(mi, false))
-                    return DynValue.NewCallback((Func<ScriptExecutionContext, CallbackArguments, DynValue>)d);
+                    return DynValue.NewCallback(
+                        (Func<ScriptExecutionContext, CallbackArguments, DynValue>)d
+                    );
             }
 
             return null;
         }
-
 
         /// <summary>
         /// Tries to convert a CLR object to a MoonSharp value, using more in-depth analysis
         /// </summary>
         internal static DynValue ObjectToDynValue(Script script, object obj)
         {
-            DynValue v = TryObjectToSimpleDynValue(script, obj);
+            var v = TryObjectToSimpleDynValue(script, obj);
 
-            if (v != null) return v;
+            if (v != null)
+                return v;
 
             v = UserData.Create(obj);
-            if (v != null) return v;
+            if (v != null)
+                return v;
 
             if (obj is Type)
                 v = UserData.CreateStatic(obj as Type);
 
             // unregistered enums go as integers
             if (obj is Enum)
-                return DynValue.NewNumber(NumericConversions.TypeToDouble(Enum.GetUnderlyingType(obj.GetType()), obj));
+                return DynValue.NewNumber(
+                    NumericConversions.TypeToDouble(Enum.GetUnderlyingType(obj.GetType()), obj)
+                );
 
-            if (v != null) return v;
+            if (v != null)
+                return v;
 
             if (obj is Delegate)
                 return DynValue.NewCallback(CallbackFunction.FromDelegate(script, (Delegate)obj));
 
             if (obj is MethodInfo)
             {
-                MethodInfo mi = (MethodInfo)obj;
+                var mi = (MethodInfo)obj;
 
                 if (mi.IsStatic)
                 {
@@ -135,21 +141,21 @@ namespace SolarSharp.Interpreter.Interop.Converters
                 }
             }
 
-            if (obj is System.Collections.IList)
+            if (obj is IList)
             {
-                Table t = TableConversions.ConvertIListToTable(script, (System.Collections.IList)obj);
+                var t = TableConversions.ConvertIListToTable(script, (IList)obj);
                 return DynValue.NewTable(t);
             }
 
-            if (obj is System.Collections.IDictionary)
+            if (obj is IDictionary)
             {
-                Table t = TableConversions.ConvertIDictionaryToTable(script, (System.Collections.IDictionary)obj);
+                var t = TableConversions.ConvertIDictionaryToTable(script, (IDictionary)obj);
                 return DynValue.NewTable(t);
             }
 
             var enumerator = EnumerationToDynValue(script, obj);
-            if (enumerator != null) return enumerator;
-
+            if (enumerator != null)
+                return enumerator;
 
             throw ScriptRuntimeException.ConvertObjectFailed(obj);
         }
@@ -162,22 +168,19 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// <returns></returns>
         public static DynValue EnumerationToDynValue(Script script, object obj)
         {
-            if (obj is System.Collections.IEnumerable)
+            if (obj is IEnumerable)
             {
-                var enumer = (System.Collections.IEnumerable)obj;
+                var enumer = (IEnumerable)obj;
                 return EnumerableWrapper.ConvertIterator(script, enumer.GetEnumerator());
             }
 
-            if (obj is System.Collections.IEnumerator)
+            if (obj is IEnumerator)
             {
-                var enumer = (System.Collections.IEnumerator)obj;
+                var enumer = (IEnumerator)obj;
                 return EnumerableWrapper.ConvertIterator(script, enumer);
             }
 
             return null;
         }
-
-
-
     }
 }

@@ -50,11 +50,15 @@ namespace SolarSharp.Interpreter.Security.Manifests
             {
                 return Pattern switch
                 {
-                    "manifest" => path.EndsWith("LuaManifest.json", StringComparison.OrdinalIgnoreCase),
+                    "manifest" => path.EndsWith(
+                        "Manifest.json",
+                        StringComparison.OrdinalIgnoreCase
+                    ),
                     "digest_target" => false, // Would need manifest context to determine
                     "executable" => path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase),
-                    "module" => path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase) && path.Contains("modules", StringComparison.OrdinalIgnoreCase),
-                    _ => false
+                    "module" => path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase)
+                        && path.Contains("modules", StringComparison.OrdinalIgnoreCase),
+                    _ => false,
                 };
             }
 
@@ -99,7 +103,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
                 ScopeType.Directory => 200 + CountPathSegments(pattern),
                 ScopeType.Special => 300,
                 ScopeType.Exact => 400 + CountPathSegments(pattern),
-                _ => 0
+                _ => 0,
             };
         }
 
@@ -122,12 +126,12 @@ namespace SolarSharp.Interpreter.Security.Manifests
                 "digest_target" => true,
                 "executable" => true,
                 "module" => true,
-                _ => false
+                _ => false,
             };
         }
 
-
-        public override string ToString() => $"{Pattern} (Type: {Type}, Specificity: {Specificity})";
+        public override string ToString() =>
+            $"{Pattern} (Type: {Type}, Specificity: {Specificity})";
     }
 
     /// <summary>
@@ -158,7 +162,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// <summary>
         /// Exact paths (scripts/main.lua) - most specific
         /// </summary>
-        Exact = 4
+        Exact = 4,
     }
 
     /// <summary>
@@ -167,7 +171,8 @@ namespace SolarSharp.Interpreter.Security.Manifests
     public class ScopeResolver
     {
         private readonly List<ManifestScope> _scopes = new List<ManifestScope>();
-        private readonly Dictionary<string, ManifestScope> _scopeCache = new Dictionary<string, ManifestScope>();
+        private readonly Dictionary<string, ManifestScope> _scopeCache =
+            new Dictionary<string, ManifestScope>();
 
         /// <summary>
         /// Adds a scope to the resolver
@@ -191,9 +196,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// </summary>
         public IEnumerable<ManifestScope> GetMatchingScopes(string path)
         {
-            return _scopes
-                .Where(s => s.Matches(path))
-                .OrderBy(s => s.Specificity);
+            return _scopes.Where(s => s.Matches(path)).OrderBy(s => s.Specificity);
         }
 
         /// <summary>
@@ -246,7 +249,9 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// <summary>
         /// Groups scopes by specificity level
         /// </summary>
-        public static IEnumerable<IGrouping<ScopeType, ManifestScope>> GroupBySpecificity(this IEnumerable<ManifestScope> scopes)
+        public static IEnumerable<IGrouping<ScopeType, ManifestScope>> GroupBySpecificity(
+            this IEnumerable<ManifestScope> scopes
+        )
         {
             return scopes.GroupBy(s => s.Type).OrderBy(g => g.Key);
         }

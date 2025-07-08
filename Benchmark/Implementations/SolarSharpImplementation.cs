@@ -1,4 +1,5 @@
 ﻿using SolarSharp.Interpreter;
+using SolarSharp.Interpreter.Security;
 
 namespace Benchmark.Implementations
 {
@@ -8,8 +9,8 @@ namespace Benchmark.Implementations
 
         public SolarSharpImplementation()
         {
-            Script.WarmUp();
-            script = new Script();
+            Script.WarmUp(Examples.DesktopBasePolicySet);
+            script = new Script(Examples.DesktopBasePolicySet);
         }
 
         public override object Run(string file)

@@ -6,12 +6,13 @@ using NUnit.Framework;
 using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     [NonParallelizable] // Uses global UserData registration
-    [Category("IntegrationTest")]
+    [Category("VM.Integration")]
     public class UserDataMethodsTests
     {
         public class SomeClass_NoRegister : IComparable
@@ -21,7 +22,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 throw new NotImplementedException();
             }
 
-            public string ManipulateString(string input, ref string tobeconcat, out string lowercase)
+            public string ManipulateString(
+                string input,
+                ref string tobeconcat,
+                out string lowercase
+            )
             {
                 tobeconcat = input + tobeconcat;
                 lowercase = input.ToLower();
@@ -30,7 +35,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public string ConcatNums(int p1, int p2)
             {
-                return string.Format("{0}%{1}", p1, p2);
+                return $"{p1}%{p2}";
             }
 
             public int SomeMethodWithLongName(int i)
@@ -40,7 +45,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public StringBuilder SetComplexRecursive(List<int[]> intList)
             {
-                StringBuilder sb = new();
+                var sb = new StringBuilder();
 
                 foreach (var arr in intList)
                 {
@@ -51,10 +56,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return sb;
             }
 
-            public StringBuilder SetComplexTypes(List<string> strlist, IList<int> intlist, Dictionary<string, int> map,
-                string[] strarray, int[] intarray)
+            public StringBuilder SetComplexTypes(
+                List<string> strlist,
+                IList<int> intlist,
+                Dictionary<string, int> map,
+                string[] strarray,
+                int[] intarray
+            )
             {
-                StringBuilder sb = new();
+                var sb = new StringBuilder();
 
                 sb.Append(string.Join(",", strlist.ToArray()));
 
@@ -64,11 +74,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 sb.Append("|");
 
-                sb.Append(string.Join(",", map.Keys.OrderBy(x => x).Select(i => i.ToString()).ToArray()));
+                sb.Append(
+                    string.Join(",", map.Keys.OrderBy(x => x).Select(i => i.ToString()).ToArray())
+                );
 
                 sb.Append("|");
 
-                sb.Append(string.Join(",", map.Values.OrderBy(x => x).Select(i => i.ToString()).ToArray()));
+                sb.Append(
+                    string.Join(",", map.Values.OrderBy(x => x).Select(i => i.ToString()).ToArray())
+                );
 
                 sb.Append("|");
 
@@ -81,10 +95,18 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return sb;
             }
 
-
-            public StringBuilder ConcatS(int p1, string p2, IComparable p3, bool p4, List<object> p5,
+            public StringBuilder ConcatS(
+                int p1,
+                string p2,
+                IComparable p3,
+                bool p4,
+                List<object> p5,
                 IEnumerable<object> p6,
-                StringBuilder p7, Dictionary<object, object> p8, SomeClass_NoRegister p9, int p10 = 1994)
+                StringBuilder p7,
+                Dictionary<object, object> p8,
+                SomeClass_NoRegister p9,
+                int p10 = 1994
+            )
             {
                 p7.Append(p1);
                 p7.Append(p2);
@@ -92,13 +114,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 p7.Append(p4);
 
                 p7.Append("|");
-                foreach (var o in p5) p7.Append(o);
+                foreach (var o in p5)
+                    p7.Append(o);
                 p7.Append("|");
-                foreach (var o in p6) p7.Append(o);
+                foreach (var o in p6)
+                    p7.Append(o);
                 p7.Append("|");
-                foreach (var o in p8.Keys.OrderBy(x => x.ToString())) p7.Append(o);
+                foreach (var o in p8.Keys.OrderBy(x => x.ToString()))
+                    p7.Append(o);
                 p7.Append("|");
-                foreach (var o in p8.Values.OrderBy(x => x.ToString())) p7.Append(o);
+                foreach (var o in p8.Values.OrderBy(x => x.ToString()))
+                    p7.Append(o);
                 p7.Append("|");
 
                 p7.Append(p9);
@@ -112,9 +138,19 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return string.Format(s, args);
             }
 
-            public StringBuilder ConcatI(Script s, int p1, string p2, IComparable p3, bool p4, List<object> p5,
+            public StringBuilder ConcatI(
+                Script s,
+                int p1,
+                string p2,
+                IComparable p3,
+                bool p4,
+                List<object> p5,
                 IEnumerable<object> p6,
-                StringBuilder p7, Dictionary<object, object> p8, SomeClass_NoRegister p9, int p10 = 1912)
+                StringBuilder p7,
+                Dictionary<object, object> p8,
+                SomeClass_NoRegister p9,
+                int p10 = 1912
+            )
             {
                 Assert.That(s, Is.Not.Null);
                 return ConcatS(p1, p2, p3, p4, p5, p6, p7, p8, this, p10);
@@ -127,13 +163,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public static List<int> MkList(int from, int to)
             {
-                List<int> l = new();
+                var l = new List<int>();
                 for (var i = from; i <= to; i++)
                     l.Add(i);
                 return l;
             }
         }
-
 
         public class SomeClass : IComparable
         {
@@ -142,7 +177,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 throw new NotImplementedException();
             }
 
-            public string ManipulateString(string input, ref string tobeconcat, out string lowercase)
+            public string ManipulateString(
+                string input,
+                ref string tobeconcat,
+                out string lowercase
+            )
             {
                 tobeconcat = input + tobeconcat;
                 lowercase = input.ToLower();
@@ -151,7 +190,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public string ConcatNums(int p1, int p2)
             {
-                return string.Format("{0}%{1}", p1, p2);
+                return $"{p1}%{p2}";
             }
 
             public int SomeMethodWithLongName(int i)
@@ -161,7 +200,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public static StringBuilder SetComplexRecursive(List<int[]> intList)
             {
-                StringBuilder sb = new();
+                var sb = new StringBuilder();
 
                 foreach (var arr in intList)
                 {
@@ -172,11 +211,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return sb;
             }
 
-            public static StringBuilder SetComplexTypes(List<string> strlist, IList<int> intlist,
+            public static StringBuilder SetComplexTypes(
+                List<string> strlist,
+                IList<int> intlist,
                 Dictionary<string, int> map,
-                string[] strarray, int[] intarray)
+                string[] strarray,
+                int[] intarray
+            )
             {
-                StringBuilder sb = new();
+                var sb = new StringBuilder();
 
                 sb.Append(string.Join(",", strlist.ToArray()));
 
@@ -190,7 +233,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 sb.Append("|");
 
-                sb.Append(string.Join(",", map.Values.OrderBy(x => x).Select(i => i.ToString()).ToArray()));
+                sb.Append(
+                    string.Join(",", map.Values.OrderBy(x => x).Select(i => i.ToString()).ToArray())
+                );
 
                 sb.Append("|");
 
@@ -203,10 +248,18 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return sb;
             }
 
-
-            public static StringBuilder ConcatS(int p1, string p2, IComparable p3, bool p4, List<object> p5,
+            public static StringBuilder ConcatS(
+                int p1,
+                string p2,
+                IComparable p3,
+                bool p4,
+                List<object> p5,
                 IEnumerable<object> p6,
-                StringBuilder p7, Dictionary<object, object> p8, SomeClass p9, int p10 = 1994)
+                StringBuilder p7,
+                Dictionary<object, object> p8,
+                SomeClass p9,
+                int p10 = 1994
+            )
             {
                 // eheh1ciao!SOMECLASS!True|asdqwezxc|asdqwezxc|123xy|asdqweXYzxc|!SOMECLASS!1912
                 p7.Append(p1);
@@ -215,13 +268,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 p7.Append(p4);
 
                 p7.Append("|");
-                foreach (var o in p5) p7.Append(o);
+                foreach (var o in p5)
+                    p7.Append(o);
                 p7.Append("|");
-                foreach (var o in p6) p7.Append(o);
+                foreach (var o in p6)
+                    p7.Append(o);
                 p7.Append("|");
-                foreach (var o in p8.Keys.OrderBy(x => x.ToString().ToUpperInvariant())) p7.Append(o);
+                foreach (var o in p8.Keys.OrderBy(x => x.ToString().ToUpperInvariant()))
+                    p7.Append(o);
                 p7.Append("|");
-                foreach (var o in p8.Values.OrderBy(x => x.ToString().ToUpperInvariant())) p7.Append(o);
+                foreach (var o in p8.Values.OrderBy(x => x.ToString().ToUpperInvariant()))
+                    p7.Append(o);
                 p7.Append("|");
 
                 p7.Append(p9);
@@ -235,9 +292,19 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return string.Format(s, args);
             }
 
-            public StringBuilder ConcatI(Script s, int p1, string p2, IComparable p3, bool p4, List<object> p5,
+            public StringBuilder ConcatI(
+                Script s,
+                int p1,
+                string p2,
+                IComparable p3,
+                bool p4,
+                List<object> p5,
                 IEnumerable<object> p6,
-                StringBuilder p7, Dictionary<object, object> p8, SomeClass p9, int p10 = 1912)
+                StringBuilder p7,
+                Dictionary<object, object> p8,
+                SomeClass p9,
+                int p10 = 1912
+            )
             {
                 Assert.That(s, Is.Not.Null);
                 return ConcatS(p1, p2, p3, p4, p5, p6, p7, p8, this, p10);
@@ -250,7 +317,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public List<int> MkList(int from, int to)
             {
-                List<int> l = new();
+                var l = new List<int>();
                 for (var i = from; i <= to; i++)
                     l.Add(i);
                 return l;
@@ -267,7 +334,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             string Test2();
         }
 
-
         public class SomeOtherClass
         {
             public string Test1()
@@ -281,23 +347,32 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
         }
 
-
-        public class SomeOtherClassCustomDescriptor
-        {
-        }
+        public class SomeOtherClassCustomDescriptor { }
 
         public class CustomDescriptor : IUserDataDescriptor
         {
-            public string Name => "ciao";
+            public string Name
+            {
+                get { return "ciao"; }
+            }
 
-            public Type Type => typeof(SomeOtherClassCustomDescriptor);
+            public Type Type
+            {
+                get { return typeof(SomeOtherClassCustomDescriptor); }
+            }
 
             public DynValue Index(Script script, object obj, DynValue index, bool dummy)
             {
                 return DynValue.NewNumber(index.Number * 4);
             }
 
-            public bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool dummy)
+            public bool SetIndex(
+                Script script,
+                object obj,
+                DynValue index,
+                DynValue value,
+                bool dummy
+            )
             {
                 throw new NotImplementedException();
             }
@@ -317,7 +392,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return Framework.Do.IsInstanceOfType(type, obj);
             }
         }
-
 
         public class SelfDescribingClass : IUserDataType
         {
@@ -354,12 +428,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             UserData.UnregisterType<SomeClass>();
 
-            var script = @"    
+            var script =
+                @"    
 			return myobj.format('{0}.{1}@{2}:{3}', 1, 2, 'ciao', true);";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -375,14 +450,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
-
         private static void Test_ConcatMethodStaticComplexCustomConv(InteropAccessMode opt)
         {
             try
             {
                 UserData.UnregisterType<SomeClass>();
 
-                var script = @"    
+                var script =
+                    @"    
 				strlist = { 'ciao', 'hello', 'aloha' };
 				intlist = {  };
 				dictry = { ciao = 39, hello = 78, aloha = 128 };
@@ -391,28 +466,36 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return x;";
 
-                Script S = new();
+                var S = new Script(Examples.DesktopBasePolicySet);
 
-                SomeClass obj = new();
+                var obj = new SomeClass();
 
                 UserData.UnregisterType<SomeClass>();
                 UserData.RegisterType<SomeClass>(opt);
 
                 Script.GlobalOptions.CustomConverters.Clear();
 
-                Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table,
+                Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(
+                    DataType.Table,
                     typeof(List<string>),
-                    v => null);
+                    v => null
+                );
 
-                Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(IList<int>),
-                    v => new List<int> { 42, 77, 125, 13 });
+                Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(
+                    DataType.Table,
+                    typeof(IList<int>),
+                    v => new List<int> { 42, 77, 125, 13 }
+                );
 
-                Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(int[]),
-                    v => new[] { 43, 78, 126, 14 });
+                Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(
+                    DataType.Table,
+                    typeof(int[]),
+                    v => new[] { 43, 78, 126, 14 }
+                );
 
-                Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<StringBuilder>((_s, v) =>
-                    DynValue.NewString(v.ToString().ToUpper()));
-
+                Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<StringBuilder>(
+                    (_s, v) => DynValue.NewString(v.ToString().ToUpper())
+                );
 
                 S.Globals.Set("static", UserData.CreateStatic<SomeClass>());
                 S.Globals.Set("myobj", UserData.Create(obj));
@@ -422,9 +505,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.Multiple(() =>
                 {
                     Assert.That(res.Type, Is.EqualTo(DataType.String));
-                    Assert.That(res.String,
+                    Assert.That(
+                        res.String,
                         Is.EqualTo(
-                            "CIAO,HELLO,ALOHA|42,77,125,13|ALOHA,CIAO,HELLO|39,78,128|CIAO,HELLO,ALOHA|43,78,126,14"));
+                            "CIAO,HELLO,ALOHA|42,77,125,13|ALOHA,CIAO,HELLO|39,78,128|CIAO,HELLO,ALOHA|43,78,126,14"
+                        )
+                    );
                 });
             }
             finally
@@ -433,12 +519,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
         }
 
-
         private static void Test_ConcatMethodStaticComplex(InteropAccessMode opt)
         {
             UserData.UnregisterType<SomeClass>();
 
-            var script = @"    
+            var script =
+                @"    
 				strlist = { 'ciao', 'hello', 'aloha' };
 				intlist = { 42, 77, 125, 13 };
 				dictry = { ciao = 39, hello = 78, aloha = 128 };
@@ -447,9 +533,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return x;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -462,9 +548,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.String));
-                Assert.That(res.String,
+                Assert.That(
+                    res.String,
                     Is.EqualTo(
-                        "ciao,hello,aloha|42,77,125,13|aloha,ciao,hello|39,78,128|ciao,hello,aloha|42,77,125,13"));
+                        "ciao,hello,aloha|42,77,125,13|aloha,ciao,hello|39,78,128|ciao,hello,aloha|42,77,125,13"
+                    )
+                );
             });
         }
 
@@ -472,16 +561,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             UserData.UnregisterType<SomeClass>();
 
-            var script = @"    
+            var script =
+                @"    
 				array = { { 1, 2, 3 }, { 11, 35, 77 }, { 16, 42, 64 }, {99, 76, 17 } };				
 			
 				x = static.SetComplexRecursive(array);
 
 				return x;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -498,18 +588,18 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
-
         private static void Test_RefOutParams(InteropAccessMode opt)
         {
             UserData.UnregisterType<SomeClass>();
 
-            var script = @"    
+            var script =
+                @"    
 				x, y, z = myobj:manipulateString('CiAo', 'hello');
 				return x, y, z;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -535,19 +625,19 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
-
         private static void Test_ConcatMethodStatic(InteropAccessMode opt)
         {
             UserData.UnregisterType<SomeClass>();
 
-            var script = @"    
+            var script =
+                @"    
 				t = { 'asd', 'qwe', 'zxc', ['x'] = 'X', ['y'] = 'Y' };
 				x = static.ConcatS(1, 'ciao', myobj, true, t, t, 'eheh', t, myobj);
 				return x;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -560,8 +650,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.String));
-                Assert.That(res.String,
-                    Is.EqualTo("eheh1ciao!SOMECLASS!True|asdqwezxc|asdqwezxc|123xy|asdqweXYzxc|!SOMECLASS!1994"));
+                Assert.That(
+                    res.String,
+                    Is.EqualTo(
+                        "eheh1ciao!SOMECLASS!True|asdqwezxc|asdqwezxc|123xy|asdqweXYzxc|!SOMECLASS!1994"
+                    )
+                );
             });
         }
 
@@ -569,14 +663,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             UserData.UnregisterType<SomeClass>();
 
-            var script = @"    
+            var script =
+                @"    
 				t = { 'asd', 'qwe', 'zxc', ['x'] = 'X', ['y'] = 'Y' };
 				x = myobj.ConcatI(1, 'ciao', myobj, true, t, t, 'eheh', t, myobj);
 				return x;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -588,8 +683,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.String));
-                Assert.That(res.String,
-                    Is.EqualTo("eheh1ciao!SOMECLASS!True|asdqwezxc|asdqwezxc|123xy|asdqweXYzxc|!SOMECLASS!1912"));
+                Assert.That(
+                    res.String,
+                    Is.EqualTo(
+                        "eheh1ciao!SOMECLASS!True|asdqwezxc|asdqwezxc|123xy|asdqweXYzxc|!SOMECLASS!1912"
+                    )
+                );
             });
         }
 
@@ -597,14 +696,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             UserData.UnregisterType<SomeClass>();
 
-            var script = @"    
+            var script =
+                @"    
 				t = { 'asd', 'qwe', 'zxc', ['x'] = 'X', ['y'] = 'Y' };
 				x = myobj:ConcatI(1, 'ciao', myobj, true, t, t, 'eheh', t, myobj);
 				return x;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -616,8 +716,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.String));
-                Assert.That(res.String,
-                    Is.EqualTo("eheh1ciao!SOMECLASS!True|asdqwezxc|asdqwezxc|123xy|asdqweXYzxc|!SOMECLASS!1912"));
+                Assert.That(
+                    res.String,
+                    Is.EqualTo(
+                        "eheh1ciao!SOMECLASS!True|asdqwezxc|asdqwezxc|123xy|asdqweXYzxc|!SOMECLASS!1912"
+                    )
+                );
             });
         }
 
@@ -625,15 +729,16 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             UserData.UnregisterType<SomeClass>();
 
-            var script = @"    
+            var script =
+                @"    
 				myobj = mytype.__new();
 				t = { 'asd', 'qwe', 'zxc', ['x'] = 'X', ['y'] = 'Y' };
 				x = myobj:ConcatI(1, 'ciao', myobj, true, t, t, 'eheh', t, myobj);
 				return x;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -645,24 +750,28 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.String));
-                Assert.That(res.String,
-                    Is.EqualTo("eheh1ciao!SOMECLASS!True|asdqwezxc|asdqwezxc|123xy|asdqweXYzxc|!SOMECLASS!1912"));
+                Assert.That(
+                    res.String,
+                    Is.EqualTo(
+                        "eheh1ciao!SOMECLASS!True|asdqwezxc|asdqwezxc|123xy|asdqweXYzxc|!SOMECLASS!1912"
+                    )
+                );
             });
         }
-
 
         private static void Test_ConcatMethodStaticSimplifiedSyntax(InteropAccessMode opt)
         {
             UserData.UnregisterType<SomeClass>();
 
-            var script = @"    
+            var script =
+                @"    
 				t = { 'asd', 'qwe', 'zxc', ['x'] = 'X', ['y'] = 'Y' };
 				x = static.ConcatS(1, 'ciao', myobj, true, t, t, 'eheh', t, myobj);
 				return x;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -675,8 +784,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.String));
-                Assert.That(res.String,
-                    Is.EqualTo("eheh1ciao!SOMECLASS!True|asdqwezxc|asdqwezxc|123xy|asdqweXYzxc|!SOMECLASS!1994"));
+                Assert.That(
+                    res.String,
+                    Is.EqualTo(
+                        "eheh1ciao!SOMECLASS!True|asdqwezxc|asdqwezxc|123xy|asdqweXYzxc|!SOMECLASS!1994"
+                    )
+                );
             });
         }
 
@@ -684,15 +797,20 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             UserData.UnregisterType<SomeClass>();
 
-            var script = @"    
+            var script =
+                @"    
 				x = concat(1, 2);
 				return x;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
-            S.Globals["concat"] = CallbackFunction.FromDelegate(S, (Func<int, int, string>)obj.ConcatNums, opt);
+            S.Globals["concat"] = CallbackFunction.FromDelegate(
+                S,
+                (Func<int, int, string>)obj.ConcatNums,
+                opt
+            );
 
             var res = S.DoString(script);
 
@@ -707,7 +825,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             UserData.UnregisterType<SomeClass>();
 
-            var script = @"    
+            var script =
+                @"    
 				x = mklist(1, 4);
 				sum = 0;				
 
@@ -717,12 +836,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return sum;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass_NoRegister obj = new();
+            var obj = new SomeClass_NoRegister();
 
-            S.Globals["mklist"] =
-                CallbackFunction.FromDelegate(S, (Func<int, int, List<int>>)SomeClass_NoRegister.MkList, opt);
+            S.Globals["mklist"] = CallbackFunction.FromDelegate(
+                S,
+                (Func<int, int, List<int>>)SomeClass_NoRegister.MkList,
+                opt
+            );
 
             var res = S.DoString(script);
 
@@ -732,7 +854,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(res.Number, Is.EqualTo(10));
             });
         }
-
 
         [Test]
         public void Interop_ConcatMethod_None()
@@ -769,7 +890,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             Test_ConcatMethodSemicolon(InteropAccessMode.Preoptimized);
         }
-
 
         [Test]
         public void Interop_ConstructorAndConcatMethodSemicolon_None()
@@ -861,7 +981,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Test_ConcatMethodStatic(InteropAccessMode.Preoptimized);
         }
 
-
         [Test]
         public void Interop_ConcatMethodStaticSimplifiedSyntax_None()
         {
@@ -897,7 +1016,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             Test_VarArgs(InteropAccessMode.Preoptimized);
         }
-
 
         [Test]
         public void Interop_DelegateMethod_None()
@@ -964,9 +1082,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 UserData.RegistrationPolicy = InteropRegistrationPolicy.Automatic;
 
-                Script S = new();
+                var S = new Script(Examples.DesktopBasePolicySet);
 
-                SomeOtherClass obj = new();
+                var obj = new SomeOtherClass();
 
                 S.Globals.Set("myobj", UserData.Create(obj));
 
@@ -989,14 +1107,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             var script = @"return myobj:Test1() .. myobj:Test2()";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
             UserData.UnregisterType<Interface1>();
             UserData.UnregisterType<Interface2>();
             UserData.RegisterType<Interface1>();
             UserData.RegisterType<Interface2>();
 
-            SomeOtherClassWithDualInterfaces obj = new();
+            var obj = new SomeOtherClassWithDualInterfaces();
 
             S.Globals.Set("myobj", UserData.Create(obj));
 
@@ -1014,7 +1132,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             UserData.UnregisterType<SomeClass>();
 
-            var script = @"    
+            var script =
+                @"    
 				a = myobj:SomeMethodWithLongName(1);
 				b = myobj:someMethodWithLongName(2);
 				c = myobj:some_method_with_long_name(3);
@@ -1023,9 +1142,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return a + b + c + d;
 			";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>();
@@ -1046,7 +1165,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             UserData.UnregisterType<SelfDescribingClass>();
 
-            var script = @"    
+            var script =
+                @"    
 				a = myobj[1];
 				b = myobj[2];
 				c = myobj[3];
@@ -1054,9 +1174,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return a + b + c;
 			";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SelfDescribingClass obj = new();
+            var obj = new SelfDescribingClass();
 
             UserData.UnregisterType<SelfDescribingClass>();
             UserData.RegisterType<SelfDescribingClass>();
@@ -1077,7 +1197,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             UserData.UnregisterType<SomeOtherClassCustomDescriptor>();
 
-            var script = @"    
+            var script =
+                @"    
 				a = myobj[1];
 				b = myobj[2];
 				c = myobj[3];
@@ -1085,9 +1206,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return a + b + c;
 			";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeOtherClassCustomDescriptor obj = new();
+            var obj = new SomeOtherClassCustomDescriptor();
 
             UserData.RegisterType<SomeOtherClassCustomDescriptor>(new CustomDescriptor());
 
@@ -1102,7 +1223,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
-
         [Test]
         public void Interop_StaticInstanceAccessRaisesError()
         {
@@ -1110,14 +1230,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             {
                 UserData.UnregisterType<SomeClass>();
 
-                var script = @"    
+                var script =
+                    @"    
 				t = { 'asd', 'qwe', 'zxc', ['x'] = 'X', ['y'] = 'Y' };
 				x = mystatic.ConcatI(1, 'ciao', myobj, true, t, t, 'eheh', t, myobj);
 				return x;";
 
-                Script S = new();
+                var S = new Script(Examples.DesktopBasePolicySet);
 
-                SomeClass obj = new();
+                var obj = new SomeClass();
 
                 UserData.UnregisterType<SomeClass>();
                 UserData.RegisterType<SomeClass>();

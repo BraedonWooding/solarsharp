@@ -1,6 +1,16 @@
 using System.CommandLine;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
+using System.IO.Abstractions;
+using System.Text;
+using Org.BouncyCastle.Asn1.Pkcs;
+using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Operators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.X509;
+using Org.BouncyCastle.X509.Extension;
 
 namespace SolarSharp.CertUtil.Commands
 {
@@ -14,6 +24,8 @@ namespace SolarSharp.CertUtil.Commands
     /// </remarks>
     public static class GenerateCaCommand
     {
+        private static readonly IFileSystem _fileSystem = new FileSystem();
+
         /// <summary>
         /// Creates a command to generate a Certificate Authority (CA) certificate.
         /// </summary>
@@ -24,119 +36,168 @@ namespace SolarSharp.CertUtil.Commands
         {
             var nameOption = new Option<string>(
                 "--name",
-                description: "Name for the CA certificate")
-            { IsRequired = true };
+                description: "Name for the CA certificate"
+            )
+            {
+                IsRequired = true,
+            };
 
             var outputOption = new Option<DirectoryInfo>(
                 "--output",
                 description: "Output directory for certificates",
-                getDefaultValue: static () => new DirectoryInfo(Directory.GetCurrentDirectory()));
+                getDefaultValue: () =>
+                    new DirectoryInfo(_fileSystem.Directory.GetCurrentDirectory())
+            );
 
             var command = new Command("generate-ca", "Generate a root CA certificate")
             {
                 nameOption,
-                outputOption
+                outputOption,
             };
 
-            command.SetHandler(static (name, outputDir) =>
-            {
-                try
+            command.SetHandler(
+                (name, outputDir) =>
                 {
-                    Console.WriteLine($"Generating root CA: {name}");
-                    
-                    if (!outputDir.Exists)
-                        outputDir.Create();
-                    
-                    var rootCa = GenerateRootCa(name);
-                    var certPath = Path.Combine(outputDir.FullName, "root-ca.crt");
-                    var keyPath = Path.Combine(outputDir.FullName, "root-ca.key");
-                    
-                    SaveCertificate(certPath, rootCa);
-                    SavePrivateKey(keyPath, rootCa);
-                    
-                    Console.WriteLine($"✓ Root CA certificate saved to: {certPath}");
-                    Console.WriteLine($"✓ Root CA private key saved to: {keyPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error generating CA: {ex.Message}");
-                    Environment.Exit(1);
-                }
-            }, nameOption, outputOption);
+                    try
+                    {
+                        Console.WriteLine($"Generating root CA: {name}");
+
+                        if (!_fileSystem.Directory.Exists(outputDir.FullName))
+                            _fileSystem.Directory.CreateDirectory(outputDir.FullName);
+
+                        var (rootCa, privateKey) = GenerateRootCa(name);
+                        var certPath = _fileSystem.Path.Combine(outputDir.FullName, "root-ca.crt");
+                        var keyPath = _fileSystem.Path.Combine(outputDir.FullName, "root-ca.key");
+
+                        SaveCertificate(certPath, rootCa);
+                        SavePrivateKey(keyPath, privateKey);
+
+                        Console.WriteLine($"✓ Root CA certificate saved to: {certPath}");
+                        Console.WriteLine($"✓ Root CA private key saved to: {keyPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error generating CA: {ex.Message}");
+                        Environment.Exit(1);
+                    }
+                },
+                nameOption,
+                outputOption
+            );
 
             return command;
         }
 
         /// <summary>
-        /// Generates a self-signed root Certificate Authority (CA) certificate.
+        /// Generates a self-signed root Certificate Authority (CA) certificate using BouncyCastle.
         /// </summary>
         /// <param name="caName">The name of the CA certificate to be generated. This name will appear in the certificate's distinguished name.</param>
         /// <returns>
-        /// A generated <see cref="X509Certificate2"/> object representing the root CA certificate.
+        /// A tuple containing the generated BouncyCastle X509Certificate and its private key.
         /// </returns>
-        private static X509Certificate2 GenerateRootCa(string caName)
+        private static (X509Certificate cert, AsymmetricKeyParameter privateKey) GenerateRootCa(
+            string caName
+        )
         {
-            var rsa = RSA.Create(4096);
-            var request = new CertificateRequest(
-                $"CN={caName}, O={caName}, C=US",
-                rsa,
-                HashAlgorithmName.SHA256,
-                RSASignaturePadding.Pkcs1);
+            // Generate RSA key pair using BouncyCastle
+            var random = new SecureRandom();
+            var rsaGenerator = new RsaKeyPairGenerator();
+            rsaGenerator.Init(new KeyGenerationParameters(random, 4096));
+            var keyPair = rsaGenerator.GenerateKeyPair();
 
-            // Root CA extensions
-            request.CertificateExtensions.Add(
-                new X509BasicConstraintsExtension(true, true, 1, true));
-            
-            request.CertificateExtensions.Add(
-                new X509KeyUsageExtension(
-                    X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign,
-                    true));
+            // Create certificate generator
+            var certGenerator = new X509V3CertificateGenerator();
 
-            request.CertificateExtensions.Add(
-                new X509SubjectKeyIdentifierExtension(request.PublicKey, false));
+            // Set certificate properties
+            var subject = new X509Name($"CN={caName}, O={caName}, C=US");
+            certGenerator.SetSerialNumber(BigInteger.ValueOf(DateTime.UtcNow.Ticks));
+            certGenerator.SetIssuerDN(subject); // Self-signed, so issuer = subject
+            certGenerator.SetSubjectDN(subject);
+            certGenerator.SetNotBefore(DateTime.UtcNow.AddDays(-1));
+            certGenerator.SetNotAfter(DateTime.UtcNow.AddYears(10));
+            certGenerator.SetPublicKey(keyPair.Public);
 
-            var certificate = request.CreateSelfSigned(
-                DateTimeOffset.UtcNow.AddDays(-1),
-                DateTimeOffset.UtcNow.AddYears(10));
+            // Add Root CA extensions
+            certGenerator.AddExtension(
+                X509Extensions.BasicConstraints,
+                true,
+                new BasicConstraints(true) // CA certificate with no path length constraint
+            );
 
-            return new X509Certificate2(certificate.Export(X509ContentType.Pfx), "", 
-                X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
+            certGenerator.AddExtension(
+                X509Extensions.KeyUsage,
+                true,
+                new KeyUsage(KeyUsage.KeyCertSign | KeyUsage.CrlSign)
+            );
+
+            certGenerator.AddExtension(
+                X509Extensions.SubjectKeyIdentifier,
+                false,
+                X509ExtensionUtilities.CreateSubjectKeyIdentifier(keyPair.Public)
+            );
+
+            // Sign the certificate (self-signed)
+            var signatureFactory = new Asn1SignatureFactory(
+                "SHA256withRSA",
+                keyPair.Private,
+                random
+            );
+            var certificate = certGenerator.Generate(signatureFactory);
+
+            return (certificate, keyPair.Private);
         }
 
         /// <summary>
-        /// Saves the specified X.509 certificate to a file in PEM format.
+        /// Saves a BouncyCastle X.509 certificate to a file in PEM format.
         /// </summary>
         /// <param name="path">The file path where the certificate will be saved.</param>
-        /// <param name="cert">The X.509 certificate to save.</param>
-        private static void SaveCertificate(string path, X509Certificate2 cert)
+        /// <param name="cert">The BouncyCastle X509Certificate to save.</param>
+        private static void SaveCertificate(string path, X509Certificate cert)
         {
-            var pemBuilder = new System.Text.StringBuilder();
+            var pemBuilder = new StringBuilder();
             pemBuilder.AppendLine("-----BEGIN CERTIFICATE-----");
-            pemBuilder.AppendLine(Convert.ToBase64String(cert.RawData, Base64FormattingOptions.InsertLineBreaks));
+            pemBuilder.AppendLine(
+                Convert.ToBase64String(cert.GetEncoded(), Base64FormattingOptions.InsertLineBreaks)
+            );
             pemBuilder.AppendLine("-----END CERTIFICATE-----");
-            File.WriteAllText(path, pemBuilder.ToString());
+            _fileSystem.File.WriteAllText(path, pemBuilder.ToString());
         }
 
         /// <summary>
-        /// Saves the private key of a given X509Certificate to a specified file path in PEM format.
+        /// Saves a BouncyCastle RSA private key to a file in PEM format.
         /// </summary>
         /// <param name="path">The file path where the private key will be saved.</param>
-        /// <param name="cert">The X509Certificate2 object containing the private key to save.</param>
-        /// <exception cref="InvalidOperationException">Thrown if the certificate does not contain an RSA private key.</exception>
-        private static void SavePrivateKey(string path, X509Certificate2 cert)
+        /// <param name="privateKey">The BouncyCastle private key to save.</param>
+        /// <exception cref="InvalidOperationException">Thrown if the key is not an RSA private key.</exception>
+        private static void SavePrivateKey(string path, AsymmetricKeyParameter privateKey)
         {
-            var rsa = cert.GetRSAPrivateKey();
-            if (rsa == null)
+            if (privateKey is not RsaPrivateCrtKeyParameters rsaKey)
             {
-                throw new InvalidOperationException("Certificate does not contain an RSA private key");
+                throw new InvalidOperationException("Private key is not an RSA key");
             }
-            
-            // Export as PEM
-            var pemBuilder = new System.Text.StringBuilder();
+
+            // Convert BouncyCastle RSA key to PKCS#1 format
+            var rsaPrivateKeyStructure = new RsaPrivateKeyStructure(
+                rsaKey.Modulus,
+                rsaKey.PublicExponent,
+                rsaKey.Exponent,
+                rsaKey.P,
+                rsaKey.Q,
+                rsaKey.DP,
+                rsaKey.DQ,
+                rsaKey.QInv
+            );
+
+            var pemBuilder = new StringBuilder();
             pemBuilder.AppendLine("-----BEGIN RSA PRIVATE KEY-----");
-            pemBuilder.AppendLine(Convert.ToBase64String(rsa.ExportRSAPrivateKey(), Base64FormattingOptions.InsertLineBreaks));
+            pemBuilder.AppendLine(
+                Convert.ToBase64String(
+                    rsaPrivateKeyStructure.GetEncoded(),
+                    Base64FormattingOptions.InsertLineBreaks
+                )
+            );
             pemBuilder.AppendLine("-----END RSA PRIVATE KEY-----");
-            File.WriteAllText(path, pemBuilder.ToString());
+            _fileSystem.File.WriteAllText(path, pemBuilder.ToString());
         }
     }
 }

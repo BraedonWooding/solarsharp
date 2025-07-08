@@ -8,9 +8,8 @@ namespace SolarSharp.Interpreter.Execution.Scopes
 {
     internal class BuildTimeScope
     {
-        private readonly List<BuildTimeScopeFrame> m_Frames = new();
-        private readonly List<IClosureBuilder> m_ClosureBuilders = new();
-
+        private readonly List<BuildTimeScopeFrame> m_Frames = new List<BuildTimeScopeFrame>();
+        private readonly List<IClosureBuilder> m_ClosureBuilders = new List<IClosureBuilder>();
 
         public void PushFunction(IClosureBuilder closureBuilder, bool hasVarArgs)
         {
@@ -39,17 +38,16 @@ namespace SolarSharp.Interpreter.Execution.Scopes
             return last.GetRuntimeFrameData();
         }
 
-
         public SymbolRef Find(string name)
         {
-            SymbolRef local = m_Frames.Last().Find(name);
+            var local = m_Frames.Last().Find(name);
 
             if (local != null)
                 return local;
 
-            for (int i = m_Frames.Count - 2; i >= 0; i--)
+            for (var i = m_Frames.Count - 2; i >= 0; i--)
             {
-                SymbolRef symb = m_Frames[i].Find(name);
+                var symb = m_Frames[i].Find(name);
 
                 if (symb != null)
                 {
@@ -68,23 +66,27 @@ namespace SolarSharp.Interpreter.Execution.Scopes
             if (name == WellKnownSymbols.ENV)
                 throw new InternalErrorException("_ENV passed in CreateGlobalReference");
 
-            SymbolRef env = Find(WellKnownSymbols.ENV);
+            var env = Find(WellKnownSymbols.ENV);
             return SymbolRef.Global(name, env);
         }
-
 
         public void ForceEnvUpValue()
         {
             Find(WellKnownSymbols.ENV);
         }
 
-        private SymbolRef CreateUpValue(BuildTimeScope buildTimeScope, SymbolRef symb, int closuredFrame, int currentFrame)
+        private SymbolRef CreateUpValue(
+            BuildTimeScope buildTimeScope,
+            SymbolRef symb,
+            int closuredFrame,
+            int currentFrame
+        )
         {
             // it's a 0-level upvalue. Just create it and we're done.
             if (closuredFrame == currentFrame)
                 return m_ClosureBuilders[currentFrame + 1].CreateUpvalue(this, symb);
 
-            SymbolRef upvalue = CreateUpValue(buildTimeScope, symb, closuredFrame, currentFrame - 1);
+            var upvalue = CreateUpValue(buildTimeScope, symb, closuredFrame, currentFrame - 1);
 
             return m_ClosureBuilders[currentFrame + 1].CreateUpvalue(this, upvalue);
         }
@@ -113,6 +115,5 @@ namespace SolarSharp.Interpreter.Execution.Scopes
         {
             m_Frames.Last().RegisterGoto(gotostat);
         }
-
     }
 }

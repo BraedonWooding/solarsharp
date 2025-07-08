@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Execution.VM;
 
 namespace SolarSharp.Interpreter.Debugging
@@ -8,7 +7,7 @@ namespace SolarSharp.Interpreter.Debugging
     /// Class providing services specific to debugger implementations.
     /// </summary>
     /// <seealso cref="IScriptPrivateResource" />
-    public sealed class DebugService : IScriptPrivateResource
+    public sealed class DebugService
     {
         private readonly Processor m_Processor;
 
@@ -36,8 +35,5 @@ namespace SolarSharp.Interpreter.Debugging
         {
             return m_Processor.ResetBreakPoints(src, lines);
         }
-
-
-
     }
 }

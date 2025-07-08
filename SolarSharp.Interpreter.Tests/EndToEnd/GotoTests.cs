@@ -1,17 +1,19 @@
 using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [Category("IntegrationTest")]
+    [Category("VM.Integration")]
     public class GotoTests
     {
         [Test]
         public void Goto_Simple_Fwd()
         {
-            var script = @"
+            var script =
+                @"
 				function test()
 					x = 3
 					goto skip	
@@ -23,7 +25,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return test();
 				";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -35,7 +37,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Goto_Simple_Bwd()
         {
-            var script = @"
+            var script =
+                @"
 				function test()
 					x = 5;
 	
@@ -52,7 +55,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return test();
 				";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -64,41 +67,49 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Goto_UndefinedLabel()
         {
-            var script = @"
+            var script =
+                @"
 				goto there
 				";
 
-            Assert.Throws<SyntaxErrorException>(() => new Script().DoString(script));
+            Assert.Throws<SyntaxErrorException>(() =>
+                new Script(Examples.DesktopBasePolicySet).DoString(script)
+            );
         }
 
         [Test]
         public void Goto_DoubleDefinedLabel()
         {
-            var script = @"
+            var script =
+                @"
 				::label::
 				::label::
 				";
 
-            Assert.Throws<SyntaxErrorException>(() => new Script().DoString(script));
+            Assert.Throws<SyntaxErrorException>(() =>
+                new Script(Examples.DesktopBasePolicySet).DoString(script)
+            );
         }
 
         [Test]
         public void Goto_RedefinedLabel()
         {
-            var script = @"
+            var script =
+                @"
 				::label::
 				do
 					::label::
 				end
 				";
 
-            new Script().DoString(script);
+            new Script(Examples.DesktopBasePolicySet).DoString(script);
         }
 
         [Test]
         public void Goto_RedefinedLabel_Goto()
         {
-            var script = @"
+            var script =
+                @"
 				::label::
 				do
 					goto label
@@ -108,7 +119,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				end
 				";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -120,7 +131,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Goto_UndefinedLabel_2()
         {
-            var script = @"
+            var script =
+                @"
 				goto label
 				do
 					do return 5 end
@@ -129,26 +141,31 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				end
 				";
 
-            Assert.Throws<SyntaxErrorException>(() => new Script().DoString(script));
+            Assert.Throws<SyntaxErrorException>(() =>
+                new Script(Examples.DesktopBasePolicySet).DoString(script)
+            );
         }
 
         [Test]
         public void Goto_VarInScope()
         {
-            var script = @"
+            var script =
+                @"
 				goto f
 				local x
 				::f::
 				";
 
-            Assert.Throws<SyntaxErrorException>(() => new Script().DoString(script));
+            Assert.Throws<SyntaxErrorException>(() =>
+                new Script(Examples.DesktopBasePolicySet).DoString(script)
+            );
         }
-
 
         [Test]
         public void Goto_JumpOutOfBlocks()
         {
-            var script = @"
+            var script =
+                @"
 				local u = 4
 
 				do
@@ -172,7 +189,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return 3
 			";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.Number));
@@ -183,7 +200,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Goto_JumpOutOfScopes()
         {
-            var script = @"
+            var script =
+                @"
 				local u = 4
 
 				do
@@ -213,7 +231,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 			";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.Number));

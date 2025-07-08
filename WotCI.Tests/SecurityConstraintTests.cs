@@ -1,30 +1,36 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using CSharpFunctionalExtensions;
 using FluentAssertions;
 using NUnit.Framework;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.X509;
 using SolarSharp.Interpreter;
+using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Security.Operations;
 
 namespace WotCI.Tests
 {
     [TestFixture]
-    [Category("IntegrationTest")]
-    [Category("SecurityTest")]
+    [Category("WotCI.Integration")]
+    [Category("Security.Constraint")]
     public class SecurityConstraintTests
     {
         private string _testDir;
-        private X509Certificate2 _rootCa;
+        private X509Certificate _rootCa;
+        private AsymmetricCipherKeyPair _rootCaKey;
 
         [SetUp]
         public void SetUp()
         {
             _testDir = Path.Combine(Path.GetTempPath(), $"wotci_security_{Guid.NewGuid()}");
             Directory.CreateDirectory(_testDir);
-            _rootCa = TestCertificateHelpers.GenerateRootCA();
+            (_rootCa, _rootCaKey) = TestCertificateHelpers.GenerateRootCa();
         }
 
         [TearDown]
@@ -36,28 +42,44 @@ namespace WotCI.Tests
             }
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void CertificatePathConstraint_EnforcesStrictBoundaries()
         {
-                        var cert1 = TestCertificateHelpers.GeneratePartnerCertificate(
-                _rootCa, "Partner 1", "/plugins/partner1");
-            var cert2 = TestCertificateHelpers.GeneratePartnerCertificate(
-                _rootCa, "Partner 2", "/plugins/partner2");
+            var (cert1, key1) = TestCertificateHelpers.GeneratePartnerCertificate(
+                _rootCa,
+                _rootCaKey,
+                "Partner 1",
+                "/plugins/partner1"
+            );
+            var (cert2, key2) = TestCertificateHelpers.GeneratePartnerCertificate(
+                _rootCa,
+                _rootCaKey,
+                "Partner 2",
+                "/plugins/partner2"
+            );
 
-                        ValidatePathAccess(cert1, "/plugins/partner1/file.lua").Should().BeTrue();
+            ValidatePathAccess(cert1, "/plugins/partner1/file.lua").Should().BeTrue();
             ValidatePathAccess(cert1, "/plugins/partner1/subdir/file.lua").Should().BeTrue();
             ValidatePathAccess(cert1, "/plugins/partner2/file.lua").Should().BeFalse();
             ValidatePathAccess(cert1, "/system/file.lua").Should().BeFalse();
-            
+
             ValidatePathAccess(cert2, "/plugins/partner2/file.lua").Should().BeTrue();
             ValidatePathAccess(cert2, "/plugins/partner1/file.lua").Should().BeFalse();
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void PathTraversalAttacks_ArePrevented()
         {
-                        var cert = TestCertificateHelpers.GeneratePartnerCertificate(
-                _rootCa, "Test", "/plugins/test");
+            var (cert, key) = TestCertificateHelpers.GeneratePartnerCertificate(
+                _rootCa,
+                _rootCaKey,
+                "Test",
+                "/plugins/test"
+            );
 
             // Act & Assert - Various path traversal attempts
             ValidatePathAccess(cert, "/plugins/test/../other/file.lua").Should().BeFalse();
@@ -66,16 +88,18 @@ namespace WotCI.Tests
             ValidatePathAccess(cert, "/plugins/test//file.lua").Should().BeTrue(); // double slash normalized
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void SharedResourceAccess_CanBeControlled()
         {
-                        var constraints = new CertificateConstraints
+            var constraints = new CertificateConstraints
             {
                 SubjectPath = "/plugins/restricted",
-                CanAccessSharedResources = true
+                CanAccessSharedResources = true,
             };
 
-                        constraints.IsPathAllowed("/plugins/restricted/file.lua").Should().BeTrue();
+            constraints.IsPathAllowed("/plugins/restricted/file.lua").Should().BeTrue();
             constraints.IsPathAllowed("/include/shared.lua").Should().BeTrue(); // Shared resources
 
             // Disable shared access
@@ -83,25 +107,29 @@ namespace WotCI.Tests
             constraints.IsPathAllowed("/include/shared.lua").Should().BeFalse();
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void AdditionalAllowedPaths_ExtendAccess()
         {
-                        var constraints = new CertificateConstraints
+            var constraints = new CertificateConstraints
             {
                 SubjectPath = "/plugins/main",
-                AllowedPaths = new[] { "/data/shared", "/config" }
+                AllowedPaths = ["/data/shared", "/config"],
             };
 
-                        constraints.IsPathAllowed("/plugins/main/file.lua").Should().BeTrue();
+            constraints.IsPathAllowed("/plugins/main/file.lua").Should().BeTrue();
             constraints.IsPathAllowed("/data/shared/database.db").Should().BeTrue();
             constraints.IsPathAllowed("/config/settings.json").Should().BeTrue();
             constraints.IsPathAllowed("/data/private/secret.key").Should().BeFalse();
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void ManifestSecurityPolicy_EnforcesLimits()
         {
-                        var manifest = new SimpleManifest
+            var manifest = new SimpleManifest
             {
                 version = "1.0.0",
                 name = "Limited Plugin",
@@ -110,45 +138,51 @@ namespace WotCI.Tests
                 {
                     timeout = 5,
                     memoryLimit = 50,
-                    allowedModules = new[] { "basic", "string" },
-                    capabilities = new[] { "FileRead" }
-                }
+                    allowedModules = ["basic", "string"],
+                    capabilities = ["FileRead"],
+                },
             };
 
             // Create security config from manifest
-            var config = SecurityConfiguration.Isolated();
-            if (manifest.policy?.timeout > 0)
+            var config = SolarSharp.Interpreter.Security.Examples.Isolated();
+            if (manifest.Policy?.Timeout > 0)
             {
-                config.Execution.Timeout = TimeSpan.FromSeconds(manifest.policy.timeout);
+                config = config with { TimeoutMs = manifest.Policy.Timeout * 1000 };
             }
-            if (manifest.policy?.memoryLimit > 0)
+            if (manifest.Policy?.MemoryLimit > 0)
             {
-                config.Execution.MaxMemoryMB = manifest.policy.memoryLimit;
+                config = config with { MaxMemoryMB = manifest.Policy.MemoryLimit };
             }
 
-                        config.Execution.Timeout.Should().Be(TimeSpan.FromSeconds(5));
-            config.Execution.MaxMemoryMB.Should().Be(50);
+            config.TimeoutMs.Should().Be(5000);
+            config.MaxMemoryMB.Should().Be(50);
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void FileAccessLevels_AreRespected()
         {
-                        var filePerms = new Dictionary<string, string>
+            var filePerms = new Dictionary<string, string>
             {
                 ["/game/assets/**"] = "read",
                 ["/game/saves/*.sav"] = "sandboxedreadwrite",
                 ["/game/logs/*.log"] = "readwrite",
-                ["/game/system/**"] = "none"
+                ["/game/system/**"] = "none",
             };
 
-                        GetFileAccessLevel(filePerms, "/game/assets/texture.png").Should().Be("read");
+            GetFileAccessLevel(filePerms, "/game/assets/texture.png").Should().Be("read");
             GetFileAccessLevel(filePerms, "/game/assets/models/player.obj").Should().Be("read");
-            GetFileAccessLevel(filePerms, "/game/saves/game1.sav").Should().Be("sandboxedreadwrite");
+            GetFileAccessLevel(filePerms, "/game/saves/game1.sav")
+                .Should()
+                .Be("sandboxedreadwrite");
             GetFileAccessLevel(filePerms, "/game/logs/debug.log").Should().Be("readwrite");
             GetFileAccessLevel(filePerms, "/game/system/config.ini").Should().Be("none");
             GetFileAccessLevel(filePerms, "/other/file.txt").Should().BeNull(); // No match
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void WildcardPatterns_MatchCorrectly()
         {
@@ -156,74 +190,177 @@ namespace WotCI.Tests
             // Single asterisk matches within directory
             MatchesPattern("*.lua", "script.lua").Should().BeTrue();
             MatchesPattern("*.lua", "subdir/script.lua").Should().BeFalse();
-            
+
             // Double asterisk matches across directories
             MatchesPattern("**/*.lua", "script.lua").Should().BeTrue();
             MatchesPattern("**/*.lua", "subdir/script.lua").Should().BeTrue();
             MatchesPattern("**/*.lua", "a/b/c/script.lua").Should().BeTrue();
-            
+
             // Directory patterns
             MatchesPattern("/plugins/*/main.lua", "/plugins/partner1/main.lua").Should().BeTrue();
-            MatchesPattern("/plugins/*/main.lua", "/plugins/partner1/subdir/main.lua").Should().BeFalse();
-            
+            MatchesPattern("/plugins/*/main.lua", "/plugins/partner1/subdir/main.lua")
+                .Should()
+                .BeFalse();
+
             // Complex patterns
             MatchesPattern("/game/**/saves/*.sav", "/game/user1/saves/game.sav").Should().BeTrue();
-            MatchesPattern("/game/**/saves/*.sav", "/game/profiles/user1/saves/game.sav").Should().BeTrue();
+            MatchesPattern("/game/**/saves/*.sav", "/game/profiles/user1/saves/game.sav")
+                .Should()
+                .BeTrue();
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
-        public void SecurityConfiguration_DefaultsAreSafe()
+        public void SecurityPolicy_DefaultsAreSafe()
         {
-                        var config = SecurityConfiguration.Isolated();
+            var config = SolarSharp.Interpreter.Security.Examples.Isolated();
 
             // Isolated config should be restrictive
-            config.Execution.Timeout.Should().BeLessThan(TimeSpan.FromMinutes(5));
-            config.Execution.MaxMemoryMB.Should().BeGreaterThan(0);
-            config.Execution.MaxInstructions.Should().BeGreaterThan(0);
-            config.FileSystem.Should().NotBeNull();
-            config.Network.Should().NotBeNull();
-            
+            config.TimeoutMs.Should().BeLessThan(300_000); // 5 minutes
+            config.MaxMemoryMB.Should().BeGreaterThan(0);
+            config.MaxInstructions.Should().BeGreaterThan(0);
+            config.DefaultFileAccess.Should().Be(FilePermissions.None);
+            config.AllowNetworkAccess.Should().BeFalse();
+
             // Check capabilities
-            (config.Capabilities & ScriptCapabilities.DirectoryOperations).Should().Be(0);
-            (config.Capabilities & ScriptCapabilities.NetworkAccess).Should().Be(0);
-            (config.Capabilities & ScriptCapabilities.ProcessExecution).Should().Be(0);
+            config.Capabilities.Should().Be(ScriptCapabilities.None);
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void CrossPluginAccess_IsPrevented()
         {
-                        var partner1Cert = TestCertificateHelpers.GeneratePartnerCertificate(
-                _rootCa, "Partner 1", "/plugins/partner1");
+            var partner1Cert = TestCertificateHelpers.GeneratePartnerCertificate(
+                _rootCa,
+                _rootCaKey,
+                "Partner 1",
+                "/plugins/partner1"
+            );
             var partner2Cert = TestCertificateHelpers.GeneratePartnerCertificate(
-                _rootCa, "Partner 2", "/plugins/partner2");
+                _rootCa,
+                _rootCaKey,
+                "Partner 2",
+                "/plugins/partner2"
+            );
 
-            var config = SecurityConfiguration.Isolated();
-            config.Capabilities |= ScriptCapabilities.FileWrite | ScriptCapabilities.FileRead;
-            
+            // Extract signing key fingerprints from certificates for directory access rules
+            var partner1KeyFingerprint = GetCertificateFingerprint(partner1Cert.Item1);
+            var partner2KeyFingerprint = GetCertificateFingerprint(partner2Cert.Item1);
+
+            var config = SolarSharp.Interpreter.Security.Examples.Desktop() with
+            {
+                Capabilities = ScriptCapabilities.FileWrite | ScriptCapabilities.FileRead,
+                DirectoryAccessRules =
+                [
+                    .. new[]
+                    {
+                        // Partner 1 can only access /plugins/partner1
+                        DirectoryAccessRule.Create(
+                            "/plugins/partner1",
+                            FilePermissions.ReadWrite,
+                            partner1KeyFingerprint
+                        ),
+                        // Partner 2 can only access /plugins/partner2
+                        DirectoryAccessRule.Create(
+                            "/plugins/partner2",
+                            FilePermissions.ReadWrite,
+                            partner2KeyFingerprint
+                        ),
+                        // Deny all other access to plugin directories for unsigned scripts
+                        DirectoryAccessRule.Create("/plugins/**", FilePermissions.None),
+                    },
+                ],
+            };
+
             // Create test directories
             var testRoot = Path.Combine(Path.GetTempPath(), $"vfs_test_{Guid.NewGuid()}");
             Directory.CreateDirectory(Path.Combine(testRoot, "plugins", "partner1"));
             Directory.CreateDirectory(Path.Combine(testRoot, "plugins", "partner2"));
-            
+
             try
             {
-                config.SetDirectoryPermissions(testRoot, DirectoryPermissions.ListAndCreateFiles);
-                
-                // Create VFS instances with memory filesystems
-                var vfs1 = new SimpleVirtualFileSystem(config, partner1Cert);
-                var vfs2 = new SimpleVirtualFileSystem(config, partner2Cert);
-                
-                // Mount shared memory filesystem for both partners
-                var sharedMemFS = new MemoryFileSystemProvider();
-                vfs1.MountFileSystemProvider("/plugins", sharedMemFS);
-                vfs2.MountFileSystemProvider("/plugins", sharedMemFS);
+                // Directory permissions are now set through the SecurityPolicy record
 
-                // Partner 1 writes to its area
-                vfs1.WriteAllBytes("/plugins/partner1/data.txt", Encoding.UTF8.GetBytes("Partner 1 data"));
+                // Create VFS instances with memory filesystems
+                var vfs1 = new SimpleVirtualFileSystem(config);
+                var vfs2 = new SimpleVirtualFileSystem(config);
+
+                // Mount shared memory filesystem for both partners
+                var sharedMemFs = new MemoryFileSystemProvider();
+                vfs1.MountFileSystemProvider("/plugins", sharedMemFs);
+                vfs2.MountFileSystemProvider("/plugins", sharedMemFs);
+
+                // Partner 1 writes to its area within execution context
+                var partner1Context = LuaExecutionContext
+                    .CreateFromPath("/plugins/partner1/script.lua")
+                    .Value.With(signingKeyFingerprint: Maybe<string>.From(partner1KeyFingerprint));
+
+                var writeResult = ExecutionContextManager.WithContext(
+                    partner1Context,
+                    ctx =>
+                    {
+                        vfs1.WriteAllBytes(
+                            "/plugins/partner1/data.txt",
+                            Encoding.UTF8.GetBytes("Partner 1 data")
+                        );
+                        return Result.Success<bool, ExecutionError>(true);
+                    }
+                );
+                writeResult.IsSuccess.Should().BeTrue();
 
                 // Partner 2 cannot access Partner 1's data due to certificate constraint
-                Action crossAccess = () => vfs2.ReadAllBytes("/plugins/partner1/data.txt");
-                crossAccess.Should().Throw<UnauthorizedAccessException>();
+                var partner2Context = LuaExecutionContext
+                    .CreateFromPath("/plugins/partner2/script.lua")
+                    .Value.With(signingKeyFingerprint: Maybe<string>.From(partner2KeyFingerprint));
+
+                // Test that Partner 1 can still access their own data
+                var selfAccessResult = ExecutionContextManager.WithContext(
+                    partner1Context,
+                    ctx =>
+                    {
+                        var data = vfs1.ReadAllBytes("/plugins/partner1/data.txt");
+                        return Result.Success<byte[], ExecutionError>(data);
+                    }
+                );
+                selfAccessResult.IsSuccess.Should().BeTrue();
+                var retrievedData = Encoding.UTF8.GetString(selfAccessResult.Value);
+                retrievedData.Should().Be("Partner 1 data");
+
+                // Test that Partner 2 cannot access Partner 1's data due to certificate constraint
+                Action crossAccess = () =>
+                {
+                    ExecutionContextManager.WithContext(
+                        partner2Context,
+                        ctx =>
+                        {
+                            var data = vfs2.ReadAllBytes("/plugins/partner1/data.txt");
+                            return Result.Success<byte[], ExecutionError>(data);
+                        }
+                    );
+                };
+                crossAccess
+                    .Should()
+                    .Throw<UnauthorizedAccessException>()
+                    .WithMessage("*Certificate constraint violation*");
+
+                // Test that Partner 2 can access their own area
+                var partner2SelfResult = ExecutionContextManager.WithContext(
+                    partner2Context,
+                    ctx =>
+                    {
+                        vfs2.WriteAllBytes(
+                            "/plugins/partner2/partner2-data.txt",
+                            Encoding.UTF8.GetBytes("Partner 2 data")
+                        );
+                        var data = vfs2.ReadAllBytes("/plugins/partner2/partner2-data.txt");
+                        return Result.Success<byte[], ExecutionError>(data);
+                    }
+                );
+                partner2SelfResult.IsSuccess.Should().BeTrue();
+                var partner2Data = Encoding.UTF8.GetString(partner2SelfResult.Value);
+                partner2Data.Should().Be("Partner 2 data");
             }
             finally
             {
@@ -233,10 +370,12 @@ namespace WotCI.Tests
             }
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void ManifestSignatureValidation_RequiresValidChain()
         {
-                        var manifest = new
+            var manifest = new
             {
                 version = "1.0",
                 name = "Signed Plugin",
@@ -246,66 +385,75 @@ namespace WotCI.Tests
                     signature = new
                     {
                         algorithm = "SHA256withRSA",
-                        value = Convert.ToBase64String(new byte[256]) // Fake signature
+                        value = Convert.ToBase64String(new byte[256]), // Fake signature
                     },
                     certificate = new
                     {
                         format = "X509_BASE64",
-                        value = Convert.ToBase64String(_rootCa.RawData)
-                    }
-                }
+                        value = Convert.ToBase64String(_rootCa.GetEncoded()),
+                    },
+                },
             };
 
             var manifestJson = JsonSerializer.Serialize(manifest);
 
-                        // In a real implementation, this would verify the signature
+            // In a real implementation, this would verify the signature
             // Here we're testing the structure is correct
             manifest.security.Should().NotBeNull();
             manifest.security.signature.Should().NotBeNull();
             manifest.security.certificate.Should().NotBeNull();
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void ResourceLimits_PreventDoS()
         {
-                        var config = SecurityConfiguration.Isolated();
-            config.Execution.Timeout = TimeSpan.FromSeconds(1);
-            config.Execution.MaxInstructions = 1000;
-            
-            var script = new Script();
-            
+            var config = SolarSharp.Interpreter.Security.Examples.Isolated() with
+            {
+                TimeoutMs = 1000,
+                MaxInstructions = 1000,
+            };
+
+            // Convert SecurityPolicy to BasePolicySet using PolicySetBuilder
+            var policySetBuilder = new PolicySetBuilder()
+                .DefinePolicy("isolated", config)
+                .WithDefaultPolicy("isolated");
+
+            var basePolicySet = BasePolicySetFactory
+                .Create(policySetBuilder.Build())
+                .Match(
+                    success => success,
+                    error =>
+                        throw new InvalidOperationException(
+                            $"Failed to create BasePolicySet: {error.Message}"
+                        )
+                );
+
+            var script = new Script(basePolicySet);
+
             // This would need actual integration with the VM to test properly
             // Here we verify the limits are set
-            config.Execution.Timeout.Should().Be(TimeSpan.FromSeconds(1));
-            config.Execution.MaxInstructions.Should().Be(1000);
+            config.TimeoutMs.Should().Be(1000);
+            config.MaxInstructions.Should().Be(1000);
         }
 
+        [Category("Security.Unit")]
+        [Category("Plugin.Unit")]
         [Test]
         public void AntiPolymorphism_PreventsSelfModification()
         {
-                        var config = SecurityConfiguration.Isolated();
-            config.AntiPolymorphism.Should().NotBeNull();
-            
-            // In a real implementation, these would be enforced
-            config.AntiPolymorphism.AllowOnlyLuaExtension = true;
-            config.AntiPolymorphism.PreventLuaFileWrites = true;
-            config.AntiPolymorphism.BlockManifestAccess = true;
-            config.AntiPolymorphism.PreventRunString = true;
-            config.AntiPolymorphism.PreventInternalDynamicCode = true;
+            var config = SolarSharp.Interpreter.Security.Examples.Isolated();
 
-            // Assert configuration is set
-            config.AntiPolymorphism.AllowOnlyLuaExtension.Should().BeTrue();
-            config.AntiPolymorphism.PreventLuaFileWrites.Should().BeTrue();
-            config.AntiPolymorphism.BlockManifestAccess.Should().BeTrue();
-            config.AntiPolymorphism.PreventRunString.Should().BeTrue();
-            config.AntiPolymorphism.PreventInternalDynamicCode.Should().BeTrue();
+            // Anti-polymorphism is now policy-based
+            config.AllowExecution.Should().BeFalse();
         }
 
-        private bool ValidatePathAccess(X509Certificate2 cert, string path)
+        private bool ValidatePathAccess(X509Certificate cert, string path)
         {
-            var subject = cert.Subject;
+            var subject = cert.SubjectDN.ToString();
             var parts = subject.Split(',');
-            
+
             foreach (var part in parts)
             {
                 var trimmed = part.Trim();
@@ -319,7 +467,7 @@ namespace WotCI.Tests
                     }
                 }
             }
-            
+
             return false;
         }
 
@@ -327,7 +475,7 @@ namespace WotCI.Tests
         {
             // Simple normalization - in production use Path.GetFullPath
             var normalized = path.Replace('\\', '/');
-            
+
             // Remove path traversal
             while (normalized.Contains("/../"))
             {
@@ -349,13 +497,13 @@ namespace WotCI.Tests
                     normalized = normalized.Substring(4);
                 }
             }
-            
+
             // Normalize slashes
             while (normalized.Contains("//"))
             {
                 normalized = normalized.Replace("//", "/");
             }
-            
+
             return normalized;
         }
 
@@ -373,15 +521,24 @@ namespace WotCI.Tests
 
         private bool MatchesPattern(string pattern, string path)
         {
-            // Use standardized GlobMatcher for consistent behavior
+            // Use standardized GlobMatcher for consistent behaviour
             return GlobMatcher.MatchesPattern(path, pattern);
+        }
+
+        private string GetCertificateFingerprint(X509Certificate certificate)
+        {
+            // Generate SHA256 fingerprint of the certificate for use as signing key fingerprint
+            var certBytes = certificate.GetEncoded();
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var hash = sha256.ComputeHash(certBytes);
+            return Convert.ToHexString(hash).ToLowerInvariant();
         }
     }
 
     public class CertificateConstraints
     {
         public string SubjectPath { get; set; }
-        public string[] AllowedPaths { get; set; } = Array.Empty<string>();
+        public string[] AllowedPaths { get; set; } = [];
         public bool CanAccessSharedResources { get; set; } = true;
 
         public bool IsPathAllowed(string path)
@@ -394,7 +551,10 @@ namespace WotCI.Tests
                 normalizedPath = "/" + normalizedPath;
 
             // Check shared resources access
-            if (CanAccessSharedResources && normalizedPath.StartsWith("/include/", StringComparison.OrdinalIgnoreCase))
+            if (
+                CanAccessSharedResources
+                && normalizedPath.StartsWith("/include/", StringComparison.OrdinalIgnoreCase)
+            )
                 return true;
 
             // Check subject path constraint

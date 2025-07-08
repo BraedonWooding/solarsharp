@@ -19,11 +19,12 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="name">The name.</param>
         /// <param name="isSetter">if set to <c>true</c> is a setter indexer.</param>
         /// <param name="indexerParams">The indexer parameters.</param>
-        public ArrayMemberDescriptor(string name, bool isSetter, ParameterDescriptor[] indexerParams)
-            : base(
-            name,
-            isSetter ? ArrayIndexerSet : (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerGet,
-            indexerParams)
+        public ArrayMemberDescriptor(
+            string name,
+            bool isSetter,
+            ParameterDescriptor[] indexerParams
+        )
+            : base(name, isSetter ? ArrayIndexerSet : ArrayIndexerGet, indexerParams)
         {
             m_IsSetter = isSetter;
         }
@@ -34,9 +35,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="name">The name.</param>
         /// <param name="isSetter">if set to <c>true</c> [is setter].</param>
         public ArrayMemberDescriptor(string name, bool isSetter)
-            : base(
-            name,
-            isSetter ? ArrayIndexerSet : (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerGet)
+            : base(name, isSetter ? ArrayIndexerSet : ArrayIndexerGet)
         {
             m_IsSetter = isSetter;
         }
@@ -58,11 +57,11 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
 
                 t.Set("params", pars);
 
-                int i = 0;
+                var i = 0;
 
                 foreach (var p in Parameters)
                 {
-                    DynValue pt = DynValue.NewPrimeTable();
+                    var pt = DynValue.NewPrimeTable();
                     pars.Table.Set(++i, pt);
                     p.PrepareForWiring(pt.Table);
                 }
@@ -71,37 +70,48 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
 
         private static int[] BuildArrayIndices(CallbackArguments args, int count)
         {
-            int[] indices = new int[count];
+            var indices = new int[count];
 
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
                 indices[i] = args.AsInt(i, "userdata_array_indexer");
 
             return indices;
         }
 
-        private static object ArrayIndexerSet(object arrayObj, ScriptExecutionContext ctx, CallbackArguments args)
+        private static object ArrayIndexerSet(
+            object arrayObj,
+            ScriptExecutionContext ctx,
+            CallbackArguments args
+        )
         {
-            Array array = (Array)arrayObj;
-            int[] indices = BuildArrayIndices(args, args.Count - 1);
-            DynValue value = args[^1];
+            var array = (Array)arrayObj;
+            var indices = BuildArrayIndices(args, args.Count - 1);
+            var value = args[^1];
 
-            Type elemType = array.GetType().GetElementType();
+            var elemType = array.GetType().GetElementType();
 
-            object objValue = ScriptToClrConversions.DynValueToObjectOfType(value, elemType, null, false);
+            var objValue = ScriptToClrConversions.DynValueToObjectOfType(
+                value,
+                elemType,
+                null,
+                false
+            );
 
             array.SetValue(objValue, indices);
 
             return DynValue.Void;
         }
 
-
-        private static object ArrayIndexerGet(object arrayObj, ScriptExecutionContext ctx, CallbackArguments args)
+        private static object ArrayIndexerGet(
+            object arrayObj,
+            ScriptExecutionContext ctx,
+            CallbackArguments args
+        )
         {
-            Array array = (Array)arrayObj;
-            int[] indices = BuildArrayIndices(args, args.Count);
+            var array = (Array)arrayObj;
+            var indices = BuildArrayIndices(args, args.Count);
 
             return array.GetValue(indices);
         }
-
     }
 }

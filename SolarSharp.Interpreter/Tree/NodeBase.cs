@@ -15,21 +15,19 @@ namespace SolarSharp.Interpreter.Tree
             Script = lcontext.Script;
         }
 
-
         public abstract void Compile(ByteCode bc);
-
 
         protected static Token UnexpectedTokenType(Token t)
         {
             throw new SyntaxErrorException(t, "unexpected symbol near '{0}'", t.Text)
             {
-                IsPrematureStreamTermination = t.Type == TokenType.Eof
+                IsPrematureStreamTermination = t.Type == TokenType.Eof,
             };
         }
 
         protected static Token CheckTokenType(ScriptLoadingContext lcontext, TokenType tokenType)
         {
-            Token t = lcontext.Lexer.Current;
+            var t = lcontext.Lexer.Current;
             if (t.Type != tokenType)
                 return UnexpectedTokenType(t);
 
@@ -38,11 +36,13 @@ namespace SolarSharp.Interpreter.Tree
             return t;
         }
 
-
-
-        protected static Token CheckTokenType(ScriptLoadingContext lcontext, TokenType tokenType1, TokenType tokenType2)
+        protected static Token CheckTokenType(
+            ScriptLoadingContext lcontext,
+            TokenType tokenType1,
+            TokenType tokenType2
+        )
         {
-            Token t = lcontext.Lexer.Current;
+            var t = lcontext.Lexer.Current;
             if (t.Type != tokenType1 && t.Type != tokenType2)
                 return UnexpectedTokenType(t);
 
@@ -50,9 +50,15 @@ namespace SolarSharp.Interpreter.Tree
 
             return t;
         }
-        protected static Token CheckTokenType(ScriptLoadingContext lcontext, TokenType tokenType1, TokenType tokenType2, TokenType tokenType3)
+
+        protected static Token CheckTokenType(
+            ScriptLoadingContext lcontext,
+            TokenType tokenType1,
+            TokenType tokenType2,
+            TokenType tokenType3
+        )
         {
-            Token t = lcontext.Lexer.Current;
+            var t = lcontext.Lexer.Current;
             if (t.Type != tokenType1 && t.Type != tokenType2 && t.Type != tokenType3)
                 return UnexpectedTokenType(t);
 
@@ -61,23 +67,36 @@ namespace SolarSharp.Interpreter.Tree
             return t;
         }
 
-        protected static void CheckTokenTypeNotNext(ScriptLoadingContext lcontext, TokenType tokenType)
+        protected static void CheckTokenTypeNotNext(
+            ScriptLoadingContext lcontext,
+            TokenType tokenType
+        )
         {
-            Token t = lcontext.Lexer.Current;
+            var t = lcontext.Lexer.Current;
             if (t.Type != tokenType)
                 UnexpectedTokenType(t);
         }
 
-        protected static Token CheckMatch(ScriptLoadingContext lcontext, Token originalToken, TokenType expectedTokenType, string expectedTokenText)
+        protected static Token CheckMatch(
+            ScriptLoadingContext lcontext,
+            Token originalToken,
+            TokenType expectedTokenType,
+            string expectedTokenText
+        )
         {
-            Token t = lcontext.Lexer.Current;
+            var t = lcontext.Lexer.Current;
             if (t.Type != expectedTokenType)
             {
-                throw new SyntaxErrorException(lcontext.Lexer.Current,
+                throw new SyntaxErrorException(
+                    lcontext.Lexer.Current,
                     "'{0}' expected (to close '{1}' at line {2}) near '{3}'",
-                    expectedTokenText, originalToken.Text, originalToken.FromLine, t.Text)
+                    expectedTokenText,
+                    originalToken.Text,
+                    originalToken.FromLine,
+                    t.Text
+                )
                 {
-                    IsPrematureStreamTermination = t.Type == TokenType.Eof
+                    IsPrematureStreamTermination = t.Type == TokenType.Eof,
                 };
             }
 

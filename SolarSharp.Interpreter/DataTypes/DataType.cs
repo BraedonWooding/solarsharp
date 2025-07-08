@@ -73,22 +73,27 @@ namespace SolarSharp.Interpreter.DataTypes
         /// A nil value, as in Lua
         /// </summary>
         Nil,
+
         /// <summary>
         /// A place holder for no value
         /// </summary>
         Void,
+
         /// <summary>
         /// A Lua boolean
         /// </summary>
         Boolean,
+
         /// <summary>
         /// A Lua number
         /// </summary>
         Number,
+
         /// <summary>
         /// A Lua string
         /// </summary>
         String,
+
         /// <summary>
         /// A Lua function
         /// </summary>
@@ -98,14 +103,17 @@ namespace SolarSharp.Interpreter.DataTypes
         /// A Lua table
         /// </summary>
         Table,
+
         /// <summary>
         /// A set of multiple values
         /// </summary>
         Tuple,
+
         /// <summary>
         /// A userdata reference - that is a wrapped CLR object
         /// </summary>
         UserData,
+
         /// <summary>
         /// A coroutine handle
         /// </summary>
@@ -120,6 +128,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// A request to execute a tail call
         /// </summary>
         TailCallRequest,
+
         /// <summary>
         /// A request to coroutine.yield
         /// </summary>
@@ -164,7 +173,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 DataType.Table => "table",
                 DataType.UserData => "userdata",
                 DataType.Thread => "coroutine",
-                _ => string.Format("internal<{0}>", type.ToLuaDebuggerString()),
+                _ => $"internal<{type.ToLuaDebuggerString()}>",
             };
         }
 
@@ -179,7 +188,6 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return type.ToString().ToLowerInvariant();
         }
-
 
         /// <summary>
         /// Converts the DataType to the string returned by the "type(...)" Lua function

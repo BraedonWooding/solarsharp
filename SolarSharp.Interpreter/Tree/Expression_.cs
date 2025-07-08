@@ -10,8 +10,7 @@ namespace SolarSharp.Interpreter.Tree
     internal abstract class Expression : NodeBase
     {
         public Expression(ScriptLoadingContext lcontext)
-            : base(lcontext)
-        { }
+            : base(lcontext) { }
 
         public virtual string GetFriendlyDebugName()
         {
@@ -25,12 +24,12 @@ namespace SolarSharp.Interpreter.Tree
             return null;
         }
 
-        internal static List<Expression> ExprListAfterFirstExpr(ScriptLoadingContext lcontext, Expression expr1)
+        internal static List<Expression> ExprListAfterFirstExpr(
+            ScriptLoadingContext lcontext,
+            Expression expr1
+        )
         {
-            List<Expression> exps = new()
-            {
-                expr1
-            };
+            var exps = new List<Expression> { expr1 };
 
             while (lcontext.Lexer.Current.Type == TokenType.Comma)
             {
@@ -41,10 +40,9 @@ namespace SolarSharp.Interpreter.Tree
             return exps;
         }
 
-
         internal static List<Expression> ExprList(ScriptLoadingContext lcontext)
         {
-            List<Expression> exps = new();
+            var exps = new List<Expression>();
 
             while (true)
             {
@@ -66,7 +64,7 @@ namespace SolarSharp.Interpreter.Tree
 
         internal static Expression SubExpr(ScriptLoadingContext lcontext, bool isPrimary)
         {
-            Token T = lcontext.Lexer.Current;
+            var T = lcontext.Lexer.Current;
 
             Expression e;
             if (T.IsUnaryOperator())
@@ -75,15 +73,12 @@ namespace SolarSharp.Interpreter.Tree
                 e = SubExpr(lcontext, false);
 
                 // check for power operator -- it be damned forever and ever for being higher priority than unary ops
-                Token unaryOp = T;
+                var unaryOp = T;
                 T = lcontext.Lexer.Current;
 
                 if (isPrimary && T.Type == TokenType.Op_Pwr)
                 {
-                    List<Expression> powerChain = new()
-                    {
-                        e
-                    };
+                    var powerChain = new List<Expression> { e };
 
                     while (isPrimary && T.Type == TokenType.Op_Pwr)
                     {
@@ -94,9 +89,13 @@ namespace SolarSharp.Interpreter.Tree
 
                     e = powerChain[^1];
 
-                    for (int i = powerChain.Count - 2; i >= 0; i--)
+                    for (var i = powerChain.Count - 2; i >= 0; i--)
                     {
-                        e = BinaryOperatorExpression.CreatePowerExpression(powerChain[i], e, lcontext);
+                        e = BinaryOperatorExpression.CreatePowerExpression(
+                            powerChain[i],
+                            e,
+                            lcontext
+                        );
                     }
                 }
 
@@ -111,7 +110,7 @@ namespace SolarSharp.Interpreter.Tree
 
             if (isPrimary && T.IsBinaryOperator())
             {
-                object chain = BinaryOperatorExpression.BeginOperatorChain();
+                var chain = BinaryOperatorExpression.BeginOperatorChain();
 
                 BinaryOperatorExpression.AddExpressionToChain(chain, e);
 
@@ -119,7 +118,7 @@ namespace SolarSharp.Interpreter.Tree
                 {
                     BinaryOperatorExpression.AddOperatorToChain(chain, T);
                     lcontext.Lexer.Next();
-                    Expression right = SubExpr(lcontext, false);
+                    var right = SubExpr(lcontext, false);
                     BinaryOperatorExpression.AddExpressionToChain(chain, right);
                     T = lcontext.Lexer.Current;
                 }
@@ -132,7 +131,7 @@ namespace SolarSharp.Interpreter.Tree
 
         internal static Expression SimpleExp(ScriptLoadingContext lcontext)
         {
-            Token t = lcontext.Lexer.Current;
+            var t = lcontext.Lexer.Current;
 
             switch (t.Type)
             {
@@ -157,7 +156,6 @@ namespace SolarSharp.Interpreter.Tree
                 default:
                     return PrimaryExp(lcontext);
             }
-
         }
 
         /// <summary>
@@ -167,11 +165,11 @@ namespace SolarSharp.Interpreter.Tree
         /// <returns></returns>
         internal static Expression PrimaryExp(ScriptLoadingContext lcontext)
         {
-            Expression e = PrefixExp(lcontext);
+            var e = PrefixExp(lcontext);
 
             while (true)
             {
-                Token T = lcontext.Lexer.Current;
+                var T = lcontext.Lexer.Current;
                 Token thisCallName = null;
 
                 switch (T.Type)
@@ -179,15 +177,15 @@ namespace SolarSharp.Interpreter.Tree
                     case TokenType.Dot:
                         {
                             lcontext.Lexer.Next();
-                            Token name = CheckTokenType(lcontext, TokenType.Name);
+                            var name = CheckTokenType(lcontext, TokenType.Name);
                             e = new IndexExpression(e, name.Text, lcontext);
                         }
                         break;
                     case TokenType.Brk_Open_Square:
                         {
-                            Token openBrk = lcontext.Lexer.Current;
+                            var openBrk = lcontext.Lexer.Current;
                             lcontext.Lexer.Next(); // skip bracket
-                            Expression index = Expr(lcontext);
+                            var index = Expr(lcontext);
 
                             // support moonsharp multiple indexers for userdata
                             if (lcontext.Lexer.Current.Type == TokenType.Comma)
@@ -218,12 +216,12 @@ namespace SolarSharp.Interpreter.Tree
 
         private static Expression PrefixExp(ScriptLoadingContext lcontext)
         {
-            Token T = lcontext.Lexer.Current;
+            var T = lcontext.Lexer.Current;
             switch (T.Type)
             {
                 case TokenType.Brk_Open_Round:
                     lcontext.Lexer.Next();
-                    Expression e = Expr(lcontext);
+                    var e = Expr(lcontext);
                     e = new AdjustmentExpression(lcontext, e);
                     CheckMatch(lcontext, T, TokenType.Brk_Close_Round, ")");
                     return e;
@@ -232,7 +230,7 @@ namespace SolarSharp.Interpreter.Tree
                 default:
                     throw new SyntaxErrorException(T, "unexpected symbol near '{0}'", T.Text)
                     {
-                        IsPrematureStreamTermination = T.Type == TokenType.Eof
+                        IsPrematureStreamTermination = T.Type == TokenType.Eof,
                     };
             }
         }

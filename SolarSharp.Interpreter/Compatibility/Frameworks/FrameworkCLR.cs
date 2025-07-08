@@ -17,7 +17,6 @@ namespace SolarSharp.Interpreter.Compatibility.Frameworks
             return o != null && Convert.IsDBNull(o);
         }
 
-
         public override bool StringContainsChar(string str, char chr)
         {
             return str.Contains(chr);

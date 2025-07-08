@@ -2,11 +2,10 @@
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Serialization.Json;
 
-
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [Category("IntegrationTest")]
+    [Category("VM.Integration")]
     public class JsonSerializationTests
     {
         private static void AssertTableValues(Table t)
@@ -81,7 +80,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
-
         [Test]
         public void JsonDeserialization()
         {
@@ -121,7 +119,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             AssertTableValues(t);
         }
 
-
         [Test]
         public void JsonObjectSerialization()
         {
@@ -129,27 +126,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             {
                 aNumber = 1,
                 aString = "2",
-                anObject = new
-                {
-                    aNumber = 3,
-                    aString = "4"
-                },
-                anArray = new object[]
-                {
-                    5,
-                    "6",
-                    true,
-                    null,
-                    new
-                    {
-                        aNumber = 7,
-                        aString = "8"
-                    }
-                },
+                anObject = new { aNumber = 3, aString = "4" },
+                anArray = new object[] { 5, "6", true, null, new { aNumber = 7, aString = "8" } },
                 aNegativeNumber = -9,
-                slash = "a/b"
+                slash = "a/b",
             };
-
 
             var json = JsonTableConverter.ObjectToJson(o);
 
@@ -157,7 +138,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             AssertTableValues(t);
         }
-
-
     }
 }

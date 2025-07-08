@@ -1,9 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -43,7 +48,7 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class SecurityLogger : ISecurityLogger
     {
-        private readonly List<ISecurityEventHandler> _handlers = new();
+        private readonly List<ISecurityEventHandler> _handlers = new List<ISecurityEventHandler>();
         private readonly object _lock = new object();
 
         /// <summary>
@@ -73,7 +78,8 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public void LogSecurityEvent(SecurityEvent evt)
         {
-            if (evt == null) return;
+            if (evt == null)
+                return;
 
             lock (_lock)
             {
@@ -86,14 +92,16 @@ namespace SolarSharp.Interpreter.Security
                     catch (Exception ex)
                     {
                         // Don't let handler exceptions break security logging
-                        System.Diagnostics.Debug.WriteLine($"Security handler error: {ex}");
+                        Debug.WriteLine($"Security handler error: {ex}");
                     }
                 }
             }
 
             // Also log to debug output in debug builds
 #if DEBUG
-            System.Diagnostics.Debug.WriteLine($"[SECURITY] {evt.Type}: {evt.Operation} - {string.Join(", ", evt.Arguments ?? Array.Empty<object>())}");
+            Debug.WriteLine(
+                $"[SECURITY] {evt.Type}: {evt.Operation} - {string.Join(", ", evt.Arguments ?? Array.Empty<object>())}"
+            );
 #endif
         }
 
@@ -107,7 +115,7 @@ namespace SolarSharp.Interpreter.Security
                 Type = SecurityEventType.AccessDenied,
                 Operation = operation,
                 Arguments = args is object[] arr ? arr : new[] { args },
-                StackTrace = Environment.StackTrace
+                StackTrace = Environment.StackTrace,
             };
 
             if (!string.IsNullOrEmpty(reason))
@@ -132,8 +140,8 @@ namespace SolarSharp.Interpreter.Security
                 {
                     ["FileName"] = filename,
                     ["Mode"] = mode,
-                    ["Access"] = access.ToString()
-                }
+                    ["Access"] = access.ToString(),
+                },
             };
 
             LogSecurityEvent(evt);
@@ -152,8 +160,8 @@ namespace SolarSharp.Interpreter.Security
                 Metadata = new Dictionary<string, object>
                 {
                     ["Operation"] = operation,
-                    ["FileCount"] = files.Length
-                }
+                    ["FileCount"] = files.Length,
+                },
             };
 
             LogSecurityEvent(evt);
@@ -166,7 +174,10 @@ namespace SolarSharp.Interpreter.Security
         {
             var evt = new SecurityEvent
             {
-                Type = current > limit ? SecurityEventType.ResourceLimitExceeded : SecurityEventType.PolicyViolation,
+                Type =
+                    current > limit
+                        ? SecurityEventType.ResourceLimitExceeded
+                        : SecurityEventType.PolicyViolation,
                 Operation = "ResourceUsage",
                 Arguments = new object[] { resource, current, limit },
                 Metadata = new Dictionary<string, object>
@@ -174,8 +185,8 @@ namespace SolarSharp.Interpreter.Security
                     ["Resource"] = resource,
                     ["Current"] = current,
                     ["Limit"] = limit,
-                    ["Percentage"] = limit > 0 ? (current * 100.0 / limit) : 0
-                }
+                    ["Percentage"] = limit > 0 ? (current * 100.0 / limit) : 0,
+                },
             };
 
             LogSecurityEvent(evt);
@@ -195,7 +206,7 @@ namespace SolarSharp.Interpreter.Security
         private readonly object _lock = new object();
         private static FileSecurityTracer _instance;
         private static readonly object _instanceLock = new object();
-        
+
         /// <summary>
         /// Whether learning mode is enabled (logs failures but permits them)
         /// </summary>
@@ -206,16 +217,20 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public FileSecurityTracer(string traceDirectory, bool learningMode = false)
         {
-            _traceDirectory = traceDirectory ?? throw new ArgumentNullException(nameof(traceDirectory));
+            _traceDirectory =
+                traceDirectory ?? throw new ArgumentNullException(nameof(traceDirectory));
             LearningMode = learningMode;
-            
+
             try
             {
                 Directory.CreateDirectory(_traceDirectory);
             }
             catch (Exception ex)
             {
-                throw new ArgumentException($"Cannot create trace directory '{_traceDirectory}': {ex.Message}", ex);
+                throw new ArgumentException(
+                    $"Cannot create trace directory '{_traceDirectory}': {ex.Message}",
+                    ex
+                );
             }
         }
 
@@ -225,24 +240,30 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public static FileSecurityTracer GetGlobalTracer()
         {
-            if (_instance != null) return _instance;
+            if (_instance != null)
+                return _instance;
 
             lock (_instanceLock)
             {
-                if (_instance != null) return _instance;
+                if (_instance != null)
+                    return _instance;
 
                 // Check multiple environment variables
-                var traceDir = Environment.GetEnvironmentVariable("SOLARSHARP_SECURITY_TRACE") 
-                            ?? Environment.GetEnvironmentVariable("LUA_SANDBOX_LOG_DIR");
-                
+                var traceDir =
+                    Environment.GetEnvironmentVariable("SOLARSHARP_SECURITY_TRACE")
+                    ?? Environment.GetEnvironmentVariable("LUA_SANDBOX_LOG_DIR");
+
                 if (string.IsNullOrEmpty(traceDir))
                     return null;
 
                 // Check if learning mode is enabled
                 var learnModeStr = Environment.GetEnvironmentVariable("LUA_SANDBOX_LEARN_MODE");
-                var learningMode = !string.IsNullOrEmpty(learnModeStr) && 
-                                 (learnModeStr.Equals("true", StringComparison.OrdinalIgnoreCase) ||
-                                  learnModeStr.Equals("1", StringComparison.OrdinalIgnoreCase));
+                var learningMode =
+                    !string.IsNullOrEmpty(learnModeStr)
+                    && (
+                        learnModeStr.Equals("true", StringComparison.OrdinalIgnoreCase)
+                        || learnModeStr.Equals("1", StringComparison.OrdinalIgnoreCase)
+                    );
 
                 try
                 {
@@ -252,7 +273,7 @@ namespace SolarSharp.Interpreter.Security
                 catch (Exception ex)
                 {
                     // Log error but don't fail - tracing is optional
-                    System.Diagnostics.Debug.WriteLine($"Failed to initialize security tracer: {ex.Message}");
+                    Debug.WriteLine($"Failed to initialize security tracer: {ex.Message}");
                     return null;
                 }
             }
@@ -264,7 +285,8 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public void HandleSecurityEvent(SecurityEvent evt)
         {
-            if (evt == null) return;
+            if (evt == null)
+                return;
 
             try
             {
@@ -275,31 +297,36 @@ namespace SolarSharp.Interpreter.Security
                     var filepath = Path.Combine(_traceDirectory, filename);
 
                     // In learning mode, log the original violation but mark it as permitted for learning
-                    var wasViolation = evt.Type == SecurityEventType.AccessDenied || evt.Type == SecurityEventType.PolicyViolation;
+                    var wasViolation =
+                        evt.Type == SecurityEventType.AccessDenied
+                        || evt.Type == SecurityEventType.PolicyViolation;
                     var permitInLearningMode = LearningMode && wasViolation;
 
                     var logEntry = new
                     {
                         Timestamp = timestamp,
                         Type = evt.Type.ToString(),
-                        Operation = evt.Operation,
-                        Arguments = evt.Arguments,
-                        Metadata = evt.Metadata,
-                        StackTrace = evt.StackTrace,
-                        ScriptId = evt.ScriptId,
-                        ThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId,
-                        ProcessId = System.Diagnostics.Process.GetCurrentProcess().Id,
-                        LearningMode = LearningMode,
+                        evt.Operation,
+                        evt.Arguments,
+                        evt.Metadata,
+                        evt.StackTrace,
+                        evt.ScriptId,
+                        ThreadId = Thread.CurrentThread.ManagedThreadId,
+                        ProcessId = Process.GetCurrentProcess().Id,
+                        LearningMode,
                         PermittedInLearningMode = permitInLearningMode,
                         ViolationHandling = evt.ViolationHandling.ToString(),
-                        TerminateExecution = evt.TerminateExecution
+                        evt.TerminateExecution,
                     };
 
-                    var json = JsonSerializer.Serialize(logEntry, new JsonSerializerOptions 
-                    { 
-                        WriteIndented = false,
-                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-                    });
+                    var json = JsonSerializer.Serialize(
+                        logEntry,
+                        new JsonSerializerOptions
+                        {
+                            WriteIndented = false,
+                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                        }
+                    );
 
                     // Use JSONL format (JSON Lines) - one JSON object per line
                     File.AppendAllText(filepath, json + Environment.NewLine, Encoding.UTF8);
@@ -316,17 +343,23 @@ namespace SolarSharp.Interpreter.Security
                     else if (wasViolation)
                     {
                         // Set appropriate violation handling for different types of operations
-                        if (evt.Operation?.Contains("Module") == true || evt.Operation?.Contains("Function") == true)
+                        if (
+                            evt.Operation?.Contains("Module") == true
+                            || evt.Operation?.Contains("Function") == true
+                        )
                         {
                             evt.ViolationHandling = SecurityViolationHandling.ReturnNil; // Make functions appear as nil
                         }
-                        else if (evt.Operation?.Contains("File") == true || evt.Operation?.Contains("IO") == true)
+                        else if (
+                            evt.Operation?.Contains("File") == true
+                            || evt.Operation?.Contains("IO") == true
+                        )
                         {
                             evt.ViolationHandling = SecurityViolationHandling.ThrowError; // Throw Lua errors for file ops
                         }
                         else
                         {
-                            evt.ViolationHandling = SecurityViolationHandling.Deny; // Default deny behavior
+                            evt.ViolationHandling = SecurityViolationHandling.Deny; // Default deny behaviour
                         }
                         evt.TerminateExecution = false; // Don't terminate, handle gracefully
                     }
@@ -335,7 +368,7 @@ namespace SolarSharp.Interpreter.Security
             catch (Exception ex)
             {
                 // Don't let tracing errors break security functionality
-                System.Diagnostics.Debug.WriteLine($"Security tracing error: {ex.Message}");
+                Debug.WriteLine($"Security tracing error: {ex.Message}");
             }
         }
 
@@ -344,24 +377,31 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public bool ShouldPermitInLearningMode(SecurityEventType eventType)
         {
-            return LearningMode && (eventType == SecurityEventType.AccessDenied || eventType == SecurityEventType.PolicyViolation);
+            return LearningMode
+                && (
+                    eventType == SecurityEventType.AccessDenied
+                    || eventType == SecurityEventType.PolicyViolation
+                );
         }
 
         /// <summary>
         /// Determines the appropriate violation handling strategy for an operation
         /// </summary>
-        public static SecurityViolationHandling GetViolationHandling(string operation, bool learningMode)
+        public static SecurityViolationHandling GetViolationHandling(
+            string operation,
+            bool learningMode
+        )
         {
             if (learningMode)
                 return SecurityViolationHandling.Allow;
 
             if (operation?.Contains("Module") == true || operation?.Contains("Function") == true)
                 return SecurityViolationHandling.ReturnNil; // Make functions appear as nil
-            
+
             if (operation?.Contains("File") == true || operation?.Contains("IO") == true)
                 return SecurityViolationHandling.ThrowError; // Throw Lua errors for file ops
-            
-            return SecurityViolationHandling.Deny; // Default deny behavior
+
+            return SecurityViolationHandling.Deny; // Default deny behaviour
         }
 
         /// <summary>
@@ -374,12 +414,24 @@ namespace SolarSharp.Interpreter.Security
 
             try
             {
-                var traceFiles = Directory.GetFiles(_traceDirectory, "security-trace-*.jsonl")
-                    .Where(f => 
+                var traceFiles = Directory
+                    .GetFiles(_traceDirectory, "security-trace-*.jsonl")
+                    .Where(f =>
                     {
-                        var match = System.Text.RegularExpressions.Regex.Match(Path.GetFileName(f), @"security-trace-(\d{4}-\d{2}-\d{2})\.jsonl");
-                        if (!match.Success) return false;
-                        return DateTime.TryParseExact(match.Groups[1].Value, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var date) && date >= from.Date;
+                        var match = Regex.Match(
+                            Path.GetFileName(f),
+                            @"security-trace-(\d{4}-\d{2}-\d{2})\.jsonl"
+                        );
+                        if (!match.Success)
+                            return false;
+                        return DateTime.TryParseExact(
+                                match.Groups[1].Value,
+                                "yyyy-MM-dd",
+                                null,
+                                DateTimeStyles.None,
+                                out var date
+                            )
+                            && date >= from.Date;
                     });
 
                 foreach (var file in traceFiles)
@@ -399,7 +451,8 @@ namespace SolarSharp.Interpreter.Security
         {
             foreach (var line in File.ReadAllLines(filepath, Encoding.UTF8))
             {
-                if (string.IsNullOrWhiteSpace(line)) continue;
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
 
                 try
                 {
@@ -412,8 +465,10 @@ namespace SolarSharp.Interpreter.Security
                     // Track denied operations to suggest permissions
                     if (type == "AccessDenied" || type == "PolicyViolation")
                     {
-                        suggestion.DeniedOperations.Add($"{operation}: {GetArgumentsSummary(root)}");
-                        
+                        suggestion.DeniedOperations.Add(
+                            $"{operation}: {GetArgumentsSummary(root)}"
+                        );
+
                         // Suggest specific permissions based on operation
                         if (operation?.Contains("FileRead") == true)
                         {
@@ -433,7 +488,9 @@ namespace SolarSharp.Interpreter.Security
                     // Track successful operations to understand usage patterns
                     if (type == "OperationSuccess")
                     {
-                        suggestion.SuccessfulOperations.Add($"{operation}: {GetArgumentsSummary(root)}");
+                        suggestion.SuccessfulOperations.Add(
+                            $"{operation}: {GetArgumentsSummary(root)}"
+                        );
                     }
                 }
                 catch (Exception ex)
@@ -445,7 +502,10 @@ namespace SolarSharp.Interpreter.Security
 
         private string GetArgumentsSummary(JsonElement root)
         {
-            if (root.TryGetProperty("Arguments", out var args) && args.ValueKind == JsonValueKind.Array)
+            if (
+                root.TryGetProperty("Arguments", out var args)
+                && args.ValueKind == JsonValueKind.Array
+            )
             {
                 var argList = new List<string>();
                 foreach (var arg in args.EnumerateArray())

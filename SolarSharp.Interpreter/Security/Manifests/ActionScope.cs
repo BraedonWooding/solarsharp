@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SolarSharp.Interpreter.Security.Manifests
 {
@@ -105,7 +104,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// <summary>
         /// All actions
         /// </summary>
-        All = Read | Write | Execute | Delete | Create | List | Load | Compile
+        All = Read | Write | Execute | Delete | Create | List | Load | Compile,
     }
 
     /// <summary>
@@ -114,7 +113,8 @@ namespace SolarSharp.Interpreter.Security.Manifests
     public class ActionScopeManager
     {
         private readonly List<ActionScope> _scopes = new List<ActionScope>();
-        private readonly Dictionary<string, ActionType> _cache = new Dictionary<string, ActionType>();
+        private readonly Dictionary<string, ActionType> _cache =
+            new Dictionary<string, ActionType>();
 
         /// <summary>
         /// Adds an action scope
@@ -146,7 +146,10 @@ namespace SolarSharp.Interpreter.Security.Manifests
                 if (scope.Matches(filePath, action))
                 {
                     // Check if this is an allow or deny rule
-                    if (scope.Context.TryGetValue("deny", out var denyObj) && denyObj is bool and true)
+                    if (
+                        scope.Context.TryGetValue("deny", out var denyObj)
+                        && denyObj is bool and true
+                    )
                     {
                         deniedActions |= scope.Action;
                     }
@@ -193,23 +196,28 @@ namespace SolarSharp.Interpreter.Security.Manifests
             var manager = new ActionScopeManager();
 
             // Lua files can be executed but not modified
-            manager.AddScope(new ActionScope("*.lua", ActionType.Execute | ActionType.Read | ActionType.Load));
-            manager.AddScope(new ActionScope("*.lua", ActionType.Write | ActionType.Delete | ActionType.Create)
-            {
-                Context = { ["deny"] = true }
-            });
+            manager.AddScope(
+                new ActionScope("*.lua", ActionType.Execute | ActionType.Read | ActionType.Load)
+            );
+            manager.AddScope(
+                new ActionScope("*.lua", ActionType.Write | ActionType.Delete | ActionType.Create)
+                {
+                    Context = { ["deny"] = true },
+                }
+            );
 
             // Manifest files cannot be accessed at all
-            manager.AddScope(new ActionScope("manifest", ActionType.All)
-            {
-                Context = { ["deny"] = true }
-            });
+            manager.AddScope(
+                new ActionScope("manifest", ActionType.All) { Context = { ["deny"] = true } }
+            );
 
             // Digest-protected files cannot be modified
-            manager.AddScope(new ActionScope("digest_target", ActionType.Write | ActionType.Delete)
-            {
-                Context = { ["deny"] = true }
-            });
+            manager.AddScope(
+                new ActionScope("digest_target", ActionType.Write | ActionType.Delete)
+                {
+                    Context = { ["deny"] = true },
+                }
+            );
 
             return manager;
         }
@@ -237,12 +245,20 @@ namespace SolarSharp.Interpreter.Security.Manifests
             if (rule.Target != RuleTarget.Action)
                 yield break;
 
-            if (rule is not ComposableManifestRule composable) yield break;
+            if (rule is not ComposableManifestRule composable)
+                yield break;
             var actions = ActionType.None;
 
-            if (composable.CanExecute == true)
+            // Check ResourceLimits for action permissions
+            if (
+                composable.ResourceLimits.TryGetValue("CanExecute", out var canExecuteValue)
+                && canExecuteValue is bool and true
+            )
                 actions |= ActionType.Execute;
-            if (composable.CanModify == true)
+            if (
+                composable.ResourceLimits.TryGetValue("CanModify", out var canModifyValue)
+                && canModifyValue is bool and true
+            )
                 actions |= ActionType.Write | ActionType.Delete | ActionType.Create;
 
             if (actions != ActionType.None)
@@ -253,16 +269,23 @@ namespace SolarSharp.Interpreter.Security.Manifests
             // Add deny rules for false values
             var denyActions = ActionType.None;
 
-            if (composable.CanExecute == false)
+            // Check ResourceLimits for deny permissions
+            if (
+                composable.ResourceLimits.TryGetValue("CanExecute", out var canExecuteValue2)
+                && canExecuteValue2 is bool and false
+            )
                 denyActions |= ActionType.Execute;
-            if (composable.CanModify == false)
+            if (
+                composable.ResourceLimits.TryGetValue("CanModify", out var canModifyValue2)
+                && canModifyValue2 is bool and false
+            )
                 denyActions |= ActionType.Write | ActionType.Delete | ActionType.Create;
 
             if (denyActions != ActionType.None)
             {
                 yield return new ActionScope(rule.Scope, denyActions)
                 {
-                    Context = { ["deny"] = true }
+                    Context = { ["deny"] = true },
                 };
             }
         }
@@ -274,10 +297,11 @@ namespace SolarSharp.Interpreter.Security.Manifests
         {
             var manager = new ActionScopeManager();
 
-            foreach (var actionScope in manifest.Rules.Values.SelectMany(static rule => rule.ToActionScopes()))
-            {
-                manager.AddScope(actionScope);
-            }
+            // Manifest no longer has Rules property, skip rule processing for now
+            // foreach (var actionScope in manifest.Rules.Values.SelectMany(static rule => rule.ToActionScopes()))
+            // {
+            //     manager.AddScope(actionScope);
+            // }
 
             return manager;
         }

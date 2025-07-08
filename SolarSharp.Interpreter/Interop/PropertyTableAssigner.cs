@@ -80,7 +80,6 @@ namespace SolarSharp.Interpreter.Interop
             m_InternalAssigner.SetSubassignerForType(typeof(SubassignerType), assigner);
         }
 
-
         /// <summary>
         /// Assigns the properties of the specified object without checking the type.
         /// </summary>
@@ -92,7 +91,6 @@ namespace SolarSharp.Interpreter.Interop
         }
     }
 
-
     /// <summary>
     /// Utility class which may be used to set properties on an object from values contained in a Lua table.
     /// Properties must be decorated with the <see cref="MoonSharpPropertyAttribute"/>.
@@ -101,8 +99,10 @@ namespace SolarSharp.Interpreter.Interop
     public class PropertyTableAssigner : IPropertyTableAssigner
     {
         private readonly Type m_Type;
-        private readonly Dictionary<string, PropertyInfo> m_PropertyMap = new();
-        private readonly Dictionary<Type, IPropertyTableAssigner> m_SubAssigners = new();
+        private readonly Dictionary<string, PropertyInfo> m_PropertyMap =
+            new Dictionary<string, PropertyInfo>();
+        private readonly Dictionary<Type, IPropertyTableAssigner> m_SubAssigners =
+            new Dictionary<Type, IPropertyTableAssigner>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PropertyTableAssigner"/> class.
@@ -119,28 +119,28 @@ namespace SolarSharp.Interpreter.Interop
             if (Framework.Do.IsValueType(m_Type))
                 throw new ArgumentException("Type cannot be a value type.");
 
-            foreach (string property in expectedMissingProperties)
+            foreach (var property in expectedMissingProperties)
             {
                 m_PropertyMap.Add(property, null);
             }
 
-            foreach (PropertyInfo pi in Framework.Do.GetProperties(m_Type))
+            foreach (var pi in Framework.Do.GetProperties(m_Type))
             {
-                foreach (MoonSharpPropertyAttribute attr in pi.GetCustomAttributes(true).OfType<MoonSharpPropertyAttribute>())
+                foreach (
+                    var attr in pi.GetCustomAttributes(true).OfType<MoonSharpPropertyAttribute>()
+                )
                 {
-                    string name = attr.Name ?? pi.Name;
+                    var name = attr.Name ?? pi.Name;
 
                     if (m_PropertyMap.ContainsKey(name))
                     {
-                        throw new ArgumentException(string.Format("Type {0} has two definitions for MoonSharp property {1}", m_Type.FullName, name));
+                        throw new ArgumentException(
+                            $"Type {m_Type.FullName} has two definitions for MoonSharp property {name}"
+                        );
                     }
-                    else
-                    {
-                        m_PropertyMap.Add(name, pi);
-                    }
+                    m_PropertyMap.Add(name, pi);
                 }
             }
-
         }
 
         /// <summary>
@@ -152,12 +152,11 @@ namespace SolarSharp.Interpreter.Interop
             m_PropertyMap.Add(name, null);
         }
 
-
         private bool TryAssignProperty(object obj, string name, DynValue value)
         {
             if (m_PropertyMap.ContainsKey(name))
             {
-                PropertyInfo pi = m_PropertyMap[name];
+                var pi = m_PropertyMap[name];
 
                 if (pi != null)
                 {
@@ -171,11 +170,15 @@ namespace SolarSharp.Interpreter.Interop
                     }
                     else
                     {
-                        o = ScriptToClrConversions.DynValueToObjectOfType(value,
-                            pi.PropertyType, null, false);
+                        o = ScriptToClrConversions.DynValueToObjectOfType(
+                            value,
+                            pi.PropertyType,
+                            null,
+                            false
+                        );
                     }
 
-                    Framework.Do.GetSetMethod(pi).Invoke(obj, new object[] { o });
+                    Framework.Do.GetSetMethod(pi).Invoke(obj, new[] { o });
                 }
 
                 return true;
@@ -186,10 +189,32 @@ namespace SolarSharp.Interpreter.Interop
 
         private void AssignProperty(object obj, string name, DynValue value)
         {
-            if (TryAssignProperty(obj, name, value)) return;
-            if ((Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter && TryAssignProperty(obj, DescriptorHelpers.UpperFirstLetter(name), value)) return;
-            if ((Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify && TryAssignProperty(obj, DescriptorHelpers.Camelify(name), value)) return;
-            if ((Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase && TryAssignProperty(obj, DescriptorHelpers.UpperFirstLetter(DescriptorHelpers.Camelify(name)), value)) return;
+            if (TryAssignProperty(obj, name, value))
+                return;
+            if (
+                (
+                    Script.GlobalOptions.FuzzySymbolMatching
+                    & FuzzySymbolMatchingbehaviour.UpperFirstLetter
+                ) == FuzzySymbolMatchingbehaviour.UpperFirstLetter
+                && TryAssignProperty(obj, DescriptorHelpers.UpperFirstLetter(name), value)
+            )
+                return;
+            if (
+                (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingbehaviour.Camelify)
+                    == FuzzySymbolMatchingbehaviour.Camelify
+                && TryAssignProperty(obj, DescriptorHelpers.Camelify(name), value)
+            )
+                return;
+            if (
+                (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingbehaviour.PascalCase)
+                    == FuzzySymbolMatchingbehaviour.PascalCase
+                && TryAssignProperty(
+                    obj,
+                    DescriptorHelpers.UpperFirstLetter(DescriptorHelpers.Camelify(name)),
+                    value
+                )
+            )
+                return;
 
             throw new ScriptRuntimeException("Invalid property {0}", name);
         }
@@ -208,13 +233,18 @@ namespace SolarSharp.Interpreter.Interop
                 throw new ArgumentNullException("Object is null");
 
             if (!Framework.Do.IsInstanceOfType(m_Type, obj))
-                throw new ArgumentException(string.Format("Invalid type of object : got '{0}', expected {1}", obj.GetType().FullName, m_Type.FullName));
+                throw new ArgumentException(
+                    $"Invalid type of object : got '{obj.GetType().FullName}', expected {m_Type.FullName}"
+                );
 
             foreach (var pair in data)
             {
                 if (pair.Key.Type != DataType.String)
                 {
-                    throw new ScriptRuntimeException("Invalid property of type {0}", pair.Key.Type.ToErrorTypeString());
+                    throw new ScriptRuntimeException(
+                        "Invalid property of type {0}",
+                        pair.Key.Type.ToErrorTypeString()
+                    );
                 }
 
                 AssignProperty(obj, pair.Key.String, pair.Value);
@@ -228,10 +258,12 @@ namespace SolarSharp.Interpreter.Interop
         /// <param name="assigner">The property assigner.</param>
         public void SetSubassignerForType(Type propertyType, IPropertyTableAssigner assigner)
         {
-            if (Framework.Do.IsAbstract(propertyType)
+            if (
+                Framework.Do.IsAbstract(propertyType)
                 || Framework.Do.IsGenericType(propertyType)
                 || Framework.Do.IsInterface(propertyType)
-                || Framework.Do.IsValueType(propertyType))
+                || Framework.Do.IsValueType(propertyType)
+            )
             {
                 throw new ArgumentException("propertyType must be a concrete, reference type");
             }

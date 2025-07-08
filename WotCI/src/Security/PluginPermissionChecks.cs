@@ -16,9 +16,10 @@ namespace WotCI.Security
             return required switch
             {
                 PluginTrustLevel.User => true, // User level is always met
-                PluginTrustLevel.Partner => actual == PluginTrustLevel.Partner || actual == PluginTrustLevel.System,
+                PluginTrustLevel.Partner => actual == PluginTrustLevel.Partner
+                    || actual == PluginTrustLevel.System,
                 PluginTrustLevel.System => actual == PluginTrustLevel.System,
-                _ => false
+                _ => false,
             };
         }
     }

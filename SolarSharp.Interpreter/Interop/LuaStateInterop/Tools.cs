@@ -44,13 +44,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-
 using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-
 
 namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 {
@@ -65,17 +63,17 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         /// </returns>
         public static bool IsNumericType(object o)
         {
-            return o is byte ||
-                o is sbyte ||
-                o is short ||
-                o is ushort ||
-                o is int ||
-                o is uint ||
-                o is long ||
-                o is ulong ||
-                o is float ||
-                o is double ||
-                o is decimal;
+            return o is byte
+                || o is sbyte
+                || o is short
+                || o is ushort
+                || o is int
+                || o is uint
+                || o is long
+                || o is ulong
+                || o is float
+                || o is double
+                || o is decimal;
         }
 
         /// <summary>
@@ -88,7 +86,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         /// </returns>
         public static bool IsPositive(object Value, bool ZeroIsPositive)
         {
-            Type t = Value.GetType();
+            var t = Value.GetType();
 
             if (t == typeof(sbyte))
                 return ZeroIsPositive ? (sbyte)Value >= 0 : (sbyte)Value > 0;
@@ -126,7 +124,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         /// <returns>A boxed numeric object whos type is unsigned.</returns>
         public static object ToUnsigned(object Value)
         {
-            Type t = Value.GetType();
+            var t = Value.GetType();
 
             if (t == typeof(sbyte))
                 return (byte)(sbyte)Value;
@@ -165,7 +163,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         /// </returns>
         public static object ToInteger(object Value, bool Round)
         {
-            Type t = Value.GetType();
+            var t = Value.GetType();
 
             if (t == typeof(sbyte))
                 return Value;
@@ -195,7 +193,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
         public static long UnboxToLong(object Value, bool Round)
         {
-            Type t = Value.GetType();
+            var t = Value.GetType();
 
             if (t == typeof(sbyte))
                 return (sbyte)Value;
@@ -231,73 +229,78 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         /// <returns>A string with all string meta chars are replaced</returns>
         public static string ReplaceMetaChars(string input)
         {
-            return Regex.Replace(input, @"(\\)(\d{3}|[^\d])?", new MatchEvaluator(ReplaceMetaCharsMatch));
+            return Regex.Replace(input, @"(\\)(\d{3}|[^\d])?", ReplaceMetaCharsMatch);
         }
+
         private static string ReplaceMetaCharsMatch(Match m)
         {
             // convert octal quotes (like \040)
             if (m.Groups[2].Length == 3)
                 return Convert.ToChar(Convert.ToByte(m.Groups[2].Value, 8)).ToString();
-            else
+
+            // convert all other special meta characters
+            //TODO: \xhhh hex and possible dec !!
+            switch (m.Groups[2].Value)
             {
-                // convert all other special meta characters
-                //TODO: \xhhh hex and possible dec !!
-                switch (m.Groups[2].Value)
-                {
-                    case "0":           // null
-                        return "\0";
-                    case "a":           // alert (beep)
-                        return "\a";
-                    case "b":           // BS
-                        return "\b";
-                    case "f":           // FF
-                        return "\f";
-                    case "v":           // vertical tab
-                        return "\v";
-                    case "r":           // CR
-                        return "\r";
-                    case "n":           // LF
-                        return "\n";
-                    case "t":           // Tab
-                        return "\t";
-                    default:
-                        // if neither an octal quote nor a special meta character
-                        // so just remove the backslash
-                        return m.Groups[2].Value;
-                }
+                case "0": // null
+                    return "\0";
+                case "a": // alert (beep)
+                    return "\a";
+                case "b": // BS
+                    return "\b";
+                case "f": // FF
+                    return "\f";
+                case "v": // vertical tab
+                    return "\v";
+                case "r": // CR
+                    return "\r";
+                case "n": // LF
+                    return "\n";
+                case "t": // Tab
+                    return "\t";
+                default:
+                    // if neither an octal quote nor a special meta character
+                    // so just remove the backslash
+                    return m.Groups[2].Value;
             }
         }
 
-        public static void fprintf(TextWriter Destination, string Format, params object[] Parameters)
+        public static void fprintf(
+            TextWriter Destination,
+            string Format,
+            params object[] Parameters
+        )
         {
             Destination.Write(sprintf(Format, Parameters));
         }
 
+        internal static Regex r = new Regex(
+            @"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])"
+        );
 
-        internal static Regex r = new(@"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])");
         public static string sprintf(string Format, params object[] Parameters)
         {
-            StringBuilder f = new();
+            var f = new StringBuilder();
             //Regex r = new Regex( @"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])" );
             //"%[parameter][flags][width][.precision][length]type"
             Match m = null;
-            string w = string.Empty;
-            int defaultParamIx = 0;
+            var w = string.Empty;
+            var defaultParamIx = 0;
             int paramIx;
             object o = null;
 
-            bool flagLeft2Right = false;
-            bool flagAlternate = false;
-            bool flagPositiveSign = false;
-            bool flagPositiveSpace = false;
-            bool flagZeroPadding = false;
-            bool flagGroupThousands = false;
+            var flagLeft2Right = false;
+            var flagAlternate = false;
+            var flagPositiveSign = false;
+            var flagPositiveSpace = false;
+            var flagZeroPadding = false;
+            var flagGroupThousands = false;
 
-            int fieldLength = 0;
-            int fieldPrecision = 0;
-            char shortLongIndicator = '\0';
-            char formatSpecifier = '\0';
-            char paddingCharacter = ' ';
+            var fieldLength = 0;
+            var fieldPrecision = 0;
+            var shortLongIndicator = '\0';
+            var formatSpecifier = '\0';
+            var paddingCharacter = ' ';
 
             // find all format parameters in format string
             f.Append(Format);
@@ -307,9 +310,10 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                 paramIx = defaultParamIx;
                 if (m.Groups[1] != null && m.Groups[1].Value.Length > 0)
                 {
-                    string val = m.Groups[1].Value[..^1];
+                    var val = m.Groups[1].Value[..^1];
                     paramIx = Convert.ToInt32(val) - 1;
-                };
+                }
+                ;
 
                 // extract format flags
                 flagAlternate = false;
@@ -320,7 +324,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                 flagGroupThousands = false;
                 if (m.Groups[2] != null && m.Groups[2].Value.Length > 0)
                 {
-                    string flags = m.Groups[2].Value;
+                    var flags = m.Groups[2].Value;
 
                     flagAlternate = flags.IndexOf('#') >= 0;
                     flagLeft2Right = flags.IndexOf('-') >= 0;
@@ -334,7 +338,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                         flagPositiveSpace = false;
                 }
 
-                // extract field length and 
+                // extract field length and
                 // pading character
                 paddingCharacter = ' ';
                 fieldLength = int.MinValue;
@@ -370,11 +374,13 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                     formatSpecifier = m.Groups[6].Value[0];
 
                 // default precision is 6 digits if none is specified except
-                if (fieldPrecision == int.MinValue &&
-                    formatSpecifier != 's' &&
-                    formatSpecifier != 'c' &&
-                    char.ToUpper(formatSpecifier) != 'X' &&
-                    formatSpecifier != 'o')
+                if (
+                    fieldPrecision == int.MinValue
+                    && formatSpecifier != 's'
+                    && formatSpecifier != 'c'
+                    && char.ToUpper(formatSpecifier) != 'X'
+                    && formatSpecifier != 'o'
+                )
                     fieldPrecision = 6;
 
                 // get next value parameter and convert value parameter depending on short / long indicator
@@ -412,51 +418,83 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                 w = string.Empty;
                 switch (formatSpecifier)
                 {
-                    case '%':   // % character
+                    case '%': // % character
                         w = "%";
                         break;
 
-                    case 'd':   // integer
-                        w = FormatNumber(flagGroupThousands ? "n" : "d", flagAlternate,
-                                        fieldLength, int.MinValue, flagLeft2Right,
-                                        flagPositiveSign, flagPositiveSpace,
-                                        paddingCharacter, o);
+                    case 'd': // integer
+                        w = FormatNumber(
+                            flagGroupThousands ? "n" : "d",
+                            flagAlternate,
+                            fieldLength,
+                            int.MinValue,
+                            flagLeft2Right,
+                            flagPositiveSign,
+                            flagPositiveSpace,
+                            paddingCharacter,
+                            o
+                        );
                         defaultParamIx++;
                         break;
 
-                    case 'i':   // integer
+                    case 'i': // integer
                         goto case 'd';
 
-                    case 'o':   // octal integer - no leading zero
-                        w = FormatOct("o", flagAlternate,
-                                        fieldLength, int.MinValue, flagLeft2Right,
-                                        paddingCharacter, o);
+                    case 'o': // octal integer - no leading zero
+                        w = FormatOct(
+                            "o",
+                            flagAlternate,
+                            fieldLength,
+                            int.MinValue,
+                            flagLeft2Right,
+                            paddingCharacter,
+                            o
+                        );
                         defaultParamIx++;
                         break;
 
-                    case 'x':   // hex integer - no leading zero
-                        w = FormatHex("x", flagAlternate,
-                                        fieldLength, fieldPrecision, flagLeft2Right,
-                                        paddingCharacter, o);
+                    case 'x': // hex integer - no leading zero
+                        w = FormatHex(
+                            "x",
+                            flagAlternate,
+                            fieldLength,
+                            fieldPrecision,
+                            flagLeft2Right,
+                            paddingCharacter,
+                            o
+                        );
                         defaultParamIx++;
                         break;
 
-                    case 'X':   // same as x but with capital hex characters
-                        w = FormatHex("X", flagAlternate,
-                                        fieldLength, fieldPrecision, flagLeft2Right,
-                                        paddingCharacter, o);
+                    case 'X': // same as x but with capital hex characters
+                        w = FormatHex(
+                            "X",
+                            flagAlternate,
+                            fieldLength,
+                            fieldPrecision,
+                            flagLeft2Right,
+                            paddingCharacter,
+                            o
+                        );
                         defaultParamIx++;
                         break;
 
-                    case 'u':   // unsigned integer
-                        w = FormatNumber(flagGroupThousands ? "n" : "d", flagAlternate,
-                                        fieldLength, int.MinValue, flagLeft2Right,
-                                        false, false,
-                                        paddingCharacter, ToUnsigned(o));
+                    case 'u': // unsigned integer
+                        w = FormatNumber(
+                            flagGroupThousands ? "n" : "d",
+                            flagAlternate,
+                            fieldLength,
+                            int.MinValue,
+                            flagLeft2Right,
+                            false,
+                            false,
+                            paddingCharacter,
+                            ToUnsigned(o)
+                        );
                         defaultParamIx++;
                         break;
 
-                    case 'c':   // character
+                    case 'c': // character
                         if (IsNumericType(o))
                             w = Convert.ToChar(o).ToString();
                         else if (o is char)
@@ -466,72 +504,116 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                         defaultParamIx++;
                         break;
 
-                    case 's':   // string
-                                //string t = "{0" + ( fieldLength != int.MinValue ? "," + ( flagLeft2Right ? "-" : String.Empty ) + fieldLength.ToString() : String.Empty ) + ":s}";
+                    case 's': // string
+                        //string t = "{0" + ( fieldLength != int.MinValue ? "," + ( flagLeft2Right ? "-" : String.Empty ) + fieldLength.ToString() : String.Empty ) + ":s}";
                         w = o.ToString();
                         if (fieldPrecision >= 0)
                             w = w[..fieldPrecision];
 
                         if (fieldLength != int.MinValue)
-                            w = flagLeft2Right ? w.PadRight(fieldLength, paddingCharacter) : w.PadLeft(fieldLength, paddingCharacter);
+                            w = flagLeft2Right
+                                ? w.PadRight(fieldLength, paddingCharacter)
+                                : w.PadLeft(fieldLength, paddingCharacter);
                         defaultParamIx++;
                         break;
 
-                    case 'f':   // double
-                        w = FormatNumber(flagGroupThousands ? "n" : "f", flagAlternate,
-                                        fieldLength, fieldPrecision, flagLeft2Right,
-                                        flagPositiveSign, flagPositiveSpace,
-                                        paddingCharacter, o);
+                    case 'f': // double
+                        w = FormatNumber(
+                            flagGroupThousands ? "n" : "f",
+                            flagAlternate,
+                            fieldLength,
+                            fieldPrecision,
+                            flagLeft2Right,
+                            flagPositiveSign,
+                            flagPositiveSpace,
+                            paddingCharacter,
+                            o
+                        );
                         defaultParamIx++;
                         break;
 
-                    case 'e':   // double / exponent
-                        w = FormatNumber("e", flagAlternate,
-                                        fieldLength, fieldPrecision, flagLeft2Right,
-                                        flagPositiveSign, flagPositiveSpace,
-                                        paddingCharacter, o);
+                    case 'e': // double / exponent
+                        w = FormatNumber(
+                            "e",
+                            flagAlternate,
+                            fieldLength,
+                            fieldPrecision,
+                            flagLeft2Right,
+                            flagPositiveSign,
+                            flagPositiveSpace,
+                            paddingCharacter,
+                            o
+                        );
                         defaultParamIx++;
                         break;
 
-                    case 'E':   // double / exponent
-                        w = FormatNumber("E", flagAlternate,
-                                        fieldLength, fieldPrecision, flagLeft2Right,
-                                        flagPositiveSign, flagPositiveSpace,
-                                        paddingCharacter, o);
+                    case 'E': // double / exponent
+                        w = FormatNumber(
+                            "E",
+                            flagAlternate,
+                            fieldLength,
+                            fieldPrecision,
+                            flagLeft2Right,
+                            flagPositiveSign,
+                            flagPositiveSpace,
+                            paddingCharacter,
+                            o
+                        );
                         defaultParamIx++;
                         break;
 
-                    case 'g':   // double / exponent
-                        w = FormatNumber("g", flagAlternate,
-                                        fieldLength, fieldPrecision, flagLeft2Right,
-                                        flagPositiveSign, flagPositiveSpace,
-                                        paddingCharacter, o);
+                    case 'g': // double / exponent
+                        w = FormatNumber(
+                            "g",
+                            flagAlternate,
+                            fieldLength,
+                            fieldPrecision,
+                            flagLeft2Right,
+                            flagPositiveSign,
+                            flagPositiveSpace,
+                            paddingCharacter,
+                            o
+                        );
                         defaultParamIx++;
                         break;
 
-                    case 'G':   // double / exponent
-                        w = FormatNumber("G", flagAlternate,
-                                        fieldLength, fieldPrecision, flagLeft2Right,
-                                        flagPositiveSign, flagPositiveSpace,
-                                        paddingCharacter, o);
+                    case 'G': // double / exponent
+                        w = FormatNumber(
+                            "G",
+                            flagAlternate,
+                            fieldLength,
+                            fieldPrecision,
+                            flagLeft2Right,
+                            flagPositiveSign,
+                            flagPositiveSpace,
+                            paddingCharacter,
+                            o
+                        );
                         defaultParamIx++;
                         break;
 
-                    case 'p':   // pointer
+                    case 'p': // pointer
                         if (o is IntPtr)
 #if PCL || ENABLE_DOTNET
-							w = ( (IntPtr)o ).ToString();
+                            w = ((IntPtr)o).ToString();
 #else
                             w = "0x" + ((IntPtr)o).ToString("x");
 #endif
                         defaultParamIx++;
                         break;
 
-                    case 'n':   // number of characters so far
-                        w = FormatNumber("d", flagAlternate,
-                                        fieldLength, int.MinValue, flagLeft2Right,
-                                        flagPositiveSign, flagPositiveSpace,
-                                        paddingCharacter, m.Index);
+                    case 'n': // number of characters so far
+                        w = FormatNumber(
+                            "d",
+                            flagAlternate,
+                            fieldLength,
+                            int.MinValue,
+                            flagLeft2Right,
+                            flagPositiveSign,
+                            flagPositiveSpace,
+                            paddingCharacter,
+                            m.Index
+                        );
                         break;
                     default:
                         w = string.Empty;
@@ -552,17 +634,25 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             return f.ToString();
         }
 
-        private static string FormatOct(string NativeFormat, bool Alternate,
-                                            int FieldLength, int FieldPrecision,
-                                            bool Left2Right,
-                                            char Padding, object Value)
+        private static string FormatOct(
+            string NativeFormat,
+            bool Alternate,
+            int FieldLength,
+            int FieldPrecision,
+            bool Left2Right,
+            char Padding,
+            object Value
+        )
         {
-            string w = string.Empty;
-            string lengthFormat = "{0" + (FieldLength != int.MinValue ?
-                                            "," + (Left2Right ?
-                                                    "-" :
-                                                    string.Empty) + FieldLength.ToString() :
-                                            string.Empty) + "}";
+            var w = string.Empty;
+            var lengthFormat =
+                "{0"
+                + (
+                    FieldLength != int.MinValue
+                        ? "," + (Left2Right ? "-" : string.Empty) + FieldLength
+                        : string.Empty
+                )
+                + "}";
 
             if (IsNumericType(Value))
             {
@@ -586,20 +676,30 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             return w;
         }
 
-        private static string FormatHex(string NativeFormat, bool Alternate,
-                                            int FieldLength, int FieldPrecision,
-                                            bool Left2Right,
-                                            char Padding, object Value)
+        private static string FormatHex(
+            string NativeFormat,
+            bool Alternate,
+            int FieldLength,
+            int FieldPrecision,
+            bool Left2Right,
+            char Padding,
+            object Value
+        )
         {
-            string w = string.Empty;
-            string lengthFormat = "{0" + (FieldLength != int.MinValue ?
-                                            "," + (Left2Right ?
-                                                    "-" :
-                                                    string.Empty) + FieldLength.ToString() :
-                                            string.Empty) + "}";
-            string numberFormat = "{0:" + NativeFormat + (FieldPrecision != int.MinValue ?
-                                            FieldPrecision.ToString() :
-                                            string.Empty) + "}";
+            var w = string.Empty;
+            var lengthFormat =
+                "{0"
+                + (
+                    FieldLength != int.MinValue
+                        ? "," + (Left2Right ? "-" : string.Empty) + FieldLength
+                        : string.Empty
+                )
+                + "}";
+            var numberFormat =
+                "{0:"
+                + NativeFormat
+                + (FieldPrecision != int.MinValue ? FieldPrecision.ToString() : string.Empty)
+                + "}";
 
             if (IsNumericType(Value))
             {
@@ -623,21 +723,32 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             return w;
         }
 
-        private static string FormatNumber(string NativeFormat, bool Alternate,
-                                            int FieldLength, int FieldPrecision,
-                                            bool Left2Right,
-                                            bool PositiveSign, bool PositiveSpace,
-                                            char Padding, object Value)
+        private static string FormatNumber(
+            string NativeFormat,
+            bool Alternate,
+            int FieldLength,
+            int FieldPrecision,
+            bool Left2Right,
+            bool PositiveSign,
+            bool PositiveSpace,
+            char Padding,
+            object Value
+        )
         {
-            string w = string.Empty;
-            string lengthFormat = "{0" + (FieldLength != int.MinValue ?
-                                            "," + (Left2Right ?
-                                                    "-" :
-                                                    string.Empty) + FieldLength.ToString() :
-                                            string.Empty) + "}";
-            string numberFormat = "{0:" + NativeFormat + (FieldPrecision != int.MinValue ?
-                                            FieldPrecision.ToString() :
-                                            "0") + "}";
+            var w = string.Empty;
+            var lengthFormat =
+                "{0"
+                + (
+                    FieldLength != int.MinValue
+                        ? "," + (Left2Right ? "-" : string.Empty) + FieldLength
+                        : string.Empty
+                )
+                + "}";
+            var numberFormat =
+                "{0:"
+                + NativeFormat
+                + (FieldPrecision != int.MinValue ? FieldPrecision.ToString() : "0")
+                + "}";
 
             if (IsNumericType(Value))
             {
@@ -646,8 +757,12 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                 if (Left2Right || Padding == ' ')
                 {
                     if (IsPositive(Value, true))
-                        w = (PositiveSign ?
-                                "+" : PositiveSpace ? " " : string.Empty) + w;
+                        w =
+                            (
+                                PositiveSign ? "+"
+                                : PositiveSpace ? " "
+                                : string.Empty
+                            ) + w;
                     w = string.Format(lengthFormat, w);
                 }
                 else
@@ -655,10 +770,11 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
                     if (w.StartsWith("-"))
                         w = w[1..];
                     if (FieldLength != int.MinValue)
-                        w = PositiveSign ? w.PadLeft(FieldLength - 1, Padding) : w.PadLeft(FieldLength, Padding);
+                        w = PositiveSign
+                            ? w.PadLeft(FieldLength - 1, Padding)
+                            : w.PadLeft(FieldLength, Padding);
                     if (IsPositive(Value, true))
-                        w = (PositiveSign ?
-                                "+" : "") + w;  // xan - change here
+                        w = (PositiveSign ? "+" : "") + w; // xan - change here
                     else
                         w = "-" + w;
                 }
@@ -668,5 +784,3 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         }
     }
 }
-
-

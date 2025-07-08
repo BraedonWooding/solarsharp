@@ -12,14 +12,14 @@ namespace SolarSharp.Interpreter.Tests.Units
     ///     - Core functionality: Basic operations such as Push, Pop, and Peek
     ///     - Advanced features: Operations including Set, Expand, RemoveLast, and ClearUsed
     ///     - Robustness: Handling of edge cases, boundary conditions, and invalid operations
-    ///     - Performance: Behaviors under scenarios such as large capacities and rapid operation sequences
+    ///     - Performance: behaviours under scenarios such as large capacities and rapid operation sequences
     ///     - Compatibility: Type safety and support for various data types (value types, reference types, nulls, custom
     ///     structs)
     ///     The tests ensure data integrity, memory safety, and proper exception handling under different use cases.
     ///     Test separation: All tests are independent and use isolated stack instances for validation.
     /// </remarks>
     [TestFixture]
-    [Category("DataStructureTest")]
+    [Category("VM.Unit")]
     public class FastStackTests
     {
         /// <summary>
@@ -76,7 +76,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// </summary>
         /// <remarks>
         ///     This method ensures that the most recent item added to the stack is removed and returned,
-        ///     maintaining the Last-In-First-Out (LIFO) behavior of the stack. After removal, the stack
+        ///     maintaining the Last-In-First-Out (LIFO) behaviour of the stack. After removal, the stack
         ///     count is decreased by one. The underlying data structure remains intact and can continue
         ///     to be used after the operation.
         /// </remarks>
@@ -124,7 +124,8 @@ namespace SolarSharp.Interpreter.Tests.Units
             foreach (var item in items)
                 stack.Push(item);
 
-            for (var i = items.Length - 1; i >= 0; i--) Assert.That(stack.Pop(), Is.EqualTo(items[i]));
+            for (var i = items.Length - 1; i >= 0; i--)
+                Assert.That(stack.Pop(), Is.EqualTo(items[i]));
             Assert.That(stack.Count, Is.EqualTo(0));
         }
 
@@ -134,7 +135,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     and that the top element can still be retrieved subsequently.
         /// </summary>
         /// <remarks>
-        ///     This test checks the behavior of the Peek method on a non-empty stack. It asserts that the
+        ///     This test checks the behaviour of the Peek method on a non-empty stack. It asserts that the
         ///     returned element matches the top element, the count is not modified, and the top element
         ///     remains intact after the operation.
         /// </remarks>
@@ -165,7 +166,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     from the stack based on the specified offset from the top of the stack.
         /// </summary>
         /// <remarks>
-        ///     This test checks stack behavior with multiple items. It confirms that:
+        ///     This test checks stack behaviour with multiple items. It confirms that:
         ///     - An offset of 0 retrieves the top item.
         ///     - Positive offsets retrieve items below the top item in the correct order.
         /// </remarks>
@@ -224,7 +225,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         }
 
         /// <summary>
-        ///     Tests the behavior of the <c>Expand</c> method in the <c>FastStack</c> class
+        ///     Tests the behaviour of the <c>Expand</c> method in the <c>FastStack</c> class
         ///     to verify that it increases the stack's count by the specified size
         ///     without adding non-default items to the expanded slots.
         /// </summary>
@@ -305,8 +306,11 @@ namespace SolarSharp.Interpreter.Tests.Units
             stack.RemoveLast(3);
 
             Assert.That(stack.Count, Is.EqualTo(2));
-            Assert.That(stack.Peek(), Is.EqualTo(2));
-            Assert.That(stack.Peek(1), Is.EqualTo(1));
+            Assert.Multiple(() =>
+            {
+                Assert.That(stack.Peek(), Is.EqualTo(2));
+                Assert.That(stack.Peek(1), Is.EqualTo(1));
+            });
         }
 
         /// <summary>
@@ -335,7 +339,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     underlying storage is cleared.
         /// </summary>
         /// <remarks>
-        ///     This test verifies the behavior of the ClearUsed method by populating the stack with several items, invoking
+        ///     This test verifies the behaviour of the ClearUsed method by populating the stack with several items, invoking
         ///     ClearUsed,
         ///     and confirming that the stack count is zero and the storage array has been reset to its default state.
         /// </remarks>
@@ -376,7 +380,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// </summary>
         /// <remarks>
         ///     This test ensures the <c>FastStack</c> implementation properly handles
-        ///     edge cases where the stack is empty, maintaining correct behavior
+        ///     edge cases where the stack is empty, maintaining correct behaviour
         ///     by throwing an appropriate exception when attempting to peek.
         /// </remarks>
         /// <exception cref="IndexOutOfRangeException">
@@ -480,7 +484,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         }
 
         /// <summary>
-        ///     Tests the behavior of the <c>RemoveLast</c> method when attempting to remove
+        ///     Tests the behaviour of the <c>RemoveLast</c> method when attempting to remove
         ///     more items than are currently present in the stack.
         ///     Ensures that an exception of type <c>IndexOutOfRangeException</c> is thrown
         ///     in such scenarios.
@@ -502,8 +506,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             stack.Push(1);
             stack.Push(2);
 
-            Assert.Throws<IndexOutOfRangeException>(() =>
-                stack.RemoveLast(5)); // Zero() will fail with negative indices
+            Assert.Throws<IndexOutOfRangeException>(() => stack.RemoveLast(5)); // Zero() will fail with negative indices
         }
 
         /// <summary>
@@ -523,8 +526,11 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             var popped = stack.Pop();
 
-            Assert.That(popped, Is.EqualTo("test"));
-            Assert.That(stack.Storage[0], Is.Null); // Cleared to default
+            Assert.Multiple(() =>
+            {
+                Assert.That(popped, Is.EqualTo("test"));
+                Assert.That(stack.Storage[0], Is.Null); // Cleared to default
+            });
         }
 
         /// <summary>
@@ -539,7 +545,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// </remarks>
         /// <example>
         ///     The `RemoveLast` method is expected to nullify the references to removed objects in the storage for safety.
-        ///     This behavior is particularly useful for avoiding memory issues when working with reference types.
+        ///     This behaviour is particularly useful for avoiding memory issues when working with reference types.
         /// </example>
         /// <exception cref="Exception">
         ///     If the `RemoveLast` does not clear removed item slots to null, the test will fail to ensure memory retention
@@ -556,9 +562,12 @@ namespace SolarSharp.Interpreter.Tests.Units
             stack.RemoveLast(2);
 
             Assert.That(stack.Count, Is.EqualTo(1));
-            Assert.That(stack.Storage[1], Is.Null);
-            Assert.That(stack.Storage[2], Is.Null);
-            Assert.That(stack.Storage[0], Is.EqualTo("a")); // Still there
+            Assert.Multiple(() =>
+            {
+                Assert.That(stack.Storage[1], Is.Null);
+                Assert.That(stack.Storage[2], Is.Null);
+                Assert.That(stack.Storage[0], Is.EqualTo("a")); // Still there
+            });
         }
 
         /// <summary>
@@ -600,19 +609,22 @@ namespace SolarSharp.Interpreter.Tests.Units
             stack.Push(100);
             var result = stack.Pop();
 
-            Assert.That(result, Is.EqualTo(100));
-            Assert.That(stack.Peek(), Is.EqualTo(42));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.EqualTo(100));
+                Assert.That(stack.Peek(), Is.EqualTo(42));
+            });
         }
 
         /// <summary>
         ///     Validates the functionality of a <see cref="FastStack{T}" /> with reference types.
-        ///     This includes ensuring proper behavior when pushing, popping, and peeking elements
+        ///     This includes ensuring proper behaviour when pushing, popping, and peeking elements
         ///     in a last-in-first-out (LIFO) order using reference type data.
         /// </summary>
         /// <remarks>
         ///     Specifically tests if the stack correctly returns the most recently added
         ///     reference type item, maintains the order of remaining elements in the stack after
-        ///     operations, and handles reference type-specific behavior.
+        ///     operations, and handles reference type-specific behaviour.
         /// </remarks>
         [Test]
         public void Stack_WorksWithReferenceTypes()
@@ -623,8 +635,11 @@ namespace SolarSharp.Interpreter.Tests.Units
             stack.Push("world");
             var result = stack.Pop();
 
-            Assert.That(result, Is.EqualTo("world"));
-            Assert.That(stack.Peek(), Is.EqualTo("hello"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result, Is.EqualTo("world"));
+                Assert.That(stack.Peek(), Is.EqualTo("hello"));
+            });
         }
 
         /// <summary>
@@ -633,7 +648,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// <remarks>
         ///     Validates that the stack can store and process `null` values in between other valid values properly.
         ///     The method checks that pushing `null` onto the stack does not interfere with its ability to maintain the
-        ///     order and behavior expected of a stack, including Last-In-First-Out (LIFO) retrieval.
+        ///     order and behaviour expected of a stack, including Last-In-First-Out (LIFO) retrieval.
         /// </remarks>
         [Test]
         public void Stack_HandlesNullReferences()
@@ -671,10 +686,13 @@ namespace SolarSharp.Interpreter.Tests.Units
             stack.Push(struct2);
             var result = stack.Pop();
 
-            Assert.That(result.Value, Is.EqualTo(2));
-            Assert.That(result.Name, Is.EqualTo("Two"));
-            Assert.That(stack.Peek().Value, Is.EqualTo(1));
-            Assert.That(stack.Peek().Name, Is.EqualTo("One"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Value, Is.EqualTo(2));
+                Assert.That(result.Name, Is.EqualTo("Two"));
+                Assert.That(stack.Peek().Value, Is.EqualTo(1));
+                Assert.That(stack.Peek().Name, Is.EqualTo("One"));
+            });
         }
 
         /// <summary>
@@ -703,7 +721,7 @@ namespace SolarSharp.Interpreter.Tests.Units
 
         /// <summary>
         ///     Tests if the stack can handle a large pre-allocated capacity efficiently
-        ///     while maintaining its intended behavior for operations such as pushing
+        ///     while maintaining its intended behaviour for operations such as pushing
         ///     and peeking elements.
         /// </summary>
         /// <remarks>
@@ -725,8 +743,11 @@ namespace SolarSharp.Interpreter.Tests.Units
                 stack.Push(i);
 
             Assert.That(stack.Count, Is.EqualTo(1000));
-            Assert.That(stack.Peek(), Is.EqualTo(999));
-            Assert.That(stack.Storage.Length, Is.EqualTo(stackSize));
+            Assert.Multiple(() =>
+            {
+                Assert.That(stack.Peek(), Is.EqualTo(999));
+                Assert.That(stack.Storage.Length, Is.EqualTo(stackSize));
+            });
         }
 
         /// <summary>
@@ -753,7 +774,8 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 stack.Push(i);
                 pushed++;
-                if (i % 3 != 0 || stack.Count <= 0) continue;
+                if (i % 3 != 0 || stack.Count <= 0)
+                    continue;
                 stack.Pop();
                 popped++;
             }
@@ -768,14 +790,14 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     and structure of the stack.
         /// </summary>
         /// <remarks>
-        ///     The test validates multiple aspects of the stack's behavior:
+        ///     The test validates multiple aspects of the stack's behaviour:
         ///     - Items are pushed onto the stack in the correct order (function reference, arguments, then argument count).
         ///     - The stack correctly maintains the count of its elements.
         ///     - Peek operations with offsets accurately reflect the order and values of the pushed items.
         ///     - The stack's Last-In-First-Out (LIFO) property is preserved as expected in a typical stack-based VM.
         /// </remarks>
         /// <example>
-        ///     This test is specifically designed to simulate the behavior of a virtual machine handling a function
+        ///     This test is specifically designed to simulate the behaviour of a virtual machine handling a function
         ///     call, demonstrating a common stack manipulation pattern often used in interpreted languages or
         ///     low-level runtime environments.
         /// </example>
@@ -809,7 +831,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// </summary>
         /// <remarks>
         ///     This method performs a series of stack operations including Push, Set, RemoveLast, Peek, and Expand.
-        ///     It validates the stack's behavior under these operations, ensuring correct order, data integrity,
+        ///     It validates the stack's behaviour under these operations, ensuring correct order, data integrity,
         ///     and adherence to LIFO principles. The stack's capacity and count are adjusted during the sequence,
         ///     and the final state of the stack is verified against expected values.
         /// </remarks>

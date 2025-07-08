@@ -5,7 +5,7 @@ namespace SolarSharp.Interpreter.Loaders
 {
     /// <summary>
     /// Class dictating how requests to read scripts from files are handled.
-    /// 
+    ///
     /// It's recommended that no class implement IScriptLoader directly, and rather extend ScriptLoaderBase.
     /// </summary>
     public interface IScriptLoader
@@ -22,14 +22,18 @@ namespace SolarSharp.Interpreter.Loaders
         /// A string, a byte[] or a Stream.
         /// </returns>
         object LoadFile(string file, Table globalContext);
+
         /// <summary>
         /// Resolves a filename [applying paths, etc.]
         /// </summary>
         /// <param name="filename">The filename.</param>
         /// <param name="globalContext">The global context.</param>
         /// <returns></returns>
-        [Obsolete("This serves almost no purpose. Kept here just to preserve backward compatibility.")]
+        [Obsolete(
+            "This serves almost no purpose. Kept here just to preserve backward compatibility."
+        )]
         string ResolveFileName(string filename, Table globalContext);
+
         /// <summary>
         /// Resolves the name of a module to a filename (which will later be passed to OpenScriptFile)
         /// </summary>

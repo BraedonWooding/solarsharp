@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -19,11 +20,12 @@ namespace SolarSharp.Interpreter.Security
         {
             _policy = policy ?? throw new ArgumentNullException(nameof(policy));
             _virtualMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            
-            _sandboxRoot = _policy.SandboxRoot ?? Path.Combine(Path.GetTempPath(), "solarsharp_sandbox");
+
+            _sandboxRoot =
+                _policy.SandboxRoot ?? Path.Combine(Path.GetTempPath(), "solarsharp_sandbox");
             _tempDirectory = _policy.TempDirectory ?? Path.Combine(_sandboxRoot, "temp");
             _workingDirectory = _policy.WorkingDirectory ?? Path.Combine(_sandboxRoot, "workspace");
-            
+
             Initialize();
         }
 
@@ -70,7 +72,8 @@ namespace SolarSharp.Interpreter.Security
                 if (realPath.StartsWith(kvp.Value, StringComparison.OrdinalIgnoreCase))
                 {
                     var relativePath = Path.GetRelativePath(kvp.Value, realPath);
-                    return Path.Combine(kvp.Key, relativePath).Replace(Path.DirectorySeparatorChar, '/');
+                    return Path.Combine(kvp.Key, relativePath)
+                        .Replace(Path.DirectorySeparatorChar, '/');
                 }
             }
 
@@ -130,7 +133,7 @@ namespace SolarSharp.Interpreter.Security
             {
                 // Create sandbox root
                 Directory.CreateDirectory(_sandboxRoot);
-                
+
                 // Create essential directories
                 Directory.CreateDirectory(_tempDirectory);
                 Directory.CreateDirectory(_workingDirectory);
@@ -139,14 +142,17 @@ namespace SolarSharp.Interpreter.Security
                 Directory.CreateDirectory(Path.Combine(_sandboxRoot, "data"));
 
                 // Set permissions if on Unix
-                if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     SetUnixPermissions();
                 }
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to initialize sandbox at {_sandboxRoot}: {ex.Message}", ex);
+                throw new InvalidOperationException(
+                    $"Failed to initialize sandbox at {_sandboxRoot}: {ex.Message}",
+                    ex
+                );
             }
         }
 
@@ -177,7 +183,7 @@ namespace SolarSharp.Interpreter.Security
             _virtualMappings["/workspace"] = _workingDirectory;
 
             // Windows-specific mappings
-            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 _virtualMappings[@"C:\Windows\Temp"] = _tempDirectory;
                 _virtualMappings[@"C:\Temp"] = _tempDirectory;
@@ -266,5 +272,4 @@ namespace SolarSharp.Interpreter.Security
         public Dictionary<string, string> VirtualMappings { get; set; }
         public long MaxSandboxSize { get; set; } = 100 * 1024 * 1024; // 100MB
     }
-
 }

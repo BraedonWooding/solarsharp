@@ -4,22 +4,22 @@ namespace SolarSharp.Interpreter.CoreLib.IO
 {
     internal class BinaryEncoding : Encoding
     {
-        public BinaryEncoding()
-            : base()
-        {
-
-        }
-
         public override int GetByteCount(char[] chars, int index, int count)
         {
             return count;
         }
 
-        public override int GetBytes(char[] chars, int charIndex, int charCount, byte[] bytes, int byteIndex)
+        public override int GetBytes(
+            char[] chars,
+            int charIndex,
+            int charCount,
+            byte[] bytes,
+            int byteIndex
+        )
         {
-            for (int i = 0; i < charCount; i++)
+            for (var i = 0; i < charCount; i++)
             {
-                bytes[byteIndex + i] = (byte)(int)chars[charIndex + i];
+                bytes[byteIndex + i] = (byte)chars[charIndex + i];
             }
 
             return charCount;
@@ -30,11 +30,17 @@ namespace SolarSharp.Interpreter.CoreLib.IO
             return count;
         }
 
-        public override int GetChars(byte[] bytes, int byteIndex, int byteCount, char[] chars, int charIndex)
+        public override int GetChars(
+            byte[] bytes,
+            int byteIndex,
+            int byteCount,
+            char[] chars,
+            int charIndex
+        )
         {
-            for (int i = 0; i < byteCount; i++)
+            for (var i = 0; i < byteCount; i++)
             {
-                chars[charIndex + i] = (char)(int)bytes[byteIndex + i];
+                chars[charIndex + i] = (char)bytes[byteIndex + i];
             }
 
             return byteCount;

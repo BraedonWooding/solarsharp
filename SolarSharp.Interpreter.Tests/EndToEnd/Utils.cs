@@ -10,7 +10,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             if (args == null)
                 args = new object[1] { DataType.Void };
 
-
             if (args.Length == 1)
             {
                 DynAssertValue(args[0], result);

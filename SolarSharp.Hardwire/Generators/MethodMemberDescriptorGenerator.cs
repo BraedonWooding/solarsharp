@@ -2,6 +2,7 @@
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using SolarSharp.Hardwire.Utils;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.DataTypes;
@@ -16,9 +17,7 @@ namespace SolarSharp.Hardwire.Generators
         private readonly string m_Prefix;
 
         public MethodMemberDescriptorGenerator()
-            : this("MTHD")
-        {
-        }
+            : this("MTHD") { }
 
         public MethodMemberDescriptorGenerator(string prefix)
         {
@@ -30,12 +29,16 @@ namespace SolarSharp.Hardwire.Generators
             get { return "SolarSharp.Interpreter.Interop.MethodMemberDescriptor"; }
         }
 
-        public CodeExpression[] Generate(Table table, HardwireCodeGenerationContext generator, CodeTypeMemberCollection members)
+        public CodeExpression[] Generate(
+            Table table,
+            HardwireCodeGenerationContext generator,
+            CodeTypeMemberCollection members
+        )
         {
-            bool isArray = table.Get("arraytype").IsNotNil();
-            string memberName = table.Get("name").String;
+            var isArray = table.Get("arraytype").IsNotNil();
+            var memberName = table.Get("name").String;
 
-            // Ignore arrays weird special members 
+            // Ignore arrays weird special members
             if (isArray)
             {
                 if (memberName == "Get" || memberName == "Set" || memberName == "Address")
@@ -43,48 +46,60 @@ namespace SolarSharp.Hardwire.Generators
             }
 
             // Create the descriptor class
-            string className = m_Prefix + "_" + Guid.NewGuid().ToString("N");
+            var className = m_Prefix + "_" + Guid.NewGuid().ToString("N");
 
-            CodeTypeDeclaration classCode = new(className)
+            var classCode = new CodeTypeDeclaration(className)
             {
-                TypeAttributes = System.Reflection.TypeAttributes.NestedPrivate | System.Reflection.TypeAttributes.Sealed
+                TypeAttributes = TypeAttributes.NestedPrivate | TypeAttributes.Sealed,
             };
             classCode.BaseTypes.Add(typeof(HardwiredMethodMemberDescriptor));
 
             // Create the class constructor
-            CodeConstructor ctor = new()
-            {
-                Attributes = MemberAttributes.Assembly
-            };
+            var ctor = new CodeConstructor { Attributes = MemberAttributes.Assembly };
             classCode.Members.Add(ctor);
 
             // Create the parameters
-            List<HardwireParameterDescriptor> paramDescs = HardwireParameterDescriptor.LoadDescriptorsFromTable(table.Get("params").Table);
+            var paramDescs = HardwireParameterDescriptor.LoadDescriptorsFromTable(
+                table.Get("params").Table
+            );
 
-            int paramNum = paramDescs.Count;
-            int optionalNum = paramDescs.Where(p => p.HasDefaultValue).Count();
+            var paramNum = paramDescs.Count;
+            var optionalNum = paramDescs.Where(p => p.HasDefaultValue).Count();
 
             // Add initialize call to ctor
-            List<CodeExpression> initParams = new();
+            var initParams = new List<CodeExpression>();
 
             initParams.Add(new CodePrimitiveExpression(memberName));
-            initParams.Add(new CodePrimitiveExpression(table.Get("static").Boolean || table.Get("ctor").Boolean));
+            initParams.Add(
+                new CodePrimitiveExpression(
+                    table.Get("static").Boolean || table.Get("ctor").Boolean
+                )
+            );
 
-            initParams.Add(new CodeArrayCreateExpression(typeof(ParameterDescriptor),
-                paramDescs.Select(e => e.Expression).ToArray()));
+            initParams.Add(
+                new CodeArrayCreateExpression(
+                    typeof(ParameterDescriptor),
+                    paramDescs.Select(e => e.Expression).ToArray()
+                )
+            );
 
             initParams.Add(new CodePrimitiveExpression(table.Get("extension").Boolean));
 
-            ctor.Statements.Add(new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "Initialize", initParams.ToArray()));
-
+            ctor.Statements.Add(
+                new CodeMethodInvokeExpression(
+                    new CodeThisReferenceExpression(),
+                    "Initialize",
+                    initParams.ToArray()
+                )
+            );
 
             // Create the Invoke method : protected override object Invoke(Script script, object obj, object[] pars, int argscount);
 
-            CodeMemberMethod m = new()
+            var m = new CodeMemberMethod
             {
                 Name = "Invoke",
                 Attributes = MemberAttributes.Override | MemberAttributes.Family,
-                ReturnType = new CodeTypeReference(typeof(object))
+                ReturnType = new CodeTypeReference(typeof(object)),
             };
             m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(Script), "script"));
             m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(object), "obj"));
@@ -92,57 +107,65 @@ namespace SolarSharp.Hardwire.Generators
             m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(int), "argscount"));
 
             // get some meta about the method
-            bool isVoid = table.Get("ret").String == "System.Void";
-            bool isCtor = table.Get("ctor").Boolean;
-            bool isStatic = table.Get("static").Boolean;
-            bool isExtension = table.Get("extension").Boolean;
-            bool specialName = table.Get("special").Boolean;
+            var isVoid = table.Get("ret").String == "System.Void";
+            var isCtor = table.Get("ctor").Boolean;
+            var isStatic = table.Get("static").Boolean;
+            var isExtension = table.Get("extension").Boolean;
+            var specialName = table.Get("special").Boolean;
 
-            string declType = table.Get("decltype").String;
+            var declType = table.Get("decltype").String;
             var paramArray = new CodeVariableReferenceExpression("pars");
             var paramThis = isStatic
                 ? new CodeTypeReferenceExpression(declType)
-                : (CodeExpression)new CodeCastExpression(declType, new CodeVariableReferenceExpression("obj"));
+                : (CodeExpression)
+                    new CodeCastExpression(declType, new CodeVariableReferenceExpression("obj"));
 
             // Build a list of arguments to the call
-            int refparCount = 0;
-            List<CodeExpression> paramExps = new();
-            for (int i = 0; i < paramDescs.Count; i++)
+            var refparCount = 0;
+            var paramExps = new List<CodeExpression>();
+            for (var i = 0; i < paramDescs.Count; i++)
             {
                 var P = paramDescs[i];
 
-                CodeExpression paramExp = new CodeCastExpression(paramDescs[i].ParamType, new CodeArrayIndexerExpression(paramArray, new CodePrimitiveExpression(i)));
+                CodeExpression paramExp = new CodeCastExpression(
+                    paramDescs[i].ParamType,
+                    new CodeArrayIndexerExpression(paramArray, new CodePrimitiveExpression(i))
+                );
 
                 if (P.IsOut)
                 {
-                    string varName = GenerateRefParamVariable(refparCount++);
+                    var varName = GenerateRefParamVariable(refparCount++);
                     var vd = new CodeVariableDeclarationStatement(P.ParamType, varName);
                     m.Statements.Add(vd);
-                    paramExp = new CodeDirectionExpression(FieldDirection.Out, new CodeVariableReferenceExpression(varName));
+                    paramExp = new CodeDirectionExpression(
+                        FieldDirection.Out,
+                        new CodeVariableReferenceExpression(varName)
+                    );
                 }
                 else if (P.IsRef)
                 {
-                    string varName = GenerateRefParamVariable(refparCount++);
+                    var varName = GenerateRefParamVariable(refparCount++);
                     var vd = new CodeVariableDeclarationStatement(P.ParamType, varName, paramExp);
                     m.Statements.Add(vd);
-                    paramExp = new CodeDirectionExpression(FieldDirection.Ref, new CodeVariableReferenceExpression(varName));
+                    paramExp = new CodeDirectionExpression(
+                        FieldDirection.Ref,
+                        new CodeVariableReferenceExpression(varName)
+                    );
                 }
 
                 paramExps.Add(paramExp);
             }
 
-
-
             // build a list of possible dispatching to default params
-            List<CodeExpression[]> calls = new();
+            var calls = new List<CodeExpression[]>();
             var paramArgsCount = new CodeVariableReferenceExpression("argscount");
 
-            for (int callidx = paramNum - optionalNum; callidx <= paramNum; callidx++)
+            for (var callidx = paramNum - optionalNum; callidx <= paramNum; callidx++)
             {
-                List<CodeExpression> pars = new();
+                var pars = new List<CodeExpression>();
 
                 // Build the array of parameters expressions
-                for (int i = 0; i < callidx; i++)
+                for (var i = 0; i < callidx; i++)
                 {
                     pars.Add(paramExps[i]);
                 }
@@ -150,22 +173,54 @@ namespace SolarSharp.Hardwire.Generators
                 calls.Add(pars.ToArray());
             }
 
-
             // foreach "overload" of default pars, dispatch a call
-            for (int i = 0; i < calls.Count - 1; i++)
+            for (var i = 0; i < calls.Count - 1; i++)
             {
-                int argcnt = calls[i].Length;
+                var argcnt = calls[i].Length;
 
-                CodeExpression condition = new CodeBinaryOperatorExpression(paramArgsCount,
-                        CodeBinaryOperatorType.LessThanOrEqual, new CodePrimitiveExpression(argcnt));
+                CodeExpression condition = new CodeBinaryOperatorExpression(
+                    paramArgsCount,
+                    CodeBinaryOperatorType.LessThanOrEqual,
+                    new CodePrimitiveExpression(argcnt)
+                );
 
-                var ifs = new CodeConditionStatement(condition, GenerateCall(table, generator, isVoid, isCtor, isStatic, isExtension, calls[i], paramThis, declType, specialName, refparCount).OfType<CodeStatement>().ToArray());
+                var ifs = new CodeConditionStatement(
+                    condition,
+                    GenerateCall(
+                            table,
+                            generator,
+                            isVoid,
+                            isCtor,
+                            isStatic,
+                            isExtension,
+                            calls[i],
+                            paramThis,
+                            declType,
+                            specialName,
+                            refparCount
+                        )
+                        .OfType<CodeStatement>()
+                        .ToArray()
+                );
 
                 m.Statements.Add(ifs);
             }
 
-            m.Statements.AddRange(GenerateCall(table, generator, isVoid, isCtor, isStatic, isExtension, calls[calls.Count - 1], paramThis, declType, specialName, refparCount));
-
+            m.Statements.AddRange(
+                GenerateCall(
+                    table,
+                    generator,
+                    isVoid,
+                    isCtor,
+                    isStatic,
+                    isExtension,
+                    calls[calls.Count - 1],
+                    paramThis,
+                    declType,
+                    specialName,
+                    refparCount
+                )
+            );
 
             // close
             classCode.Members.Add(m);
@@ -175,23 +230,38 @@ namespace SolarSharp.Hardwire.Generators
 
         private string GenerateRefParamVariable(int refparIdx)
         {
-            return string.Format("refp_{0}", refparIdx);
+            return $"refp_{refparIdx}";
         }
 
-
-        private CodeStatementCollection GenerateCall(Table table, HardwireCodeGenerationContext generator, bool isVoid, bool isCtor, bool isStatic, bool isExtension, CodeExpression[] arguments, CodeExpression paramThis, string declaringType, bool specialName, int refparCount)
+        private CodeStatementCollection GenerateCall(
+            Table table,
+            HardwireCodeGenerationContext generator,
+            bool isVoid,
+            bool isCtor,
+            bool isStatic,
+            bool isExtension,
+            CodeExpression[] arguments,
+            CodeExpression paramThis,
+            string declaringType,
+            bool specialName,
+            int refparCount
+        )
         {
-            string arrayCtorType = table.Get("arraytype").IsNil() ? null : table.Get("arraytype").String;
+            var arrayCtorType = table.Get("arraytype").IsNil()
+                ? null
+                : table.Get("arraytype").String;
 
-            CodeStatementCollection coll = new();
+            var coll = new CodeStatementCollection();
             CodeExpression retVal = null;
 
             if (isCtor)
             {
                 if (arrayCtorType != null)
                 {
-                    var exp = generator.TargetLanguage.CreateMultidimensionalArray(arrayCtorType,
-                        arguments);
+                    var exp = generator.TargetLanguage.CreateMultidimensionalArray(
+                        arrayCtorType,
+                        arguments
+                    );
 
                     retVal = new CodeArrayCreateExpression(arrayCtorType, arguments);
                 }
@@ -202,12 +272,27 @@ namespace SolarSharp.Hardwire.Generators
             }
             else if (specialName)
             {
-                GenerateSpecialNameCall(table, generator, isVoid, isCtor, isStatic, isExtension,
-                    arguments, paramThis, declaringType, table.Get("name").String, coll);
+                GenerateSpecialNameCall(
+                    table,
+                    generator,
+                    isVoid,
+                    isCtor,
+                    isStatic,
+                    isExtension,
+                    arguments,
+                    paramThis,
+                    declaringType,
+                    table.Get("name").String,
+                    coll
+                );
             }
             else
             {
-                retVal = new CodeMethodInvokeExpression(paramThis, table.Get("name").String, arguments);
+                retVal = new CodeMethodInvokeExpression(
+                    paramThis,
+                    table.Get("name").String,
+                    arguments
+                );
             }
 
             if (retVal != null)
@@ -215,9 +300,11 @@ namespace SolarSharp.Hardwire.Generators
                 if (isVoid)
                 {
                     coll.Add(new CodeExpressionStatement(retVal));
-                    retVal = new CodePropertyReferenceExpression(new CodeTypeReferenceExpression(typeof(DynValue)), refparCount == 0 ? "Void" : "Nil");
+                    retVal = new CodePropertyReferenceExpression(
+                        new CodeTypeReferenceExpression(typeof(DynValue)),
+                        refparCount == 0 ? "Void" : "Nil"
+                    );
                 }
-
 
                 if (refparCount == 0)
                 {
@@ -227,16 +314,27 @@ namespace SolarSharp.Hardwire.Generators
                 {
                     coll.Add(new CodeVariableDeclarationStatement(typeof(object), "retv", retVal));
 
-                    List<CodeExpression> retVals = new();
+                    var retVals = new List<CodeExpression>();
 
                     retVals.Add(WrapFromObject(new CodeVariableReferenceExpression("retv")));
 
-                    for (int i = 0; i < refparCount; i++)
-                        retVals.Add(WrapFromObject(new CodeVariableReferenceExpression(GenerateRefParamVariable(i))));
+                    for (var i = 0; i < refparCount; i++)
+                        retVals.Add(
+                            WrapFromObject(
+                                new CodeVariableReferenceExpression(GenerateRefParamVariable(i))
+                            )
+                        );
 
-                    var arrayExp = new CodeArrayCreateExpression(typeof(DynValue), retVals.ToArray());
+                    var arrayExp = new CodeArrayCreateExpression(
+                        typeof(DynValue),
+                        retVals.ToArray()
+                    );
 
-                    var tupleExp = new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(DynValue)), "NewTuple", arrayExp);
+                    var tupleExp = new CodeMethodInvokeExpression(
+                        new CodeTypeReferenceExpression(typeof(DynValue)),
+                        "NewTuple",
+                        arrayExp
+                    );
 
                     coll.Add(new CodeMethodReturnStatement(tupleExp));
                 }
@@ -248,14 +346,29 @@ namespace SolarSharp.Hardwire.Generators
         private CodeExpression WrapFromObject(CodeExpression retVal)
         {
             var script = new CodeVariableReferenceExpression("script");
-            return new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof(DynValue)), "FromObject", script, retVal);
+            return new CodeMethodInvokeExpression(
+                new CodeTypeReferenceExpression(typeof(DynValue)),
+                "FromObject",
+                script,
+                retVal
+            );
         }
 
-
-
-        private void GenerateSpecialNameCall(Table table, HardwireCodeGenerationContext generator, bool isVoid, bool isCtor, bool isStatic, bool isExtension, CodeExpression[] arguments, CodeExpression paramThis, string declaringType, string specialName, CodeStatementCollection coll)
+        private void GenerateSpecialNameCall(
+            Table table,
+            HardwireCodeGenerationContext generator,
+            bool isVoid,
+            bool isCtor,
+            bool isStatic,
+            bool isExtension,
+            CodeExpression[] arguments,
+            CodeExpression paramThis,
+            string declaringType,
+            string specialName,
+            CodeStatementCollection coll
+        )
         {
-            ReflectionSpecialName special = new(specialName);
+            var special = new ReflectionSpecialName(specialName);
             CodeExpression exp = null;
             CodeStatement stat = null;
 
@@ -263,19 +376,34 @@ namespace SolarSharp.Hardwire.Generators
             {
                 case ReflectionSpecialNameType.IndexGetter:
                     if (isStatic)
-                        EmitInvalid(generator, coll, "Static indexers are not supported by hardwired descriptors.");
+                        EmitInvalid(
+                            generator,
+                            coll,
+                            "Static indexers are not supported by hardwired descriptors."
+                        );
                     else
                         exp = new CodeIndexerExpression(paramThis, arguments);
                     break;
                 case ReflectionSpecialNameType.IndexSetter:
                     if (isStatic)
-                        EmitInvalid(generator, coll, "Static indexers are not supported by hardwired descriptors.");
+                        EmitInvalid(
+                            generator,
+                            coll,
+                            "Static indexers are not supported by hardwired descriptors."
+                        );
                     else
                     {
-                        coll.Add(new CodeVariableDeclarationStatement(declaringType, "tmp", paramThis));
+                        coll.Add(
+                            new CodeVariableDeclarationStatement(declaringType, "tmp", paramThis)
+                        );
 
-                        stat = new CodeAssignStatement(new CodeIndexerExpression(new CodeVariableReferenceExpression("tmp"),
-                            arguments.Take(arguments.Length - 1).ToArray()), arguments.Last());
+                        stat = new CodeAssignStatement(
+                            new CodeIndexerExpression(
+                                new CodeVariableReferenceExpression("tmp"),
+                                arguments.Take(arguments.Length - 1).ToArray()
+                            ),
+                            arguments.Last()
+                        );
                     }
                     break;
                 case ReflectionSpecialNameType.ImplicitCast:
@@ -296,15 +424,27 @@ namespace SolarSharp.Hardwire.Generators
                     {
                         if (isStatic)
                         {
-                            var memberExp = new CodePropertyReferenceExpression(new CodeTypeReferenceExpression(declaringType), special.Argument);
+                            var memberExp = new CodePropertyReferenceExpression(
+                                new CodeTypeReferenceExpression(declaringType),
+                                special.Argument
+                            );
 
                             coll.Add(new CodeAssignStatement(memberExp, arguments[0]));
                         }
                         else
                         {
-                            coll.Add(new CodeVariableDeclarationStatement(declaringType, "tmp", paramThis));
+                            coll.Add(
+                                new CodeVariableDeclarationStatement(
+                                    declaringType,
+                                    "tmp",
+                                    paramThis
+                                )
+                            );
 
-                            var memberExp = new CodePropertyReferenceExpression(new CodeVariableReferenceExpression("tmp"), special.Argument);
+                            var memberExp = new CodePropertyReferenceExpression(
+                                new CodeVariableReferenceExpression("tmp"),
+                                special.Argument
+                            );
 
                             coll.Add(new CodeAssignStatement(memberExp, arguments[0]));
                         }
@@ -322,40 +462,76 @@ namespace SolarSharp.Hardwire.Generators
                     break;
                 case ReflectionSpecialNameType.OperatorDec:
                     exp = generator.TargetLanguage.UnaryDecrement(arguments[0]);
-                    if (exp == null) EmitInvalid(generator, coll, string.Format("Language {0} does not support decrement operators.", generator.TargetLanguage.Name));
+                    if (exp == null)
+                        EmitInvalid(
+                            generator,
+                            coll,
+                            $"Language {generator.TargetLanguage.Name} does not support decrement operators."
+                        );
                     break;
                 case ReflectionSpecialNameType.OperatorDiv:
                     exp = BinaryOperator(CodeBinaryOperatorType.Divide, paramThis, arguments);
                     break;
                 case ReflectionSpecialNameType.OperatorEq:
-                    exp = BinaryOperator(CodeBinaryOperatorType.ValueEquality, paramThis, arguments);
+                    exp = BinaryOperator(
+                        CodeBinaryOperatorType.ValueEquality,
+                        paramThis,
+                        arguments
+                    );
                     break;
                 case ReflectionSpecialNameType.OperatorXor:
                     exp = generator.TargetLanguage.BinaryXor(arguments[0], arguments[1]);
-                    if (exp == null) EmitInvalid(generator, coll, string.Format("Language {0} does not support XOR operators.", generator.TargetLanguage.Name));
+                    if (exp == null)
+                        EmitInvalid(
+                            generator,
+                            coll,
+                            $"Language {generator.TargetLanguage.Name} does not support XOR operators."
+                        );
                     break;
                 case ReflectionSpecialNameType.OperatorGt:
                     exp = BinaryOperator(CodeBinaryOperatorType.GreaterThan, paramThis, arguments);
                     break;
                 case ReflectionSpecialNameType.OperatorGte:
-                    exp = BinaryOperator(CodeBinaryOperatorType.GreaterThanOrEqual, paramThis, arguments);
+                    exp = BinaryOperator(
+                        CodeBinaryOperatorType.GreaterThanOrEqual,
+                        paramThis,
+                        arguments
+                    );
                     break;
                 case ReflectionSpecialNameType.OperatorInc:
                     exp = generator.TargetLanguage.UnaryIncrement(arguments[0]);
-                    if (exp == null) EmitInvalid(generator, coll, string.Format("Language {0} does not support increment operators.", generator.TargetLanguage.Name));
+                    if (exp == null)
+                        EmitInvalid(
+                            generator,
+                            coll,
+                            $"Language {generator.TargetLanguage.Name} does not support increment operators."
+                        );
                     break;
                 case ReflectionSpecialNameType.OperatorNeq:
-                    exp = BinaryOperator(CodeBinaryOperatorType.IdentityInequality, paramThis, arguments);
+                    exp = BinaryOperator(
+                        CodeBinaryOperatorType.IdentityInequality,
+                        paramThis,
+                        arguments
+                    );
                     break;
                 case ReflectionSpecialNameType.OperatorLt:
                     exp = BinaryOperator(CodeBinaryOperatorType.LessThan, paramThis, arguments);
                     break;
                 case ReflectionSpecialNameType.OperatorLte:
-                    exp = BinaryOperator(CodeBinaryOperatorType.LessThanOrEqual, paramThis, arguments);
+                    exp = BinaryOperator(
+                        CodeBinaryOperatorType.LessThanOrEqual,
+                        paramThis,
+                        arguments
+                    );
                     break;
                 case ReflectionSpecialNameType.OperatorNot:
                     exp = generator.TargetLanguage.UnaryLogicalNot(arguments[0]);
-                    if (exp == null) EmitInvalid(generator, coll, string.Format("Language {0} does not support logical NOT operators.", generator.TargetLanguage.Name));
+                    if (exp == null)
+                        EmitInvalid(
+                            generator,
+                            coll,
+                            $"Language {generator.TargetLanguage.Name} does not support logical NOT operators."
+                        );
                     break;
                 case ReflectionSpecialNameType.OperatorMod:
                     exp = BinaryOperator(CodeBinaryOperatorType.Modulus, paramThis, arguments);
@@ -365,24 +541,46 @@ namespace SolarSharp.Hardwire.Generators
                     break;
                 case ReflectionSpecialNameType.OperatorCompl:
                     exp = generator.TargetLanguage.UnaryOneComplement(arguments[0]);
-                    if (exp == null) EmitInvalid(generator, coll, string.Format("Language {0} does not support bitwise NOT operators.", generator.TargetLanguage.Name));
+                    if (exp == null)
+                        EmitInvalid(
+                            generator,
+                            coll,
+                            $"Language {generator.TargetLanguage.Name} does not support bitwise NOT operators."
+                        );
                     break;
                 case ReflectionSpecialNameType.OperatorSub:
                     exp = BinaryOperator(CodeBinaryOperatorType.Subtract, paramThis, arguments);
                     break;
                 case ReflectionSpecialNameType.OperatorNeg:
                     exp = generator.TargetLanguage.UnaryNegation(arguments[0]);
-                    if (exp == null) EmitInvalid(generator, coll, string.Format("Language {0} does not support negation operators.", generator.TargetLanguage.Name));
+                    if (exp == null)
+                        EmitInvalid(
+                            generator,
+                            coll,
+                            $"Language {generator.TargetLanguage.Name} does not support negation operators."
+                        );
                     break;
                 case ReflectionSpecialNameType.OperatorUnaryPlus:
                     exp = generator.TargetLanguage.UnaryPlus(arguments[0]);
-                    if (exp == null) EmitInvalid(generator, coll, string.Format("Language {0} does not support unary + operators.", generator.TargetLanguage.Name));
+                    if (exp == null)
+                        EmitInvalid(
+                            generator,
+                            coll,
+                            $"Language {generator.TargetLanguage.Name} does not support unary + operators."
+                        );
                     break;
                 case ReflectionSpecialNameType.AddEvent:
                 case ReflectionSpecialNameType.RemoveEvent:
-                    coll.Add(new CodeThrowExceptionStatement(new CodeObjectCreateExpression(typeof(InvalidOperationException), new CodePrimitiveExpression("Access to event special methods is not supported by hardwired decriptors."))));
-                    break;
-                default:
+                    coll.Add(
+                        new CodeThrowExceptionStatement(
+                            new CodeObjectCreateExpression(
+                                typeof(InvalidOperationException),
+                                new CodePrimitiveExpression(
+                                    "Access to event special methods is not supported by hardwired decriptors."
+                                )
+                            )
+                        )
+                    );
                     break;
             }
 
@@ -396,28 +594,55 @@ namespace SolarSharp.Hardwire.Generators
                 coll.Add(new CodeMethodReturnStatement(exp));
         }
 
-        private CodeExpression BinaryOperator(CodeBinaryOperatorType codeBinaryOperatorType, CodeExpression paramThis, CodeExpression[] arguments)
+        private CodeExpression BinaryOperator(
+            CodeBinaryOperatorType codeBinaryOperatorType,
+            CodeExpression paramThis,
+            CodeExpression[] arguments
+        )
         {
-            return new CodeBinaryOperatorExpression(arguments[0], codeBinaryOperatorType, arguments[1]);
+            return new CodeBinaryOperatorExpression(
+                arguments[0],
+                codeBinaryOperatorType,
+                arguments[1]
+            );
         }
 
-        private void GenerateBooleanOperator(CodeExpression paramThis, CodeStatementCollection coll, bool boolOp)
+        private void GenerateBooleanOperator(
+            CodeExpression paramThis,
+            CodeStatementCollection coll,
+            bool boolOp
+        )
         {
-            coll.Add(new CodeConditionStatement(paramThis,
-                new CodeStatement[] { new CodeMethodReturnStatement(new CodePrimitiveExpression(boolOp)) },
-                new CodeStatement[] { new CodeMethodReturnStatement(new CodePrimitiveExpression(!boolOp)) }));
+            coll.Add(
+                new CodeConditionStatement(
+                    paramThis,
+                    new CodeStatement[]
+                    {
+                        new CodeMethodReturnStatement(new CodePrimitiveExpression(boolOp)),
+                    },
+                    new CodeStatement[]
+                    {
+                        new CodeMethodReturnStatement(new CodePrimitiveExpression(!boolOp)),
+                    }
+                )
+            );
         }
 
-        private void EmitInvalid(HardwireCodeGenerationContext generator, CodeStatementCollection coll, string message)
+        private void EmitInvalid(
+            HardwireCodeGenerationContext generator,
+            CodeStatementCollection coll,
+            string message
+        )
         {
             generator.Warning(message);
-            coll.Add(new CodeThrowExceptionStatement(new CodeObjectCreateExpression(typeof(InvalidOperationException),
-                new CodePrimitiveExpression(message))));
+            coll.Add(
+                new CodeThrowExceptionStatement(
+                    new CodeObjectCreateExpression(
+                        typeof(InvalidOperationException),
+                        new CodePrimitiveExpression(message)
+                    )
+                )
+            );
         }
-
-
-
-
-
     }
 }

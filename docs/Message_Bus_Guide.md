@@ -1,674 +1,591 @@
-# SolarSharp Message Bus Developer Guide
-
-## Table of Contents
-1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Core Concepts](#core-concepts)
-4. [API Reference](#api-reference)
-5. [Security Model](#security-model)
-6. [Common Patterns](#common-patterns)
-7. [Best Practices](#best-practices)
-8. [Troubleshooting](#troubleshooting)
-9. [Examples](#examples)
+# SolarSharp Message Bus System
 
 ## Overview
 
-The SolarSharp Message Bus provides secure, capability-based inter-script communication. It enables scripts to exchange messages while enforcing security boundaries, rate limits, and access policies. The message bus is designed to prevent malicious scripts from overwhelming the system or accessing unauthorized data.
+The SolarSharp Message Bus provides secure inter-script communication with identity-based access controls. It uses publish/subscribe patterns with cryptographic authentication and policy-based permissions.
 
 ### Key Features
-- **Secure by Default**: All communication enforces security policies
-- **Trust-Based Access**: Different capabilities for different trust levels
-- **Rate Limiting**: Prevents message flooding and DoS attacks
-- **Policy Enforcement**: Fine-grained control over who can send/receive what
-- **Async Support**: Non-blocking message handling
-- **Audit Trail**: All operations are logged for security analysis
-
-## Architecture
-
-The message bus consists of several key components:
-
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│    Script A     │────▶│   Message Bus    │────▶│    Script B     │
-│ (User Plugin)   │     │                  │     │ (Partner Plugin)│
-└─────────────────┘     │ - Policy Check   │     └─────────────────┘
-                        │ - Rate Limiting  │
-                        │ - Message Route  │
-                        │ - Audit Logging  │
-                        └──────────────────┘
-```
-
-### Components
-
-1. **IScriptMessageBus**: Core interface defining message bus operations
-2. **ScriptMessage**: Message container with metadata and security properties
-3. **ScriptCommunicationPolicy**: Defines what a script can send/receive
-4. **MessageBusCapability**: Lua API integration for script access
-5. **SecurityAuditor**: Logs all message bus operations for security analysis
+- **Script Identity**: Public key tokens with semantic versioning
+- **Policy-based Security**: Fine-grained permissions through policy system
+- **Execution Context Tracking**: Automatic identity propagation
+- **Type Safety**: Result<T,E> and Option<T> for error handling
 
 ## Core Concepts
 
+### Script Identity
+
+Each script has a cryptographically verifiable identity:
+
+```csharp
+public readonly struct ScriptIdentity
+{
+    public string Name { get; }
+    public NuGetVersion Version { get; }
+    public byte[] PublicKeyToken { get; }
+}
+```
+
+Public key tokens are always required when using name/version constraints to ensure cryptographic verification of identity.
+
 ### Messages
 
-Messages are the fundamental unit of communication:
+Messages carry identity and topic information:
 
 ```csharp
-public class ScriptMessage
+public sealed class PubSubMessage
 {
-    public string Id { get; set; }              // Unique message identifier
-    public string Type { get; set; }            // Message type/topic
-    public string FromScript { get; set; }      // Sender script ID
-    public string ToScript { get; set; }        // Target script (for direct messages)
-    public Dictionary<string, object> Data { get; set; }  // Message payload
-    public DateTime Timestamp { get; set; }     // Creation time
-    public MessagePriority Priority { get; set; } // Processing priority
-    public TimeSpan? TTL { get; set; }         // Time-to-live
-    public bool RequiresResponse { get; set; } // Response expected?
-    public string CorrelationId { get; set; }  // For request/response tracking
-    public string Signature { get; set; }      // Digital signature (if required)
+    public string Topic { get; }
+    public ScriptIdentity Sender { get; }
+    public string JsonData { get; }
+    public DateTime Timestamp { get; }
 }
 ```
 
-### Communication Policies
+## Lua API
 
-Each script must be registered with a policy that defines its communication capabilities:
+The message bus is accessed through the `pubsub` global module:
 
-```csharp
-public class ScriptCommunicationPolicy
-{
-    public HashSet<string> CanSendTypes { get; set; }      // Message types it can send
-    public HashSet<string> CanReceiveTypes { get; set; }   // Message types it can receive
-    public HashSet<string> AllowedTargets { get; set; }    // Scripts it can send to
-    public HashSet<string> AllowedSenders { get; set; }    // Scripts it can receive from
-    public int MaxMessageSize { get; set; }                // Max message size in bytes
-    public int MaxMessagesPerMinute { get; set; }          // Rate limit
-    public bool RequireSignature { get; set; }             // Signature validation
-    public bool EnableAuditLogging { get; set; }           // Audit all operations
-}
+### pubsub.publish(topic, data)
+
+Publishes a message to a topic. The data parameter can be a Lua table or a JSON string.
+
+```lua
+-- Publishing a Lua table (automatically encoded to JSON)
+local success = pubsub.publish("events.user.login", { 
+    userId = 123, 
+    timestamp = os.time() 
+})
+
+-- Publishing pre-encoded JSON string
+local jsonData = json.encode({ userId = 123, timestamp = os.time() })
+local success = pubsub.publish("events.user.login", jsonData)
+
+-- Returns: boolean (true if published successfully)
 ```
 
-### Subscriptions
+### pubsub.request(topic, data, timeout)
 
-Scripts subscribe to message types they want to receive:
+Sends a request and waits for a reply. Response data is automatically decoded from JSON.
+
+```lua
+-- API call with timeout (response is decoded from JSON to Lua table)
+local response, error = pubsub.request("api.user.get", { userId = 123 }, 5.0)
+if response then
+    print("User name:", response.name)
+else
+    print("Error:", error)
+end
+
+-- Using JSON string directly
+local request = json.encode({ userId = 123 })
+local response, error = pubsub.request("api.user.get", request, 5.0)
+
+-- Returns: (response, nil) on success, (nil, error) on failure
+```
+
+### pubsub.identity()
+
+Gets the current script's identity.
+
+```lua
+local identity = pubsub.identity()
+print("Script:", identity.name)
+print("Version:", identity.version)
+print("Token:", identity.token)
+
+-- Returns: Table with identity fields
+```
+
+## C# Configuration
+
+### Setting Up Message Bus with Policies
 
 ```csharp
-messageBus.Subscribe("game.event", scriptId, async (message) => 
-{
-    // Handle message
-    return message.CreateResponse(new Dictionary<string, object> 
+// Create message bus
+var messageBus = new MessageBus();
+
+// Configure policy resolver with anonymous signature-based policies
+var signaturePolicies = ImmutableDictionary<string, Policy>.Empty
+    // Policy for scripts signed with specific public key token
+    .Add("a1b2c3d4e5f67890", new()
     {
-        ["status"] = "processed"
+        TimeoutMs = 60_000,
+        MaxMemoryMB = 256,
+        AllowExecution = true,
+        PubSubPermissions = new()
+        {
+            Publish = ImmutableArray.Create("service.*", "events.*"),
+            Subscribe = ImmutableArray.Create("system.*", "service.*"),
+            TopicConstraints = ImmutableDictionary<string, TopicConstraints>.Empty
+                .Add("events.*", new TopicConstraints
+                {
+                    // WHO CAN RECEIVE FROM US: Only scripts with these tokens can subscribe to our events
+                    AllowedRecipients = ImmutableArray.Create("b2c3d4e5f6789012", "c3d4e5f678901234")
+                })
+        }
     });
-});
-```
 
-## API Reference
-
-### IScriptMessageBus Interface
-
-#### RegisterScript
-```csharp
-void RegisterScript(string scriptId, ScriptCommunicationPolicy policy)
-```
-Registers a script with the message bus, establishing its communication policy.
-
-**Parameters:**
-- `scriptId`: Unique identifier for the script
-- `policy`: Communication policy defining capabilities
-
-**Example:**
-```csharp
-var policy = new ScriptCommunicationPolicy
-{
-    ScriptId = "my-plugin",
-    CanSendTypes = new HashSet<string> { "ui.update", "game.action" },
-    CanReceiveTypes = new HashSet<string> { "game.event", "system.notification" },
-    MaxMessagesPerMinute = 60,
-    MaxMessageSize = 64 * 1024 // 64KB
-};
-messageBus.RegisterScript("my-plugin", policy);
-```
-
-#### Subscribe
-```csharp
-void Subscribe(string messageType, string scriptId, Func<ScriptMessage, Task<ScriptMessage>> handler)
-```
-Subscribes to messages of a specific type.
-
-**Parameters:**
-- `messageType`: Type of messages to receive (supports wildcards: `game.*`)
-- `scriptId`: ID of the subscribing script
-- `handler`: Async function to process messages
-
-**Example:**
-```csharp
-messageBus.Subscribe("game.player.damaged", "combat-plugin", async (message) =>
-{
-    var damage = message.Data["damage"];
-    Console.WriteLine($"Player took {damage} damage!");
-    return null; // No response needed
-});
-```
-
-#### PublishAsync
-```csharp
-Task<IReadOnlyList<ScriptMessage>> PublishAsync(ScriptMessage message)
-```
-Publishes a message to all subscribers.
-
-**Parameters:**
-- `message`: Message to publish
-
-**Returns:** List of responses from subscribers
-
-**Example:**
-```csharp
-var responses = await messageBus.PublishAsync(new ScriptMessage
-{
-    Type = "game.round.start",
-    FromScript = "game-engine",
-    Data = new Dictionary<string, object>
-    {
-        ["round"] = 5,
-        ["players"] = new[] { "Alice", "Bob" }
-    }
-});
-```
-
-#### SendDirectAsync
-```csharp
-Task<ScriptMessage> SendDirectAsync(ScriptMessage message, string targetScriptId)
-```
-Sends a message directly to a specific script.
-
-**Parameters:**
-- `message`: Message to send
-- `targetScriptId`: Target script ID
-
-**Returns:** Response from the target script
-
-**Example:**
-```csharp
-var response = await messageBus.SendDirectAsync(
-    new ScriptMessage
-    {
-        Type = "data.request",
-        FromScript = "ui-plugin",
-        Data = new Dictionary<string, object> { ["query"] = "player.stats" }
-    },
-    "data-service"
+// Create policy resolver
+var resolver = new SecurityPolicyResolver(
+    signaturePolicies,
+    pathPolicies: ImmutableDictionary<string, Policy>.Empty,
+    fallbackPolicy: Policy.DefaultFallback
 );
+
+// Configure script
+var script = new Script(SecurityConfiguration.CreateIsolated());
+script.SetService<IMessageBus>(messageBus);
+script.SetService<SecurityPolicyResolver>(resolver);
 ```
 
-### Lua API
+### Token-Scoped PubSub Permissions
 
-When using the message bus from Lua scripts, the API is exposed through the `api.messages` table:
+Add PubSub permissions scoped to a specific token:
 
-#### send
-```lua
--- Publish a message to all subscribers
-api.messages.send("game.event", {
-    action = "item_collected",
-    item = "gold_coin",
-    amount = 10
-})
-```
+```csharp
+var publicKeyToken = "a1b2c3d4e5f67890";
 
-#### sendTo
-```lua
--- Send a direct message to a specific script
-local response = api.messages.sendTo("data-service", "data.request", {
-    query = "player.inventory"
-})
-print("Inventory size: " .. response.data.count)
-```
+// Start with base policy and add token-specific PubSub
+var policyWithPubSub = ExamplePolicies.Desktop.WithTokenPubSub(publicKeyToken);
 
-#### subscribe
-```lua
--- Subscribe to messages
-api.messages.subscribe("game.player.*", function(message)
-    print("Player event: " .. message.type)
-    print("From: " .. message.from)
-    
-    -- Return a response (optional)
-    return {
-        status = "acknowledged",
-        processed_at = os.time()
+// Or compose manually with immutable syntax
+var customPolicy = ExamplePolicies.Desktop with
+{
+    PubSubPermissions = new()
+    {
+        Publish = ImmutableArray.Create($"script.{publicKeyToken}.*"),
+        Subscribe = ImmutableArray.Create($"script.{publicKeyToken}.*", "system.broadcast"),
+        TopicConstraints = ImmutableDictionary<string, TopicConstraints>.Empty
+            .Add($"script.{publicKeyToken}.*", new TopicConstraints
+            {
+                AllowedSenders = ImmutableArray.Create(publicKeyToken),
+                AllowedRecipients = ImmutableArray.Create(publicKeyToken)
+            })
     }
-end)
+};
 ```
 
 ## Security Model
 
-### Trust Levels
+### Policy-Based Permissions
 
-The message bus enforces different capabilities based on script trust levels:
-
-#### User Level (Untrusted)
-- **Can Subscribe**: Yes (limited message types)
-- **Can Publish**: No
-- **Can Send Direct**: No
-- **Rate Limit**: 10 messages/minute
-- **Max Message Size**: 64KB
-
-#### Partner Level
-- **Can Subscribe**: Yes (expanded message types)
-- **Can Publish**: Yes (specific types)
-- **Can Send Direct**: Yes (to allowed targets)
-- **Rate Limit**: 100 messages/minute
-- **Max Message Size**: 1MB
-
-#### System Level
-- **Can Subscribe**: Yes (all types)
-- **Can Publish**: Yes (all types)
-- **Can Send Direct**: Yes (any target)
-- **Rate Limit**: 1000 messages/minute
-- **Max Message Size**: 10MB
-
-### Policy Enforcement
-
-The message bus enforces policies at multiple levels:
-
-1. **Registration**: Scripts must be registered before any operations
-2. **Type Checking**: Message types are validated against allowed lists
-3. **Target Validation**: Direct messages check allowed targets
-4. **Sender Validation**: Receivers can limit who can send to them
-5. **Size Limits**: Messages exceeding size limits are rejected
-6. **Rate Limiting**: Per-script rate limits prevent flooding
-7. **Signature Validation**: Optional cryptographic signatures
-
-### Security Violations
-
-All security violations are logged and can trigger various responses:
+PubSub permissions are defined in policies. In C#, policies are anonymous/inline objects without names. Only manifests use named policies for internal resolution:
 
 ```csharp
-// Example violation log
-[2025-01-15 10:23:45] SecurityViolation: Script 'untrusted-plugin' 
-    attempted to publish message type 'system.admin' 
-    (not in CanSendTypes)
+// C# policies are anonymous - no Name property needed
+var policy = new Policy
+{
+    TimeoutMs = 60_000,
+    MaxMemoryMB = 256,
+    AllowExecution = true,
+    PubSubPermissions = new()
+    {
+        Publish = ImmutableArray<string>.Empty,
+        Subscribe = ImmutableArray<string>.Empty,
+        TopicConstraints = ImmutableDictionary<string, TopicConstraints>.Empty
+    }
+};
 ```
 
-## Common Patterns
+### Topic Constraints
 
-### Request/Response
+Topic constraints control who can send and receive messages. When using name or version constraints, **public key tokens are required**:
 
-Use correlation IDs to match responses with requests:
-
-```lua
--- Client
-local request = {
-    id = generate_uuid(),
-    type = "data.query",
-    data = { table = "players", filter = "active" }
+```csharp
+new TopicConstraints
+{
+    // WHO CAN SEND TO US: Scripts with these tokens can publish messages we'll receive
+    AllowedSenders = ImmutableArray.Create("a1b2c3d4e5f67890"),
+    
+    // WHO CAN RECEIVE FROM US: Only scripts with these tokens can subscribe to our messages
+    AllowedRecipients = ImmutableArray.Create("b2c3d4e5f6789012"),
+    
+    // Optional: Version constraints (NuGet version range syntax)
+    MinVersion = "1.0.0",
+    MaxVersion = "2.0.0"
 }
-
-api.messages.subscribe("data.response", function(msg)
-    if msg.correlationId == request.id then
-        -- This is our response
-        process_data(msg.data)
-    end
-end)
-
-api.messages.send("data.query", request)
 ```
 
-### Event Broadcasting
+### Manifest PubSub Configuration
 
-Publish events that multiple subscribers can react to:
+Manifests use named policies internally for resolution. Policy names are only meaningful within the manifest:
 
-```lua
--- Publisher
-api.messages.send("game.player.levelup", {
-    player = "Alice",
-    newLevel = 10,
-    timestamp = os.time()
-})
-
--- Subscriber 1: UI updates
-api.messages.subscribe("game.player.levelup", function(msg)
-    update_ui_level(msg.data.player, msg.data.newLevel)
-end)
-
--- Subscriber 2: Achievement system
-api.messages.subscribe("game.player.levelup", function(msg)
-    check_level_achievements(msg.data.player, msg.data.newLevel)
-end)
+```json
+{
+  "identity": {
+    "name": "EmailService",
+    "version": "1.2.0"
+  },
+  "authorityInformationAccess": {
+    "signerPublicKeyToken": "a1b2c3d4e5f67890",
+    "issuerDN": "CN=MyCompany CA, O=MyCompany, C=US"
+  },
+  "policyDefinitions": {
+    "service": {  // Named policy - only used for manifest scope resolution
+      "timeoutMs": 60000,
+      "maxMemoryMB": 256,
+      "pubsub": {
+        "publish": ["events.email.*", "commands.smtp.*"],
+        "subscribe": ["system.config", "events.user.*"],
+        "topics": {
+          "events.email.sent": {
+            "allowedRecipients": {
+              // Only these tokens can receive our published messages on this topic
+              "publicKeyTokens": ["b2c3d4e5f6789012", "c3d4e5f678901234"],
+              "minVersion": "1.0.0"
+            }
+          },
+          "commands.email.*": {
+            "allowedSenders": {
+              // Only accept commands from these trusted sources
+              "publicKeyTokens": ["a1b2c3d4e5f67890"],
+              "names": ["AdminPanel", "EmailController"]
+            },
+            "allowedRecipients": {
+              // Commands are internal only - no external receivers
+              "publicKeyTokens": []
+            }
+          }
+        }
+      }
+    }
+  },
+  "scope": [
+    { "pattern": "*.lua", "policy": "service" }  // References the named policy
+  ]
+}
 ```
 
-### Message Filtering
+### Security Enforcement
 
-Use wildcards and message inspection:
+The message bus enforces security at multiple levels:
 
-```lua
--- Subscribe to all game events
-api.messages.subscribe("game.*", function(msg)
-    -- Filter further in handler
-    if msg.type:match("player") then
-        handle_player_event(msg)
-    elseif msg.type:match("npc") then
-        handle_npc_event(msg)
-    end
-end)
-```
-
-### Priority Handling
-
-Process high-priority messages first:
-
-```lua
-api.messages.send("system.alert", {
-    message = "Low memory warning",
-    priority = "critical"  -- Will be processed before normal messages
-})
-```
+1. **Identity Verification**: Public key token validation
+2. **Permission Checking**: Publish/subscribe permissions from policy
+3. **Topic Constraints**: Sender/recipient validation
+4. **Version Constraints**: Semantic version range checking
+5. **Rate Limiting**: Prevents message flooding
+6. **Size Limits**: Message payload restrictions
 
 ## Best Practices
 
-### 1. Message Design
+### 1. Always Use Public Key Tokens
 
-**DO:**
-- Keep messages small and focused
-- Use clear, hierarchical type names (`game.player.action`)
-- Include timestamps for time-sensitive data
-- Use correlation IDs for request/response patterns
+When defining constraints, always include public key tokens:
 
-**DON'T:**
-- Send large binary data through messages
-- Use generic type names (`event`, `data`)
-- Include sensitive information in messages
-- Rely on message ordering
+```csharp
+// ❌ Bad: Name constraints without cryptographic verification
+new TopicConstraints
+{
+    AllowedSenders = ImmutableArray.Create("EmailService")  // Just a string!
+}
 
-### 2. Error Handling
+// ✅ Good: Public key token ensures identity
+new TopicConstraints
+{
+    // WHO CAN SEND TO US: Only this specific signed script
+    AllowedSenders = ImmutableArray.Create("a1b2c3d4e5f67890")
+}
+```
+
+### 2. Version Constraints Are Enforced
+
+Scripts cannot bypass version constraints by using low version numbers:
+
+```json
+{
+  "allowedSenders": {
+    "publicKeyTokens": ["a1b2c3d4e5f67890"],
+    "minVersion": "2.0.0"  // Scripts with version 0.0.0 or 1.x will be rejected
+  }
+}
+```
+
+The constraint validation:
+- Properly compares version components (2.0.0 > 1.9.9 > 0.0.0)
+- Prevents version downgrade attacks
+- Works with version ranges when using `"version": "[1.0.0, 3.0.0)"`
+
+### 3. Use Immutable Collections
+
+Policies are immutable records - use immutable collections and syntax:
+
+```csharp
+// Create anonymous policy with immutable collections
+var basePolicy = new Policy
+{
+    TimeoutMs = 30_000,
+    MaxMemoryMB = 128,
+    AllowExecution = true,
+    PubSubPermissions = new()
+    {
+        Publish = ImmutableArray.Create("events.*"),
+        Subscribe = ImmutableArray<string>.Empty  // No subscriptions
+    }
+};
+
+// Create new policy with additional permissions (non-destructive)
+var expandedPolicy = basePolicy with
+{
+    PubSubPermissions = basePolicy.PubSubPermissions with
+    {
+        Subscribe = ImmutableArray.Create("system.config")
+    }
+};
+```
+
+### 4. Scope Topics by Token
+
+Use token-scoped topics to prevent conflicts:
+
+```csharp
+// Anonymous policy with token-scoped permissions
+var publicKeyToken = "a1b2c3d4e5f67890";
+var tokenScopedPolicy = new Policy
+{
+    TimeoutMs = 30_000,
+    MaxMemoryMB = 64,
+    AllowExecution = true,
+    PubSubPermissions = new()
+    {
+        // Each script gets its own namespace
+        Publish = ImmutableArray.Create($"script.{publicKeyToken}.*"),
+        Subscribe = ImmutableArray.Create($"script.{publicKeyToken}.*", "system.broadcast")
+    }
+};
+```
+
+### 5. Handle Errors Gracefully
 
 Always handle potential failures:
 
 ```lua
 local success, result = pcall(function()
-    return api.messages.sendTo("service", "request", data)
+    return pubsub.publish("events.important", data)
 end)
 
 if not success then
-    api.util.log("Failed to send message: " .. tostring(result), "error")
-    -- Implement fallback behavior
+    -- Log error but don't crash
+    print("Failed to publish: " .. tostring(result))
 end
 ```
 
-### 3. Rate Limiting
+## JSON Encoding and Decoding
 
-Implement client-side throttling:
+The message bus uses JSON for message serialization. SolarSharp provides a `json` module for encoding and decoding:
+
+### json.encode(value)
+
+Converts a Lua value to a JSON string:
 
 ```lua
-local lastMessageTime = 0
-local messageInterval = 1.0  -- 1 second between messages
+-- Encode simple table
+local data = { name = "Alice", level = 10 }
+local jsonStr = json.encode(data)
+-- Result: '{"name":"Alice","level":10}'
 
-function throttled_send(type, data)
-    local now = os.time()
-    if now - lastMessageTime >= messageInterval then
-        api.messages.send(type, data)
-        lastMessageTime = now
-        return true
-    end
-    return false  -- Message throttled
-end
+-- Encode nested structures
+local complex = {
+    user = { id = 123, name = "Bob" },
+    items = { "sword", "shield" },
+    stats = { health = 100, mana = 50 }
+}
+local jsonStr = json.encode(complex)
+
+-- Encode with null values (nil becomes null)
+local withNull = { name = "Carol", email = json.null }
+local jsonStr = json.encode(withNull)
+-- Result: '{"name":"Carol","email":null}'
 ```
 
-### 4. Subscription Management
+### json.decode(string)
 
-Clean up subscriptions when done:
+Parses a JSON string into a Lua value:
 
 ```lua
--- Store subscription info
-local subscriptions = {}
+-- Decode simple JSON
+local jsonStr = '{"name":"Alice","level":10}'
+local data = json.decode(jsonStr)
+print(data.name)  -- "Alice"
+print(data.level) -- 10
 
--- Subscribe
-subscriptions["player.events"] = "game.player.*"
-
--- Later: unsubscribe
-for _, messageType in pairs(subscriptions) do
-    api.messages.unsubscribe(messageType)
+-- Decode arrays (become Lua tables with numeric indices)
+local arrayJson = '["apple","banana","orange"]'
+local fruits = json.decode(arrayJson)
+for i, fruit in ipairs(fruits) do
+    print(i, fruit)
 end
+
+-- Handle null values
+local withNull = '{"name":"Dave","email":null}'
+local data = json.decode(withNull)
+print(data.email == json.null)  -- true
 ```
 
-### 5. Message Validation
+### Message Bus Integration
 
-Always validate incoming messages:
+The message bus automatically handles JSON conversion:
 
 ```lua
-api.messages.subscribe("data.update", function(msg)
-    -- Validate structure
-    if not msg.data or not msg.data.id then
-        return { error = "Invalid message format" }
-    end
+-- Subscribe with automatic JSON decoding
+pubsub.subscribe("data.update", function(msg)
+    -- msg.data is already a Lua table (decoded from JSON)
+    print("Received update for:", msg.data.id)
+    print("New value:", msg.data.value)
     
-    -- Validate content
-    if type(msg.data.value) ~= "number" or msg.data.value < 0 then
-        return { error = "Invalid value" }
-    end
-    
-    -- Process valid message
-    update_data(msg.data.id, msg.data.value)
-    return { status = "success" }
+    -- Return value will be automatically encoded to JSON
+    return { 
+        status = "processed",
+        timestamp = os.time()
+    }
 end)
+
+-- Publish with automatic encoding
+local update = {
+    id = "sensor-001",
+    value = 23.5,
+    unit = "celsius",
+    readings = { 23.1, 23.3, 23.5 }
+}
+pubsub.publish("data.update", update)  -- Automatically encoded to JSON
+```
+
+### Best Practices for JSON
+
+1. **Handle encoding errors**:
+```lua
+local success, result = pcall(json.encode, complexData)
+if not success then
+    print("JSON encoding failed:", result)
+end
+```
+
+2. **Validate decoded data**:
+```lua
+local success, data = pcall(json.decode, jsonString)
+if success and type(data) == "table" then
+    -- Safe to use data
+else
+    print("Invalid JSON data")
+end
+```
+
+3. **Use json.null for explicit null values**:
+```lua
+-- Distinguish between nil (absent) and null (explicit null)
+local data = {
+    required = "value",
+    optional = json.null  -- Explicitly null in JSON
+    -- missing = nil      -- Won't appear in JSON
+}
+```
+
+## Common Patterns
+
+### Event Broadcasting
+
+```lua
+-- Publisher
+pubsub.publish("game.player.levelup", {
+    player = "Alice",
+    newLevel = 10,
+    timestamp = os.time()
+})
+
+-- Subscribers react independently
+-- (Assuming policy allows subscription to game.*)
+```
+
+### Request/Response
+
+```lua
+-- Service implementation
+pubsub.subscribe("api.user.get", function(msg)
+    -- msg.data is automatically decoded from JSON
+    local user = lookup_user(msg.data.userId)
+    
+    -- Return value is automatically encoded to JSON
+    return { 
+        name = user.name, 
+        email = user.email,
+        metadata = {
+            lastLogin = user.lastLogin,
+            preferences = user.preferences
+        }
+    }
+end)
+
+-- Client request
+local response, err = pubsub.request("api.user.get", { userId = 123 }, 5.0)
+if response then
+    -- response is automatically decoded from JSON
+    print("User:", response.name)
+    print("Last login:", response.metadata.lastLogin)
+end
+```
+
+### Token-Scoped Communication
+
+```lua
+-- Get own identity
+local identity = pubsub.identity()
+
+-- Publish to own namespace
+pubsub.publish("script." .. identity.token .. ".status", {
+    status = "ready",
+    capabilities = { "data_processing" }
+})
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### 1. "Script not registered" Error
-**Cause**: Attempting to use message bus before registration
-**Solution**: Ensure `RegisterScript` is called during plugin initialization
+1. **"Permission denied" errors**
+   - Check policy PubSubPermissions
+   - Verify public key token matches
+   - Ensure topic pattern allows operation
 
-#### 2. "Rate limit exceeded" Error
-**Cause**: Too many messages sent within time window
-**Solution**: Implement client-side throttling or increase rate limits for trusted scripts
+2. **Messages not received**
+   - Verify subscription permissions in policy
+   - Check topic constraints allow sender
+   - Confirm version constraints are met
 
-#### 3. Messages Not Received
-**Possible Causes**:
-- Script not subscribed to message type
-- Message type not in `CanReceiveTypes`
-- Sender not in `AllowedSenders`
-- Message expired (TTL exceeded)
+3. **"Invalid constraint" errors**
+   - Always include publicKeyTokens when using name/version constraints
+   - Use hex string format for tokens
+   - Verify token is 16 bytes (32 hex chars)
 
-**Debugging Steps**:
-1. Check subscription with `GetSubscriptions()`
-2. Verify communication policy
-3. Check audit logs for policy violations
-4. Test with direct messages first
+### Debugging
 
-#### 4. High Latency
-**Causes**:
-- Heavy message processing in handlers
-- Too many subscribers
-- Large message payloads
-
-**Solutions**:
-- Make handlers async and non-blocking
-- Filter messages early
-- Reduce payload size
-- Use message priorities
-
-### Debugging Tools
-
-#### Message Bus Stats
 ```lua
-local stats = api.messages.getStats()
-print("Total messages: " .. stats.totalMessages)
-print("Active subscriptions: " .. stats.subscriptions)
-print("Dropped messages: " .. stats.droppedMessages)
-```
+-- Check identity
+local id = pubsub.identity()
+print("My token: " .. id.token)
 
-#### Audit Logs
-Enable audit logging in policies to trace message flow:
-```csharp
-policy.EnableAuditLogging = true;
-```
+-- Test basic publish
+local ok = pubsub.publish("test.ping", { timestamp = os.time() })
+print("Publish allowed: " .. tostring(ok))
 
-#### Test Utilities
-```lua
--- Echo service for testing
-api.messages.subscribe("test.echo", function(msg)
-    return {
-        echo = msg.data,
-        timestamp = os.time()
-    }
+-- Check for permission errors in pcall
+local success, error = pcall(function()
+    return pubsub.publish("restricted.topic", {})
 end)
-
--- Ping test
-local response = api.messages.sendTo("echo-service", "test.echo", {
-    ping = true
-})
-assert(response.data.echo.ping == true)
-```
-
-## Examples
-
-### Example 1: Simple Notification System
-
-```lua
--- Notification publisher
-function notify(level, message)
-    api.messages.send("ui.notification", {
-        level = level,  -- "info", "warning", "error"
-        message = message,
-        timestamp = os.time()
-    })
-end
-
--- UI subscriber
-api.messages.subscribe("ui.notification", function(msg)
-    local color = ({
-        info = "white",
-        warning = "yellow", 
-        error = "red"
-    })[msg.data.level] or "white"
-    
-    display_notification(msg.data.message, color)
-end)
-```
-
-### Example 2: Plugin Coordination
-
-```lua
--- Coordinator plugin
-local activePlugins = {}
-
-api.messages.subscribe("plugin.status", function(msg)
-    activePlugins[msg.from] = {
-        status = msg.data.status,
-        capabilities = msg.data.capabilities,
-        lastSeen = os.time()
-    }
-    
-    -- Broadcast updated plugin list
-    api.messages.send("plugin.list.updated", {
-        plugins = activePlugins
-    })
-end)
-
--- Worker plugin
-api.messages.send("plugin.status", {
-    status = "ready",
-    capabilities = {"data_processing", "reporting"}
-})
-```
-
-### Example 3: Data Pipeline
-
-```lua
--- Data producer
-function produceData()
-    local data = generate_sensor_reading()
-    api.messages.send("data.raw", {
-        sensorId = "temp-001",
-        value = data.temperature,
-        unit = "celsius",
-        timestamp = os.time()
-    })
-end
-
--- Data processor
-api.messages.subscribe("data.raw", function(msg)
-    local fahrenheit = (msg.data.value * 9/5) + 32
-    
-    api.messages.send("data.processed", {
-        sensorId = msg.data.sensorId,
-        celsius = msg.data.value,
-        fahrenheit = fahrenheit,
-        timestamp = msg.data.timestamp
-    })
-end)
-
--- Data consumer
-local readings = {}
-api.messages.subscribe("data.processed", function(msg)
-    table.insert(readings, msg.data)
-    
-    if #readings >= 10 then
-        local avg = calculate_average(readings)
-        api.messages.send("data.aggregate", {
-            average = avg,
-            count = #readings,
-            period = "10_readings"
-        })
-        readings = {}  -- Reset
-    end
-end)
-```
-
-### Example 4: Security Demo
-
-```lua
--- Demonstrate security boundaries
-function test_security()
-    -- This will fail for user-level plugins
-    local success, err = pcall(function()
-        api.messages.send("system.admin.command", {
-            action = "restart"
-        })
-    end)
-    
-    if not success then
-        print("Security working: " .. err)
-    end
-    
-    -- This will work (assuming proper policy)
-    api.messages.subscribe("game.event", function(msg)
-        print("Received allowed message: " .. msg.type)
-    end)
+if not success then
+    print("Permission error: " .. error)
 end
 ```
 
-## Performance Considerations
+## Integration Points
 
-### Message Size
-- Keep payloads under 1KB for best performance
-- Use references for large data instead of embedding
-- Compress data if necessary
+The message bus integrates with other SolarSharp components:
 
-### Subscription Count
-- Each message type check has O(n) complexity for n subscribers
-- Use specific message types rather than wildcards when possible
-- Unsubscribe from unused message types
+- **Policy System**: All permissions flow through policies
+- **Security Auditing**: Operations logged via ISecurityAuditor  
+- **Execution Context**: Identity tracked automatically
+- **Manifest System**: Identity established via signed manifests
 
-### Handler Performance
-- Keep handlers fast and non-blocking
-- Offload heavy processing to background tasks
-- Return early from handlers when possible
-
-### Memory Usage
-- Messages are kept in memory until processed
-- Implement TTL for time-sensitive messages
-- Monitor message bus stats for memory leaks
-
-## Integration with SolarSharp Security
-
-The message bus integrates seamlessly with SolarSharp's security infrastructure:
-
-1. **Capability System**: Message bus operations are gated by capabilities
-2. **Audit Trail**: All operations are logged through ISecurityAuditor
-3. **Resource Limits**: Message processing respects script resource limits
-4. **Sandboxing**: Messages cannot escape the security sandbox
-5. **Trust Chain**: Trust levels determine available messaging features
-
-This ensures that the message bus enhances functionality without compromising security.
+For more details on these systems, see:
+- [Policy System Design](/docs/Policy_System_Design.md)
+- [Security Documentation](/docs/SolarSharp_Security_Documentation.md)
+- [Manifest API Reference](/docs/Manifest_API_Reference.md)

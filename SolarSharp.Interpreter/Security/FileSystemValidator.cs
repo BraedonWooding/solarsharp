@@ -9,6 +9,7 @@ namespace SolarSharp.Interpreter.Security
     public class FileSystemValidator
     {
         private readonly FileSystemSecurity _security;
+        private readonly CrossPlatformPathCanonicalizer _canonicalizer;
 
         /// <summary>
         /// Creates a new file system validator
@@ -16,6 +17,7 @@ namespace SolarSharp.Interpreter.Security
         public FileSystemValidator(FileSystemSecurity security)
         {
             _security = security ?? throw new ArgumentNullException(nameof(security));
+            _canonicalizer = new CrossPlatformPathCanonicalizer();
         }
 
         /// <summary>
@@ -23,31 +25,34 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public void ValidateFilePermissions(string path, FileOperation operation)
         {
-            // Normalize path separators first to ensure cross-platform compatibility
-            var normalizedPath = path.Replace('\\', Path.DirectorySeparatorChar);
-            
-            // Get the fully resolved path using the OS path resolver
-            // This handles Unicode normalization, relative paths, symlinks, etc.
-            string resolvedPath;
-            try
-            {
-                resolvedPath = Path.GetFullPath(normalizedPath);
-            }
-            catch (Exception ex)
-            {
-                throw new FilePermissionViolationException($"Invalid path: {path}", "ValidateFileAccess", ex);
-            }
-            
-            // Check if the resolved path escapes allowed boundaries
-            if (!IsPathWithinAllowedBoundaries(resolvedPath, path))
-            {
-                throw new PathTraversalException(
-                    $"Path traversal detected - resolved path escapes allowed boundaries: {path} -> {resolvedPath}",
-                    "ValidateFileAccess",
-                    path);
-            }
+            // Get sandbox root from security config
+            string sandboxRoot = _security.SandboxRoot;
+            string displayPath;
 
-            var displayPath = resolvedPath.Replace('\\', '/');
+            // If no sandbox root, just normalize the path without canonicalization
+            if (string.IsNullOrEmpty(sandboxRoot))
+            {
+                // Simple path normalization for testing scenarios
+                displayPath = PathNormalizer.NormalizePath(path);
+            }
+            else
+            {
+                // Use canonicalizer for secure path resolution
+                var canonicalResult = _canonicalizer.Canonicalize(path, sandboxRoot);
+                if (canonicalResult.IsFailure)
+                {
+                    var error = canonicalResult.Error;
+                    throw new FilePermissionViolationException(
+                        error.Message,
+                        "ValidateFileAccess",
+                        path
+                    );
+                }
+
+                var canonical = canonicalResult.Value;
+                var resolvedPath = canonical.Resolved;
+                displayPath = canonical.SecurityPath.Replace('\\', '/');
+            }
 
             // Check for hidden files
             if (!_security.AllowHiddenFiles && IsHiddenFile(displayPath))
@@ -55,7 +60,8 @@ namespace SolarSharp.Interpreter.Security
                 throw new FilePermissionViolationException(
                     $"Hidden files are not allowed: {path}",
                     "ValidateFileAccess",
-                    path);
+                    path
+                );
             }
 
             // Check for symbolic links
@@ -64,21 +70,106 @@ namespace SolarSharp.Interpreter.Security
                 throw new FilePermissionViolationException(
                     $"Symbolic links are not allowed: {path}",
                     "ValidateFileAccess",
-                    path);
+                    path
+                );
             }
 
             // Check if file operation is allowed based on new access model
-            if (!_security.IsFileOperationPermitted(displayPath, operation))
-            {
-                var fileAccess = _security.GetFilePermissions(displayPath);
-                var directory = Path.GetDirectoryName(displayPath);
-                var dirAccess = _security.GetDirectoryPermissions(directory);
+            // Use GetFilePermissionsWithKey to handle DirectoryAccessRules even when no signing key is present
+            var fileAccess = _security.GetFilePermissionsWithKey(displayPath, null);
+            var directory = Path.GetDirectoryName(displayPath);
+            var dirAccess = _security.GetDirectoryPermissions(directory);
 
+            if (!PermissionChecks.CanPerformFileOperation(operation, fileAccess, dirAccess))
+            {
                 throw new FilePermissionViolationException(
                     $"File operation '{operation}' not allowed. File access: {fileAccess}, Directory access: {dirAccess}, Path: {path}",
-                    
                     "ValidateFileAccess",
-                    path);
+                    path
+                );
+            }
+
+            // Validate file size for read/write operations
+            if (operation == FileOperation.Read || operation == FileOperation.Write)
+            {
+                ValidateFileSize(displayPath);
+            }
+        }
+
+        /// <summary>
+        /// Validates file access according to security policy with signing key consideration
+        /// </summary>
+        public void ValidateFilePermissions(
+            string path,
+            FileOperation operation,
+            string signingKeyFingerprint
+        )
+        {
+            // Get sandbox root from security config
+            string sandboxRoot = _security.SandboxRoot;
+            string displayPath;
+
+            // If no sandbox root, just normalize the path without canonicalization
+            if (string.IsNullOrEmpty(sandboxRoot))
+            {
+                // Simple path normalization for testing scenarios
+                displayPath = PathNormalizer.NormalizePath(path);
+            }
+            else
+            {
+                // Use canonicalizer for secure path resolution
+                var canonicalResult = _canonicalizer.Canonicalize(path, sandboxRoot);
+                if (canonicalResult.IsFailure)
+                {
+                    var error = canonicalResult.Error;
+                    throw new FilePermissionViolationException(
+                        error.Message,
+                        "ValidateFileAccess",
+                        path
+                    );
+                }
+
+                var canonical = canonicalResult.Value;
+                var resolvedPath = canonical.Resolved;
+                displayPath = canonical.SecurityPath.Replace('\\', '/');
+            }
+
+            // Check for hidden files
+            if (!_security.AllowHiddenFiles && IsHiddenFile(displayPath))
+            {
+                throw new FilePermissionViolationException(
+                    $"Hidden files are not allowed: {path}",
+                    "ValidateFileAccess",
+                    path
+                );
+            }
+
+            // Check for symbolic links
+            if (!_security.AllowSymbolicLinks && IsSymbolicLink(displayPath))
+            {
+                throw new FilePermissionViolationException(
+                    $"Symbolic links are not allowed: {path}",
+                    "ValidateFileAccess",
+                    path
+                );
+            }
+
+            // Get file permissions considering signing key
+            var fileAccess = _security.GetFilePermissionsWithKey(
+                displayPath,
+                signingKeyFingerprint
+            );
+            var directory = Path.GetDirectoryName(displayPath);
+            var dirAccess = _security.GetDirectoryPermissions(directory);
+
+            // Check if file operation is allowed
+            if (!PermissionChecks.CanPerformFileOperation(operation, fileAccess, dirAccess))
+            {
+                throw new FilePermissionViolationException(
+                    $"File operation '{operation}' not allowed. File access: {fileAccess}, Directory access: {dirAccess}, Path: {path}, Key: {signingKeyFingerprint ?? "unsigned"}",
+                    "ValidateFileAccess",
+                    path
+                );
             }
 
             // Validate file size for read/write operations
@@ -93,31 +184,33 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public void ValidateDirectoryAccess(string path, DirectoryOperation operation)
         {
-            // Normalize path separators first to ensure cross-platform compatibility
-            var normalizedPath = path.Replace('\\', Path.DirectorySeparatorChar);
-            
-            // Get the fully resolved path using the OS path resolver
-            // This handles Unicode normalization, relative paths, symlinks, etc.
-            string resolvedPath;
-            try
-            {
-                resolvedPath = Path.GetFullPath(normalizedPath);
-            }
-            catch (Exception ex)
-            {
-                throw new FilePermissionViolationException($"Invalid path: {path}", "ValidateDirectoryAccess", ex);
-            }
-            
-            // Check if the resolved path escapes allowed boundaries
-            if (!IsPathWithinAllowedBoundaries(resolvedPath, path))
-            {
-                throw new PathTraversalException(
-                    $"Path traversal detected - resolved path escapes allowed boundaries: {path} -> {resolvedPath}",
-                    "ValidateDirectoryAccess",
-                    path);
-            }
+            // Get sandbox root from security config
+            string sandboxRoot = _security.SandboxRoot;
+            string displayPath;
 
-            var displayPath = resolvedPath.Replace('\\', '/');
+            // If no sandbox root, just normalize the path without canonicalization
+            if (string.IsNullOrEmpty(sandboxRoot))
+            {
+                // Simple path normalization for testing scenarios
+                displayPath = PathNormalizer.NormalizePath(path);
+            }
+            else
+            {
+                // Use canonicalizer for secure path resolution
+                var canonicalResult = _canonicalizer.Canonicalize(path, sandboxRoot);
+                if (canonicalResult.IsFailure)
+                {
+                    var error = canonicalResult.Error;
+                    throw new FilePermissionViolationException(
+                        error.Message,
+                        "ValidateDirectoryAccess",
+                        path
+                    );
+                }
+
+                var canonical = canonicalResult.Value;
+                displayPath = canonical.SecurityPath.Replace('\\', '/');
+            }
             var dirAccess = _security.GetDirectoryPermissions(displayPath);
 
             switch (operation)
@@ -128,7 +221,8 @@ namespace SolarSharp.Interpreter.Security
                         throw new FilePermissionViolationException(
                             $"Directory listing not allowed. Access level: {dirAccess}, Path: {path}",
                             "ValidateDirectoryAccess",
-                            path);
+                            path
+                        );
                     }
                     break;
 
@@ -137,13 +231,13 @@ namespace SolarSharp.Interpreter.Security
                     {
                         throw new FilePermissionViolationException(
                             $"Directory creation not allowed. Access level: {dirAccess}, Path: {path}",
-                            "ValidateDirectoryAccess", 
-                            path);
+                            "ValidateDirectoryAccess",
+                            path
+                        );
                     }
                     break;
             }
         }
-
 
         /// <summary>
         /// Checks if the resolved path is within allowed sandbox boundaries
@@ -157,20 +251,25 @@ namespace SolarSharp.Interpreter.Security
                 {
                     return false;
                 }
-                
+
                 // Check if we have a configured sandbox root (chroot-style)
                 if (!string.IsNullOrEmpty(_security.SandboxRoot))
                 {
                     var normalizedResolved = resolvedPath.Replace('\\', '/');
                     var normalizedRoot = _security.SandboxRoot.Replace('\\', '/');
-                    
+
                     // Path must be within the sandbox root
-                    if (!normalizedResolved.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+                    if (
+                        !normalizedResolved.StartsWith(
+                            normalizedRoot,
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
                     {
                         return false;
                     }
                 }
-                
+
                 // No sandbox defined - allow access (security is handled by file/directory permissions)
                 return true;
             }
@@ -180,7 +279,6 @@ namespace SolarSharp.Interpreter.Security
                 return false;
             }
         }
-
 
         /// <summary>
         /// Checks if file is hidden
@@ -245,9 +343,9 @@ namespace SolarSharp.Interpreter.Security
                     {
                         throw new FilePermissionViolationException(
                             $"File exceeds maximum size limit ({_security.MaxFileSize} bytes): {path}",
-                            
                             "ValidateFileSize",
-                            path);
+                            path
+                        );
                     }
                 }
             }
@@ -259,9 +357,9 @@ namespace SolarSharp.Interpreter.Security
             {
                 throw new FilePermissionViolationException(
                     $"Cannot check file size: {path}",
-                    
                     "ValidateFileSize",
-                    ex);
+                    ex
+                );
             }
         }
     }
@@ -279,6 +377,6 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Creating new files in directory
         /// </summary>
-        Create
+        Create,
     }
 }

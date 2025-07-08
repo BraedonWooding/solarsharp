@@ -11,8 +11,11 @@ namespace SolarSharp.Interpreter.Tree.Expressions
         private readonly Expression m_IndexExp;
         private readonly string m_Name;
 
-
-        public IndexExpression(Expression baseExp, Expression indexExp, ScriptLoadingContext lcontext)
+        public IndexExpression(
+            Expression baseExp,
+            Expression indexExp,
+            ScriptLoadingContext lcontext
+        )
             : base(lcontext)
         {
             m_BaseExp = baseExp;
@@ -25,7 +28,6 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             m_BaseExp = baseExp;
             m_Name = name;
         }
-
 
         public override void Compile(ByteCode bc)
         {
@@ -67,11 +69,16 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
         public override DynValue Eval(ScriptExecutionContext context)
         {
-            DynValue b = m_BaseExp.Eval(context).ToScalar();
-            DynValue i = m_IndexExp != null ? m_IndexExp.Eval(context).ToScalar() : DynValue.NewString(m_Name);
+            var b = m_BaseExp.Eval(context).ToScalar();
+            var i =
+                m_IndexExp != null
+                    ? m_IndexExp.Eval(context).ToScalar()
+                    : DynValue.NewString(m_Name);
 
-            if (b.Type != DataType.Table) throw new DynamicExpressionException("Attempt to index non-table.");
-            else if (i.IsNilOrNan()) throw new DynamicExpressionException("Attempt to index with nil or nan key.");
+            if (b.Type != DataType.Table)
+                throw new DynamicExpressionException("Attempt to index non-table.");
+            if (i.IsNilOrNan())
+                throw new DynamicExpressionException("Attempt to index with nil or nan key.");
             return b.Table.Get(i) ?? DynValue.Nil;
         }
     }

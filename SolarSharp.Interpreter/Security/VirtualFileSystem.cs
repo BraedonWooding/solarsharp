@@ -39,9 +39,9 @@ namespace SolarSharp.Interpreter.Security
         private readonly string _chrootDirectory;
         private readonly string _sandboxDirectory;
         private readonly WritePolicy _writePolicy;
-        private readonly List<string> _createdFiles = new();
-        private readonly object _lock = new();
-        private bool _disposed = false;
+        private readonly List<string> _createdFiles = new List<string>();
+        private readonly object _lock = new object();
+        private bool _disposed;
 
         /// <summary>
         /// Event fired before sandbox cleanup, allowing files to be preserved
@@ -57,7 +57,7 @@ namespace SolarSharp.Interpreter.Security
         {
             _chrootDirectory = Path.GetFullPath(chrootDirectory ?? Environment.CurrentDirectory);
             _writePolicy = writePolicy;
-            
+
             if (writePolicy == WritePolicy.Sandbox)
             {
                 _sandboxDirectory = CreateTempSandboxDirectory();
@@ -77,17 +77,21 @@ namespace SolarSharp.Interpreter.Security
 
             // Normalize path separators
             virtualPath = virtualPath.Replace('\\', '/');
-            
+
             // Remove leading slash if present (we treat everything as relative to chroot)
             if (virtualPath.StartsWith("/"))
                 virtualPath = virtualPath.Substring(1);
 
             // Prevent directory traversal attacks
             if (virtualPath.Contains("..") || virtualPath.Contains("~"))
-                throw new PathTraversalException($"Path traversal not allowed: {virtualPath}", "MapVirtualToReal", virtualPath);
+                throw new PathTraversalException(
+                    $"Path traversal not allowed: {virtualPath}",
+                    "MapVirtualToReal",
+                    virtualPath
+                );
 
             var basePath = _chrootDirectory;
-            
+
             // For write operations, use sandbox if policy requires it
             if (forWrite && _writePolicy == WritePolicy.Sandbox && _sandboxDirectory != null)
             {
@@ -114,7 +118,7 @@ namespace SolarSharp.Interpreter.Security
 
                 return sandboxPath;
             }
-            
+
             return Path.Combine(basePath, virtualPath);
         }
 
@@ -134,7 +138,7 @@ namespace SolarSharp.Interpreter.Security
                 }
 
                 // Check original location
-                var realPath = TranslatePath(virtualPath, false);
+                var realPath = TranslatePath(virtualPath);
                 return File.Exists(realPath);
             }
             catch
@@ -159,7 +163,7 @@ namespace SolarSharp.Interpreter.Security
                 }
 
                 // Check original location
-                var realPath = TranslatePath(virtualPath, false);
+                var realPath = TranslatePath(virtualPath);
                 return Directory.Exists(realPath);
             }
             catch
@@ -182,7 +186,7 @@ namespace SolarSharp.Interpreter.Security
             }
 
             // Check original location
-            var realPath = TranslatePath(virtualPath, false);
+            var realPath = TranslatePath(virtualPath);
             return new FileInfo(realPath);
         }
 
@@ -192,11 +196,11 @@ namespace SolarSharp.Interpreter.Security
         public string[] GetFiles(string virtualPath, string searchPattern = "*")
         {
             var files = new HashSet<string>();
-            
+
             // Get files from original directory
             try
             {
-                var realPath = TranslatePath(virtualPath, false);
+                var realPath = TranslatePath(virtualPath);
                 if (Directory.Exists(realPath))
                 {
                     foreach (var file in Directory.GetFiles(realPath, searchPattern))
@@ -234,14 +238,18 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Opens a file stream with write tracking
         /// </summary>
-        public Stream OpenFile(string virtualPath, FileMode mode, System.IO.FileAccess access)
+        public Stream OpenFile(string virtualPath, FileMode mode, FileAccess access)
         {
-            if (_writePolicy == WritePolicy.Deny && access != System.IO.FileAccess.Read)
+            if (_writePolicy == WritePolicy.Deny && access != FileAccess.Read)
             {
-                throw new FilePermissionViolationException($"Write access denied by security policy: {virtualPath}", "ValidateFileAccess", virtualPath);
+                throw new FilePermissionViolationException(
+                    $"Write access denied by security policy: {virtualPath}",
+                    "ValidateFileAccess",
+                    virtualPath
+                );
             }
 
-            bool isWrite = access != System.IO.FileAccess.Read;
+            var isWrite = access != FileAccess.Read;
             var realPath = TranslatePath(virtualPath, isWrite);
 
             if (isWrite)
@@ -279,7 +287,7 @@ namespace SolarSharp.Interpreter.Security
             var tempBase = Path.GetTempPath();
             var sandboxName = $"solarsharp_sandbox_{Guid.NewGuid():N}";
             var sandboxPath = Path.Combine(tempBase, sandboxName);
-            
+
             Directory.CreateDirectory(sandboxPath);
             return sandboxPath;
         }
@@ -289,13 +297,17 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+                return;
             _disposed = true;
 
             if (_sandboxDirectory != null && Directory.Exists(_sandboxDirectory))
             {
                 // Fire cleanup event to allow file collection
-                var args = new SandboxCleanupEventArgs(_sandboxDirectory, new List<string>(_createdFiles));
+                var args = new SandboxCleanupEventArgs(
+                    _sandboxDirectory,
+                    new List<string>(_createdFiles)
+                );
                 SandboxCleanup?.Invoke(this, args);
 
                 // Delete sandbox unless cancelled

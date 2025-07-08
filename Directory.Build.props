@@ -1,14 +1,16 @@
 <Project>
-    <Sdk Name="DotNet.ReproducibleBuilds.Isolated" Version="1.2.25"/>
-    <PropertyGroup>
-        <!-- Force clean before build for test projects -->
-        <CleanOnTestRun Condition="'$(IsTestProject)' == 'true'">true</CleanOnTestRun>
-        <!-- Strong name signing for identity only -->
-        <SignAssembly>true</SignAssembly>
-        <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)signing/open-signing-key.snk</AssemblyOriginatorKeyFile>
-    </PropertyGroup>
-    <ItemGroup>
-        <!-- Reproducible Builds -->
-        <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.25" PrivateAssets="All"/>
-    </ItemGroup>
+  <Sdk Name="DotNet.ReproducibleBuilds.Isolated" Version="1.2.25" />
+  <PropertyGroup>
+    <!-- Force clean before build for test projects -->
+    <CleanOnTestRun Condition="'$(IsTestProject)' == 'true'">true</CleanOnTestRun>
+    <!-- Strong name signing for identity only -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)signing/open-signing-key.snk</AssemblyOriginatorKeyFile>
+    <!-- Suppress CS8002 strong name warnings - strong naming has no benefits on .NET Core/5+ -->
+    <NoWarn>$(NoWarn);CS8002</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Reproducible Builds -->
+    <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.25" PrivateAssets="All" />
+  </ItemGroup>
 </Project>

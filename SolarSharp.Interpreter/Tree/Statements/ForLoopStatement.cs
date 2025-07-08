@@ -14,13 +14,16 @@ namespace SolarSharp.Interpreter.Tree.Statements
         private readonly RuntimeScopeBlock m_StackFrame;
         private readonly Statement m_InnerBlock;
         private readonly SymbolRef m_VarName;
-        private readonly Expression m_Start, m_End, m_Step;
-        private readonly SourceRef m_RefFor, m_RefEnd;
+        private readonly Expression m_Start,
+            m_End,
+            m_Step;
+        private readonly SourceRef m_RefFor,
+            m_RefEnd;
 
         public ForLoopStatement(ScriptLoadingContext lcontext, Token nameToken, Token forToken)
             : base(lcontext)
         {
-            //	for Name ‘=’ exp ‘,’ exp [‘,’ exp] do block end | 
+            //	for Name ‘=’ exp ‘,’ exp [‘,’ exp] do block end |
 
             // lexer already at the '=' ! [due to dispatching vs for-each]
             CheckTokenType(lcontext, TokenType.Op_Assignment);
@@ -50,15 +53,11 @@ namespace SolarSharp.Interpreter.Tree.Statements
             lcontext.Source.Refs.Add(m_RefEnd);
         }
 
-
         public override void Compile(ByteCode bc)
         {
             bc.PushSourceRef(m_RefFor);
 
-            Loop L = new()
-            {
-                Scope = m_StackFrame
-            };
+            var L = new Loop { Scope = m_StackFrame };
 
             bc.LoopTracker.Loops.Push(L);
 
@@ -69,7 +68,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
             m_Start.Compile(bc);
             bc.Emit_ToNum(1);
 
-            int start = bc.GetJumpPointForNextInstruction();
+            var start = bc.GetJumpPointForNextInstruction();
             var jumpend = bc.Emit_Jump(OpCode.JFor, -1);
             bc.Emit_Enter(m_StackFrame);
             //bc.Emit_SymStorN(m_VarName);
@@ -88,9 +87,9 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
             bc.LoopTracker.Loops.Pop();
 
-            int exitpoint = bc.GetJumpPointForNextInstruction();
+            var exitpoint = bc.GetJumpPointForNextInstruction();
 
-            foreach (Instruction i in L.BreakJumps)
+            foreach (var i in L.BreakJumps)
                 i.NumVal = exitpoint;
 
             jumpend.NumVal = exitpoint;
@@ -98,6 +97,5 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
             bc.PopSourceRef();
         }
-
     }
 }

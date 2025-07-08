@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Security.Operations;
 
 namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
 {
@@ -15,47 +16,86 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
     [Category("InstructionLimits")]
     public class DeterministicInstructionLimitTests : ResourceLimitTestBase
     {
+        [Category("Resource.Unit")]
         [Test]
         [Order(1)]
         public void TestInstructionLimit_SimpleLoop()
         {
-            var config = new SecurityConfiguration()
-                .WithInstructionLimit(1000) // Low limit
-                .WithMemoryLimitMB(100) // High memory to avoid hitting it
-                .WithCallDepth(1000) // High call depth
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxInstructions = 1000, // Low limit
+                MaxMemoryMB = 100, // High memory to avoid hitting it
+                MaxCallDepth = 1000, // High call depth
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<InstructionLimitExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local sum = 0
                     for i = 1, 10000 do
                         sum = sum + i
                     end
-                ");
+                "
+                );
             });
 
-            Assert.That(exception.Operation, Is.EqualTo("InstructionCount"));
-            Assert.That(exception.Message, Does.Contain("1000"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(exception.Operation, Is.EqualTo("InstructionCount"));
+                Assert.That(exception.Message, Does.Contain("1000"));
+            });
         }
 
         [Test]
         [Order(2)]
         public void TestInstructionLimit_NestedLoops()
         {
-            var config = new SecurityConfiguration()
-                .WithInstructionLimit(10000)
-                .WithMemoryLimitMB(100)
-                .WithCallDepth(1000)
-                .WithModules(CoreModules.Basic | CoreModules.Table);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxInstructions = 10000,
+                MaxMemoryMB = 100,
+                MaxCallDepth = 1000,
+                AllowedModules = CoreModules.Basic | CoreModules.Table,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<InstructionLimitExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local result = 0
                     for i = 1, 100 do
                         for j = 1, 100 do
@@ -64,7 +104,8 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
                             end
                         end
                     end
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("InstructionCount"));
@@ -74,22 +115,40 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         [Order(3)]
         public void TestInstructionLimit_WhileLoop()
         {
-            var config = new SecurityConfiguration()
-                .WithInstructionLimit(5000)
-                .WithMemoryLimitMB(100)
-                .WithCallDepth(1000)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxInstructions = 5000,
+                MaxMemoryMB = 100,
+                MaxCallDepth = 1000,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<InstructionLimitExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local i = 0
                     while i < 100000 do
                         i = i + 1
                     end
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("InstructionCount"));
@@ -99,17 +158,34 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         [Order(4)]
         public void TestInstructionLimit_TableOperations()
         {
-            var config = new SecurityConfiguration()
-                .WithInstructionLimit(8000)
-                .WithMemoryLimitMB(100)
-                .WithCallDepth(1000)
-                .WithModules(CoreModules.Basic | CoreModules.Table);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxInstructions = 8000,
+                MaxMemoryMB = 100,
+                MaxCallDepth = 1000,
+                AllowedModules = CoreModules.Basic | CoreModules.Table,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<InstructionLimitExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local t = {}
                     -- Table operations consume instructions
                     for i = 1, 1000 do
@@ -117,7 +193,8 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
                         t[tostring(i)] = i * 2
                         local v = t[i] + t[tostring(i)]
                     end
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("InstructionCount"));
@@ -127,17 +204,34 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         [Order(5)]
         public void TestInstructionLimit_FunctionCalls()
         {
-            var config = new SecurityConfiguration()
-                .WithInstructionLimit(5000)
-                .WithMemoryLimitMB(100)
-                .WithCallDepth(1000)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxInstructions = 5000,
+                MaxMemoryMB = 100,
+                MaxCallDepth = 1000,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<InstructionLimitExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local function compute(x)
                         return x * 2 + 1
                     end
@@ -146,7 +240,8 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
                     for i = 1, 1000 do
                         sum = sum + compute(i)
                     end
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("InstructionCount"));
@@ -156,22 +251,40 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         [Order(6)]
         public void TestInstructionLimit_StringOperations()
         {
-            var config = new SecurityConfiguration()
-                .WithInstructionLimit(3000)
-                .WithMemoryLimitMB(100)
-                .WithCallDepth(1000)
-                .WithModules(CoreModules.Basic | CoreModules.String);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxInstructions = 3000,
+                MaxMemoryMB = 100,
+                MaxCallDepth = 1000,
+                AllowedModules = CoreModules.Basic | CoreModules.String,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<InstructionLimitExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local s = ''
                     for i = 1, 500 do
                         s = tostring(i) .. ',' .. tostring(i * 2)
                     end
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("InstructionCount"));
@@ -182,23 +295,41 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         public void TestInstructionLimit_ExactLimit()
         {
             // Test hitting exact limit
-            var config = new SecurityConfiguration()
-                .WithInstructionLimit(100)
-                .WithMemoryLimitMB(100)
-                .WithCallDepth(1000)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxInstructions = 100,
+                MaxMemoryMB = 100,
+                MaxCallDepth = 1000,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             // Act & Assert - Should fail when exceeding 100 instructions
             var exception = Assert.Throws<InstructionLimitExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local x = 0
                     for i = 1, 50 do  -- Each iteration is multiple instructions
                         x = x + 1
                     end
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Message, Does.Contain("100"));
@@ -209,22 +340,40 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         public void TestInstructionLimit_NoFalsePositives()
         {
             // Should complete within limit
-            var config = new SecurityConfiguration()
-                .WithInstructionLimit(1000)
-                .WithMemoryLimitMB(100)
-                .WithCallDepth(1000)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxInstructions = 1000,
+                MaxMemoryMB = 100,
+                MaxCallDepth = 1000,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             // Small loop that should succeed
-            var result = script.DoString(@"
+            var result = script.DoString(
+                @"
                 local sum = 0
                 for i = 1, 10 do
                     sum = sum + i
                 end
                 return sum
-            ");
+            "
+            );
 
             Assert.That(result.Number, Is.EqualTo(55));
         }
@@ -233,17 +382,34 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         [Order(9)]
         public void TestInstructionLimit_ConditionalBranches()
         {
-            var config = new SecurityConfiguration()
-                .WithInstructionLimit(4000)
-                .WithMemoryLimitMB(100)
-                .WithCallDepth(1000)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxInstructions = 4000,
+                MaxMemoryMB = 100,
+                MaxCallDepth = 1000,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<InstructionLimitExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local count = 0
                     for i = 1, 1000 do
                         if i % 2 == 0 then
@@ -254,7 +420,8 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
                             count = count + 3
                         end
                     end
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("InstructionCount"));
@@ -264,22 +431,40 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         [Order(10)]
         public void TestInstructionLimit_RepeatUntil()
         {
-            var config = new SecurityConfiguration()
-                .WithInstructionLimit(2000)
-                .WithMemoryLimitMB(100)
-                .WithCallDepth(1000)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxInstructions = 2000,
+                MaxMemoryMB = 100,
+                MaxCallDepth = 1000,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<InstructionLimitExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local i = 0
                     repeat
                         i = i + 1
                     until i > 10000
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("InstructionCount"));

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using SolarSharp.Interpreter.Debugging;
@@ -11,7 +12,7 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// A class representing a script coroutine
     /// </summary>
-    public class Coroutine : RefIdObject, IScriptPrivateResource
+    public class Coroutine : RefIdObject
     {
         /// <summary>
         /// Possible types of coroutine
@@ -22,18 +23,21 @@ namespace SolarSharp.Interpreter.DataTypes
             /// A valid coroutine
             /// </summary>
             Coroutine,
+
             /// <summary>
-            /// A CLR callback assigned to a coroutine. 
+            /// A CLR callback assigned to a coroutine.
             /// </summary>
             ClrCallback,
+
             /// <summary>
             /// A CLR callback assigned to a coroutine and already executed.
             /// </summary>
             ClrCallbackDead,
+
             /// <summary>
             /// A recycled coroutine
             /// </summary>
-            Recycled
+            Recycled,
         }
 
         /// <summary>
@@ -44,12 +48,10 @@ namespace SolarSharp.Interpreter.DataTypes
         private readonly CallbackFunction m_ClrCallback;
         private readonly Processor m_Processor;
 
-
         internal Coroutine(CallbackFunction function)
         {
             Type = CoroutineType.ClrCallback;
             m_ClrCallback = function;
-            OwnerScript = null;
         }
 
         internal Coroutine(Processor proc)
@@ -57,7 +59,6 @@ namespace SolarSharp.Interpreter.DataTypes
             Type = CoroutineType.Coroutine;
             m_Processor = proc;
             m_Processor.AssociatedCoroutine = this;
-            OwnerScript = proc.GetScript();
         }
 
         internal void MarkClrCallbackAsDead()
@@ -83,12 +84,13 @@ namespace SolarSharp.Interpreter.DataTypes
         public IEnumerable<DynValue> AsTypedEnumerable()
         {
             if (Type != CoroutineType.Coroutine)
-                throw new InvalidOperationException("Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead");
+                throw new InvalidOperationException(
+                    "Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead"
+                );
 
             while (State == CoroutineState.NotStarted || State == CoroutineState.Suspended)
                 yield return Resume();
         }
-
 
         /// <summary>
         /// Gets this coroutine as a typed enumerable which can be looped over for resuming.
@@ -99,7 +101,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
         public IEnumerable<object> AsEnumerable()
         {
-            foreach (DynValue v in AsTypedEnumerable())
+            foreach (var v in AsTypedEnumerable())
             {
                 yield return v.ToScalar().ToObject();
             }
@@ -114,7 +116,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
         public IEnumerable<T> AsEnumerable<T>()
         {
-            foreach (DynValue v in AsTypedEnumerable())
+            foreach (var v in AsTypedEnumerable())
             {
                 yield return v.ToScalar().ToObject<T>();
             }
@@ -128,10 +130,10 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
-        public System.Collections.IEnumerator AsUnityCoroutine()
+        public IEnumerator AsUnityCoroutine()
         {
 #pragma warning disable 0219
-            foreach (DynValue v in AsTypedEnumerable())
+            foreach (var v in AsTypedEnumerable())
             {
                 yield return null;
             }
@@ -147,14 +149,12 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
         public DynValue Resume(params DynValue[] args)
         {
-            this.CheckScriptOwnership(args);
-
             if (Type == CoroutineType.Coroutine)
                 return m_Processor.Coroutine_Resume(args);
-            else
-                throw new InvalidOperationException("Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead");
+            throw new InvalidOperationException(
+                "Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead"
+            );
         }
-
 
         /// <summary>
         /// Resumes the coroutine.
@@ -164,19 +164,15 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public DynValue Resume(ScriptExecutionContext context, params DynValue[] args)
         {
-            this.CheckScriptOwnership(context);
-            this.CheckScriptOwnership(args);
-
             if (Type == CoroutineType.Coroutine)
                 return m_Processor.Coroutine_Resume(args);
-            else if (Type == CoroutineType.ClrCallback)
+            if (Type == CoroutineType.ClrCallback)
             {
-                DynValue ret = m_ClrCallback.Invoke(context, args);
+                var ret = m_ClrCallback.Invoke(context, args);
                 MarkClrCallbackAsDead();
                 return ret;
             }
-            else
-                throw ScriptRuntimeException.CannotResumeNotSuspended(CoroutineState.Dead);
+            throw ScriptRuntimeException.CannotResumeNotSuspended(CoroutineState.Dead);
         }
 
         /// <summary>
@@ -189,7 +185,6 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             return Resume(new DynValue[0]);
         }
-
 
         /// <summary>
         /// Resumes the coroutine.
@@ -211,16 +206,17 @@ namespace SolarSharp.Interpreter.DataTypes
         public DynValue Resume(params object[] args)
         {
             if (Type != CoroutineType.Coroutine)
-                throw new InvalidOperationException("Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead");
+                throw new InvalidOperationException(
+                    "Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead"
+                );
 
-            DynValue[] dargs = new DynValue[args.Length];
+            var dargs = new DynValue[args.Length];
 
-            for (int i = 0; i < dargs.Length; i++)
-                dargs[i] = DynValue.FromObject(OwnerScript, args[i]);
+            for (var i = 0; i < dargs.Length; i++)
+                dargs[i] = DynValue.FromObject(null, args[i]);
 
             return Resume(dargs);
         }
-
 
         /// <summary>
         /// Resumes the coroutine
@@ -230,16 +226,13 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public DynValue Resume(ScriptExecutionContext context, params object[] args)
         {
-            DynValue[] dargs = new DynValue[args.Length];
+            var dargs = new DynValue[args.Length];
 
-            for (int i = 0; i < dargs.Length; i++)
+            for (var i = 0; i < dargs.Length; i++)
                 dargs[i] = DynValue.FromObject(context.GetScript(), args[i]);
 
             return Resume(context, dargs);
         }
-
-
-
 
         /// <summary>
         /// Gets the coroutine state.
@@ -250,10 +243,9 @@ namespace SolarSharp.Interpreter.DataTypes
             {
                 if (Type == CoroutineType.ClrCallback)
                     return CoroutineState.NotStarted;
-                else if (Type == CoroutineType.ClrCallbackDead)
+                if (Type == CoroutineType.ClrCallbackDead)
                     return CoroutineState.Dead;
-                else
-                    return m_Processor.State;
+                return m_Processor.State;
             }
         }
 
@@ -270,21 +262,8 @@ namespace SolarSharp.Interpreter.DataTypes
                 entrySourceRef = m_Processor.GetCoroutineSuspendedLocation();
             }
 
-            List<WatchItem> stack = m_Processor.Debugger_GetCallStack(entrySourceRef);
+            var stack = m_Processor.Debugger_GetCallStack(entrySourceRef);
             return stack.Skip(skip).ToArray();
-        }
-
-        /// <summary>
-        /// Gets the script owning this resource.
-        /// </summary>
-        /// <value>
-        /// The script owning this resource.
-        /// </value>
-        /// <exception cref="NotImplementedException"></exception>
-        public Script OwnerScript
-        {
-            get;
-            private set;
         }
     }
 }

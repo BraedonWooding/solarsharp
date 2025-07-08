@@ -11,8 +11,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
         protected Stream m_Stream;
         protected StreamReader m_Reader;
         protected StreamWriter m_Writer;
-        protected bool m_Closed = false;
-
+        protected bool m_Closed;
 
         protected void Initialize(Stream stream, StreamReader reader, StreamWriter writer)
         {
@@ -21,13 +20,11 @@ namespace SolarSharp.Interpreter.CoreLib.IO
             m_Writer = writer;
         }
 
-
         private void CheckFileIsNotClosed()
         {
             if (m_Closed)
                 throw new ScriptRuntimeException("attempt to use a closed file");
         }
-
 
         protected override bool Eof()
         {
@@ -35,8 +32,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
 
             if (m_Reader != null)
                 return m_Reader.EndOfStream;
-            else
-                return false;
+            return false;
         }
 
         protected override string ReadLine()
@@ -54,8 +50,8 @@ namespace SolarSharp.Interpreter.CoreLib.IO
         protected override string ReadBuffer(int p)
         {
             CheckFileIsNotClosed();
-            char[] buffer = new char[p];
-            int length = m_Reader.ReadBlock(buffer, 0, p);
+            var buffer = new char[p];
+            var length = m_Reader.ReadBlock(buffer, 0, p);
             return new string(buffer, 0, length);
         }
 
@@ -114,7 +110,11 @@ namespace SolarSharp.Interpreter.CoreLib.IO
                 }
                 else
                 {
-                    throw ScriptRuntimeException.BadArgument(0, "seek", "invalid option '" + whence + "'");
+                    throw ScriptRuntimeException.BadArgument(
+                        0,
+                        "seek",
+                        "invalid option '" + whence + "'"
+                    );
                 }
             }
 
@@ -133,6 +133,5 @@ namespace SolarSharp.Interpreter.CoreLib.IO
         {
             return !m_Closed;
         }
-
     }
 }

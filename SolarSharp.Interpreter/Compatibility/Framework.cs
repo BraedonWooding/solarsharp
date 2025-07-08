@@ -5,8 +5,11 @@ namespace SolarSharp.Interpreter.Compatibility
 {
     public static class Framework
     {
-        private static readonly FrameworkCurrent s_FrameworkCurrent = new();
+        private static readonly FrameworkCurrent s_FrameworkCurrent = new FrameworkCurrent();
 
-        public static FrameworkBase Do { get { return s_FrameworkCurrent; } }
+        public static FrameworkBase Do
+        {
+            get { return s_FrameworkCurrent; }
+        }
     }
 }

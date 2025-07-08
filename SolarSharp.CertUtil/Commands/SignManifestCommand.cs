@@ -1,6 +1,13 @@
 using System.CommandLine;
-using System.Security.Cryptography.X509Certificates;
+using System.IO.Abstractions;
+using System.Text;
 using System.Text.Json;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto.Signers;
+using Org.BouncyCastle.OpenSsl;
+using Org.BouncyCastle.X509;
 
 namespace SolarSharp.CertUtil.Commands
 {
@@ -19,6 +26,8 @@ namespace SolarSharp.CertUtil.Commands
     /// <seealso cref="SolarSharp.CertUtil.Commands.VerifyManifestCommand"/>
     public static class SignManifestCommand
     {
+        private static readonly IFileSystem _fileSystem = new FileSystem();
+
         /// <summary>
         /// Creates a command that enables signing of a manifest file.
         /// </summary>
@@ -27,112 +36,216 @@ namespace SolarSharp.CertUtil.Commands
         {
             var manifestOption = new Option<FileInfo>(
                 "--manifest",
-                description: "Path to the manifest JSON file to sign")
-            { IsRequired = true };
+                description: "Path to the manifest JSON file to sign"
+            )
+            {
+                IsRequired = true,
+            };
 
             var certOption = new Option<FileInfo>(
                 "--cert",
-                description: "Path to the certificate file")
-            { IsRequired = true };
+                description: "Path to the certificate file"
+            )
+            {
+                IsRequired = true,
+            };
 
             var keyOption = new Option<FileInfo>(
                 "--key",
-                description: "Path to the private key file");
+                description: "Path to the private key file"
+            );
 
             var command = new Command("sign-manifest", "Sign a manifest file")
             {
                 manifestOption,
                 certOption,
-                keyOption
+                keyOption,
             };
 
-            command.SetHandler(async (manifestFile, certFile, keyFile) =>
-            {
-                try
+            command.SetHandler(
+                async (manifestFile, certFile, keyFile) =>
                 {
-                    if (!manifestFile.Exists)
+                    try
                     {
-                        Console.WriteLine($"Error: Manifest file not found: {manifestFile.FullName}");
-                        Environment.Exit(1);
-                    }
-
-                    if (!certFile.Exists)
-                    {
-                        Console.WriteLine($"Error: Certificate file not found: {certFile.FullName}");
-                        Environment.Exit(1);
-                    }
-
-                    Console.WriteLine($"Signing manifest: {manifestFile.FullName}");
-                    
-                    var manifestJson = await File.ReadAllTextAsync(manifestFile.FullName);
-                    var manifest = JsonSerializer.Deserialize<Dictionary<string, object>>(manifestJson);
-                    
-                    X509Certificate2 cert;
-                    if (keyFile is { Exists: true })
-                    {
-                        // Load certificate and separate key file
-                        var certPem = await File.ReadAllTextAsync(certFile.FullName);
-                        var keyPem = await File.ReadAllTextAsync(keyFile.FullName);
-                        var baseCert = X509Certificate2.CreateFromPem(certPem);
-                        var rsa = System.Security.Cryptography.RSA.Create();
-                        rsa.ImportFromPem(keyPem);
-                        cert = baseCert.CopyWithPrivateKey(rsa);
-                    }
-                    else
-                    {
-                        // Try to load certificate with embedded key
-                        cert = new X509Certificate2(certFile.FullName);
-                    }
-                    
-                    var signature = CreateSignature(manifestJson, cert);
-                    
-                    // Add security section to manifest
-                    if (manifest == null)
-                        manifest = new Dictionary<string, object>();
-
-                    manifest["security"] = new Dictionary<string, object>
-                    {
-                        ["publicKey"] = new Dictionary<string, object>
+                        if (!_fileSystem.File.Exists(manifestFile.FullName))
                         {
-                            ["algorithm"] = "RSA",
-                            ["key"] = Convert.ToBase64String(cert.GetPublicKey())
-                        },
-                        ["signature"] = new Dictionary<string, object>
-                        {
-                            ["algorithm"] = "SHA256withRSA",
-                            ["value"] = signature
+                            Console.WriteLine(
+                                $"Error: Manifest file not found: {manifestFile.FullName}"
+                            );
+                            Environment.Exit(1);
                         }
-                    };
-                    
-                    var signedJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
-                    await File.WriteAllTextAsync(manifestFile.FullName, signedJson);
-                    
-                    Console.WriteLine($"✓ Manifest signed successfully");
-                    Console.WriteLine($"✓ Signature added to manifest file");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error signing manifest: {ex.Message}");
-                    Environment.Exit(1);
-                }
-            }, manifestOption, certOption, keyOption);
+
+                        if (!_fileSystem.File.Exists(certFile.FullName))
+                        {
+                            Console.WriteLine(
+                                $"Error: Certificate file not found: {certFile.FullName}"
+                            );
+                            Environment.Exit(1);
+                        }
+
+                        Console.WriteLine($"Signing manifest: {manifestFile.FullName}");
+
+                        var manifestJson = await _fileSystem.File.ReadAllTextAsync(
+                            manifestFile.FullName
+                        );
+                        var manifest = JsonSerializer.Deserialize<Dictionary<string, object>>(
+                            manifestJson
+                        );
+
+                        X509Certificate cert;
+                        AsymmetricKeyParameter privateKey;
+
+                        if (keyFile != null && _fileSystem.File.Exists(keyFile.FullName))
+                        {
+                            // Load certificate and separate key file
+                            var certPem = await _fileSystem.File.ReadAllTextAsync(
+                                certFile.FullName
+                            );
+                            var keyPem = await _fileSystem.File.ReadAllTextAsync(keyFile.FullName);
+
+                            (cert, privateKey) = LoadCertificateAndKey(certPem, keyPem);
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException(
+                                "Private key file is required for signing. Use --key option."
+                            );
+                        }
+
+                        var signature = CreateSignature(manifestJson, privateKey);
+
+                        // Add security section to manifest
+                        if (manifest == null)
+                            manifest = new Dictionary<string, object>();
+
+                        manifest["security"] = new Dictionary<string, object>
+                        {
+                            ["publicKey"] = new Dictionary<string, object>
+                            {
+                                ["algorithm"] = "RSA",
+                                ["value"] = ExportPublicKeyAsPem(cert),
+                                ["format"] = "PEM",
+                            },
+                            ["signature"] = new Dictionary<string, object>
+                            {
+                                ["algorithm"] = "SHA256withRSA",
+                                ["value"] = signature,
+                            },
+                        };
+
+                        var signedJson = JsonSerializer.Serialize(
+                            manifest,
+                            new JsonSerializerOptions { WriteIndented = true }
+                        );
+                        await _fileSystem.File.WriteAllTextAsync(manifestFile.FullName, signedJson);
+
+                        Console.WriteLine("✓ Manifest signed successfully");
+                        Console.WriteLine("✓ Signature added to manifest file");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error signing manifest: {ex.Message}");
+                        Environment.Exit(1);
+                    }
+                },
+                manifestOption,
+                certOption,
+                keyOption
+            );
 
             return command;
         }
 
         /// <summary>
-        /// Creates a digital signature for the given content using the specified X.509 certificate.
+        /// Loads a BouncyCastle certificate and private key from PEM content.
+        /// </summary>
+        /// <param name="certPem">The certificate PEM content.</param>
+        /// <param name="keyPem">The private key PEM content.</param>
+        /// <returns>A tuple containing the certificate and private key.</returns>
+        private static (
+            X509Certificate cert,
+            AsymmetricKeyParameter privateKey
+        ) LoadCertificateAndKey(string certPem, string keyPem)
+        {
+            // Parse certificate
+            var parser = new X509CertificateParser();
+            var base64Cert = certPem
+                .Replace("-----BEGIN CERTIFICATE-----", "")
+                .Replace("-----END CERTIFICATE-----", "")
+                .Replace("\n", "")
+                .Replace("\r", "")
+                .Trim();
+            var certBytes = Convert.FromBase64String(base64Cert);
+            var cert = parser.ReadCertificate(certBytes);
+
+            // Parse private key
+            var keyReader = new PemReader(new StringReader(keyPem));
+            var keyObj = keyReader.ReadObject();
+
+            AsymmetricKeyParameter privateKey;
+            if (keyObj is AsymmetricCipherKeyPair keyPair)
+            {
+                privateKey = keyPair.Private;
+            }
+            else if (keyObj is AsymmetricKeyParameter key)
+            {
+                privateKey = key;
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"Unsupported key format: {keyObj?.GetType().Name}"
+                );
+            }
+
+            return (cert, privateKey);
+        }
+
+        /// <summary>
+        /// Exports a BouncyCastle certificate's public key as PEM format.
+        /// </summary>
+        /// <param name="cert">The BouncyCastle certificate.</param>
+        /// <returns>PEM-formatted public key string.</returns>
+        private static string ExportPublicKeyAsPem(X509Certificate cert)
+        {
+            var publicKeyInfo = cert.CertificateStructure.SubjectPublicKeyInfo;
+            var publicKeyBytes = publicKeyInfo.GetEncoded();
+
+            var pemBuilder = new StringBuilder();
+            pemBuilder.AppendLine("-----BEGIN PUBLIC KEY-----");
+            pemBuilder.AppendLine(
+                Convert.ToBase64String(publicKeyBytes, Base64FormattingOptions.InsertLineBreaks)
+            );
+            pemBuilder.AppendLine("-----END PUBLIC KEY-----");
+
+            return pemBuilder.ToString();
+        }
+
+        /// <summary>
+        /// Creates a digital signature for the given content using BouncyCastle RSA signing.
         /// </summary>
         /// <param name="content">The content to be signed, represented as a string.</param>
-        /// <param name="cert">The X.509 certificate to be used for signing the content.</param>
+        /// <param name="privateKey">The BouncyCastle private key for signing.</param>
         /// <returns>A base64-encoded string representation of the generated signature.</returns>
-        private static string CreateSignature(string content, X509Certificate2 cert)
+        private static string CreateSignature(string content, AsymmetricKeyParameter privateKey)
         {
-            // This is a simplified signature approach for demo purposes
-            // In a real implementation, you'd use proper cryptographic signing
-            var contentBytes = System.Text.Encoding.UTF8.GetBytes(content);
-            var hash = System.Security.Cryptography.SHA256.HashData(contentBytes);
-            return Convert.ToBase64String(hash);
+            if (privateKey is not RsaPrivateCrtKeyParameters)
+            {
+                throw new InvalidOperationException(
+                    "Only RSA private keys are supported for signing"
+                );
+            }
+
+            // Create RSA signer with SHA256
+            var signer = new RsaDigestSigner(new Sha256Digest());
+            signer.Init(true, privateKey); // true for signing
+
+            // Sign the content
+            var contentBytes = Encoding.UTF8.GetBytes(content);
+            signer.BlockUpdate(contentBytes, 0, contentBytes.Length);
+            var signature = signer.GenerateSignature();
+
+            return Convert.ToBase64String(signature);
         }
     }
 }

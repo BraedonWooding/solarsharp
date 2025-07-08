@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace SolarSharp.Interpreter.Security
@@ -10,47 +11,58 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Whether environment variable access is allowed
         /// </summary>
-        public bool AllowAccess { get; set; } = false;
+        public bool AllowAccess { get; set; }
 
         /// <summary>
         /// Environment variables that can be accessed
         /// </summary>
-        public List<string> AllowedVariables { get; set; } = new();
+        public List<string> AllowedVariables { get; set; } = new List<string>();
 
         /// <summary>
         /// Environment variables that are explicitly denied
         /// </summary>
-        public List<string> DeniedVariables { get; set; } = new();
+        public List<string> DeniedVariables { get; set; } = new List<string>();
 
         /// <summary>
         /// Whether to allow reading system information (OS, architecture, etc.)
         /// </summary>
-        public bool AllowSystemInfo { get; set; } = false;
+        public bool AllowSystemInfo { get; set; }
 
         /// <summary>
         /// Creates a configuration with no environment access
         /// </summary>
-        public static EnvironmentSecurity NoAccess() => new() { AllowAccess = false };
+        public static EnvironmentSecurity NoAccess() =>
+            new EnvironmentSecurity { AllowAccess = false };
 
         /// <summary>
         /// Creates a configuration with limited access to specific variables
         /// </summary>
-        public static EnvironmentSecurity LimitedAccess(params string[] allowedVars) => new()
-        {
-            AllowAccess = true,
-            AllowedVariables = new List<string>(allowedVars)
-        };
+        public static EnvironmentSecurity LimitedAccess(params string[] allowedVars) =>
+            new EnvironmentSecurity
+            {
+                AllowAccess = true,
+                AllowedVariables = new List<string>(allowedVars),
+            };
 
         /// <summary>
         /// Creates a configuration with safe environment access
         /// </summary>
-        public static EnvironmentSecurity SafeAccess() => new()
-        {
-            AllowAccess = true,
-            AllowedVariables = new List<string> { "TEMP", "TMP", "USER", "HOME", "PATH" },
-            DeniedVariables = new List<string> { "PASSWORD", "SECRET", "KEY", "TOKEN", "API_KEY", "CREDENTIALS" },
-            AllowSystemInfo = true
-        };
+        public static EnvironmentSecurity SafeAccess() =>
+            new EnvironmentSecurity
+            {
+                AllowAccess = true,
+                AllowedVariables = new List<string> { "TEMP", "TMP", "USER", "HOME", "PATH" },
+                DeniedVariables = new List<string>
+                {
+                    "PASSWORD",
+                    "SECRET",
+                    "KEY",
+                    "TOKEN",
+                    "API_KEY",
+                    "CREDENTIALS",
+                },
+                AllowSystemInfo = true,
+            };
 
         /// <summary>
         /// Checks if a variable name matches any pattern in a list
@@ -72,7 +84,7 @@ namespace SolarSharp.Interpreter.Security
                         return true;
                     }
                 }
-                else if (variableName.Equals(pattern, System.StringComparison.OrdinalIgnoreCase))
+                else if (variableName.Equals(pattern, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }

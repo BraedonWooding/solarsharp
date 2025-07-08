@@ -1,7 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security;
 using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Security
@@ -18,7 +25,10 @@ namespace SolarSharp.Interpreter.Security
         private readonly ISecurityAuditor _auditor;
         private readonly ReflectionProtectionMode _mode;
 
-        public ReflectionProtection(ReflectionProtectionMode mode = ReflectionProtectionMode.Strict, ISecurityAuditor auditor = null)
+        public ReflectionProtection(
+            ReflectionProtectionMode mode = ReflectionProtectionMode.Strict,
+            ISecurityAuditor auditor = null
+        )
         {
             _mode = mode;
             _auditor = auditor;
@@ -45,26 +55,39 @@ namespace SolarSharp.Interpreter.Security
             // Check if explicitly allowed (takes precedence)
             if (_allowedTypes.Contains(typeName))
             {
-                _auditor?.LogCapabilityUsage("reflection", "type_access_allowed", 
-                    new object[] { typeName, operation }, true, true);
+                _auditor?.LogCapabilityUsage(
+                    "reflection",
+                    "type_access_allowed",
+                    new object[] { typeName, operation },
+                    true,
+                    true
+                );
                 return true;
             }
 
             // Check blocks
-            if (_blockedTypes.Contains(typeName) ||
-                _blockedAssemblies.Contains(assemblyName) ||
-                _blockedNamespaces.Any(ns => namespaceName.StartsWith(ns, StringComparison.OrdinalIgnoreCase)))
+            if (
+                _blockedTypes.Contains(typeName)
+                || _blockedAssemblies.Contains(assemblyName)
+                || _blockedNamespaces.Any(ns =>
+                    namespaceName.StartsWith(ns, StringComparison.OrdinalIgnoreCase)
+                )
+            )
             {
-                _auditor?.LogSecurityViolation($"Reflection access blocked: {typeName} for operation '{operation}'", 
-                    SecurityEventType.ReflectionAccessDenied);
+                _auditor?.LogSecurityViolation(
+                    $"Reflection access blocked: {typeName} for operation '{operation}'",
+                    SecurityEventType.ReflectionAccessDenied
+                );
                 return false;
             }
 
             // In strict mode, only explicitly allowed types are permitted
             if (_mode == ReflectionProtectionMode.Strict)
             {
-                _auditor?.LogSecurityViolation($"Reflection access denied in strict mode: {typeName} for operation '{operation}'", 
-                    SecurityEventType.ReflectionAccessDenied);
+                _auditor?.LogSecurityViolation(
+                    $"Reflection access denied in strict mode: {typeName} for operation '{operation}'",
+                    SecurityEventType.ReflectionAccessDenied
+                );
                 return false;
             }
 
@@ -87,16 +110,20 @@ namespace SolarSharp.Interpreter.Security
             var memberName = member.Name;
             if (IsDangerousMemberName(memberName))
             {
-                _auditor?.LogSecurityViolation($"Dangerous member access blocked: {member.DeclaringType.FullName}.{memberName}", 
-                    SecurityEventType.ReflectionAccessDenied);
+                _auditor?.LogSecurityViolation(
+                    $"Dangerous member access blocked: {member.DeclaringType.FullName}.{memberName}",
+                    SecurityEventType.ReflectionAccessDenied
+                );
                 return false;
             }
 
             // Check for security-sensitive attributes
             if (HasSecuritySensitiveAttributes(member))
             {
-                _auditor?.LogSecurityViolation($"Security-sensitive member blocked: {member.DeclaringType.FullName}.{memberName}", 
-                    SecurityEventType.ReflectionAccessDenied);
+                _auditor?.LogSecurityViolation(
+                    $"Security-sensitive member blocked: {member.DeclaringType.FullName}.{memberName}",
+                    SecurityEventType.ReflectionAccessDenied
+                );
                 return false;
             }
 
@@ -108,41 +135,52 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public Table CreateProtectedMetatable(Script script, object targetObject = null)
         {
-            var metatable = new Table(script)
+            var metatable = new Table
             {
                 // Override dangerous metamethods
-                ["__index"] = DynValue.NewCallback((ctx, args) =>
-                {
-                    if (args.Count < 2)
-                        return DynValue.Nil;
-
-                    var key = args[1];
-                    var keyStr = key.CastToString();
-
-                    // Block access to dangerous properties/methods
-                    if (IsDangerousKey(keyStr))
+                ["__index"] = DynValue.NewCallback(
+                    (ctx, args) =>
                     {
-                        _auditor?.LogSecurityViolation($"Metatable access blocked for key: {keyStr}", 
-                            SecurityEventType.ReflectionAccessDenied);
+                        if (args.Count < 2)
+                            return DynValue.Nil;
+
+                        var key = args[1];
+                        var keyStr = key.CastToString();
+
+                        // Block access to dangerous properties/methods
+                        if (IsDangerousKey(keyStr))
+                        {
+                            _auditor?.LogSecurityViolation(
+                                $"Metatable access blocked for key: {keyStr}",
+                                SecurityEventType.ReflectionAccessDenied
+                            );
+                            return DynValue.Nil;
+                        }
+
+                        // If target object exists, try to get the value safely
+                        if (targetObject != null)
+                        {
+                            return GetValueSafely(targetObject, keyStr, script);
+                        }
+
                         return DynValue.Nil;
                     }
-
-                    // If target object exists, try to get the value safely
-                    if (targetObject != null)
+                ),
+                ["__newindex"] = DynValue.NewCallback(
+                    (ctx, args) =>
                     {
-                        return GetValueSafely(targetObject, keyStr, script);
+                        // Block all modifications in protected mode
+                        _auditor?.LogSecurityViolation(
+                            "Metatable modification blocked",
+                            SecurityEventType.MetatableViolation
+                        );
+                        throw new MetatableViolationException(
+                            "Modifications not allowed in protected metatable",
+                            "newindex"
+                        );
                     }
-
-                    return DynValue.Nil;
-                }),
-                ["__newindex"] = DynValue.NewCallback((ctx, args) =>
-                {
-                    // Block all modifications in protected mode
-                    _auditor?.LogSecurityViolation("Metatable modification blocked", 
-                        SecurityEventType.MetatableViolation);
-                    throw new MetatableViolationException("Modifications not allowed in protected metatable", "newindex");
-                }),
-                ["__metatable"] = DynValue.NewString("protected") // Hide metatable access
+                ),
+                ["__metatable"] = DynValue.NewString("protected"), // Hide metatable access
             };
 
             return metatable;
@@ -155,9 +193,21 @@ namespace SolarSharp.Interpreter.Security
         {
             var dangerousKeys = new[]
             {
-                "debug", "package", "require", "dofile", "loadfile", "load", "loadstring",
-                "getmetatable", "setmetatable", "rawget", "rawset", "rawequal", "rawlen",
-                "getfenv", "setfenv"
+                "debug",
+                "package",
+                "require",
+                "dofile",
+                "loadfile",
+                "load",
+                "loadstring",
+                "getmetatable",
+                "setmetatable",
+                "rawget",
+                "rawset",
+                "rawequal",
+                "rawlen",
+                "getfenv",
+                "setfenv",
             };
 
             foreach (var key in dangerousKeys)
@@ -165,8 +215,13 @@ namespace SolarSharp.Interpreter.Security
                 if (globals.Get(key) != DynValue.Nil)
                 {
                     globals.Set(key, DynValue.Nil);
-                    _auditor?.LogCapabilityUsage("reflection", "sanitize_global", 
-                        new object[] { key }, null, true);
+                    _auditor?.LogCapabilityUsage(
+                        "reflection",
+                        "sanitize_global",
+                        new object[] { key },
+                        null,
+                        true
+                    );
                 }
             }
 
@@ -239,11 +294,11 @@ namespace SolarSharp.Interpreter.Security
                 typeof(AppDomain),
                 typeof(Environment),
                 typeof(GC),
-                typeof(System.Diagnostics.Process),
-                typeof(System.IO.File),
-                typeof(System.IO.Directory),
-                typeof(System.Net.WebClient),
-                typeof(System.Net.Http.HttpClient)
+                typeof(Process),
+                typeof(File),
+                typeof(Directory),
+                typeof(WebClient),
+                typeof(HttpClient),
             };
 
             foreach (var type in dangerousTypes)
@@ -261,7 +316,7 @@ namespace SolarSharp.Interpreter.Security
                 "System.Diagnostics",
                 "System.CodeDom",
                 "System.Compiler",
-                "Microsoft.CSharp"
+                "Microsoft.CSharp",
             };
 
             foreach (var ns in dangerousNamespaces)
@@ -279,10 +334,22 @@ namespace SolarSharp.Interpreter.Security
         {
             var dangerousNames = new[]
             {
-                "GetType", "GetMethod", "GetField", "GetProperty", "GetConstructor",
-                "GetMethods", "GetFields", "GetProperties", "GetConstructors",
-                "InvokeMember", "CreateInstance", "Assembly", "Module",
-                "GetHashCode", "GetObjectData", "MemberwiseClone"
+                "GetType",
+                "GetMethod",
+                "GetField",
+                "GetProperty",
+                "GetConstructor",
+                "GetMethods",
+                "GetFields",
+                "GetProperties",
+                "GetConstructors",
+                "InvokeMember",
+                "CreateInstance",
+                "Assembly",
+                "Module",
+                "GetHashCode",
+                "GetObjectData",
+                "MemberwiseClone",
             };
 
             return dangerousNames.Contains(memberName, StringComparer.OrdinalIgnoreCase);
@@ -292,24 +359,46 @@ namespace SolarSharp.Interpreter.Security
         {
             var sensitiveAttributes = new[]
             {
-                typeof(System.Security.SecurityCriticalAttribute),
-                typeof(System.Security.SecuritySafeCriticalAttribute),
-                typeof(System.Runtime.InteropServices.DllImportAttribute),
-                typeof(System.Runtime.CompilerServices.MethodImplAttribute)
+                typeof(SecurityCriticalAttribute),
+                typeof(SecuritySafeCriticalAttribute),
+                typeof(DllImportAttribute),
+                typeof(MethodImplAttribute),
             };
 
-            return member.GetCustomAttributes().Any(attr => 
-                sensitiveAttributes.Contains(attr.GetType()));
+            return member
+                .GetCustomAttributes()
+                .Any(attr => sensitiveAttributes.Contains(attr.GetType()));
         }
 
         private bool IsDangerousKey(string key)
         {
             var dangerousKeys = new[]
             {
-                "getmetatable", "setmetatable", "rawget", "rawset", "rawequal", "rawlen",
-                "debug", "package", "require", "dofile", "loadfile", "load", "loadstring",
-                "getfenv", "setfenv", "__index", "__newindex", "__metatable", "__call",
-                "type", "pairs", "ipairs", "next", "select", "unpack"
+                "getmetatable",
+                "setmetatable",
+                "rawget",
+                "rawset",
+                "rawequal",
+                "rawlen",
+                "debug",
+                "package",
+                "require",
+                "dofile",
+                "loadfile",
+                "load",
+                "loadstring",
+                "getfenv",
+                "setfenv",
+                "__index",
+                "__newindex",
+                "__metatable",
+                "__call",
+                "type",
+                "pairs",
+                "ipairs",
+                "next",
+                "select",
+                "unpack",
             };
 
             return dangerousKeys.Contains(key, StringComparer.OrdinalIgnoreCase);
@@ -321,7 +410,7 @@ namespace SolarSharp.Interpreter.Security
             {
                 var type = obj.GetType();
                 var property = type.GetProperty(key, BindingFlags.Public | BindingFlags.Instance);
-                
+
                 if (property != null && property.CanRead)
                 {
                     if (IsMemberAccessAllowed(property, "read"))
@@ -343,8 +432,11 @@ namespace SolarSharp.Interpreter.Security
             }
             catch (Exception ex)
             {
-                _auditor?.LogSecurityViolation($"Safe value access failed for key '{key}': {ex.Message}", 
-                    SecurityEventType.ReflectionAccessDenied, ex);
+                _auditor?.LogSecurityViolation(
+                    $"Safe value access failed for key '{key}': {ex.Message}",
+                    SecurityEventType.ReflectionAccessDenied,
+                    ex
+                );
             }
 
             return DynValue.Nil;
@@ -353,31 +445,69 @@ namespace SolarSharp.Interpreter.Security
         private void ReplaceDangerousFunctions(Table globals)
         {
             // Replace getmetatable with safe version
-            globals.Set("getmetatable", DynValue.NewCallback((ctx, args) =>
-            {
-                _auditor?.LogSecurityViolation("getmetatable access blocked", SecurityEventType.ReflectionAccessDenied);
-                return DynValue.Nil;
-            }));
+            globals.Set(
+                "getmetatable",
+                DynValue.NewCallback(
+                    (ctx, args) =>
+                    {
+                        _auditor?.LogSecurityViolation(
+                            "getmetatable access blocked",
+                            SecurityEventType.ReflectionAccessDenied
+                        );
+                        return DynValue.Nil;
+                    }
+                )
+            );
 
             // Replace setmetatable with safe version
-            globals.Set("setmetatable", DynValue.NewCallback((ctx, args) =>
-            {
-                _auditor?.LogSecurityViolation("setmetatable access blocked", SecurityEventType.MetatableViolation);
-                throw new MetatableViolationException("setmetatable is not allowed in protected mode", "setmetatable");
-            }));
+            globals.Set(
+                "setmetatable",
+                DynValue.NewCallback(
+                    (ctx, args) =>
+                    {
+                        _auditor?.LogSecurityViolation(
+                            "setmetatable access blocked",
+                            SecurityEventType.MetatableViolation
+                        );
+                        throw new MetatableViolationException(
+                            "setmetatable is not allowed in protected mode",
+                            "setmetatable"
+                        );
+                    }
+                )
+            );
 
             // Block rawget/rawset
-            globals.Set("rawget", DynValue.NewCallback((ctx, args) =>
-            {
-                _auditor?.LogSecurityViolation("rawget access blocked", SecurityEventType.ReflectionAccessDenied);
-                return DynValue.Nil;
-            }));
+            globals.Set(
+                "rawget",
+                DynValue.NewCallback(
+                    (ctx, args) =>
+                    {
+                        _auditor?.LogSecurityViolation(
+                            "rawget access blocked",
+                            SecurityEventType.ReflectionAccessDenied
+                        );
+                        return DynValue.Nil;
+                    }
+                )
+            );
 
-            globals.Set("rawset", DynValue.NewCallback((ctx, args) =>
-            {
-                _auditor?.LogSecurityViolation("rawset access blocked", SecurityEventType.ReflectionAccessDenied);
-                throw new MetatableViolationException("rawset is not allowed in protected mode", "rawset");
-            }));
+            globals.Set(
+                "rawset",
+                DynValue.NewCallback(
+                    (ctx, args) =>
+                    {
+                        _auditor?.LogSecurityViolation(
+                            "rawset access blocked",
+                            SecurityEventType.ReflectionAccessDenied
+                        );
+                        throw new MetatableViolationException(
+                            "rawset is not allowed in protected mode",
+                            "rawset"
+                        );
+                    }
+                )
+            );
         }
     }
 
@@ -399,7 +529,7 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Block all reflection operations except explicitly allowed types
         /// </summary>
-        Strict
+        Strict,
     }
 
     /// <summary>
@@ -410,29 +540,31 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Applies reflection protection to a security configuration
         /// </summary>
-        public static SecurityConfiguration WithReflectionProtection(this SecurityConfiguration config, 
-            ReflectionProtectionMode mode = ReflectionProtectionMode.Moderate)
+        public static SecurityPolicy WithReflectionProtection(
+            this SecurityPolicy policy,
+            ReflectionProtectionMode mode = ReflectionProtectionMode.Moderate
+        )
         {
-            // This would be integrated with the existing security configuration
-            // For now, it returns the config unchanged but this is where integration would happen
-            return config;
+            // This would be integrated with the existing security policy
+            // For now, it returns the policy unchanged but this is where integration would happen
+            return policy;
         }
 
         /// <summary>
         /// Creates a reflection protection instance with configuration
         /// </summary>
-        public static ReflectionProtection CreateReflectionProtection(this SecurityConfiguration config, 
-            ISecurityAuditor auditor = null)
+        public static ReflectionProtection CreateReflectionProtection(
+            this SecurityPolicy policy,
+            ISecurityAuditor auditor = null
+        )
         {
-            var mode = config.Interop switch
+            var mode = policy.AllowEnvironmentAccess switch
             {
-                var interop when interop.ToString().Contains("Safe") => ReflectionProtectionMode.Strict,
-                var interop when interop.ToString().Contains("Full") => ReflectionProtectionMode.Permissive,
-                _ => ReflectionProtectionMode.Moderate
+                false => ReflectionProtectionMode.Strict,
+                true => ReflectionProtectionMode.Permissive,
             };
 
             return new ReflectionProtection(mode, auditor);
         }
     }
-
 }

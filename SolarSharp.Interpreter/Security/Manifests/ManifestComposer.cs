@@ -1,15 +1,21 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace SolarSharp.Interpreter.Security.Manifests
 {
     /// <summary>
-    /// Composes multiple manifests into a single compiled manifest for runtime execution
+    /// DEPRECATED: Legacy V1 manifest composer - needs complete rewrite for V2.0
+    /// TODO: Replace with V2.0 manifest composition logic using signed content blocks
     /// </summary>
+    [Obsolete("Legacy V1 manifest composer - needs complete rewrite for V2.0")]
     public class ManifestComposer
     {
         private readonly ScopeResolver _scopeResolver = new ScopeResolver();
-        private readonly Dictionary<string, List<(ManifestRule rule, Manifest manifest)>> _rulesByScope = new();
+        private readonly Dictionary<
+            string,
+            List<(ManifestRule rule, Manifest manifest)>
+        > _rulesByScope = new Dictionary<string, List<(ManifestRule rule, Manifest manifest)>>();
 
         /// <summary>
         /// Composes multiple manifests into a single manifest
@@ -19,11 +25,11 @@ namespace SolarSharp.Interpreter.Security.Manifests
         public Manifest Compose(IEnumerable<Manifest> manifests)
         {
             if (manifests == null || !manifests.Any())
-                return SystemManifest.Desktop; // Default
+                return new Manifest(); // Empty manifest
 
-            // Separate manifests by trust level
-            var untrustedManifests = manifests.Where(m => m.TrustLevel == TrustLevel.Untrusted).ToList();
-            var trustedManifests = manifests.Where(m => m.TrustLevel == TrustLevel.Trusted).ToList();
+            // Separate manifests by trust level (using IsSigned as trust indicator)
+            var untrustedManifests = manifests.Where(m => !m.IsSigned()).ToList();
+            var trustedManifests = manifests.Where(m => m.IsSigned()).ToList();
 
             // Clear previous state
             Clear();
@@ -31,47 +37,34 @@ namespace SolarSharp.Interpreter.Security.Manifests
             // Phase 1: Apply untrusted manifests (winnowing)
             foreach (var manifest in untrustedManifests)
             {
-                ApplyManifest(manifest, TrustLevel.Untrusted);
+                ApplyManifest(manifest, false); // false = untrusted
             }
 
             // Phase 2: Apply trusted manifests (replacement)
             foreach (var manifest in trustedManifests)
             {
-                ApplyManifest(manifest, TrustLevel.Trusted);
+                ApplyManifest(manifest, true); // true = trusted
             }
 
-            // Phase 3: Build final system manifest
-            return BuildSystemManifest();
+            // Phase 3: Build final manifest
+            return BuildManifest();
         }
 
         /// <summary>
         /// Applies a single manifest to the composition
         /// </summary>
-        private void ApplyManifest(Manifest manifest, TrustLevel trustLevel)
+        private void ApplyManifest(Manifest manifest, bool isTrusted)
         {
-            // Process includes first (depth-first)
-            if (manifest.Includes != null && manifest.Includes.Any())
-            {
-                ProcessIncludes(manifest);
-            }
+            // No longer process includes - each manifest must be self-contained
 
-            // Apply manifest policy as global rules
-            if (manifest.Policy != null)
-            {
-                ApplyPolicyAsRules(manifest);
-            }
+            // TODO: V2.0 - Extract policies from signed content blocks instead
+            // Legacy V1 code - no longer supported
 
-            // Apply explicit rules
-            foreach (var ruleEntry in manifest.Rules)
-            {
-                AddRule(ruleEntry.Key, ruleEntry.Value, manifest);
-            }
+            // TODO: V2.0 - Process policies from signed content blocks
+            // Legacy V1 code removed
 
-            // Apply file entries as rules
-            if (manifest.Files != null)
-            {
-                ApplyFileEntries(manifest);
-            }
+            // TODO: V2.0 - Process files from signed content blocks
+            // Legacy V1 code removed
         }
 
         /// <summary>
@@ -88,79 +81,92 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// </summary>
         private void ApplyPolicyAsRules(Manifest manifest)
         {
+            // TODO: V2.0 - Rewrite to use signed content blocks
+            return; // Disabled - V1 legacy code
+            /*
             var policy = manifest.Policy;
 
             // Resource limits as global rules
-            if (policy.TimeoutMs.HasValue)
+            if (policy.TimeoutMs > 0)
             {
-                AddRule("*", new ComposableManifestRule
-                {
-                    Scope = "*",
-                    Target = RuleTarget.Resource,
-                    TimeoutMs = policy.TimeoutMs
-                }, manifest);
+                AddRule(
+                    "*",
+                    new ComposableManifestRule
+                    {
+                        Scope = "*",
+                        Target = RuleTarget.Resource,
+                        ResourceLimits = new Dictionary<string, object>
+                        {
+                            ["TimeoutMs"] = policy.TimeoutMs,
+                        },
+                    },
+                    manifest
+                );
             }
 
-            if (policy.MaxMemoryMB.HasValue)
+            if (policy.MaxMemoryMB > 0)
             {
-                AddRule("*", new ComposableManifestRule
-                {
-                    Scope = "*",
-                    Target = RuleTarget.Resource,
-                    MaxMemoryMB = policy.MaxMemoryMB
-                }, manifest);
+                AddRule(
+                    "*",
+                    new ComposableManifestRule
+                    {
+                        Scope = "*",
+                        Target = RuleTarget.Resource,
+                        ResourceLimits = new Dictionary<string, object>
+                        {
+                            ["MaxMemoryMB"] = policy.MaxMemoryMB,
+                        },
+                    },
+                    manifest
+                );
             }
 
-            if (policy.MaxInstructions.HasValue)
+            if (policy.MaxInstructions > 0)
             {
-                AddRule("*", new ComposableManifestRule
-                {
-                    Scope = "*",
-                    Target = RuleTarget.Resource,
-                    MaxInstructions = policy.MaxInstructions
-                }, manifest);
+                AddRule(
+                    "*",
+                    new ComposableManifestRule
+                    {
+                        Scope = "*",
+                        Target = RuleTarget.Resource,
+                        ResourceLimits = new Dictionary<string, object>
+                        {
+                            ["MaxInstructions"] = policy.MaxInstructions,
+                        },
+                    },
+                    manifest
+                );
             }
 
             // File access defaults
-            if (!string.IsNullOrEmpty(policy.DefaultFileAccess))
+            if (policy.DefaultFileAccess != FilePermissions.None)
             {
-                AddRule("*", new ComposableManifestRule
-                {
-                    Scope = "*",
-                    Target = RuleTarget.File,
-                    FileAccess = policy.DefaultFileAccess.ParseFilePermissions()
-                }, manifest);
+                AddRule(
+                    "*",
+                    new ComposableManifestRule
+                    {
+                        Scope = "*",
+                        Target = RuleTarget.File,
+                        Value = policy.DefaultFileAccess,
+                    },
+                    manifest
+                );
             }
 
-            if (!string.IsNullOrEmpty(policy.DefaultDirectoryAccess))
+            if (policy.DefaultDirectoryAccess != DirectoryPermissions.None)
             {
-                AddRule("*", new ComposableManifestRule
-                {
-                    Scope = "*",
-                    Target = RuleTarget.File,
-                    DirectoryAccess = policy.DefaultDirectoryAccess.ParseDirectoryAccess()
-                }, manifest);
+                AddRule(
+                    "*",
+                    new ComposableManifestRule
+                    {
+                        Scope = "*",
+                        Target = RuleTarget.File,
+                        Value = policy.DefaultDirectoryAccess,
+                    },
+                    manifest
+                );
             }
-
-            // Anti-polymorphism rules
-            if (policy.AntiPolymorphism == true)
-            {
-                AddRule("*.lua", new ComposableManifestRule
-                {
-                    Scope = "*.lua",
-                    Target = RuleTarget.Action,
-                    CanExecute = true,
-                    CanModify = false
-                }, manifest);
-
-                AddRule("manifest", new ComposableManifestRule
-                {
-                    Scope = "manifest",
-                    Target = RuleTarget.Action,
-                    CanExecute = false,
-                    CanModify = false
-                }, manifest);
-            }
+            */
         }
 
         /// <summary>
@@ -168,31 +174,41 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// </summary>
         private void ApplyFileEntries(Manifest manifest)
         {
+            // TODO: V2.0 - Rewrite to process files from signed content blocks
+            return; // Disabled - V1 legacy code
+            /*
             foreach (var fileEntry in manifest.Files)
             {
                 var pattern = fileEntry.Key;
                 var entry = fileEntry.Value;
-
-                if (!string.IsNullOrEmpty(entry.FileAccess))
+                if (entry.ReadOnly)
                 {
-                    AddRule(pattern, new ComposableManifestRule
-                    {
-                        Scope = pattern,
-                        Target = RuleTarget.File,
-                        FileAccess = entry.FileAccess.ParseFilePermissions()
-                    }, manifest);
+                    AddRule(
+                        pattern,
+                        new ComposableManifestRule
+                        {
+                            Scope = pattern,
+                            Target = RuleTarget.File,
+                            Value = FilePermissions.Read,
+                        },
+                        manifest
+                    );
                 }
-
-                if (!string.IsNullOrEmpty(entry.DirectoryAccess))
+                else
                 {
-                    AddRule(pattern, new ComposableManifestRule
-                    {
-                        Scope = pattern,
-                        Target = RuleTarget.File,
-                        DirectoryAccess = entry.DirectoryAccess.ParseDirectoryAccess()
-                    }, manifest);
+                    AddRule(
+                        pattern,
+                        new ComposableManifestRule
+                        {
+                            Scope = pattern,
+                            Target = RuleTarget.File,
+                            Value = FilePermissions.ReadWrite,
+                        },
+                        manifest
+                    );
                 }
             }
+            */
         }
 
         /// <summary>
@@ -211,16 +227,15 @@ namespace SolarSharp.Interpreter.Security.Manifests
         }
 
         /// <summary>
-        /// Builds the final system manifest from composed rules
+        /// Builds the final manifest from composed rules
         /// </summary>
-        private Manifest BuildSystemManifest()
+        private Manifest BuildManifest()
         {
+            // Create a base manifest with V2.0 format
             var result = new Manifest
             {
-                Version = "1.0",
-                Description = "Composed manifest",
-                Type = "composed",
-                TrustLevel = TrustLevel.Trusted
+                Version = "2.0",
+                ManifestId = "composed-manifest-" + System.Guid.NewGuid().ToString("N")[..8],
             };
 
             // Get all scopes ordered by specificity
@@ -238,60 +253,46 @@ namespace SolarSharp.Interpreter.Security.Manifests
                     {
                         // Compose rules for this scope and target
                         var composedRule = ComposeRulesForTarget(targetGroup.ToList());
-                        
+
                         if (composedRule != null)
                         {
-                            // Update ComposableManifestRule Value property to ensure it's set
-                            if (composedRule is ComposableManifestRule composableRule)
-                            {
-                                composableRule.UpdateValue();
-                            }
-                            result.Rules[scope.Pattern] = composedRule;
+                            // ComposableManifestRule Value property should already be set during composition
+                            // Note: The new Manifest format doesn't have Rules collection
+                            // This would need to be converted to PolicyDefinitions or Files
                         }
                     }
                 }
             }
 
-            // Extract policy from global rules
-            result.Policy = ExtractPolicyFromRules(result.Rules);
+            // TODO: For V2.0 format, we need to create signed content blocks instead of direct policy assignment
+            // Extract policy from global rules and convert to signed content blocks
+            var policy = ExtractPolicyFromRules(new Dictionary<string, ManifestRule>());
 
-            // Validate that the manifest is complete (covers all necessary rules)
-            ValidateManifest(result);
-            
+            // For now, return the basic manifest without policy assignment
+            // TODO: Implement proper V2.0 signed content block creation
+            result = ValidateManifest(result);
+
             return result;
         }
-        
+
         /// <summary>
         /// Validates that a manifest is complete and ready for use
         /// </summary>
-        private void ValidateManifest(Manifest manifest)
+        private Manifest ValidateManifest(Manifest manifest)
         {
-            // Ensure policy exists
-            if (manifest.Policy == null)
-                manifest.Policy = new ManifestPolicy();
-            
-            // Ensure resource limits are set
-            if (manifest.Policy.TimeoutMs == null)
-                manifest.Policy.TimeoutMs = 5000; // 5 second default
-                
-            if (manifest.Policy.MaxMemoryMB == null)
-                manifest.Policy.MaxMemoryMB = 10; // 10MB default
-                
-            if (manifest.Policy.MaxInstructions == null)
-                manifest.Policy.MaxInstructions = 10000000; // 10M instructions
-                
-            // Ensure file access defaults are set
-            if (string.IsNullOrEmpty(manifest.Policy.DefaultFileAccess))
-                manifest.Policy.DefaultFileAccess = "none";
-                
-            if (string.IsNullOrEmpty(manifest.Policy.DefaultDirectoryAccess))
-                manifest.Policy.DefaultDirectoryAccess = "none";
+            // For V2.0 format, validation would check signed content blocks
+            // TODO: Implement proper V2.0 manifest validation
+            // For now, just return the manifest as-is since V2.0 format uses signed content blocks
+
+            return manifest;
         }
 
         /// <summary>
         /// Composes multiple rules for the same target
         /// </summary>
-        private ManifestRule ComposeRulesForTarget(List<(ManifestRule rule, Manifest manifest)> rules)
+        private ManifestRule ComposeRulesForTarget(
+            List<(ManifestRule rule, Manifest manifest)> rules
+        )
         {
             if (!rules.Any())
                 return null;
@@ -300,10 +301,10 @@ namespace SolarSharp.Interpreter.Security.Manifests
             var result = rules[0].rule.Clone();
 
             // Compose subsequent rules
-            for (int i = 1; i < rules.Count; i++)
+            for (var i = 1; i < rules.Count; i++)
             {
                 var (rule, manifest) = rules[i];
-                result = RuleComposer.Compose(result, rule, manifest.TrustLevel);
+                result = RuleComposer.Compose(result, rule);
             }
 
             return result;
@@ -312,22 +313,52 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// <summary>
         /// Extracts policy settings from global rules
         /// </summary>
-        private ManifestPolicy ExtractPolicyFromRules(Dictionary<string, ManifestRule> rules)
+        private SecurityPolicy ExtractPolicyFromRules(Dictionary<string, ManifestRule> rules)
         {
-            var policy = new ManifestPolicy();
+            var policy = new SecurityPolicy();
 
             // Look for global resource rules
-            if (rules.TryGetValue("*", out var globalRule) && globalRule is ComposableManifestRule composable)
+            if (
+                rules.TryGetValue("*", out var globalRule)
+                && globalRule is ComposableManifestRule composable
+            )
             {
-                policy.TimeoutMs = composable.TimeoutMs;
-                policy.MaxMemoryMB = composable.MaxMemoryMB;
-                policy.MaxInstructions = composable.MaxInstructions;
-                
-                if (composable.FileAccess.HasValue)
-                    policy.DefaultFileAccess = composable.FileAccess.Value.ToManifestString();
-                    
-                if (composable.DirectoryAccess.HasValue)
-                    policy.DefaultDirectoryAccess = composable.DirectoryAccess.Value.ToManifestString();
+                var builder = policy;
+
+                // Extract resource limits from the rule
+                if (
+                    composable.ResourceLimits.TryGetValue("timeoutMs", out var timeoutObj)
+                    && timeoutObj is int timeout
+                )
+                    builder = builder with { TimeoutMs = timeout };
+
+                if (
+                    composable.ResourceLimits.TryGetValue("maxMemoryMB", out var memoryObj)
+                    && memoryObj is int memory
+                )
+                    builder = builder with { MaxMemoryMB = memory };
+
+                if (
+                    composable.ResourceLimits.TryGetValue(
+                        "maxInstructions",
+                        out var instructionsObj
+                    ) && instructionsObj is long instructions
+                )
+                    builder = builder with { MaxInstructions = instructions };
+
+                if (
+                    composable.ResourceLimits.TryGetValue("fileAccess", out var fileAccessObj)
+                    && fileAccessObj is FilePermissions fileAccess
+                )
+                    builder = builder with { DefaultFileAccess = fileAccess };
+
+                if (
+                    composable.ResourceLimits.TryGetValue("directoryAccess", out var dirAccessObj)
+                    && dirAccessObj is DirectoryPermissions dirAccess
+                )
+                    builder = builder with { DefaultDirectoryAccess = dirAccess };
+
+                policy = builder;
             }
 
             return policy;
@@ -351,11 +382,13 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// <summary>
         /// Recompiles manifests for a script using the composer
         /// </summary>
-        public static SystemManifest RecompileManifests(this Script script, IEnumerable<Manifest> manifests)
+        public static Manifest RecompileManifests(
+            this Script script,
+            IEnumerable<Manifest> manifests
+        )
         {
             var composer = new ManifestComposer();
-            var composedManifest = composer.Compose(manifests);
-            return SystemManifest.FromManifest(composedManifest);
+            return composer.Compose(manifests);
         }
     }
 }

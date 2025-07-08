@@ -1,175 +1,328 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using Org.BouncyCastle.Asn1.X9;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.OpenSsl;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.X509;
+using SolarSharp.Interpreter.Security.Manifests.Infrastructure;
 
 namespace SolarSharp.Interpreter.Security.Manifests
 {
     /// <summary>
-    /// Utility for signing Lua manifests
+    /// Utility for signing Lua manifests using BouncyCastle cryptography
     /// </summary>
     public static class ManifestSigner
     {
         /// <summary>
         /// Signs a manifest file with the provided private key
         /// </summary>
-        public static void SignManifest(string manifestPath, AsymmetricAlgorithm privateKey, string algorithm = "RSA")
+        public static void SignManifest(
+            string manifestPath,
+            AsymmetricKeyParameter privateKey,
+            string algorithm = "RSA"
+        )
         {
             if (!File.Exists(manifestPath))
                 throw new FileNotFoundException($"Manifest file not found: {manifestPath}");
 
             var json = File.ReadAllText(manifestPath);
             var signedJson = SignManifestJson(json, privateKey, algorithm);
-            
+
             File.WriteAllText(manifestPath, signedJson);
         }
 
         /// <summary>
         /// Signs a manifest JSON string with the provided private key
+        /// Creates a V2.0 manifest with signed-content blocks
         /// </summary>
-        public static string SignManifestJson(string json, AsymmetricAlgorithm privateKey, string algorithm = "RSA")
+        public static string SignManifestJson(
+            string json,
+            AsymmetricKeyParameter privateKey,
+            string algorithm = "RSA"
+        )
         {
-            // Parse the manifest
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
+            // Parse the input manifest (could be V1.0 or partial V2.0)
+            JsonDocument doc;
+            JsonElement root;
+            try
+            {
+                doc = JsonDocument.Parse(json);
+                root = doc.RootElement;
+            }
+            catch (JsonException ex)
+            {
+                throw new ManifestFormatException(
+                    $"Invalid JSON format in manifest: {ex.Message}",
+                    "SignManifestJson"
+                );
+            }
 
-            // Create a mutable copy
+            // Check for unsupported features before signing
+            if (json.Contains("\"includes\""))
+            {
+                throw new ManifestFormatException(
+                    "Manifests with includes are not supported. Manifests must be self-contained.",
+                    "SignManifestJson"
+                );
+            }
+
+            // Extract public key and generate fingerprint
+            var publicKeyPem = ExportPublicKey(privateKey, algorithm);
+            var keyFingerprint = UnifiedSignatureVerificationService.GenerateKeyFingerprint(
+                publicKeyPem
+            );
+            var keyId = $"sha256:{keyFingerprint}";
+
+            // Create V2.0 manifest structure
             using var stream = new MemoryStream();
-            using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+            using (doc)
+            using (
+                var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true })
+            )
             {
                 writer.WriteStartObject();
 
-                // Copy all existing properties
-                foreach (var property in root.EnumerateObject())
+                // V2.0 manifest header
+                writer.WriteString("version", "2.0");
+
+                // Extract manifest ID or generate one
+                var manifestId = root.TryGetProperty("manifest-id", out var idProp)
+                    ? idProp.GetString()
+                    : $"manifest-{Guid.NewGuid():N}";
+                writer.WriteString("manifest-id", manifestId);
+
+                // Create signed-content block
+                writer.WritePropertyName("signed-content");
+                writer.WriteStartArray();
+                writer.WriteStartObject();
+
+                // Key ID for this block
+                writer.WriteString("key-id", keyId);
+
+                // Convert V1.0 structure to V2.0 packages and policies
+                writer.WritePropertyName("packages");
+                writer.WriteStartObject();
+
+                // Create a default package from V1.0 structure
+                var packageId = "default-package";
+                writer.WritePropertyName(packageId);
+                writer.WriteStartObject();
+
+                // Package metadata
+                writer.WritePropertyName("metadata");
+                writer.WriteStartObject();
+                writer.WriteString(
+                    "name",
+                    root.TryGetProperty("name", out var nameProp)
+                        ? nameProp.GetString()
+                        : "Converted Package"
+                );
+                writer.WriteString(
+                    "version",
+                    root.TryGetProperty("version", out var verProp) ? verProp.GetString() : "1.0.0"
+                );
+                writer.WriteString(
+                    "description",
+                    root.TryGetProperty("description", out var descProp) ? descProp.GetString() : ""
+                );
+                writer.WriteEndObject();
+
+                // Package files (placeholder - real files would be added separately)
+                writer.WritePropertyName("files");
+                writer.WriteStartObject();
+                writer.WriteString("script.lua", "sha256:placeholder"); // Will be updated when files are added
+                writer.WriteEndObject();
+
+                writer.WriteEndObject(); // package
+                writer.WriteEndObject(); // packages
+
+                // Convert V1.0 policy to V2.0 policies
+                writer.WritePropertyName("policies");
+                writer.WriteStartArray();
+                writer.WriteStartObject();
+
+                // Policy applies to the default package
+                writer.WritePropertyName("packages");
+                writer.WriteStartArray();
+                writer.WriteStringValue(packageId);
+                writer.WriteEndArray();
+
+                writer.WriteString("selector", ":file");
+
+                // Convert V1.0 policy grants
+                writer.WritePropertyName("grant");
+                writer.WriteStartObject();
+
+                if (root.TryGetProperty("policy", out var policyProp))
                 {
-                    if (property.Name != "security")
+                    // Convert capabilities
+                    if (policyProp.TryGetProperty("capabilities", out var capsProp))
                     {
-                        writer.WritePropertyName(property.Name);
-                        property.Value.WriteTo(writer);
+                        writer.WritePropertyName("capabilities");
+                        writer.WriteStartArray();
+
+                        if (capsProp.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var cap in capsProp.EnumerateArray())
+                            {
+                                writer.WriteStringValue(cap.GetString());
+                            }
+                        }
+                        else if (capsProp.ValueKind == JsonValueKind.String)
+                        {
+                            writer.WriteStringValue(capsProp.GetString());
+                        }
+
+                        writer.WriteEndArray();
+                    }
+
+                    // Convert allowed modules
+                    if (policyProp.TryGetProperty("allowedModules", out var modulesProp))
+                    {
+                        writer.WritePropertyName("modules");
+                        writer.WriteStartArray();
+
+                        if (modulesProp.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var module in modulesProp.EnumerateArray())
+                            {
+                                writer.WriteStringValue(module.GetString());
+                            }
+                        }
+                        else if (modulesProp.ValueKind == JsonValueKind.String)
+                        {
+                            writer.WriteStringValue(modulesProp.GetString());
+                        }
+
+                        writer.WriteEndArray();
                     }
                 }
 
-                // Add or update security section
-                writer.WritePropertyName("security");
+                writer.WriteEndObject(); // grant
+
+                // Add restrictions
+                writer.WritePropertyName("restrict");
                 writer.WriteStartObject();
 
-                // Add public key
-                writer.WritePropertyName("publicKey");
-                writer.WriteStartObject();
-                writer.WriteString("algorithm", algorithm.ToUpperInvariant());
-                writer.WriteString("format", "PEM");
-                writer.WriteString("value", ExportPublicKey(privateKey, algorithm));
-                writer.WriteEndObject();
+                if (root.TryGetProperty("policy", out var restrictPolicyProp))
+                {
+                    if (restrictPolicyProp.TryGetProperty("timeoutMs", out var timeoutProp))
+                    {
+                        var timeoutMs = timeoutProp.GetInt32();
+                        writer.WriteString("timeout", $"{timeoutMs}ms");
+                    }
 
-                // Prepare for signature - need to close objects first
-                writer.WriteEndObject(); // security
+                    if (restrictPolicyProp.TryGetProperty("maxMemoryMB", out var memoryProp))
+                    {
+                        var memoryMB = memoryProp.GetInt32();
+                        writer.WriteString("max-memory", $"{memoryMB}MB");
+                    }
+                }
+
+                writer.WriteEndObject(); // restrict
+
+                writer.WriteEndObject(); // policy
+                writer.WriteEndArray(); // policies
+
+                // Add public key to the signed content block
+                writer.WriteString("public-key", publicKeyPem);
+
+                // Placeholder for signature - will be added after canonicalization
+                writer.WriteString("signature", "PLACEHOLDER");
+
+                writer.WriteEndObject(); // signed-content block
+                writer.WriteEndArray(); // signed-content array
+
                 writer.WriteEndObject(); // root
                 writer.Flush();
             }
 
-            // Get the JSON without signature for canonicalization
+            // Get the JSON without actual signature for canonicalization
             var unsignedJson = Encoding.UTF8.GetString(stream.ToArray());
-            
-            // Canonicalize the JSON
-            var canonicalJson = JsonCanonicalizer.Canonicalize(unsignedJson);
-            var dataToSign = Encoding.UTF8.GetBytes(canonicalJson);
 
-            // Sign the canonical JSON
-            byte[] signature;
-            string signatureAlgorithm;
+            // Extract the signed content for canonicalization (exclude key-id and signature)
+            var signedContentJson = ExtractSignedContentForSigning(unsignedJson);
+            var dataToSign = Encoding.UTF8.GetBytes(signedContentJson);
 
-            switch (privateKey)
+            // Sign the canonical JSON using unified service
+            var signatureResult = UnifiedSignatureGenerationService.GenerateSignature(
+                dataToSign,
+                privateKey
+            );
+            if (signatureResult.IsFailure)
             {
-                case RSA rsa:
-                    signature = rsa.SignData(dataToSign, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-                    signatureAlgorithm = "SHA256withRSA";
-                    break;
-
-                case ECDsa ecdsa:
-                    signature = ecdsa.SignData(dataToSign, HashAlgorithmName.SHA256);
-                    // Determine specific curve for algorithm name
-                    if (ecdsa.KeySize == 384)
-                    {
-                        signatureAlgorithm = "SHA256withECDSA-P384";
-                    }
-                    else
-                    {
-                        signatureAlgorithm = "SHA256withECDSA-P256";
-                    }
-                    break;
-
-                default:
-                    throw new NotSupportedException($"Algorithm not supported: {privateKey.GetType().Name}");
+                throw new InvalidOperationException(
+                    $"Signature generation failed: {signatureResult.Error}"
+                );
             }
 
-            // Now add the signature to the JSON
-            using var finalStream = new MemoryStream();
-            using (var writer = new Utf8JsonWriter(finalStream, new JsonWriterOptions { Indented = true }))
+            var signature = signatureResult.Value.SignatureData;
+            var signatureBase64 = Convert.ToBase64String(signature);
+
+            // Replace placeholder signature with actual signature
+            var finalJson = unsignedJson.Replace(
+                "\"signature\": \"PLACEHOLDER\"",
+                $"\"signature\": \"{signatureBase64}\""
+            );
+
+            return finalJson;
+        }
+
+        /// <summary>
+        /// Maps SignatureType enum values to BouncyCastle algorithm format for backward compatibility
+        /// </summary>
+        private static string MapSignatureTypeToBouncyCastleFormat(SignatureType signatureType)
+        {
+            return signatureType switch
             {
-                writer.WriteStartObject();
-
-                // Copy all properties including security
-                using var docWithKey = JsonDocument.Parse(unsignedJson);
-                foreach (var property in docWithKey.RootElement.EnumerateObject())
-                {
-                    if (property.Name == "security")
-                    {
-                        writer.WritePropertyName("security");
-                        writer.WriteStartObject();
-
-                        // Copy existing security properties
-                        foreach (var secProp in property.Value.EnumerateObject())
-                        {
-                            writer.WritePropertyName(secProp.Name);
-                            secProp.Value.WriteTo(writer);
-                        }
-
-                        // Add signature
-                        writer.WritePropertyName("signature");
-                        writer.WriteStartObject();
-                        writer.WriteString("algorithm", signatureAlgorithm);
-                        writer.WriteString("value", Convert.ToBase64String(signature));
-                        writer.WriteEndObject();
-
-                        writer.WriteEndObject();
-                    }
-                    else
-                    {
-                        writer.WritePropertyName(property.Name);
-                        property.Value.WriteTo(writer);
-                    }
-                }
-
-                writer.WriteEndObject();
-                writer.Flush();
-            }
-
-            return Encoding.UTF8.GetString(finalStream.ToArray());
+                SignatureType.RSA_SHA256 => "SHA256withRSA",
+                SignatureType.ECDSA_P256_SHA256 => "SHA256withECDSA-P256",
+                SignatureType.ECDSA_P384_SHA256 => "SHA256withECDSA-P384",
+                SignatureType.ECDSA_P521_SHA256 => "SHA256withECDSA-P521",
+                _ => signatureType.ToString(), // Fallback to enum name
+            };
         }
 
         /// <summary>
         /// Creates a new key pair for signing manifests
         /// </summary>
-        public static AsymmetricAlgorithm CreateKeyPair(string algorithm = "RSA", int keySize = 2048)
+        public static AsymmetricCipherKeyPair CreateKeyPair(
+            string algorithm = "RSA",
+            int keySize = 2048
+        )
         {
+            var random = new SecureRandom();
+
             switch (algorithm.ToUpperInvariant())
             {
                 case "RSA":
-                    var rsa = RSA.Create(keySize);
-                    return rsa;
+                    var rsaGenerator = new RsaKeyPairGenerator();
+                    rsaGenerator.Init(new KeyGenerationParameters(random, keySize));
+                    return rsaGenerator.GenerateKeyPair();
 
                 case "ECDSA":
                 case "ECDSA-P256":
                     // PIV cards only support P-256 (secp256r1) curve
                     if (keySize != 256)
-                        throw new ArgumentException($"PIV-compatible ECDSA only supports 256-bit keys (P-256 curve), got: {keySize}");
-                    
-                    var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-                    return ecdsa;
+                        throw new ArgumentException(
+                            $"PIV-compatible ECDSA only supports 256-bit keys (P-256 curve), got: {keySize}"
+                        );
+
+                    var ecGenerator = new ECKeyPairGenerator();
+                    var ecSpec = ECNamedCurveTable.GetByName("secp256r1");
+                    var domainParams = new ECDomainParameters(
+                        ecSpec.Curve,
+                        ecSpec.G,
+                        ecSpec.N,
+                        ecSpec.H
+                    );
+                    ecGenerator.Init(new ECKeyGenerationParameters(domainParams, random));
+                    return ecGenerator.GenerateKeyPair();
 
                 default:
                     throw new NotSupportedException($"Algorithm not supported: {algorithm}");
@@ -177,54 +330,65 @@ namespace SolarSharp.Interpreter.Security.Manifests
         }
 
         /// <summary>
-        /// Exports a public key in BASE64 format
-        /// </summary>
-        private static string ExportPublicKeyAsBase64(AsymmetricAlgorithm key, string algorithm)
-        {
-            byte[] publicKeyBytes = key switch
-            {
-                RSA rsa => rsa.ExportSubjectPublicKeyInfo(),
-                ECDsa ecdsa => ecdsa.ExportSubjectPublicKeyInfo(),
-                _ => throw new NotSupportedException($"Key type not supported: {key.GetType().Name}")
-            };
-
-            return Convert.ToBase64String(publicKeyBytes);
-        }
-
-        /// <summary>
         /// Exports a public key in PEM format (for compatibility)
         /// </summary>
-        public static string ExportPublicKey(AsymmetricAlgorithm key, string algorithm = "RSA")
+        public static string ExportPublicKey(AsymmetricKeyParameter key, string algorithm = "RSA")
         {
             byte[] publicKeyBytes;
-            string pemType;
+            string pemType = "PUBLIC KEY";
 
-            switch (key)
+            if (key is RsaPrivateCrtKeyParameters rsaPrivate)
             {
-                case RSA rsa:
-                    publicKeyBytes = rsa.ExportSubjectPublicKeyInfo();
-                    pemType = "PUBLIC KEY";
-                    break;
-
-                case ECDsa ecdsa:
-                    publicKeyBytes = ecdsa.ExportSubjectPublicKeyInfo();
-                    pemType = "PUBLIC KEY";
-                    break;
-
-                default:
-                    throw new NotSupportedException($"Key type not supported: {key.GetType().Name}");
+                // Extract public key from private key
+                var publicKey = new RsaKeyParameters(
+                    false,
+                    rsaPrivate.Modulus,
+                    rsaPrivate.PublicExponent
+                );
+                var publicKeyInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(
+                    publicKey
+                );
+                publicKeyBytes = publicKeyInfo.GetEncoded();
+            }
+            else if (key is RsaKeyParameters rsaPublic)
+            {
+                var publicKeyInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(
+                    rsaPublic
+                );
+                publicKeyBytes = publicKeyInfo.GetEncoded();
+            }
+            else if (key is ECPrivateKeyParameters ecPrivate)
+            {
+                // Extract public key from private key
+                var q = ecPrivate.Parameters.G.Multiply(ecPrivate.D);
+                var publicKey = new ECPublicKeyParameters(q, ecPrivate.Parameters);
+                var publicKeyInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(
+                    publicKey
+                );
+                publicKeyBytes = publicKeyInfo.GetEncoded();
+            }
+            else if (key is ECPublicKeyParameters ecPublic)
+            {
+                var publicKeyInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(
+                    ecPublic
+                );
+                publicKeyBytes = publicKeyInfo.GetEncoded();
+            }
+            else
+            {
+                throw new NotSupportedException($"Key type not supported: {key.GetType().Name}");
             }
 
             var base64 = Convert.ToBase64String(publicKeyBytes);
             var sb = new StringBuilder();
             sb.AppendLine($"-----BEGIN {pemType}-----");
-            
+
             // Add line breaks every 64 characters
-            for (int i = 0; i < base64.Length; i += 64)
+            for (var i = 0; i < base64.Length; i += 64)
             {
                 sb.AppendLine(base64.Substring(i, Math.Min(64, base64.Length - i)));
             }
-            
+
             sb.AppendLine($"-----END {pemType}-----");
             return sb.ToString();
         }
@@ -232,294 +396,88 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// <summary>
         /// Loads a private key from PEM format
         /// </summary>
-        public static AsymmetricAlgorithm LoadPrivateKeyFromPem(string pemContent)
+        public static AsymmetricKeyParameter LoadPrivateKeyFromPem(string pemContent)
         {
-            var base64 = ExtractBase64FromPem(pemContent);
-            var keyBytes = Convert.FromBase64String(base64);
+            using var reader = new StringReader(pemContent);
+            var pemReader = new PemReader(reader);
 
-            // Try RSA first
+            var keyObject = pemReader.ReadObject();
+
+            switch (keyObject)
+            {
+                case AsymmetricCipherKeyPair keyPair:
+                    return keyPair.Private;
+                case AsymmetricKeyParameter privateKey:
+                    return privateKey;
+                default:
+                    throw new NotSupportedException(
+                        "Unable to load private key. Ensure it's in PKCS#8 or PEM format."
+                    );
+            }
+        }
+
+        /// <summary>
+        /// Extracts the signed content portion from a V2.0 manifest for signing
+        /// This excludes the key-id and signature fields from the signed-content block
+        /// </summary>
+        private static string ExtractSignedContentForSigning(string manifestJson)
+        {
             try
             {
-                var rsa = RSA.Create();
-                rsa.ImportPkcs8PrivateKey(keyBytes, out _);
-                return rsa;
-            }
-            catch { }
+                using var doc = JsonDocument.Parse(manifestJson);
+                var root = doc.RootElement;
 
-            // Try ECDSA
-            try
-            {
-                var ecdsa = ECDsa.Create();
-                ecdsa.ImportPkcs8PrivateKey(keyBytes, out _);
-                return ecdsa;
-            }
-            catch { }
-
-            throw new NotSupportedException("Unable to load private key. Ensure it's in PKCS#8 format.");
-        }
-
-        private static string ExtractBase64FromPem(string pem)
-        {
-            var lines = pem.Split('\n');
-            var sb = new StringBuilder();
-            bool inKey = false;
-
-            foreach (var line in lines)
-            {
-                var trimmedLine = line.Trim();
-                if (trimmedLine.StartsWith("-----BEGIN"))
+                // Get the first signed-content block
+                if (
+                    !root.TryGetProperty("signed-content", out var signedContentArray)
+                    || signedContentArray.ValueKind != JsonValueKind.Array
+                    || signedContentArray.GetArrayLength() == 0
+                )
                 {
-                    inKey = true;
+                    throw new ManifestFormatException(
+                        "No signed-content blocks found in manifest",
+                        "ExtractSignedContentForSigning"
+                    );
                 }
-                else if (trimmedLine.StartsWith("-----END"))
+
+                var firstBlock = signedContentArray[0];
+
+                // Extract only packages and policies (exclude key-id and signature)
+                using var stream = new MemoryStream();
+                using (
+                    var writer = new Utf8JsonWriter(
+                        stream,
+                        new JsonWriterOptions { Indented = false }
+                    )
+                )
                 {
-                    break;
-                }
-                else if (inKey && !string.IsNullOrWhiteSpace(trimmedLine))
-                {
-                    sb.Append(trimmedLine);
-                }
-            }
+                    writer.WriteStartObject();
 
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Signs a manifest with an X.509 certificate and embeds the certificate chain
-        /// </summary>
-        /// <param name="manifestPath">Path to the manifest file</param>
-        /// <param name="certificate">X.509 certificate with private key</param>
-        /// <param name="intermediates">Optional intermediate certificates</param>
-        public static void SignManifestWithCertificate(string manifestPath, X509Certificate2 certificate, X509Certificate2Collection intermediates = null)
-        {
-            if (!File.Exists(manifestPath))
-                throw new FileNotFoundException($"Manifest file not found: {manifestPath}");
-
-            var json = File.ReadAllText(manifestPath);
-            var signedJson = SignManifestJsonWithCertificate(json, certificate, intermediates);
-            
-            File.WriteAllText(manifestPath, signedJson);
-        }
-
-        /// <summary>
-        /// Signs a manifest JSON string with an X.509 certificate
-        /// </summary>
-        /// <param name="json">Manifest JSON content</param>
-        /// <param name="certificate">X.509 certificate with private key</param>
-        /// <param name="intermediates">Optional intermediate certificates</param>
-        /// <returns>Signed manifest JSON with embedded certificate chain</returns>
-        public static string SignManifestJsonWithCertificate(string json, X509Certificate2 certificate, X509Certificate2Collection intermediates = null)
-        {
-            if (!certificate.HasPrivateKey)
-                throw new ArgumentException("Certificate must have a private key for signing");
-
-            // Build certificate chain
-            var certificateChain = new List<string>();
-            
-            // Add leaf certificate (the signing certificate)
-            certificateChain.Add(ConvertCertificateToPem(certificate));
-            
-            // Add intermediate certificates
-            if (intermediates != null)
-            {
-                foreach (var intermediate in intermediates.Cast<X509Certificate2>())
-                {
-                    certificateChain.Add(ConvertCertificateToPem(intermediate));
-                }
-            }
-
-            // Parse the manifest
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            // Create a mutable copy with certificate chain
-            using var stream = new MemoryStream();
-            using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
-            {
-                writer.WriteStartObject();
-
-                // Copy all existing properties except security
-                foreach (var property in root.EnumerateObject())
-                {
-                    if (property.Name != "security")
+                    if (firstBlock.TryGetProperty("packages", out var packages))
                     {
-                        writer.WritePropertyName(property.Name);
-                        property.Value.WriteTo(writer);
+                        writer.WritePropertyName("packages");
+                        packages.WriteTo(writer);
                     }
-                }
 
-                // Add security section with certificate chain
-                writer.WritePropertyName("security");
-                writer.WriteStartObject();
-
-                // Add certificate chain
-                writer.WritePropertyName("certificateChain");
-                writer.WriteStartArray();
-                foreach (var certPem in certificateChain)
-                {
-                    writer.WriteStringValue(certPem);
-                }
-                writer.WriteEndArray();
-
-                writer.WriteEndObject(); // security
-                writer.WriteEndObject(); // root
-                writer.Flush();
-            }
-
-            // Get the JSON without signature for canonicalization
-            var unsignedJson = Encoding.UTF8.GetString(stream.ToArray());
-            
-            // Canonicalize the JSON
-            var canonicalJson = JsonCanonicalizer.Canonicalize(unsignedJson);
-            var dataToSign = Encoding.UTF8.GetBytes(canonicalJson);
-
-            // Sign with the certificate's private key
-            byte[] signature;
-            string signatureAlgorithm;
-
-            using (var privateKey = certificate.GetRSAPrivateKey() ?? (AsymmetricAlgorithm)certificate.GetECDsaPrivateKey())
-            {
-                switch (privateKey)
-                {
-                    case RSA rsa:
-                        signature = rsa.SignData(dataToSign, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-                        signatureAlgorithm = "SHA256withRSA";
-                        break;
-
-                    case ECDsa ecdsa:
-                        signature = ecdsa.SignData(dataToSign, HashAlgorithmName.SHA256);
-                        // Determine specific curve for algorithm name
-                        if (ecdsa.KeySize == 384)
-                        {
-                            signatureAlgorithm = "SHA256withECDSA-P384";
-                        }
-                        else
-                        {
-                            signatureAlgorithm = "SHA256withECDSA-P256";
-                        }
-                        break;
-
-                    default:
-                        throw new NotSupportedException($"Certificate key algorithm not supported: {privateKey.GetType().Name}");
-                }
-            }
-
-            // Now add the signature to the JSON
-            using var finalStream = new MemoryStream();
-            using (var writer = new Utf8JsonWriter(finalStream, new JsonWriterOptions { Indented = true }))
-            {
-                writer.WriteStartObject();
-
-                // Copy all properties including security
-                using var docWithCert = JsonDocument.Parse(unsignedJson);
-                foreach (var property in docWithCert.RootElement.EnumerateObject())
-                {
-                    if (property.Name == "security")
+                    if (firstBlock.TryGetProperty("policies", out var policies))
                     {
-                        writer.WritePropertyName("security");
-                        writer.WriteStartObject();
-
-                        // Copy existing security properties
-                        foreach (var secProp in property.Value.EnumerateObject())
-                        {
-                            writer.WritePropertyName(secProp.Name);
-                            secProp.Value.WriteTo(writer);
-                        }
-
-                        // Add signature
-                        writer.WritePropertyName("signature");
-                        writer.WriteStartObject();
-                        writer.WriteString("algorithm", signatureAlgorithm);
-                        writer.WriteString("value", Convert.ToBase64String(signature));
-                        writer.WriteEndObject();
-
-                        writer.WriteEndObject();
+                        writer.WritePropertyName("policies");
+                        policies.WriteTo(writer);
                     }
-                    else
-                    {
-                        writer.WritePropertyName(property.Name);
-                        property.Value.WriteTo(writer);
-                    }
+
+                    writer.WriteEndObject();
+                    writer.Flush();
                 }
 
-                writer.WriteEndObject();
-                writer.Flush();
+                return Encoding.UTF8.GetString(stream.ToArray());
             }
-
-            return Encoding.UTF8.GetString(finalStream.ToArray());
-        }
-
-        /// <summary>
-        /// Converts an X.509 certificate to PEM format
-        /// </summary>
-        private static string ConvertCertificateToPem(X509Certificate2 certificate)
-        {
-            var base64 = Convert.ToBase64String(certificate.RawData);
-            var sb = new StringBuilder();
-            sb.AppendLine("-----BEGIN CERTIFICATE-----");
-            
-            // Add line breaks every 64 characters
-            for (int i = 0; i < base64.Length; i += 64)
+            catch (JsonException ex)
             {
-                sb.AppendLine(base64.Substring(i, Math.Min(64, base64.Length - i)));
+                throw new ManifestFormatException(
+                    $"Failed to extract signed content: {ex.Message}",
+                    "ExtractSignedContentForSigning"
+                );
             }
-            
-            sb.AppendLine("-----END CERTIFICATE-----");
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Loads an X.509 certificate from PEM format
-        /// </summary>
-        public static X509Certificate2 LoadCertificateFromPem(string pemContent, string privateKeyPem = null)
-        {
-            var certificate = new X509Certificate2(Encoding.UTF8.GetBytes(pemContent));
-            
-            if (!string.IsNullOrEmpty(privateKeyPem))
-            {
-                // Load private key and associate with certificate
-                var privateKey = LoadPrivateKeyFromPem(privateKeyPem);
-                
-                switch (privateKey)
-                {
-                    case RSA rsa:
-                        certificate = certificate.CopyWithPrivateKey(rsa);
-                        break;
-                    case ECDsa ecdsa:
-                        certificate = certificate.CopyWithPrivateKey(ecdsa);
-                        break;
-                }
-            }
-            
-            return certificate;
-        }
-
-        /// <summary>
-        /// Creates a self-signed certificate for testing
-        /// </summary>
-        public static X509Certificate2 CreateSelfSignedCertificate(string subjectName, string subjectPath = null, int validDays = 365)
-        {
-            var distinguishedName = new X500DistinguishedName($"CN={subjectPath ?? subjectName}");
-            
-            using var rsa = RSA.Create(2048);
-            var request = new CertificateRequest(distinguishedName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-            
-            // Add key usage extensions
-            request.CertificateExtensions.Add(
-                new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, true));
-            
-            // Add extended key usage
-            request.CertificateExtensions.Add(
-                new X509EnhancedKeyUsageExtension(
-                    new OidCollection { new Oid("1.3.6.1.5.5.7.3.3") }, // Code signing
-                    true));
-            
-            // Create the certificate
-            var certificate = request.CreateSelfSigned(DateTimeOffset.Now, DateTimeOffset.Now.AddDays(validDays));
-            
-            // Export and reimport to make it work properly on all platforms
-            var exported = certificate.Export(X509ContentType.Pfx, "temp");
-            return new X509Certificate2(exported, "temp", X509KeyStorageFlags.Exportable);
         }
     }
 }

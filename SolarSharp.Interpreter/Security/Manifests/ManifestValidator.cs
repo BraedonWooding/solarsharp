@@ -1,114 +1,73 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Security.Manifests
 {
     /// <summary>
-    /// Validates manifests for completeness and correctness
+    /// DEPRECATED: Legacy V1 manifest validator - needs complete rewrite for V2.0
+    /// TODO: Replace with V2.0 manifest validation logic using signed content blocks
     /// </summary>
-    public static class ManifestValidator
+    [Obsolete("Legacy V1 manifest validator - needs complete rewrite for V2.0")]
+    public class ManifestValidator : IManifestValidator
     {
         /// <summary>
-        /// Validates that a manifest meets the requirements to be a SystemManifest
+        /// Validates that a manifest is complete and well-formed
         /// </summary>
         /// <param name="manifest">The manifest to validate</param>
         /// <returns>Validation result with any errors found</returns>
-        public static ManifestValidationResult ValidateSystemManifest(Manifest manifest)
+        public ManifestValidationResult Validate(Manifest manifest)
+        {
+            return ValidateManifest(manifest);
+        }
+
+        /// <summary>
+        /// Static validation method for backward compatibility
+        /// </summary>
+        public static ManifestValidationResult ValidateManifest(Manifest manifest)
         {
             if (manifest == null)
                 return ManifestValidationResult.Failure("Manifest cannot be null");
 
             var errors = new List<string>();
 
-            // Special handling for None SystemManifest
-            if (manifest is SystemManifest { _isNoneManifest: true })
+            // TODO: V2.0 - Rewrite to validate signed content blocks
+            // For now, just check basic V2.0 structure
+            if (manifest.Version != "2.0")
             {
-                // None SystemManifest should have no policy and no rules - denial is implicit
-                if (manifest.Policy != null)
-                    errors.Add("None SystemManifest must not have a policy - denial is implicit");
-                    
-                if (manifest.Rules.Any())
-                    errors.Add("None SystemManifest must not have rules - denial is implicit");
-                    
-                return errors.Any() ? ManifestValidationResult.Failure(errors) : ManifestValidationResult.Success();
+                errors.Add("Only V2.0 manifests are supported");
             }
 
-            // For all other SystemManifests, validate policy exists
-            if (manifest.Policy == null)
+            if (!manifest.HasSignedContent && manifest.SignedContent.Length == 0)
             {
-                errors.Add("Policy must be specified for SystemManifest");
-                return ManifestValidationResult.Failure(errors);
+                errors.Add("V2.0 manifest should have signed content blocks");
             }
 
-            // Check that essential resource limits are defined
-            if (manifest.Policy.TimeoutMs == null)
-                errors.Add("TimeoutMs must be specified for SystemManifest");
-            else if (manifest.Policy.TimeoutMs < 0)
-                errors.Add("TimeoutMs must be 0 (no limit) or positive value");
-
-            if (manifest.Policy.MaxMemoryMB == null)
-                errors.Add("MaxMemoryMB must be specified for SystemManifest");
-            else if (manifest.Policy.MaxMemoryMB < 0)
-                errors.Add("MaxMemoryMB must be 0 (no limit) or positive value");
-
-            if (manifest.Policy.MaxInstructions == null)
-                errors.Add("MaxInstructions must be specified for SystemManifest");
-            else if (manifest.Policy.MaxInstructions < 0)
-                errors.Add("MaxInstructions must be 0 (no limit) or positive value");
-
-            // Check that file access policy is defined
-            if (string.IsNullOrEmpty(manifest.Policy.DefaultFileAccess))
-                errors.Add("DefaultFileAccess must be specified for SystemManifest");
-            else if (!IsValidFileAccessValue(manifest.Policy.DefaultFileAccess))
-                errors.Add($"DefaultFileAccess '{manifest.Policy.DefaultFileAccess}' is not a valid value");
-
-            if (string.IsNullOrEmpty(manifest.Policy.DefaultDirectoryAccess))
-                errors.Add("DefaultDirectoryAccess must be specified for SystemManifest");
-            else if (!IsValidDirectoryAccessValue(manifest.Policy.DefaultDirectoryAccess))
-                errors.Add($"DefaultDirectoryAccess '{manifest.Policy.DefaultDirectoryAccess}' is not a valid value");
-
-            // Anti-polymorphism is implemented through specific rules, not a policy boolean
-
-            // SystemManifest must have some form of access control defined
-            if (!manifest.Rules.Any() && 
-                string.IsNullOrEmpty(manifest.Policy.DefaultFileAccess) && 
-                string.IsNullOrEmpty(manifest.Policy.DefaultDirectoryAccess))
+            // Validate packages in signed content blocks
+            if (manifest.HasSignedContent)
             {
-                errors.Add("SystemManifest must have at least one rule or default access policies");
-            }
-
-            // Validate individual rules
-            foreach (var rule in manifest.Rules)
-            {
-                var ruleValidation = ValidateRule(rule.Key, rule.Value);
-                if (!ruleValidation.IsValid)
+                foreach (var block in manifest.SignedContent)
                 {
-                    errors.AddRange(ruleValidation.Errors.Select(e => $"Rule '{rule.Key}': {e}"));
+                    foreach (var (packageId, package) in block.Packages)
+                    {
+                        // Validate package metadata
+                        if (string.IsNullOrEmpty(package.Metadata.Name))
+                        {
+                            errors.Add($"Package '{packageId}' must have a non-empty name");
+                        }
+
+                        if (string.IsNullOrEmpty(package.Metadata.Version))
+                        {
+                            errors.Add($"Package '{packageId}' must have a non-empty version");
+                        }
+                    }
                 }
             }
 
-            // Validate file permissions if specified
-            if (manifest.Policy.FilePermissions != null)
-            {
-                foreach (var permission in manifest.Policy.FilePermissions)
-                {
-                    if (!IsValidFileAccessValue(permission.Value))
-                        errors.Add($"File permission '{permission.Key}' has invalid access value '{permission.Value}'");
-                }
-            }
-
-            // Validate directory permissions if specified
-            if (manifest.Policy.DirectoryPermissions != null)
-            {
-                foreach (var permission in manifest.Policy.DirectoryPermissions)
-                {
-                    if (!IsValidDirectoryAccessValue(permission.Value))
-                        errors.Add($"Directory permission '{permission.Key}' has invalid access value '{permission.Value}'");
-                }
-            }
-
-            return errors.Any() ? ManifestValidationResult.Failure(errors) : ManifestValidationResult.Success();
+            return errors.Any()
+                ? ManifestValidationResult.Failure(errors)
+                : ManifestValidationResult.Success();
         }
 
         /// <summary>
@@ -167,37 +126,19 @@ namespace SolarSharp.Interpreter.Security.Manifests
                     break;
             }
 
-            return errors.Any() ? ManifestValidationResult.Failure(errors) : ManifestValidationResult.Success();
+            return errors.Any()
+                ? ManifestValidationResult.Failure(errors)
+                : ManifestValidationResult.Success();
         }
 
-        /// <summary>
-        /// Validates all system manifests
-        /// </summary>
-        /// <returns>Dictionary of validation results keyed by manifest name</returns>
-        public static Dictionary<string, ManifestValidationResult> ValidateAllSystemManifests()
+        private static bool IsValidFilePermission(FilePermissions permission)
         {
-            var results = new Dictionary<string, ManifestValidationResult>();
+            return Enum.IsDefined(typeof(FilePermissions), permission);
+        }
 
-            // Get all system manifest properties using reflection
-            var systemManifestType = typeof(SystemManifest);
-            var manifestProperties = systemManifestType.GetProperties(
-                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
-                .Where(p => p.PropertyType == typeof(SystemManifest));
-
-            foreach (var property in manifestProperties)
-            {
-                try
-                {
-                    var manifest = (SystemManifest)property.GetValue(null);
-                    results[property.Name] = ValidateSystemManifest(manifest);
-                }
-                catch (Exception ex)
-                {
-                    results[property.Name] = ManifestValidationResult.Failure($"Exception accessing {property.Name}: {ex.Message}");
-                }
-            }
-
-            return results;
+        private static bool IsValidDirectoryPermission(DirectoryPermissions permission)
+        {
+            return Enum.IsDefined(typeof(DirectoryPermissions), permission);
         }
 
         private static bool IsValidFileAccessValue(string value)
@@ -214,8 +155,15 @@ namespace SolarSharp.Interpreter.Security.Manifests
         {
             return value?.ToLowerInvariant() switch
             {
-                "allow" or "deny" or "execute" or "modify" or "read" or "write" or "delete" or "create" => true,
-                _ => false
+                "allow"
+                or "deny"
+                or "execute"
+                or "modify"
+                or "read"
+                or "write"
+                or "delete"
+                or "create" => true,
+                _ => false,
             };
         }
 
@@ -228,8 +176,8 @@ namespace SolarSharp.Interpreter.Security.Manifests
         private static bool IsValidModuleValue(string value)
         {
             // Validate against known CoreModules
-            return Enum.TryParse<Modules.CoreModules>(value, true, out _) || 
-                   !string.IsNullOrWhiteSpace(value); // Allow custom modules
+            return Enum.TryParse<CoreModules>(value, true, out _)
+                || !string.IsNullOrWhiteSpace(value); // Allow custom modules
         }
     }
 
@@ -249,11 +197,11 @@ namespace SolarSharp.Interpreter.Security.Manifests
         }
 
         public static ManifestValidationResult Success() => new ManifestValidationResult(true);
-        
-        public static ManifestValidationResult Failure(string error) => 
+
+        public static ManifestValidationResult Failure(string error) =>
             new ManifestValidationResult(false, new[] { error });
-        
-        public static ManifestValidationResult Failure(IEnumerable<string> errors) => 
+
+        public static ManifestValidationResult Failure(IEnumerable<string> errors) =>
             new ManifestValidationResult(false, errors);
 
         public override string ToString()

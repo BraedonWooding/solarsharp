@@ -1,6 +1,7 @@
-using System.Security.Cryptography.X509Certificates;
+using System.IO.Compression;
+using CSharpFunctionalExtensions;
+using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Security;
-using SolarSharp.Interpreter.Security.Manifests;
 
 namespace WotCI
 {
@@ -9,23 +10,26 @@ namespace WotCI
     /// </summary>
     public class SimpleVirtualFileSystem
     {
-        private readonly SecurityConfiguration _securityConfig;
-        private readonly X509Certificate2? _certificate;
-        private readonly Dictionary<string, IVirtualFileSystemProvider> _mountPoints = new();
+        private readonly SecurityPolicy _securityConfig;
+        private readonly Dictionary<string, IVirtualFileSystemProvider> _mountPoints =
+            new Dictionary<string, IVirtualFileSystemProvider>();
         private readonly VirtualFileSystem _baseVfs;
+        private readonly CrossPlatformPathCanonicalizer _canonicalizer =
+            new CrossPlatformPathCanonicalizer();
 
-        public SimpleVirtualFileSystem(SecurityConfiguration securityConfig, X509Certificate2? certificate = null)
-            : this(securityConfig, certificate, Environment.CurrentDirectory)
+        public SimpleVirtualFileSystem(SecurityPolicy securityConfig)
+            : this(securityConfig, Environment.CurrentDirectory) { }
+
+        public SimpleVirtualFileSystem(SecurityPolicy securityConfig, string rootPath)
         {
-        }
-        
-        public SimpleVirtualFileSystem(SecurityConfiguration securityConfig, X509Certificate2? certificate, string rootPath)
-        {
-            _securityConfig = securityConfig ?? throw new ArgumentNullException(nameof(securityConfig));
-            _certificate = certificate;
-            
+            _securityConfig =
+                securityConfig ?? throw new ArgumentNullException(nameof(securityConfig));
+
             // Use existing VirtualFileSystem as base
-            var writePolicy = (securityConfig.Capabilities & ScriptCapabilities.FileWrite) != 0 ? WritePolicy.Sandbox : WritePolicy.Deny;
+            var writePolicy =
+                (securityConfig.Capabilities & ScriptCapabilities.FileWrite) != 0
+                    ? WritePolicy.Sandbox
+                    : WritePolicy.Deny;
             _baseVfs = new VirtualFileSystem(rootPath, writePolicy);
         }
 
@@ -36,7 +40,7 @@ namespace WotCI
                 _mountPoints[NormalizePath(mountPoint)] = new MemoryFileSystemProvider();
             }
         }
-        
+
         public void MountFileSystemProvider(string mountPoint, IVirtualFileSystemProvider provider)
         {
             lock (_mountPoints)
@@ -49,21 +53,23 @@ namespace WotCI
         {
             lock (_mountPoints)
             {
-                _mountPoints[NormalizePath(mountPoint)] = new ArchiveFileSystemProvider(archivePath);
+                _mountPoints[NormalizePath(mountPoint)] = new ArchiveFileSystemProvider(
+                    archivePath
+                );
             }
         }
 
-        public void MountPluginDirectory(X509Certificate2 certificate, string physicalPath)
+        public void MountPluginDirectory(string pluginId, string physicalPath)
         {
-            ArgumentNullException.ThrowIfNull(certificate);
+            if (string.IsNullOrEmpty(pluginId))
+                throw new ArgumentException("Plugin ID cannot be null or empty", nameof(pluginId));
 
-            var subjectPath = X509CertificateInfo.ExtractSubjectPath(certificate);
-            if (string.IsNullOrEmpty(subjectPath))
-                throw new ArgumentException("Certificate does not contain a subject path constraint");
+            // Mount plugin directory under /plugins/{pluginId}
+            var mountPath = $"/plugins/{pluginId}";
 
             lock (_mountPoints)
             {
-                _mountPoints[NormalizePath(subjectPath)] = new PhysicalPathProvider(physicalPath);
+                _mountPoints[NormalizePath(mountPath)] = new PhysicalPathProvider(physicalPath);
             }
         }
 
@@ -72,8 +78,14 @@ namespace WotCI
             var mount = TryResolveMountPoint(path);
             if (mount != null)
             {
-                return mount.Value.provider.ExistsAsync(mount.Value.relativePath).GetAwaiter().GetResult() &&
-                       !mount.Value.provider.IsDirectoryAsync(mount.Value.relativePath).GetAwaiter().GetResult();
+                return mount
+                        .Value.provider.ExistsAsync(mount.Value.relativePath)
+                        .GetAwaiter()
+                        .GetResult()
+                    && !mount
+                        .Value.provider.IsDirectoryAsync(mount.Value.relativePath)
+                        .GetAwaiter()
+                        .GetResult();
             }
 
             return _baseVfs.FileExists(path);
@@ -81,63 +93,88 @@ namespace WotCI
 
         public byte[] ReadAllBytes(string path)
         {
-            if (!IsPathAllowedForCertificate(path))
-                throw new UnauthorizedAccessException($"Certificate constraint violation: {path}");
-                
+            // Validate access with certificate-based path restrictions
+            ValidateAccess(path, FilePermissions.Read);
+
             var mount = TryResolveMountPoint(path);
             if (mount != null)
             {
-                return mount.Value.provider.ReadFileAsync(mount.Value.relativePath).GetAwaiter().GetResult();
+                return mount
+                    .Value.provider.ReadFileAsync(mount.Value.relativePath)
+                    .GetAwaiter()
+                    .GetResult();
             }
 
-            var realPath = _baseVfs.TranslatePath(path, false);
+            var realPath = _baseVfs.TranslatePath(path);
             return File.ReadAllBytes(realPath);
         }
 
         public void WriteAllBytes(string path, byte[] content)
         {
-            if (!IsPathAllowedForCertificate(path))
-                throw new UnauthorizedAccessException($"Certificate constraint violation: {path}");
+            // Validate access with certificate-based path restrictions
+            ValidateAccess(path, FilePermissions.ReadWrite);
 
             var mount = TryResolveMountPoint(path);
             if (mount != null)
             {
-                mount.Value.provider.WriteFileAsync(mount.Value.relativePath, content).GetAwaiter().GetResult();
+                mount
+                    .Value.provider.WriteFileAsync(mount.Value.relativePath, content)
+                    .GetAwaiter()
+                    .GetResult();
                 return;
             }
 
             var realPath = _baseVfs.TranslatePath(path, true);
-            
+
             // Ensure the directory exists
             var directory = Path.GetDirectoryName(realPath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
-            
+
             File.WriteAllBytes(realPath, content);
         }
 
-        public Stream OpenFile(string path, FileMode mode, System.IO.FileAccess access)
+        public Stream OpenFile(string path, FileMode mode, FileAccess access)
         {
-            if (!IsPathAllowedForCertificate(path))
-                throw new UnauthorizedAccessException($"Certificate constraint violation: {path}");
+            // Check capabilities
+            var requiredRead = access == FileAccess.Read || access == FileAccess.ReadWrite;
+            var requiredWrite = access == FileAccess.Write || access == FileAccess.ReadWrite;
+
+            if (requiredRead && !_securityConfig.Capabilities.HasFlag(ScriptCapabilities.FileRead))
+                throw new UnauthorizedAccessException("File read access denied by security policy");
+
+            if (
+                requiredWrite && !_securityConfig.Capabilities.HasFlag(ScriptCapabilities.FileWrite)
+            )
+                throw new UnauthorizedAccessException(
+                    "File write access denied by security policy"
+                );
 
             var mount = TryResolveMountPoint(path);
             if (mount != null)
             {
-                return access == System.IO.FileAccess.Write 
-                    ? mount.Value.provider.OpenWriteAsync(mount.Value.relativePath).GetAwaiter().GetResult()
-                    : mount.Value.provider.OpenReadAsync(mount.Value.relativePath).GetAwaiter().GetResult();
+                return access == FileAccess.Write
+                    ? mount
+                        .Value.provider.OpenWriteAsync(mount.Value.relativePath)
+                        .GetAwaiter()
+                        .GetResult()
+                    : mount
+                        .Value.provider.OpenReadAsync(mount.Value.relativePath)
+                        .GetAwaiter()
+                        .GetResult();
             }
 
             return _baseVfs.OpenFile(path, mode, access);
         }
 
-        private (IVirtualFileSystemProvider provider, string relativePath)? TryResolveMountPoint(string path)
+        private (IVirtualFileSystemProvider provider, string relativePath)? TryResolveMountPoint(
+            string path
+        )
         {
             var normalized = NormalizePath(path);
-            
+
             lock (_mountPoints)
             {
                 string? bestMatch = null;
@@ -165,29 +202,127 @@ namespace WotCI
             return null;
         }
 
-        private bool IsPathAllowedForCertificate(string path)
-        {
-            if (_certificate == null)
-                return true;
-
-            var subjectPath = X509CertificateInfo.ExtractSubjectPath(_certificate);
-            if (string.IsNullOrEmpty(subjectPath))
-                return true;
-
-            var normalized = NormalizePath(path);
-            return normalized.StartsWith(subjectPath, StringComparison.OrdinalIgnoreCase);
-        }
-
         private string NormalizePath(string path)
         {
             if (string.IsNullOrEmpty(path))
                 return "/";
 
+            // For VFS paths, we don't want to use the canonicalizer if the path
+            // is relative, as it will convert to an absolute filesystem path.
+            // VFS paths should always be treated as absolute within the VFS namespace.
+
+            // Simple normalization for VFS paths
             path = path.Replace('\\', '/');
+
+            // If the path doesn't start with /, add it
             if (!path.StartsWith("/"))
                 path = "/" + path;
 
-            return path.TrimEnd('/');
+            // Remove trailing slashes except for root
+            if (path.Length > 1 && path.EndsWith("/"))
+                path = path.TrimEnd('/');
+
+            return path;
+        }
+
+        /// <summary>
+        /// Validates access to a path based on security configuration and certificate constraints
+        /// </summary>
+        private void ValidateAccess(string path, FilePermissions requiredAccess)
+        {
+            // Check capabilities first
+            var hasReadCapability = _securityConfig.Capabilities.HasFlag(
+                ScriptCapabilities.FileRead
+            );
+            var hasWriteCapability = _securityConfig.Capabilities.HasFlag(
+                ScriptCapabilities.FileWrite
+            );
+
+            if (requiredAccess == FilePermissions.Read && !hasReadCapability)
+                throw new UnauthorizedAccessException(
+                    "File read access denied by security configuration"
+                );
+
+            if (requiredAccess == FilePermissions.ReadWrite && !hasWriteCapability)
+                throw new UnauthorizedAccessException(
+                    "File write access denied by security configuration"
+                );
+
+            // Only apply certificate-based restrictions if DirectoryAccessRules are configured
+            if (_securityConfig.DirectoryAccessRules.IsEmpty)
+            {
+                // No certificate-based restrictions configured, allow based on capabilities only
+                return;
+            }
+
+            // Get current execution context to access signing key fingerprint
+            var currentContext = ExecutionContextManager.Current;
+            var signingKeyFingerprint = currentContext
+                .Map(ctx => ctx.SigningKeyFingerprint.GetValueOrDefault(null))
+                .GetValueOrDefault(null);
+
+            // Create FileSystemSecurity instance from SecurityPolicy for validation
+            var fileSystemSecurity = CreateFileSystemSecurityFromPolicy();
+
+            // Get effective permissions considering certificate-based rules
+            var effectivePermissions = fileSystemSecurity.GetFilePermissionsWithKey(
+                path,
+                signingKeyFingerprint
+            );
+
+            // Validate that the effective permissions allow the required access
+            if (!HasSufficientPermissions(effectivePermissions, requiredAccess))
+            {
+                var keyInfo = string.IsNullOrEmpty(signingKeyFingerprint)
+                    ? "unsigned script"
+                    : $"signing key {signingKeyFingerprint[..8]}...";
+
+                throw new UnauthorizedAccessException(
+                    $"Certificate constraint violation: {keyInfo} does not have {requiredAccess} access to path '{path}'"
+                );
+            }
+        }
+
+        /// <summary>
+        /// Creates a FileSystemSecurity instance from the current SecurityPolicy
+        /// </summary>
+        private FileSystemSecurity CreateFileSystemSecurityFromPolicy()
+        {
+            return new FileSystemSecurity
+            {
+                FilePermissions = _securityConfig.FilePermissions.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value
+                ),
+                DirectoryPermissions = _securityConfig.DirectoryPermissions.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value
+                ),
+                DefaultFilePermissions = _securityConfig.DefaultFileAccess,
+                DefaultDirectoryPermissions = _securityConfig.DefaultDirectoryAccess,
+                MaxFileSize = _securityConfig.MaxFileSize,
+                AllowHiddenFiles = _securityConfig.AllowHiddenFiles,
+                DirectoryAccessRules = _securityConfig.DirectoryAccessRules,
+            };
+        }
+
+        /// <summary>
+        /// Checks if the effective permissions are sufficient for the required access
+        /// </summary>
+        private static bool HasSufficientPermissions(
+            FilePermissions effectivePermissions,
+            FilePermissions requiredAccess
+        )
+        {
+            return requiredAccess switch
+            {
+                FilePermissions.None => true,
+                FilePermissions.Read => effectivePermissions >= FilePermissions.Read,
+                FilePermissions.SandboxedReadWrite => effectivePermissions
+                    >= FilePermissions.SandboxedReadWrite,
+                FilePermissions.ReadWrite => effectivePermissions >= FilePermissions.ReadWrite,
+                _ => false,
+            };
         }
     }
 
@@ -196,8 +331,8 @@ namespace WotCI
     /// </summary>
     public class MemoryFileSystemProvider : IVirtualFileSystemProvider
     {
-        private readonly Dictionary<string, byte[]> _files = new();
-        private readonly HashSet<string> _directories = new() { "/" };
+        private readonly Dictionary<string, byte[]> _files = new Dictionary<string, byte[]>();
+        private readonly HashSet<string> _directories = ["/"];
 
         public Task<byte[]> ReadFileAsync(string relativePath)
         {
@@ -213,7 +348,7 @@ namespace WotCI
         {
             lock (_files)
             {
-                _files[relativePath] = content ?? Array.Empty<byte>();
+                _files[relativePath] = content ?? [];
                 return Task.CompletedTask;
             }
         }
@@ -222,7 +357,9 @@ namespace WotCI
         {
             lock (_files)
             {
-                return Task.FromResult(_files.ContainsKey(relativePath) || _directories.Contains(relativePath));
+                return Task.FromResult(
+                    _files.ContainsKey(relativePath) || _directories.Contains(relativePath)
+                );
             }
         }
 
@@ -268,23 +405,15 @@ namespace WotCI
             var stream = new WriteMemoryStream(this, relativePath);
             return Task.FromResult<Stream>(stream);
         }
-        
-        private class WriteMemoryStream : MemoryStream
+
+        private class WriteMemoryStream(MemoryFileSystemProvider provider, string relativePath)
+            : MemoryStream
         {
-            private readonly MemoryFileSystemProvider _provider;
-            private readonly string _relativePath;
-            
-            public WriteMemoryStream(MemoryFileSystemProvider provider, string relativePath)
-            {
-                _provider = provider;
-                _relativePath = relativePath;
-            }
-            
             protected override void Dispose(bool disposing)
             {
                 if (disposing)
                 {
-                    _provider.WriteFileAsync(_relativePath, ToArray()).GetAwaiter().GetResult();
+                    provider.WriteFileAsync(relativePath, ToArray()).GetAwaiter().GetResult();
                 }
                 base.Dispose(disposing);
             }
@@ -299,22 +428,17 @@ namespace WotCI
     /// <summary>
     /// Simple ZIP archive provider
     /// </summary>
-    public class ArchiveFileSystemProvider : IVirtualFileSystemProvider
+    public class ArchiveFileSystemProvider(string archivePath) : IVirtualFileSystemProvider
     {
-        private readonly string _archivePath;
-        private readonly Dictionary<string, byte[]> _cache = new();
+        private readonly Dictionary<string, byte[]> _cache = new Dictionary<string, byte[]>();
         private bool _loaded;
-
-        public ArchiveFileSystemProvider(string archivePath)
-        {
-            _archivePath = archivePath;
-        }
 
         private void EnsureLoaded()
         {
-            if (_loaded) return;
-            
-            using var archive = System.IO.Compression.ZipFile.OpenRead(_archivePath);
+            if (_loaded)
+                return;
+
+            using var archive = ZipFile.OpenRead(archivePath);
             foreach (var entry in archive.Entries)
             {
                 using var stream = entry.Open();
@@ -384,49 +508,42 @@ namespace WotCI
     /// <summary>
     /// Physical path provider
     /// </summary>
-    public class PhysicalPathProvider : IVirtualFileSystemProvider
+    public class PhysicalPathProvider(string basePath) : IVirtualFileSystemProvider
     {
-        private readonly string _basePath;
-
-        public PhysicalPathProvider(string basePath)
-        {
-            _basePath = basePath;
-        }
-
         public Task<byte[]> ReadFileAsync(string relativePath)
         {
-            var fullPath = Path.Combine(_basePath, relativePath);
+            var fullPath = Path.Combine(basePath, relativePath);
             return Task.FromResult(File.ReadAllBytes(fullPath));
         }
 
         public Task WriteFileAsync(string relativePath, byte[] content)
         {
-            var fullPath = Path.Combine(_basePath, relativePath);
+            var fullPath = Path.Combine(basePath, relativePath);
             File.WriteAllBytes(fullPath, content);
             return Task.CompletedTask;
         }
 
         public Task<bool> ExistsAsync(string relativePath)
         {
-            var fullPath = Path.Combine(_basePath, relativePath);
+            var fullPath = Path.Combine(basePath, relativePath);
             return Task.FromResult(File.Exists(fullPath) || Directory.Exists(fullPath));
         }
 
         public Task<bool> IsDirectoryAsync(string relativePath)
         {
-            var fullPath = Path.Combine(_basePath, relativePath);
+            var fullPath = Path.Combine(basePath, relativePath);
             return Task.FromResult(Directory.Exists(fullPath));
         }
 
         public Task<string[]> ListDirectoryAsync(string relativePath)
         {
-            var fullPath = Path.Combine(_basePath, relativePath);
+            var fullPath = Path.Combine(basePath, relativePath);
             if (!Directory.Exists(fullPath))
                 return Task.FromResult(Array.Empty<string>());
 
             var entries = Directory.GetFileSystemEntries(fullPath);
             var names = new string[entries.Length];
-            for (int i = 0; i < entries.Length; i++)
+            for (var i = 0; i < entries.Length; i++)
             {
                 names[i] = Path.GetFileName(entries[i]);
             }
@@ -435,33 +552,33 @@ namespace WotCI
 
         public Task DeleteFileAsync(string relativePath)
         {
-            var fullPath = Path.Combine(_basePath, relativePath);
+            var fullPath = Path.Combine(basePath, relativePath);
             File.Delete(fullPath);
             return Task.CompletedTask;
         }
 
         public Task CreateDirectoryAsync(string relativePath)
         {
-            var fullPath = Path.Combine(_basePath, relativePath);
+            var fullPath = Path.Combine(basePath, relativePath);
             Directory.CreateDirectory(fullPath);
             return Task.CompletedTask;
         }
 
         public Task<Stream> OpenReadAsync(string relativePath)
         {
-            var fullPath = Path.Combine(_basePath, relativePath);
+            var fullPath = Path.Combine(basePath, relativePath);
             return Task.FromResult<Stream>(File.OpenRead(fullPath));
         }
 
         public Task<Stream> OpenWriteAsync(string relativePath)
         {
-            var fullPath = Path.Combine(_basePath, relativePath);
+            var fullPath = Path.Combine(basePath, relativePath);
             return Task.FromResult<Stream>(File.OpenWrite(fullPath));
         }
 
         public Task<FileSystemInfo> GetFileInfoAsync(string relativePath)
         {
-            var fullPath = Path.Combine(_basePath, relativePath);
+            var fullPath = Path.Combine(basePath, relativePath);
             if (File.Exists(fullPath))
                 return Task.FromResult<FileSystemInfo>(new FileInfo(fullPath));
             if (Directory.Exists(fullPath))

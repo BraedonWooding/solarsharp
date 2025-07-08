@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.IO.Abstractions;
+using System.IO.Abstractions.TestingHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -11,33 +13,38 @@ using SolarSharp.Interpreter.Security;
 namespace SolarSharp.CLI.Tests.Services
 {
     /// <summary>
-    /// Unit tests for the SecurityConfigurationFactory class.
+    /// Unit tests for the SecurityPolicyFactory class.
     /// Tests various security levels and manifest loading scenarios.
     /// </summary>
     [TestFixture]
-    [Category("UnitTest")]
+    [Category("CLI.Unit")]
     [Category("CLI")]
-    public class SecurityConfigurationFactoryTests
+    public class SecurityPolicyFactoryTests
     {
-        private SecurityConfigurationFactory _factory;
-        private Mock<ILogger<SecurityConfigurationFactory>> _loggerMock;
+        private SecurityPolicyFactory _factory;
+        private Mock<ILogger<SecurityPolicyFactory>> _loggerMock;
+        private IFileSystem _fileSystem;
         private string _tempDir;
 
         [SetUp]
         public void SetUp()
         {
-            _loggerMock = new Mock<ILogger<SecurityConfigurationFactory>>();
-            _factory = new SecurityConfigurationFactory(_loggerMock.Object);
-            _tempDir = Path.Combine(Path.GetTempPath(), $"solarsharp_cli_test_{Guid.NewGuid()}");
-            Directory.CreateDirectory(_tempDir);
+            _loggerMock = new Mock<ILogger<SecurityPolicyFactory>>();
+            _factory = new SecurityPolicyFactory(_loggerMock.Object);
+            _fileSystem = new MockFileSystem();
+            _tempDir = _fileSystem.Path.Combine(
+                _fileSystem.Path.GetTempPath(),
+                $"solarsharp_cli_test_{Guid.NewGuid()}"
+            );
+            _fileSystem.Directory.CreateDirectory(_tempDir);
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (Directory.Exists(_tempDir))
+            if (_fileSystem.Directory.Exists(_tempDir))
             {
-                Directory.Delete(_tempDir, true);
+                _fileSystem.Directory.Delete(_tempDir, true);
             }
         }
 
@@ -45,11 +52,10 @@ namespace SolarSharp.CLI.Tests.Services
         public void Create_WithNullLogger_ThrowsArgumentNullException()
         {
             // Arrange & Act
-            Action act = () => new SecurityConfigurationFactory(null);
+            Action act = () => new SecurityPolicyFactory(null);
 
             // Assert
-            act.Should().Throw<ArgumentNullException>()
-                .WithParameterName("logger");
+            act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }
 
         [Test]
@@ -74,7 +80,7 @@ namespace SolarSharp.CLI.Tests.Services
 
             // Assert
             config.Should().NotBeNull();
-            // Desktop uses default SecurityConfiguration values
+            // Desktop uses default SecurityPolicy values
             config.Execution.TimeoutMs.Should().BeGreaterThan(0);
             config.FileSystem.DefaultFileAccess.Should().NotBe(FileAccess.None);
         }
@@ -104,16 +110,19 @@ namespace SolarSharp.CLI.Tests.Services
             config.FileSystem.DefaultDirectoryAccess.Should().Be(DirectoryAccess.Full);
             config.Execution.TimeoutMs.Should().Be(-1); // No timeout
             config.Execution.MaxMemoryMB.Should().Be(-1); // No memory limit
-            
+
             // Verify warning was logged
             _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("dangerous")),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-                Times.Once);
+                x =>
+                    x.Log(
+                        LogLevel.Warning,
+                        It.IsAny<EventId>(),
+                        It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("dangerous")),
+                        It.IsAny<Exception>(),
+                        It.IsAny<Func<It.IsAnyType, Exception, string>>()
+                    ),
+                Times.Once
+            );
         }
 
         [Test]
@@ -124,24 +133,30 @@ namespace SolarSharp.CLI.Tests.Services
 
             // Assert
             config.Should().NotBeNull();
-            
+
             // Verify warning was logged
             _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Unknown security level")),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-                Times.Once);
+                x =>
+                    x.Log(
+                        LogLevel.Warning,
+                        It.IsAny<EventId>(),
+                        It.Is<It.IsAnyType>(
+                            (v, t) => v.ToString().Contains("Unknown security level")
+                        ),
+                        It.IsAny<Exception>(),
+                        It.IsAny<Func<It.IsAnyType, Exception, string>>()
+                    ),
+                Times.Once
+            );
         }
 
         [Test]
         public void Create_WithValidManifest_LoadsConfigurationFromManifest()
         {
             // Arrange
-            var manifestPath = Path.Combine(_tempDir, "test.manifest.json");
-            var manifestContent = @"{
+            var manifestPath = _fileSystem.Path.Combine(_tempDir, "test.manifest.json");
+            var manifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""allowedModules"": [""basic"", ""string"", ""table""],
@@ -150,7 +165,7 @@ namespace SolarSharp.CLI.Tests.Services
                     ""maxMemoryMB"": 50
                 }
             }";
-            File.WriteAllText(manifestPath, manifestContent);
+            _fileSystem.File.WriteAllText(manifestPath, manifestContent);
 
             // Act
             var config = _factory.Create("desktop", manifestPath);
@@ -170,13 +185,14 @@ namespace SolarSharp.CLI.Tests.Services
         public void Create_WithNonExistentManifest_ThrowsInvalidOperationException()
         {
             // Arrange
-            var nonExistentPath = Path.Combine(_tempDir, "nonexistent.json");
+            var nonExistentPath = _fileSystem.Path.Combine(_tempDir, "nonexistent.json");
 
             // Act
             Action act = () => _factory.Create("desktop", nonExistentPath);
 
             // Assert
-            act.Should().Throw<InvalidOperationException>()
+            act.Should()
+                .Throw<InvalidOperationException>()
                 .WithMessage("Failed to load manifest:*")
                 .WithInnerException<FileNotFoundException>();
         }
@@ -185,14 +201,15 @@ namespace SolarSharp.CLI.Tests.Services
         public void Create_WithInvalidManifestJson_ThrowsInvalidOperationException()
         {
             // Arrange
-            var manifestPath = Path.Combine(_tempDir, "invalid.json");
-            File.WriteAllText(manifestPath, "{ invalid json }");
+            var manifestPath = _fileSystem.Path.Combine(_tempDir, "invalid.json");
+            _fileSystem.File.WriteAllText(manifestPath, "{ invalid json }");
 
             // Act
             Action act = () => _factory.Create("desktop", manifestPath);
 
             // Assert
-            act.Should().Throw<InvalidOperationException>()
+            act.Should()
+                .Throw<InvalidOperationException>()
                 .WithMessage("Failed to load manifest:*");
         }
 
@@ -200,14 +217,15 @@ namespace SolarSharp.CLI.Tests.Services
         public void Create_WithManifestContainingUnknownModule_LogsWarning()
         {
             // Arrange
-            var manifestPath = Path.Combine(_tempDir, "unknown_module.json");
-            var manifestContent = @"{
+            var manifestPath = _fileSystem.Path.Combine(_tempDir, "unknown_module.json");
+            var manifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""allowedModules"": [""basic"", ""unknown_module""]
                 }
             }";
-            File.WriteAllText(manifestPath, manifestContent);
+            _fileSystem.File.WriteAllText(manifestPath, manifestContent);
 
             // Act
             var config = _factory.Create("desktop", manifestPath);
@@ -215,30 +233,34 @@ namespace SolarSharp.CLI.Tests.Services
             // Assert
             config.Should().NotBeNull();
             config.AllowedModules.Should().HaveFlag(CoreModules.Basic);
-            
+
             // Verify warning was logged for unknown module
             _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Unknown module name")),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-                Times.Once);
+                x =>
+                    x.Log(
+                        LogLevel.Warning,
+                        It.IsAny<EventId>(),
+                        It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Unknown module name")),
+                        It.IsAny<Exception>(),
+                        It.IsAny<Func<It.IsAnyType, Exception, string>>()
+                    ),
+                Times.Once
+            );
         }
 
         [Test]
         public void Create_WithManifestContainingFileWriteCapability_EnablesFileWrite()
         {
             // Arrange
-            var manifestPath = Path.Combine(_tempDir, "filewrite.json");
-            var manifestContent = @"{
+            var manifestPath = _fileSystem.Path.Combine(_tempDir, "filewrite.json");
+            var manifestContent =
+                @"{
                 ""version"": ""1.0"",
                 ""policy"": {
                     ""capabilities"": [""FileWrite""]
                 }
             }";
-            File.WriteAllText(manifestPath, manifestContent);
+            _fileSystem.File.WriteAllText(manifestPath, manifestContent);
 
             // Act
             var config = _factory.Create("isolated", manifestPath);
@@ -259,7 +281,7 @@ namespace SolarSharp.CLI.Tests.Services
             config1.Should().NotBeNull();
             config2.Should().NotBeNull();
             config3.Should().NotBeNull();
-            
+
             config1.Execution.TimeoutMs.Should().Be(5000); // Isolated timeout
             config3.AllowedModules.Should().HaveFlag(CoreModules.OS); // Automation includes OS
         }

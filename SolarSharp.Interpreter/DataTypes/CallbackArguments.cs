@@ -12,8 +12,7 @@ namespace SolarSharp.Interpreter.DataTypes
     public class CallbackArguments
     {
         private readonly IList<DynValue> m_Args;
-        private readonly int m_Count;
-        private readonly bool m_LastIsTuple = false;
+        private readonly bool m_LastIsTuple;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CallbackArguments" /> class.
@@ -30,17 +29,17 @@ namespace SolarSharp.Interpreter.DataTypes
 
                 if (last.Type == DataType.Tuple)
                 {
-                    m_Count = last.Tuple.Length - 1 + m_Args.Count;
+                    Count = last.Tuple.Length - 1 + m_Args.Count;
                     m_LastIsTuple = true;
                 }
                 else
                 {
-                    m_Count = last.Type == DataType.Void ? m_Args.Count - 1 : m_Args.Count;
+                    Count = last.Type == DataType.Void ? m_Args.Count - 1 : m_Args.Count;
                 }
             }
             else
             {
-                m_Count = 0;
+                Count = 0;
             }
 
             IsMethodCall = isMethodCall;
@@ -49,26 +48,19 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Gets the count of arguments
         /// </summary>
-        public int Count
-        {
-            get { return m_Count; }
-        }
+        public int Count { get; }
 
         /// <summary>
         /// Gets or sets a value indicating whether this is a method call.
         /// </summary>
         public bool IsMethodCall { get; private set; }
 
-
         /// <summary>
-        /// Gets the <see cref="DynValue"/> at the specified index, or Void if not found 
+        /// Gets the <see cref="DynValue"/> at the specified index, or Void if not found
         /// </summary>
         public DynValue this[int index]
         {
-            get
-            {
-                return RawGet(index, true) ?? DynValue.Void;
-            }
+            get { return RawGet(index, true) ?? DynValue.Void; }
         }
 
         /// <summary>
@@ -81,10 +73,13 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             DynValue v;
 
-            if (index >= m_Count)
+            if (index >= Count)
                 return null;
 
-            v = !m_LastIsTuple || index < m_Args.Count - 1 ? m_Args[index] : m_Args[m_Args.Count - 1].Tuple[index - (m_Args.Count - 1)];
+            v =
+                !m_LastIsTuple || index < m_Args.Count - 1
+                    ? m_Args[index]
+                    : m_Args[m_Args.Count - 1].Tuple[index - (m_Args.Count - 1)];
 
             if (v.Type == DataType.Tuple)
             {
@@ -99,7 +94,6 @@ namespace SolarSharp.Interpreter.DataTypes
             return v;
         }
 
-
         /// <summary>
         /// Converts the arguments to an array
         /// </summary>
@@ -108,14 +102,15 @@ namespace SolarSharp.Interpreter.DataTypes
         public DynValue[] GetArray(int skip = 0)
         {
             // TODO: Get rid of this class... or allow coroutine resume to take in slices
-            if (!m_LastIsTuple && skip == 0) return m_Args.ToArray();
+            if (!m_LastIsTuple && skip == 0)
+                return m_Args.ToArray();
 
-            if (skip >= m_Count)
+            if (skip >= Count)
                 return new DynValue[0];
 
-            DynValue[] vals = new DynValue[m_Count - skip];
+            var vals = new DynValue[Count - skip];
 
-            for (int i = skip; i < m_Count; i++)
+            for (var i = skip; i < Count; i++)
                 vals[i - skip] = this[i];
 
             return vals;
@@ -132,7 +127,15 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public DynValue AsType(int argNum, string funcName, DataType type, bool allowNil = false)
         {
-            return this[argNum].CheckType(funcName, type, argNum, allowNil ? TypeValidationFlags.AllowNil | TypeValidationFlags.AutoConvert : TypeValidationFlags.AutoConvert);
+            return this[argNum]
+                .CheckType(
+                    funcName,
+                    type,
+                    argNum,
+                    allowNil
+                        ? TypeValidationFlags.AllowNil | TypeValidationFlags.AutoConvert
+                        : TypeValidationFlags.AutoConvert
+                );
         }
 
         /// <summary>
@@ -146,7 +149,12 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public T AsUserData<T>(int argNum, string funcName, bool allowNil = false)
         {
-            return this[argNum].CheckUserDataType<T>(funcName, argNum, allowNil ? TypeValidationFlags.AllowNil : TypeValidationFlags.None);
+            return this[argNum]
+                .CheckUserDataType<T>(
+                    funcName,
+                    argNum,
+                    allowNil ? TypeValidationFlags.AllowNil : TypeValidationFlags.None
+                );
         }
 
         /// <summary>
@@ -157,8 +165,8 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public int AsInt(int argNum, string funcName)
         {
-            DynValue v = AsType(argNum, funcName, DataType.Number, false);
-            double d = v.Number;
+            var v = AsType(argNum, funcName, DataType.Number);
+            var d = v.Number;
             return (int)d;
         }
 
@@ -170,11 +178,10 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public long AsLong(int argNum, string funcName)
         {
-            DynValue v = AsType(argNum, funcName, DataType.Number, false);
-            double d = v.Number;
+            var v = AsType(argNum, funcName, DataType.Number);
+            var d = v.Number;
             return (long)d;
         }
-
 
         /// <summary>
         /// Gets the specified argument as a string, calling the __tostring metamethod if needed, in a NON
@@ -185,24 +192,31 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="funcName">Name of the function.</param>
         /// <returns></returns>
         /// <exception cref="ScriptRuntimeException">'tostring' must return a string to '{0}'</exception>
-        public string AsStringUsingMeta(ScriptExecutionContext executionContext, int argNum, string funcName)
+        public string AsStringUsingMeta(
+            ScriptExecutionContext executionContext,
+            int argNum,
+            string funcName
+        )
         {
-            if (this[argNum].Type == DataType.Table && this[argNum].Table.MetaTable != null &&
-                this[argNum].Table.MetaTable.Get("__tostring") is var method && method.IsNotNil())
+            if (
+                this[argNum].Type == DataType.Table
+                && this[argNum].Table.MetaTable != null
+                && this[argNum].Table.MetaTable.Get("__tostring") is var method
+                && method.IsNotNil()
+            )
             {
                 var v = executionContext.GetScript().Call(method, this[argNum]);
 
                 if (v.Type != DataType.String)
-                    throw new ScriptRuntimeException("'tostring' must return a string to '{0}'", funcName);
+                    throw new ScriptRuntimeException(
+                        "'tostring' must return a string to '{0}'",
+                        funcName
+                    );
 
                 return v.ToPrintString();
             }
-            else
-            {
-                return this[argNum].ToPrintString();
-            }
+            return this[argNum].ToPrintString();
         }
-
 
         /// <summary>
         /// Returns a copy of CallbackArguments where the first ("self") argument is skipped if this was a method call,
@@ -213,10 +227,10 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             if (IsMethodCall)
             {
-                Slice<DynValue> slice = new(m_Args, 1, m_Args.Count - 1, false);
+                var slice = new Slice<DynValue>(m_Args, 1, m_Args.Count - 1, false);
                 return new CallbackArguments(slice, false);
             }
-            else return this;
+            return this;
         }
     }
 }

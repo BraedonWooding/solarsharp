@@ -1,4 +1,5 @@
 using System;
+using System.IO.Abstractions;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -46,7 +47,7 @@ namespace SolarSharp.Interpreter.Security
                 FilePermissions.Read => "read",
                 FilePermissions.ReadWrite => "readwrite",
                 FilePermissions.SandboxedReadWrite => "sandboxedreadwrite",
-                _ => "sandboxedreadwrite"
+                _ => "sandboxedreadwrite",
             };
         }
 
@@ -60,7 +61,7 @@ namespace SolarSharp.Interpreter.Security
                 DirectoryPermissions.None => "none",
                 DirectoryPermissions.List => "list",
                 DirectoryPermissions.ListAndCreateFiles => "listandcreatefiles",
-                _ => "listandcreatefiles"
+                _ => "listandcreatefiles",
             };
         }
 
@@ -75,22 +76,35 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Gets all files matching a wildcard pattern in a directory
         /// </summary>
-        public static string[] GetMatchingFiles(this string pattern, string baseDirectory)
+        public static string[] GetMatchingFiles(
+            this string pattern,
+            string baseDirectory,
+            IFileSystem fileSystem = null
+        )
         {
-            return GlobMatcher.GetMatchingFiles(pattern, baseDirectory);
+            return GlobMatcher.GetMatchingFiles(pattern, baseDirectory, fileSystem);
         }
 
         /// <summary>
         /// Validates that file access is compatible with directory access
         /// </summary>
-        public static bool IsCompatibleWith(this FilePermissions fileAccess, DirectoryPermissions directoryPermissions)
+        public static bool IsCompatibleWith(
+            this FilePermissions fileAccess,
+            DirectoryPermissions directoryPermissions
+        )
         {
             // Can't access files in directories with no access
             if (directoryPermissions == DirectoryPermissions.None)
                 return fileAccess == FilePermissions.None;
 
             // Can't create files in directories without create permissions
-            if (fileAccess == FilePermissions.SandboxedReadWrite && !PermissionChecks.HasDirectoryPermission(DirectoryPermissions.ListAndCreateFiles, directoryPermissions))
+            if (
+                fileAccess == FilePermissions.SandboxedReadWrite
+                && !PermissionChecks.HasDirectoryPermission(
+                    DirectoryPermissions.ListAndCreateFiles,
+                    directoryPermissions
+                )
+            )
                 return false;
 
             return true;

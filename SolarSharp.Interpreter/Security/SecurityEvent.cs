@@ -61,7 +61,8 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// How to handle this security violation
         /// </summary>
-        public SecurityViolationHandling ViolationHandling { get; set; } = SecurityViolationHandling.Deny;
+        public SecurityViolationHandling ViolationHandling { get; set; } =
+            SecurityViolationHandling.Deny;
     }
 
     /// <summary>
@@ -84,7 +85,7 @@ namespace SolarSharp.Interpreter.Security
         /// Event raised when a security event occurs
         /// </summary>
         public event EventHandler<SecurityEventArgs> SecurityEventOccurred;
-        
+
         /// <summary>
         /// Raised when any security violation occurs
         /// </summary>
@@ -118,32 +119,43 @@ namespace SolarSharp.Interpreter.Security
             SecurityEventOccurred?.Invoke(this, new SecurityEventArgs(evt));
             SecurityViolation?.Invoke(this, new SecurityEventArgs(evt));
         }
-        
+
         /// <summary>
         /// Raises a resource access event
         /// </summary>
         public void RaiseResourceAccess(string resourceType, long amount, string operation = null)
         {
-            ResourceAccess?.Invoke(this, new ResourceAccessEventArgs
-            {
-                ResourceType = resourceType,
-                Amount = amount,
-                Operation = operation
-            });
+            ResourceAccess?.Invoke(
+                this,
+                new ResourceAccessEventArgs
+                {
+                    ResourceType = resourceType,
+                    Amount = amount,
+                    Operation = operation,
+                }
+            );
         }
 
         /// <summary>
         /// Raises a file access event
         /// </summary>
-        public void RaiseFileAccess(string path, FileAccessType accessType, bool allowed, bool isDirectory = false)
+        public void RaiseFileAccess(
+            string path,
+            FileAccessType accessType,
+            bool allowed,
+            bool isDirectory = false
+        )
         {
-            FileAccess?.Invoke(this, new FileAccessEventArgs
-            {
-                Path = path,
-                AccessType = accessType,
-                Allowed = allowed,
-                IsDirectory = isDirectory
-            });
+            FileAccess?.Invoke(
+                this,
+                new FileAccessEventArgs
+                {
+                    Path = path,
+                    AccessType = accessType,
+                    Allowed = allowed,
+                    IsDirectory = isDirectory,
+                }
+            );
         }
 
         /// <summary>
@@ -151,12 +163,15 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public void RaiseNetworkAccess(string host, int port, bool allowed)
         {
-            NetworkAccess?.Invoke(this, new NetworkAccessEventArgs
-            {
-                Host = host,
-                Port = port,
-                Allowed = allowed
-            });
+            NetworkAccess?.Invoke(
+                this,
+                new NetworkAccessEventArgs
+                {
+                    Host = host,
+                    Port = port,
+                    Allowed = allowed,
+                }
+            );
         }
 
         /// <summary>
@@ -164,11 +179,10 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public void RaiseEnvironmentAccess(string variable, bool allowed)
         {
-            EnvironmentAccess?.Invoke(this, new EnvironmentAccessEventArgs
-            {
-                Variable = variable,
-                Allowed = allowed
-            });
+            EnvironmentAccess?.Invoke(
+                this,
+                new EnvironmentAccessEventArgs { Variable = variable, Allowed = allowed }
+            );
         }
     }
 
@@ -181,17 +195,27 @@ namespace SolarSharp.Interpreter.Security
         /// The security event
         /// </summary>
         public SecurityEvent Event { get; }
-        
+
         /// <summary>
         /// The type of security event (convenience property)
         /// </summary>
-        public SecurityEventType EventType => Event?.Type ?? SecurityEventType.PolicyViolation;
-        
+        public SecurityEventType EventType
+        {
+            get { return Event?.Type ?? SecurityEventType.PolicyViolation; }
+        }
+
         /// <summary>
         /// Details about the event (convenience property)
         /// </summary>
-        public string Details => Event?.Metadata?.ContainsKey("details") == true ? 
-            Event.Metadata["details"]?.ToString() : Event?.Operation;
+        public string Details
+        {
+            get
+            {
+                return Event?.Metadata?.ContainsKey("details") == true
+                    ? Event.Metadata["details"]?.ToString()
+                    : Event?.Operation;
+            }
+        }
 
         /// <summary>
         /// Creates new security event args
@@ -236,7 +260,7 @@ namespace SolarSharp.Interpreter.Security
         Execute,
         Delete,
         Create,
-        List
+        List,
     }
 
     /// <summary>
@@ -286,6 +310,6 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Terminate script execution immediately
         /// </summary>
-        Terminate
+        Terminate,
     }
 }

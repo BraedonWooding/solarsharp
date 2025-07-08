@@ -1,7 +1,9 @@
-﻿namespace SolarSharp.Interpreter.Tree
+﻿using SolarSharp.Interpreter.Execution.VM;
+
+namespace SolarSharp.Interpreter.Tree
 {
     internal interface IVariable
     {
-        void CompileAssignment(Execution.VM.ByteCode bc, int stackofs, int tupleidx);
+        void CompileAssignment(ByteCode bc, int stackofs, int tupleidx);
     }
 }

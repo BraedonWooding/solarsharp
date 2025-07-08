@@ -11,14 +11,16 @@ namespace SolarSharp.Interpreter.Interop
     /// </summary>
     public class CustomConvertersCollection
     {
-        private readonly Dictionary<Type, Func<DynValue, object>>[] m_Script2Clr = new Dictionary<Type, Func<DynValue, object>>[(int)LuaTypeExtensions.MaxConvertibleTypes + 1];
-        private readonly Dictionary<Type, Func<Script, object, DynValue>> m_Clr2Script = new();
-
-
+        private readonly Dictionary<Type, Func<DynValue, object>>[] m_Script2Clr = new Dictionary<
+            Type,
+            Func<DynValue, object>
+        >[(int)LuaTypeExtensions.MaxConvertibleTypes + 1];
+        private readonly Dictionary<Type, Func<Script, object, DynValue>> m_Clr2Script =
+            new Dictionary<Type, Func<Script, object, DynValue>>();
 
         internal CustomConvertersCollection()
         {
-            for (int i = 0; i < m_Script2Clr.Length; i++)
+            for (var i = 0; i < m_Script2Clr.Length; i++)
                 m_Script2Clr[i] = new Dictionary<Type, Func<DynValue, object>>();
         }
 
@@ -74,20 +76,22 @@ namespace SolarSharp.Interpreter.Interop
         //	return null;
         //}
 
-
-
         /// <summary>
         /// Sets a custom converter from a script data type to a CLR data type. Set null to remove a previous custom converter.
         /// </summary>
         /// <param name="scriptDataType">The script data type</param>
         /// <param name="clrDataType">The CLR data type.</param>
         /// <param name="converter">The converter, or null.</param>
-        public void SetScriptToClrCustomConversion(DataType scriptDataType, Type clrDataType, Func<DynValue, object> converter = null)
+        public void SetScriptToClrCustomConversion(
+            DataType scriptDataType,
+            Type clrDataType,
+            Func<DynValue, object> converter = null
+        )
         {
             if ((int)scriptDataType > m_Script2Clr.Length)
                 throw new ArgumentException("scriptDataType");
 
-            Dictionary<Type, Func<DynValue, object>> map = m_Script2Clr[(int)scriptDataType];
+            var map = m_Script2Clr[(int)scriptDataType];
 
             if (converter == null)
             {
@@ -106,12 +110,15 @@ namespace SolarSharp.Interpreter.Interop
         /// <param name="scriptDataType">The script data type</param>
         /// <param name="clrDataType">The CLR data type.</param>
         /// <returns>The converter function, or null if not found</returns>
-        public Func<DynValue, object> GetScriptToClrCustomConversion(DataType scriptDataType, Type clrDataType)
+        public Func<DynValue, object> GetScriptToClrCustomConversion(
+            DataType scriptDataType,
+            Type clrDataType
+        )
         {
             if ((int)scriptDataType > m_Script2Clr.Length)
                 return null;
 
-            Dictionary<Type, Func<DynValue, object>> map = m_Script2Clr[(int)scriptDataType];
+            var map = m_Script2Clr[(int)scriptDataType];
             return map.GetOrDefault(clrDataType);
         }
 
@@ -120,7 +127,10 @@ namespace SolarSharp.Interpreter.Interop
         /// </summary>
         /// <param name="clrDataType">The CLR data type.</param>
         /// <param name="converter">The converter, or null.</param>
-        public void SetClrToScriptCustomConversion(Type clrDataType, Func<Script, object, DynValue> converter = null)
+        public void SetClrToScriptCustomConversion(
+            Type clrDataType,
+            Func<Script, object, DynValue> converter = null
+        )
         {
             if (converter == null)
             {
@@ -143,7 +153,6 @@ namespace SolarSharp.Interpreter.Interop
             SetClrToScriptCustomConversion(typeof(T), (s, o) => converter(s, (T)o));
         }
 
-
         /// <summary>
         /// Gets a custom converter from a CLR data type, or null
         /// </summary>
@@ -158,8 +167,13 @@ namespace SolarSharp.Interpreter.Interop
         /// </summary>
         /// <param name="clrDataType">The CLR data type.</param>
         /// <param name="converter">The converter, or null.</param>
-        [Obsolete("This method is deprecated. Use the overloads accepting functions with a Script argument.")]
-        public void SetClrToScriptCustomConversion(Type clrDataType, Func<object, DynValue> converter = null)
+        [Obsolete(
+            "This method is deprecated. Use the overloads accepting functions with a Script argument."
+        )]
+        public void SetClrToScriptCustomConversion(
+            Type clrDataType,
+            Func<object, DynValue> converter = null
+        )
         {
             SetClrToScriptCustomConversion(clrDataType, (s, o) => converter(o));
         }
@@ -169,12 +183,13 @@ namespace SolarSharp.Interpreter.Interop
         /// </summary>
         /// <typeparam name="T">The CLR data type.</typeparam>
         /// <param name="converter">The converter, or null.</param>
-        [Obsolete("This method is deprecated. Use the overloads accepting functions with a Script argument.")]
+        [Obsolete(
+            "This method is deprecated. Use the overloads accepting functions with a Script argument."
+        )]
         public void SetClrToScriptCustomConversion<T>(Func<T, DynValue> converter = null)
         {
             SetClrToScriptCustomConversion(typeof(T), o => converter((T)o));
         }
-
 
         /// <summary>
         /// Removes all converters.
@@ -183,9 +198,8 @@ namespace SolarSharp.Interpreter.Interop
         {
             m_Clr2Script.Clear();
 
-            for (int i = 0; i < m_Script2Clr.Length; i++)
+            for (var i = 0; i < m_Script2Clr.Length; i++)
                 m_Script2Clr[i].Clear();
         }
-
     }
 }

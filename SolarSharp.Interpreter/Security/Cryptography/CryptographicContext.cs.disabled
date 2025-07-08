@@ -1,0 +1,249 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using CSharpFunctionalExtensions;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.X509;
+
+namespace SolarSharp.Interpreter.Security.Cryptography
+{
+    /// <summary>
+    /// Immutable cryptographic context representing a security domain.
+    /// Pure BouncyCastle implementation with no System.Security.Cryptography dependencies.
+    /// </summary>
+    public sealed record CryptographicContext(
+        X509Certificate Certificate,
+        AsymmetricKeyParameter PublicKey,
+        string PublicKeyHash,
+        string SubjectName,
+        ImmutableList<X509Certificate> CertificateChain,
+        Maybe<CertificateValidationResult> ValidationResult
+    )
+    {
+        /// <summary>
+        /// Create a cryptographic context from a certificate with chain validation.
+        /// Pure function with no side effects.
+        /// </summary>
+        /// <param name="certificate">BouncyCastle X509 certificate</param>
+        /// <param name="intermediateCertificates">Intermediate CA certificates</param>
+        /// <param name="trustedCAs">Trusted root CA certificates</param>
+        /// <returns>Success with cryptographic context, or Failure with error details</returns>
+        public static Result<CryptographicContext, CryptographicError> Create(
+            X509Certificate certificate,
+            IList<X509Certificate> intermediateCertificates,
+            IList<X509Certificate> trustedCAs)
+        {
+            return BouncyCastleCryptography.ExtractPublicKey(certificate)
+                .Bind(publicKey => 
+                    BouncyCastleCryptography.ComputePublicKeyHash(publicKey)
+                        .Map(publicKeyHash => new { publicKey, publicKeyHash }))
+                .Map(keys => 
+                {
+                    // Extract subject name from certificate
+                    var subjectName = certificate.SubjectDN.ToString();
+                    
+                    // Build certificate chain
+                    var chainList = new List<X509Certificate> { certificate };
+                    chainList.AddRange(intermediateCertificates);
+                    var certificateChain = chainList.ToImmutableList();
+                    
+                    // Perform chain validation if trusted CAs are provided
+                    var validationResult = trustedCAs.Count > 0
+                        ? CertificateChainValidator.ValidateChain(certificate, intermediateCertificates, trustedCAs)
+                            .Map(result => Maybe<CertificateValidationResult>.From(result))
+                            .GetValueOrDefault(Maybe<CertificateValidationResult>.None)
+                        : Maybe<CertificateValidationResult>.None;
+                    
+                    return new CryptographicContext(
+                        Certificate: certificate,
+                        PublicKey: keys.publicKey,
+                        PublicKeyHash: keys.publicKeyHash,
+                        SubjectName: subjectName,
+                        CertificateChain: certificateChain,
+                        ValidationResult: validationResult
+                    );
+                });
+        }
+
+        /// <summary>
+        /// Create a cryptographic context from certificate bytes.
+        /// Pure function with no side effects.
+        /// </summary>
+        /// <param name="certificateBytes">Certificate data in PEM or DER format</param>
+        /// <param name="intermediateCertificates">Intermediate CA certificates</param>
+        /// <param name="trustedCAs">Trusted root CA certificates</param>
+        /// <returns>Success with cryptographic context, or Failure with error details</returns>
+        public static Result<CryptographicContext, CryptographicError> FromBytes(
+            byte[] certificateBytes,
+            IList<X509Certificate> intermediateCertificates,
+            IList<X509Certificate> trustedCAs)
+        {
+            return BouncyCastleCryptography.ParseCertificate(certificateBytes)
+                .Bind(certificate => Create(certificate, intermediateCertificates, trustedCAs));
+        }
+
+        /// <summary>
+        /// Create a minimal cryptographic context without chain validation.
+        /// Pure function with no side effects.
+        /// </summary>
+        /// <param name="certificate">BouncyCastle X509 certificate</param>
+        /// <returns>Success with cryptographic context, or Failure with error details</returns>
+        public static Result<CryptographicContext, CryptographicError> CreateMinimal(
+            X509Certificate certificate)
+        {
+            return Create(certificate, ImmutableList<X509Certificate>.Empty, ImmutableList<X509Certificate>.Empty);
+        }
+
+        /// <summary>
+        /// Verify a signature against this cryptographic context.
+        /// Pure function with no side effects.
+        /// </summary>
+        /// <param name="data">The data that was signed</param>
+        /// <param name="signature">The signature to verify</param>
+        /// <returns>Success with verification result, or Failure with error details</returns>
+        public Result<bool, CryptographicError> VerifySignature(byte[] data, byte[] signature)
+        {
+            return BouncyCastleCryptography.VerifySignature(data, signature, PublicKey);
+        }
+
+        /// <summary>
+        /// Check if this cryptographic context is trusted based on chain validation.
+        /// Pure function with no side effects.
+        /// </summary>
+        public bool IsTrusted => ValidationResult.HasValue && ValidationResult.Value.IsTrusted;
+
+        /// <summary>
+        /// Check if this cryptographic context has a valid certificate chain.
+        /// Pure function with no side effects.
+        /// </summary>
+        public bool IsChainValid => ValidationResult.HasValue && ValidationResult.Value.IsValid;
+
+        /// <summary>
+        /// Get the root CA certificate if available from validation.
+        /// Pure function with no side effects.
+        /// </summary>
+        public Maybe<X509Certificate> GetRootCA()
+        {
+            return ValidationResult.HasValue 
+                ? Maybe<X509Certificate>.From(ValidationResult.Value.RootCACertificate)
+                : CertificateChainValidator.ExtractRootCA(Certificate, CertificateChain.Skip(1).ToList());
+        }
+
+        /// <summary>
+        /// Get certificate validity period information.
+        /// Pure function with no side effects.
+        /// </summary>
+        public CertificateValidityPeriod GetValidityPeriod()
+        {
+            return new CertificateValidityPeriod(
+                NotBefore: Certificate.NotBefore,
+                NotAfter: Certificate.NotAfter,
+                IsCurrentlyValid: DateTime.UtcNow >= Certificate.NotBefore && DateTime.UtcNow <= Certificate.NotAfter
+            );
+        }
+
+        /// <summary>
+        /// Check if this context matches a given public key hash.
+        /// Pure function with no side effects.
+        /// </summary>
+        /// <param name="publicKeyHash">Hex-encoded public key hash to match</param>
+        /// <returns>True if the public key hashes match</returns>
+        public bool MatchesPublicKeyHash(string publicKeyHash)
+        {
+            return string.Equals(PublicKeyHash, publicKeyHash, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Check if this context matches a given subject name.
+        /// Pure function with no side effects.
+        /// </summary>
+        /// <param name="subjectName">Subject name to match</param>
+        /// <returns>True if the subject names match</returns>
+        public bool MatchesSubjectName(string subjectName)
+        {
+            return string.Equals(SubjectName, subjectName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Get a display-friendly representation of this cryptographic context.
+        /// Pure function with no side effects.
+        /// </summary>
+        public string GetDisplayName()
+        {
+            var validity = GetValidityPeriod();
+            var statusIndicator = IsTrusted ? "✓" : (IsChainValid ? "?" : "✗");
+            var validityIndicator = validity.IsCurrentlyValid ? "Valid" : "Expired";
+            
+            return $"{statusIndicator} {SubjectName} ({validityIndicator})";
+        }
+
+        /// <summary>
+        /// Create a security audit entry for this cryptographic context.
+        /// Pure function with no side effects.
+        /// </summary>
+        public CryptographicAuditEntry CreateAuditEntry(string operation, bool success, string details = null)
+        {
+            return new CryptographicAuditEntry(
+                Timestamp: DateTime.UtcNow,
+                Operation: operation,
+                Success: success,
+                SubjectName: SubjectName,
+                PublicKeyHash: PublicKeyHash,
+                IsTrusted: IsTrusted,
+                Details: details ?? string.Empty
+            );
+        }
+    }
+
+    /// <summary>
+    /// Immutable certificate validity period information.
+    /// </summary>
+    public sealed record CertificateValidityPeriod(
+        DateTime NotBefore,
+        DateTime NotAfter,
+        bool IsCurrentlyValid
+    )
+    {
+        /// <summary>
+        /// Get the remaining validity duration from current time.
+        /// </summary>
+        public TimeSpan GetRemainingValidity()
+        {
+            var now = DateTime.UtcNow;
+            return now < NotAfter ? NotAfter - now : TimeSpan.Zero;
+        }
+
+        /// <summary>
+        /// Check if the certificate will be valid at a specific time.
+        /// </summary>
+        public bool IsValidAt(DateTime time)
+        {
+            return time >= NotBefore && time <= NotAfter;
+        }
+    }
+
+    /// <summary>
+    /// Immutable audit entry for cryptographic operations.
+    /// </summary>
+    public sealed record CryptographicAuditEntry(
+        DateTime Timestamp,
+        string Operation,
+        bool Success,
+        string SubjectName,
+        string PublicKeyHash,
+        bool IsTrusted,
+        string Details
+    )
+    {
+        /// <summary>
+        /// Create a formatted log message for this audit entry.
+        /// </summary>
+        public string ToLogMessage()
+        {
+            var status = Success ? "SUCCESS" : "FAILURE";
+            var trustLevel = IsTrusted ? "TRUSTED" : "UNTRUSTED";
+            
+            return $"[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] {Operation} {status} - {SubjectName} ({trustLevel}) - PKH:{PublicKeyHash[..8]}... {Details}";
+        }
+    }
+}

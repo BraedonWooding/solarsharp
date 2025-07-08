@@ -79,15 +79,5 @@ namespace SolarSharp.Interpreter.Security
         /// Safe computation only
         /// </summary>
         SafeCompute = None,
-
-        /// <summary>
-        /// Trusted script capabilities
-        /// </summary>
-        TrustedScript = FileRead | FileWrite | EnvironmentAccess,
-
-        /// <summary>
-        /// Administrative script capabilities
-        /// </summary>
-        AdminScript = ProcessExecution | NetworkAccess | SystemInformation
     }
 }

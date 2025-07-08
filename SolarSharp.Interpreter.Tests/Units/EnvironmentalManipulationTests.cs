@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Security.Operations;
 
 namespace SolarSharp.Interpreter.Tests.Units
 {
@@ -16,8 +18,8 @@ namespace SolarSharp.Interpreter.Tests.Units
     ///     compromise script isolation or integrity.
     /// </summary>
     [TestFixture]
-    [Category("SecurityTest")]
-    [Category("IntegrationTest")]
+    [Category("Security.General")]
+    [Category("Security.Integration")]
     public class EnvironmentalManipulationTests
     {
         /// <summary>
@@ -41,7 +43,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         [TearDown]
         public void Cleanup()
         {
-            if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, true);
+            if (Directory.Exists(_tempDir))
+                Directory.Delete(_tempDir, true);
         }
 
         /// <summary>
@@ -64,124 +67,152 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestGlobalStateCorruption()
         {
             // Test corrupting global state to affect subsequent scripts
-#if DEBUG || VERBOSE_SECURITY_TESTS
-            TestContext.Out.WriteLine("Testing global state corruption attack");
-#endif
 
-            var config = SecurityConfiguration.Isolated();
+            var basePolicySet = Examples.IsolatedBasePolicySet;
+            var configuredBasePolicySetResult = basePolicySet.ApplyToAll(policy =>
+                policy with
+                {
+                    AllowExecution = true,
+                }
+            );
+            Assert.That(
+                configuredBasePolicySetResult.IsSuccess,
+                Is.True,
+                configuredBasePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {configuredBasePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var configuredBasePolicySet = configuredBasePolicySetResult.Value;
 
             // First script - the attacker
-            var attackerScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var attackerScript = new Script(configuredBasePolicySet);
 
             try
             {
                 // Attacker tries to corrupt global state
-                attackerScript.DoString(@"
-                    -- Try to corrupt global Lua environment
-                    _G.compromised = true
-                    _G.original_print = print
-                    _G.original_type = type
-                    _G.original_pairs = pairs
-                    
-                    -- Try to replace core functions
-                    function _G.print(...)
-                        _G.original_print('COMPROMISED:', ...)
-                    end
-                    
-                    function _G.type(obj)
-                        if obj == nil then
-                            return 'compromised'
+                attackerScript.DoString(
+                    @"
+                    -- Try to corrupt global Lua environment (if _G is available)
+                    if _G then
+                        _G.compromised = true
+                        
+                        -- Try to store original functions (if available)
+                        if print then
+                            _G.original_print = print
+                            -- Try to replace core functions
+                            function _G.print(...)
+                                _G.original_print('COMPROMISED:', ...)
+                            end
                         end
-                        return _G.original_type(obj)
+                        
+                        if type then
+                            _G.original_type = type
+                            function _G.type(obj)
+                                if obj == nil then
+                                    return 'compromised'
+                                end
+                                return _G.original_type(obj)
+                            end
+                        end
+                        
+                        if pairs then
+                            _G.original_pairs = pairs
+                        end
+                        
+                        -- Try to poison the global environment
+                        _G.malicious_payload = function()
+                            return 'GLOBAL_STATE_CORRUPTED'
+                        end
+                    else
+                        -- Try direct global assignment if _G is not available
+                        compromised = true
+                        malicious_payload = function()
+                            return 'GLOBAL_STATE_CORRUPTED'
+                        end
                     end
                     
-                    -- Try to poison the global environment
-                    _G.malicious_payload = function()
-                        return 'GLOBAL_STATE_CORRUPTED'
-                    end
-                    
-                    -- Try to modify package system
-                    if package then
+                    -- Try to modify package system (if available)
+                    if package and package.loaded then
                         package.loaded['malicious'] = {
                             attack = function() return 'PACKAGE_COMPROMISED' end
                         }
                     end
                     
                     return 'attacker_executed'
-                ");
-
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine("Attacker script executed");
-#endif
+                "
+                );
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Attacker script blocked: {ex.Message}");
-#endif
+                // Attacker script blocked by security policy
             }
 
             // Second script - the victim
-            var victimScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var victimScript = new Script(configuredBasePolicySet);
 
             try
             {
-                var result = victimScript.DoString(@"
+                var result = victimScript.DoString(
+                    @"
                     local corruption_detected = {}
                     
                     -- Check for global state corruption
-                    if _G.compromised then
-                        corruption_detected[#corruption_detected + 1] = 'global_compromised'
+                    if _G then
+                        if _G.compromised then
+                            corruption_detected[#corruption_detected + 1] = 'global_compromised'
+                        end
+                        
+                        if _G.malicious_payload then
+                            corruption_detected[#corruption_detected + 1] = 'malicious_payload_found'
+                        end
+                        
+                        -- Test if core functions are compromised (if type function is available)
+                        if type then
+                            local nil_type = type(nil)
+                            if nil_type == 'compromised' then
+                                corruption_detected[#corruption_detected + 1] = 'type_function_corrupted'
+                            end
+                        end
+                    else
+                        -- Check direct global variables if _G is not available
+                        if compromised then
+                            corruption_detected[#corruption_detected + 1] = 'global_compromised'
+                        end
+                        
+                        if malicious_payload then
+                            corruption_detected[#corruption_detected + 1] = 'malicious_payload_found'
+                        end
                     end
                     
-                    if _G.malicious_payload then
-                        corruption_detected[#corruption_detected + 1] = 'malicious_payload_found'
-                    end
-                    
-                    -- Test if core functions are compromised
-                    local nil_type = type(nil)
-                    if nil_type == 'compromised' then
-                        corruption_detected[#corruption_detected + 1] = 'type_function_corrupted'
-                    end
-                    
-                    -- Check package system
+                    -- Check package system (if available)
                     if package and package.loaded and package.loaded['malicious'] then
                         corruption_detected[#corruption_detected + 1] = 'package_system_corrupted'
                     end
                     
-                    -- Test print function behavior
+                    -- Test print function behaviour
                     local print_test = 'normal'
                     -- We can't easily test print output, so assume it's working
                     
-                    return table.concat(corruption_detected, ',')
-                ");
-
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Victim script result: '{result.String}'");
-#endif
+                    -- Return a simple string instead of using table.concat which may not be available
+                    local result = ''
+                    for i = 1, #corruption_detected do
+                        if i > 1 then result = result .. ',' end
+                        result = result .. corruption_detected[i]
+                    end
+                    return result
+                "
+                );
 
                 if (!string.IsNullOrEmpty(result.String))
                 {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                    TestContext.Out.WriteLine("WARNING: Global state corruption detected between scripts");
-                    TestContext.Out.WriteLine("Scripts are not properly isolated from each other");
+                    // WARNING: Global state corruption detected between scripts
+                }
 
-                    var corruptions = result.String.Split(',');
-                    foreach (var corruption in corruptions) TestContext.Out.WriteLine($"  - {corruption}");
-#endif
-                }
-                else
-                {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                    TestContext.Out.WriteLine("Global state isolation working correctly");
-#endif
-                }
+                // Global state isolation working correctly
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Victim script blocked: {ex.Message}");
-#endif
+                // Victim script blocked by security policy
             }
         }
 
@@ -205,117 +236,138 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestScriptGlobalLeakage()
         {
             // Test if globals from one script leak to another
-#if DEBUG || VERBOSE_SECURITY_TESTS
-            TestContext.Out.WriteLine("Testing script global leakage");
-#endif
 
-            var config = SecurityConfiguration.Isolated();
+            var basePolicySet = Examples.IsolatedBasePolicySet;
+            var configuredBasePolicySetResult = basePolicySet.ApplyToAll(policy =>
+                policy with
+                {
+                    AllowExecution = true,
+                }
+            );
+            Assert.That(
+                configuredBasePolicySetResult.IsSuccess,
+                Is.True,
+                configuredBasePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {configuredBasePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var configuredBasePolicySet = configuredBasePolicySetResult.Value;
 
-            var script1 = new Script(config.AllowRunString().AllowInternalDynamicCode());
-            var script2 = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var script1 = new Script(configuredBasePolicySet);
+            var script2 = new Script(configuredBasePolicySet);
 
             var secretValue = "SECRET_" + Guid.NewGuid();
 
             try
             {
                 // Script 1 sets a secret global
-                script1.DoString($@"
-                    _G.secret_data = '{secretValue}'
-                    _G.script1_marker = 'SCRIPT1_EXECUTED'
-                    
-                    -- Try to persist data in various ways (if functions are available)
-                    if rawset then
-                        rawset(_G, 'raw_secret', '{secretValue}')
-                    end
-                    
-                    -- Try to hide in metatable (if functions are available)
-                    if getmetatable and setmetatable then
-                        local mt = getmetatable(_G) or {{}}
-                        mt.hidden_secret = '{secretValue}'
-                        setmetatable(_G, mt)
+                script1.DoString(
+                    $@"
+                    -- Try to set secret data (if _G is available)
+                    if _G then
+                        _G.secret_data = '{secretValue}'
+                        _G.script1_marker = 'SCRIPT1_EXECUTED'
+                        
+                        -- Try to persist data in various ways (if functions are available)
+                        if rawset then
+                            rawset(_G, 'raw_secret', '{secretValue}')
+                        end
+                        
+                        -- Try to hide in metatable (if functions are available)
+                        if getmetatable and setmetatable then
+                            local mt = getmetatable(_G) or {{}}
+                            mt.hidden_secret = '{secretValue}'
+                            setmetatable(_G, mt)
+                        end
+                    else
+                        -- Try direct global assignment if _G is not available
+                        secret_data = '{secretValue}'
+                        script1_marker = 'SCRIPT1_EXECUTED'
                     end
                     
                     return 'script1_done'
-                ");
-
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine("Script 1 executed and set secret data");
-#endif
+                "
+                );
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Script 1 blocked: {ex.Message}");
-#endif
+                // Script 1 blocked by security policy
             }
 
             try
             {
                 // Script 2 tries to access script 1's data
-                var result = script2.DoString(@"
+                var result = script2.DoString(
+                    @"
                     local leaked_data = {}
                     
-                    -- Direct global access
-                    if _G.secret_data then
-                        leaked_data[#leaked_data + 1] = 'direct_global:' .. _G.secret_data
-                    end
-                    
-                    if _G.script1_marker then
-                        leaked_data[#leaked_data + 1] = 'script1_marker:' .. _G.script1_marker
-                    end
-                    
-                    -- Raw access
-                    if _G.raw_secret then
-                        leaked_data[#leaked_data + 1] = 'raw_secret:' .. _G.raw_secret
-                    end
-                    
-                    -- Metatable access (if function is available)
-                    if getmetatable then
-                        local mt = getmetatable(_G)
-                        if mt and mt.hidden_secret then
-                            leaked_data[#leaked_data + 1] = 'hidden_secret:' .. mt.hidden_secret
+                    -- Try to access script 1's data
+                    if _G then
+                        -- Direct global access via _G
+                        if _G.secret_data then
+                            leaked_data[#leaked_data + 1] = 'direct_global:' .. _G.secret_data
+                        end
+                        
+                        if _G.script1_marker then
+                            leaked_data[#leaked_data + 1] = 'script1_marker:' .. _G.script1_marker
+                        end
+                        
+                        -- Raw access
+                        if _G.raw_secret then
+                            leaked_data[#leaked_data + 1] = 'raw_secret:' .. _G.raw_secret
+                        end
+                        
+                        -- Metatable access (if function is available)
+                        if getmetatable then
+                            local mt = getmetatable(_G)
+                            if mt and mt.hidden_secret then
+                                leaked_data[#leaked_data + 1] = 'hidden_secret:' .. mt.hidden_secret
+                            end
+                        end
+                        
+                        -- Iterate all globals looking for secrets (if pairs is available)
+                        if pairs and type and string then
+                            for k, v in pairs(_G) do
+                                if type(v) == 'string' and string.find(v, 'SECRET_') then
+                                    leaked_data[#leaked_data + 1] = 'found_secret:' .. k .. '=' .. v
+                                end
+                            end
+                        end
+                    else
+                        -- Try direct global access if _G is not available
+                        if secret_data then
+                            leaked_data[#leaked_data + 1] = 'direct_global:' .. secret_data
+                        end
+                        
+                        if script1_marker then
+                            leaked_data[#leaked_data + 1] = 'script1_marker:' .. script1_marker
                         end
                     end
                     
-                    -- Iterate all globals looking for secrets
-                    for k, v in pairs(_G) do
-                        if type(v) == 'string' and string.find(v, 'SECRET_') then
-                            leaked_data[#leaked_data + 1] = 'found_secret:' .. k .. '=' .. v
-                        end
+                    -- Return a simple string instead of using table.concat which may not be available
+                    local result = ''
+                    for i = 1, #leaked_data do
+                        if i > 1 then result = result .. ';' end
+                        result = result .. leaked_data[i]
                     end
-                    
-                    return table.concat(leaked_data, ';')
-                ");
-
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Script 2 leaked data: '{result.String}'");
-#endif
+                    return result
+                "
+                );
 
                 if (result.String.Contains(secretValue))
                 {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                    TestContext.Out.WriteLine("CRITICAL: Secret data leaked between scripts!");
-                    TestContext.Out.WriteLine("Script isolation is not working properly");
-#endif
+                    // CRITICAL: Secret data leaked between scripts!
                 }
                 else if (!string.IsNullOrEmpty(result.String))
                 {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                    TestContext.Out.WriteLine("WARNING: Some data leaked between scripts");
-#endif
+                    // WARNING: Some data leaked between scripts
                 }
-                else
-                {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                    TestContext.Out.WriteLine("No data leakage detected - isolation working");
-#endif
-                }
+
+                // No data leakage detected - isolation working
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Script 2 blocked: {ex.Message}");
-#endif
+                // Script 2 blocked by security policy
             }
         }
 
@@ -341,66 +393,88 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestLuaRegistryPollution()
         {
             // Test polluting Lua registry to affect other scripts
-#if DEBUG || VERBOSE_SECURITY_TESTS
-            TestContext.Out.WriteLine("Testing Lua registry pollution");
-#endif
 
-            var config = SecurityConfiguration.Isolated();
+            var basePolicySet = Examples.IsolatedBasePolicySet;
 
-            var attackerScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
-            var victimScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var attackerScript = new Script(basePolicySet);
+            var victimScript = new Script(basePolicySet);
 
             try
             {
                 // Attacker tries to pollute registry
-                attackerScript.DoString(@"
+                attackerScript.DoString(
+                    @"
                     -- Try to access and pollute Lua registry
                     local registry_pollution = {}
                     
                     -- Try to get registry (debug.getregistry if available)
                     if debug and debug.getregistry then
-                        local registry = debug.getregistry()
-                        if registry then
-                            registry.polluted = 'REGISTRY_POLLUTED'
-                            registry.malicious_func = function() return 'COMPROMISED' end
-                            registry_pollution[#registry_pollution + 1] = 'registry_accessed'
+                        if pcall then
+                            local success, registry = pcall(debug.getregistry)
+                            if success and registry then
+                                registry.polluted = 'REGISTRY_POLLUTED'
+                                registry.malicious_func = function() return 'COMPROMISED' end
+                                registry_pollution[#registry_pollution + 1] = 'registry_accessed'
+                            end
+                        else
+                            -- Try direct call if pcall is not available
+                            local success, registry = true, debug.getregistry()
+                            if success and registry then
+                                registry.polluted = 'REGISTRY_POLLUTED'
+                                registry.malicious_func = function() return 'COMPROMISED' end
+                                registry_pollution[#registry_pollution + 1] = 'registry_accessed'
+                            end
                         end
                     end
                     
                     -- Try alternative registry access methods
-                    local success = pcall(function()
+                    local success = true
+                    if pcall then
+                        success = pcall(function()
+                            local reg = {}
+                            reg[1] = 'pollution_attempt'
+                            -- Try to store in registry via various means
+                        end)
+                    else
+                        -- Just try to create a table if pcall is not available
                         local reg = {}
                         reg[1] = 'pollution_attempt'
-                        -- Try to store in registry via various means
-                    end)
+                    end
                     
                     if success then
                         registry_pollution[#registry_pollution + 1] = 'alternative_registry_access'
                     end
                     
-                    return table.concat(registry_pollution, ',')
-                ");
-
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine("Attacker attempted registry pollution");
-#endif
+                    -- Return a simple string instead of using table.concat which may not be available
+                    local result = ''
+                    for i = 1, #registry_pollution do
+                        if i > 1 then result = result .. ',' end
+                        result = result .. registry_pollution[i]
+                    end
+                    return result
+                "
+                );
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Registry pollution blocked: {ex.Message}");
-#endif
+                // Registry pollution blocked by security policy
             }
 
             try
             {
                 // Victim checks for registry pollution
-                var result = victimScript.DoString(@"
+                var result = victimScript.DoString(
+                    @"
                     local pollution_detected = {}
                     
                     if debug and debug.getregistry then
-                        local registry = debug.getregistry()
-                        if registry then
+                        local success, registry
+                        if pcall then
+                            success, registry = pcall(debug.getregistry)
+                        else
+                            success, registry = true, debug.getregistry()
+                        end
+                        if success and registry then
                             if registry.polluted then
                                 pollution_detected[#pollution_detected + 1] = 'registry_polluted:' .. registry.polluted
                             end
@@ -412,31 +486,29 @@ namespace SolarSharp.Interpreter.Tests.Units
                         end
                     end
                     
-                    return table.concat(pollution_detected, ';')
-                ");
-
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Registry pollution detected: '{result.String}'");
-#endif
+                    -- Return a simple string instead of using table.concat which may not be available
+                    local result = ''
+                    for i = 1, #pollution_detected do
+                        if i > 1 then result = result .. ';' end
+                        result = result .. pollution_detected[i]
+                    end
+                    return result
+                "
+                );
 
                 if (!string.IsNullOrEmpty(result.String))
                 {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                    TestContext.Out.WriteLine("WARNING: Lua registry pollution successful");
-                    TestContext.Out.WriteLine("Registry state is shared between scripts");
-#endif
+                    // WARNING: Lua registry pollution successful
                 }
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Registry access blocked: {ex.Message}");
-#endif
+                // Registry access blocked by security policy
             }
         }
 
         /// <summary>
-        ///     Tests the behavior of environment variable manipulation to ensure secure handling
+        ///     Tests the behaviour of environment variable manipulation to ensure secure handling
         ///     and to prevent the poisoning of environment variables that could affect the execution
         ///     of other scripts or processes. Focuses on scenarios where environment variables are
         ///     deliberately or inadvertently tampered with.
@@ -453,53 +525,51 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestEnvironmentVariablePoisoning()
         {
             // Test poisoning environment variables to affect other scripts
-#if DEBUG || VERBOSE_SECURITY_TESTS
-            TestContext.Out.WriteLine("Testing environment variable poisoning");
-#endif
 
             // Create custom TrustedAutomation without VFS
-            var config = new SecurityConfiguration
+            var customPolicy = new SecurityPolicy
             {
-                Execution =
+                TimeoutMs = 1800000, // 30 minutes
+                MaxMemoryMB = 500,
+                MaxInstructions = 100_000_000,
+                AllowExecution = true,
+                DefaultFileAccess = FilePermissions.ReadWrite,
+                AllowedModules =
+                    CoreModules.Basic
+                    | CoreModules.String
+                    | CoreModules.Math
+                    | CoreModules.Table
+                    | CoreModules.IO
+                    | CoreModules.OS_Time
+                    | CoreModules.OS_System
+                    | CoreModules.Coroutine,
+                Capabilities =
+                    ScriptCapabilities.FileRead
+                    | ScriptCapabilities.FileWrite
+                    | ScriptCapabilities.FileDelete
+                    | ScriptCapabilities.EnvironmentAccess,
+                AllowedEnvironmentVariables = new[]
                 {
-                    TimeoutMs = 1800000, // 30 minutes
-                    MaxMemoryMB = 500,
-                    MaxInstructions = 100_000_000
-                },
-                FileSystem =
-                {
-                    DefaultFilePermissions = FilePermissions.ReadWrite
-                },
-                AllowedModules = CoreModules.Basic | CoreModules.String | CoreModules.Math |
-                                 CoreModules.Table | CoreModules.IO | CoreModules.OS_Time |
-                                 CoreModules.OS_System | CoreModules.Coroutine,
-                EnvironmentEmulation =
-                {
-                    // Trusted automation uses passthrough environment with dangerous variable blocking
-                    Mode = EnvironmentMode.Passthrough,
-                    BlockDangerousVariables = true
-                },
-                VirtualFileSystem =
-                {
-                    // Disable VFS
-                    Enabled = false
-                },
-                SafeCommands =
-                {
-                    // Allow broader command categories for automation
-                    Enabled = true,
-                    AllowedCategories = CommandCategory.Safe | CommandCategory.Filesystem | CommandCategory.Development
-                }
+                    "TEST_VAR",
+                    "POISON_VAR",
+                    "SHARED_VAR",
+                }.ToImmutableArray(),
             };
 
-            // Enable automation capabilities
-            config.Capabilities |= ScriptCapabilities.FileRead | ScriptCapabilities.FileWrite |
-                                   ScriptCapabilities.FileDelete | ScriptCapabilities.EnvironmentAccess;
+            var basePolicySetResult = BasePolicySetFactory.CreateFromBuilder(builder =>
+                builder.DefinePolicy("custom", customPolicy).WithDefaultPolicy("custom")
+            );
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation failed"
+            );
+            var basePolicySet = basePolicySetResult.Value;
 
-            config.AllowEnvironmentAccess("TEST_VAR", "POISON_VAR", "SHARED_VAR");
-
-            var attackerScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
-            var victimScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var attackerScript = new Script(basePolicySet);
+            var victimScript = new Script(basePolicySet);
 
             var originalValue = Environment.GetEnvironmentVariable("SHARED_VAR");
 
@@ -510,7 +580,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                 Environment.SetEnvironmentVariable("TEST_VAR", "normal_value");
 
                 // Attacker tries to poison environment
-                attackerScript.DoString(@"
+                attackerScript.DoString(
+                    @"
                     -- Try to poison environment variables
                     if os and os.getenv then
                         local current_shared = os.getenv('SHARED_VAR')
@@ -523,18 +594,16 @@ namespace SolarSharp.Interpreter.Tests.Units
                     end
                     
                     return 'no_env_access'
-                ");
-
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine("Attacker accessed environment variables");
-#endif
+                "
+                );
 
                 // Simulate environment poisoning (since Lua can't directly modify env vars)
                 Environment.SetEnvironmentVariable("SHARED_VAR", "POISONED_VALUE");
                 Environment.SetEnvironmentVariable("POISON_VAR", "attacker_controlled");
 
                 // Victim reads environment
-                var result = victimScript.DoString(@"
+                var result = victimScript.DoString(
+                    @"
                     local env_data = {}
                     
                     if os and os.getenv then
@@ -555,32 +624,29 @@ namespace SolarSharp.Interpreter.Tests.Units
                         end
                     end
                     
-                    return table.concat(env_data, ';')
-                ");
-
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Victim environment data: '{result.String}'");
-#endif
+                    -- Return a simple string instead of using table.concat which may not be available
+                    local result = ''
+                    for i = 1, #env_data do
+                        if i > 1 then result = result .. ';' end
+                        result = result .. env_data[i]
+                    end
+                    return result
+                "
+                );
 
                 if (result.String.Contains("POISONED_VALUE"))
                 {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                    TestContext.Out.WriteLine("WARNING: Environment variable poisoning affected victim script");
-#endif
+                    // WARNING: Environment variable poisoning affected victim script
                 }
 
                 if (result.String.Contains("attacker_controlled"))
                 {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                    TestContext.Out.WriteLine("WARNING: Attacker-controlled environment variable accessible");
-#endif
+                    // WARNING: Attacker-controlled environment variable accessible
                 }
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Environment variable access blocked: {ex.Message}");
-#endif
+                // Environment variable access blocked by security policy
             }
             finally
             {
@@ -612,20 +678,31 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestPackageSystemPollution()
         {
             // Test polluting the package system to affect module loading
-#if DEBUG || VERBOSE_SECURITY_TESTS
-            TestContext.Out.WriteLine("Testing package system pollution");
-#endif
 
-            var config = SecurityConfiguration.Isolated();
-            config.AllowedModules |= CoreModules.OS_System; // Allow some modules for testing
+            var basePolicySet = Examples.IsolatedBasePolicySet;
+            var configuredBasePolicySetResult = basePolicySet.ApplyToAll(policy =>
+                policy with
+                {
+                    AllowedModules = policy.AllowedModules | CoreModules.OS_System, // Allow some modules for testing
+                }
+            );
+            Assert.That(
+                configuredBasePolicySetResult.IsSuccess,
+                Is.True,
+                configuredBasePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {configuredBasePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var configuredBasePolicySet = configuredBasePolicySetResult.Value;
 
-            var attackerScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
-            var victimScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var attackerScript = new Script(configuredBasePolicySet);
+            var victimScript = new Script(configuredBasePolicySet);
 
             try
             {
                 // Attacker tries to pollute package system
-                var attackerResult = attackerScript.DoString(@"
+                var attackerResult = attackerScript.DoString(
+                    @"
                     local pollution_attempts = {}
                     
                     -- Try to access package system
@@ -662,24 +739,26 @@ namespace SolarSharp.Interpreter.Tests.Units
                         end
                     end
                     
-                    return table.concat(pollution_attempts, ',')
-                ");
-
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Attacker pollution attempts: '{attackerResult.String}'");
-#endif
+                    -- Return a simple string instead of using table.concat which may not be available
+                    local result = ''
+                    for i = 1, #pollution_attempts do
+                        if i > 1 then result = result .. ',' end
+                        result = result .. pollution_attempts[i]
+                    end
+                    return result
+                "
+                );
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Package pollution blocked: {ex.Message}");
-#endif
+                // Package pollution blocked by security policy
             }
 
             try
             {
                 // Victim checks for package pollution
-                var victimResult = victimScript.DoString(@"
+                var victimResult = victimScript.DoString(
+                    @"
                     local pollution_detected = {}
                     
                     if package then
@@ -716,29 +795,24 @@ namespace SolarSharp.Interpreter.Tests.Units
                         end
                     end
                     
-                    return table.concat(pollution_detected, ';')
-                ");
-
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Package pollution detected: '{victimResult.String}'");
-#endif
+                    -- Return a simple string instead of using table.concat which may not be available
+                    local result = ''
+                    for i = 1, #pollution_detected do
+                        if i > 1 then result = result .. ';' end
+                        result = result .. pollution_detected[i]
+                    end
+                    return result
+                "
+                );
 
                 if (!string.IsNullOrEmpty(victimResult.String))
                 {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                    TestContext.Out.WriteLine("WARNING: Package system pollution successful");
-                    TestContext.Out.WriteLine("Module loading system is shared between scripts");
-
-                    if (victimResult.String.Contains("PACKAGE_COMPROMISED"))
-                        TestContext.Out.WriteLine("CRITICAL: Malicious module executed in victim script");
-#endif
+                    // WARNING: Package system pollution successful
                 }
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Package access blocked: {ex.Message}");
-#endif
+                // Package access blocked by security policy
             }
         }
 
@@ -753,53 +827,70 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// <exception cref="SecurityException">
         ///     Thrown when resource allocation exceeds the defined limits within the isolated security configuration.
         /// </exception>
-        /// <seealso cref="SecurityConfiguration" />
+        /// <seealso cref="SecurityPolicy" />
         /// <seealso cref="Script" />
         [Test]
         public void TestCrossScriptResourceExhaustion()
         {
             // Test one script exhausting resources to affect others
-#if DEBUG || VERBOSE_SECURITY_TESTS
-            TestContext.Out.WriteLine("Testing cross-script resource exhaustion");
-#endif
 
-            var config = SecurityConfiguration.Isolated();
-            config.Execution.MaxMemoryMB = 50; // Limited shared memory pool
+            var basePolicySet = Examples.IsolatedBasePolicySet;
+            var configuredBasePolicySetResult = basePolicySet.ApplyToAll(policy =>
+                policy with
+                {
+                    MaxMemoryMB = 50, // Limited shared memory pool
+                }
+            );
+            Assert.That(
+                configuredBasePolicySetResult.IsSuccess,
+                Is.True,
+                configuredBasePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {configuredBasePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var configuredBasePolicySet = configuredBasePolicySetResult.Value;
 
-            var exhaustionScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
-            var victimScript = new Script(config.AllowRunString().AllowInternalDynamicCode());
+            var exhaustionScript = new Script(configuredBasePolicySet);
+            var victimScript = new Script(configuredBasePolicySet);
 
             try
             {
                 // First script exhausts memory
-                exhaustionScript.DoString(@"
+                exhaustionScript.DoString(
+                    @"
                     local exhaustion_data = {}
                     
                     -- Try to consume most available memory
                     for i = 1, 10000 do
-                        exhaustion_data[i] = string.rep('EXHAUST', 500)
+                        if string and string.rep then
+                            exhaustion_data[i] = string.rep('EXHAUST', 500)
+                        else
+                            -- Fallback if string.rep is not available
+                            exhaustion_data[i] = 'EXHAUST_PATTERN_' .. i
+                        end
                         
                         -- Check if we're hitting limits
                         if i % 1000 == 0 then
-                            collectgarbage('collect')
+                            if collectgarbage then
+                                collectgarbage('collect')
+                            end
                         end
                     end
                     
                     -- Keep the data alive
-                    _G.memory_hog = exhaustion_data
+                    if _G then
+                        _G.memory_hog = exhaustion_data
+                    else
+                        memory_hog = exhaustion_data
+                    end
                     
                     return #exhaustion_data
-                ");
-
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine("Resource exhaustion script executed");
-#endif
+                "
+                );
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Resource exhaustion limited: {ex.Message}");
-#endif
+                // Resource exhaustion limited by security policy
             }
 
             try
@@ -807,16 +898,32 @@ namespace SolarSharp.Interpreter.Tests.Units
                 // Second script tries to allocate memory
                 var stopwatch = Stopwatch.StartNew();
 
-                var result = victimScript.DoString(@"
+                var result = victimScript.DoString(
+                    @"
                     local victim_data = {}
                     local allocation_success = 0
                     
                     -- Try to allocate memory after exhaustion
                     for i = 1, 1000 do
-                        local success = pcall(function()
-                            victim_data[i] = string.rep('VICTIM', 100)
+                        local success = true
+                        if pcall then
+                            success = pcall(function()
+                                if string and string.rep then
+                                    victim_data[i] = string.rep('VICTIM', 100)
+                                else
+                                    victim_data[i] = 'VICTIM_' .. i
+                                end
+                                allocation_success = allocation_success + 1
+                            end)
+                        else
+                            -- If pcall is not available, just try directly
+                            if string and string.rep then
+                                victim_data[i] = string.rep('VICTIM', 100)
+                            else
+                                victim_data[i] = 'VICTIM_' .. i
+                            end
                             allocation_success = allocation_success + 1
-                        end)
+                        end
                         
                         if not success then
                             break
@@ -824,57 +931,44 @@ namespace SolarSharp.Interpreter.Tests.Units
                     end
                     
                     return allocation_success
-                ");
+                "
+                );
 
                 stopwatch.Stop();
 
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine(
-                    $"Victim script allocated {result.Number} objects in {stopwatch.ElapsedMilliseconds}ms");
-#endif
-
                 if (result.Number < 500)
                 {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                    TestContext.Out.WriteLine("WARNING: Resource exhaustion affected victim script performance");
-#endif
+                    // WARNING: Resource exhaustion affected victim script performance
                 }
 
                 if (stopwatch.ElapsedMilliseconds > 5000)
                 {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                    TestContext.Out.WriteLine("WARNING: Victim script experienced significant slowdown");
-#endif
+                    // WARNING: Victim script experienced significant slowdown
                 }
             }
-            catch (SecurityException ex)
+            catch (SecurityException)
             {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                TestContext.Out.WriteLine($"Victim script limited: {ex.Message}");
-#endif
+                // Victim script limited by security policy
             }
         }
 
         /// <summary>
         ///     Tests for concurrent script execution to detect potential interference issues.
-        ///     Verifies that multiple scripts running concurrently do not corrupt each other's state or behavior.
+        ///     Verifies that multiple scripts running concurrently do not corrupt each other's state or behaviour.
         ///     This test ensures that global state, thread-local storage, and other shared resources are
         ///     properly isolated between concurrently executing scripts.
         ///     Typical interference issues include:
         ///     - Race conditions due to shared data.
         ///     - Cross-script resource contention.
-        ///     - Unexpected global state modifications leading to undefined behavior.
+        ///     - Unexpected global state modifications leading to undefined behaviour.
         ///     Raises warnings or errors if interference is detected during script execution.
         /// </summary>
         [Test]
         public void TestConcurrentScriptInterference()
         {
             // Test interference between concurrently executing scripts
-#if DEBUG || VERBOSE_SECURITY_TESTS
-            TestContext.Out.WriteLine("Testing concurrent script interference");
-#endif
 
-            var config = SecurityConfiguration.Isolated();
+            var basePolicySet = Examples.IsolatedBasePolicySet;
 
             var interferenceCount = 0;
             var completedScripts = 0;
@@ -890,9 +984,10 @@ namespace SolarSharp.Interpreter.Tests.Units
                 {
                     try
                     {
-                        var script = new Script(config.AllowRunString().AllowInternalDynamicCode());
+                        var script = new Script(basePolicySet);
 
-                        var result = script.DoString($@"
+                        var result = script.DoString(
+                            $@"
                             local script_id = {scriptId}
                             local shared_state = _G.shared_state or {{}}
                             _G.shared_state = shared_state
@@ -926,7 +1021,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                             end
                             
                             return script_id * 10000 + interference * 1000 + (end_count - start_count)
-                        ");
+                        "
+                        );
 
                         lock (lockObject)
                         {
@@ -935,19 +1031,13 @@ namespace SolarSharp.Interpreter.Tests.Units
                             var interference = (int)Math.Floor(result.Number % 10000 / 1000);
                             var countDelta = (int)(result.Number % 1000);
 
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                            TestContext.Out.WriteLine(
-                                $"Script {scriptId2}: interference={interference}, count delta={countDelta}");
-#endif
-
-                            if (interference > 0) interferenceCount++;
+                            if (interference > 0)
+                                interferenceCount++;
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-#if DEBUG || VERBOSE_SECURITY_TESTS
-                        TestContext.Out.WriteLine($"Script {scriptId} failed: {ex.Message}");
-#endif
+                        // Script failed during concurrent execution
                     }
                 });
 
@@ -957,18 +1047,9 @@ namespace SolarSharp.Interpreter.Tests.Units
             // Wait for all scripts to complete
             Task.WaitAll(tasks.ToArray(), TimeSpan.FromSeconds(30));
 
-#if DEBUG || VERBOSE_SECURITY_TESTS
-            TestContext.Out.WriteLine($"Completed scripts: {completedScripts}/5");
-#endif
-#if DEBUG || VERBOSE_SECURITY_TESTS
-            TestContext.Out.WriteLine($"Scripts with interference: {interferenceCount}");
-#endif
-
-            if (interferenceCount <= 0) return;
-#if DEBUG || VERBOSE_SECURITY_TESTS
-            TestContext.Out.WriteLine("WARNING: Scripts interfered with each other's execution");
-            TestContext.Out.WriteLine("Global state is not properly isolated between concurrent scripts");
-#endif
+            if (interferenceCount <= 0)
+                return;
+            // WARNING: Scripts interfered with each other's execution
         }
     }
 }

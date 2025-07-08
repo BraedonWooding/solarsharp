@@ -21,31 +21,42 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// The maximum number of arguments supported in an event handler delegate
         /// </summary>
         public const int MAX_ARGS_IN_DELEGATE = 16;
-        private readonly object m_Lock = new();
-        private readonly MultiDictionary<object, Closure> m_Callbacks = new(new ReferenceEqualityComparer());
-        private readonly Dictionary<object, Delegate> m_Delegates = new(new ReferenceEqualityComparer());
+        private readonly object m_Lock = new object();
+        private readonly MultiDictionary<object, Closure> m_Callbacks = new MultiDictionary<
+            object,
+            Closure
+        >(new ReferenceEqualityComparer());
+        private readonly Dictionary<object, Delegate> m_Delegates = new Dictionary<
+            object,
+            Delegate
+        >(new ReferenceEqualityComparer());
 
         /// <summary>
-        /// Tries to create a new StandardUserDataEventDescriptor, returning <c>null</c> in case the method is not 
+        /// Tries to create a new StandardUserDataEventDescriptor, returning <c>null</c> in case the method is not
         /// visible to script code.
         /// </summary>
         /// <param name="ei">The EventInfo.</param>
         /// <param name="accessMode">The <see cref="InteropAccessMode" /></param>
         /// <returns>A new StandardUserDataEventDescriptor or null.</returns>
-        public static EventMemberDescriptor TryCreateIfVisible(EventInfo ei, InteropAccessMode accessMode)
+        public static EventMemberDescriptor TryCreateIfVisible(
+            EventInfo ei,
+            InteropAccessMode accessMode
+        )
         {
             if (!CheckEventIsCompatible(ei, false))
                 return null;
 
-            MethodInfo addm = Framework.Do.GetAddMethod(ei);
-            MethodInfo remm = Framework.Do.GetRemoveMethod(ei);
+            var addm = Framework.Do.GetAddMethod(ei);
+            var remm = Framework.Do.GetRemoveMethod(ei);
 
-            if (ei.GetVisibilityFromAttributes() ?? remm != null && remm.IsPublic && addm != null && addm.IsPublic)
+            if (
+                ei.GetVisibilityFromAttributes()
+                ?? remm != null && remm.IsPublic && addm != null && addm.IsPublic
+            )
                 return new EventMemberDescriptor(ei, accessMode);
 
             return null;
         }
-
 
         /// <summary>
         /// Checks if the event is compatible with a standard descriptor
@@ -57,7 +68,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// Thrown if throwException is <c>true</c> and one of this applies:
         /// The event is declared in a value type
         /// or
-        /// The event does not have both add and remove methods 
+        /// The event does not have both add and remove methods
         /// or
         /// The event handler type doesn't implement a public Invoke method
         /// or
@@ -73,21 +84,24 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         {
             if (Framework.Do.IsValueType(ei.DeclaringType))
             {
-                if (throwException) throw new ArgumentException("Events are not supported on value types");
+                if (throwException)
+                    throw new ArgumentException("Events are not supported on value types");
                 return false;
             }
 
             if (Framework.Do.GetAddMethod(ei) == null || Framework.Do.GetRemoveMethod(ei) == null)
             {
-                if (throwException) throw new ArgumentException("Event must have add and remove methods");
+                if (throwException)
+                    throw new ArgumentException("Event must have add and remove methods");
                 return false;
             }
 
-            MethodInfo invoke = Framework.Do.GetMethod(ei.EventHandlerType, "Invoke");
+            var invoke = Framework.Do.GetMethod(ei.EventHandlerType, "Invoke");
 
             if (invoke == null)
             {
-                if (throwException) throw new ArgumentException("Event handler type doesn't seem to be a delegate");
+                if (throwException)
+                    throw new ArgumentException("Event handler type doesn't seem to be a delegate");
                 return false;
             }
 
@@ -96,28 +110,38 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
 
             if (invoke.ReturnType != typeof(void))
             {
-                if (throwException) throw new ArgumentException("Event handler cannot have a return type");
+                if (throwException)
+                    throw new ArgumentException("Event handler cannot have a return type");
                 return false;
             }
 
-            ParameterInfo[] pars = invoke.GetParameters();
+            var pars = invoke.GetParameters();
 
             if (pars.Length > MAX_ARGS_IN_DELEGATE)
             {
-                if (throwException) throw new ArgumentException(string.Format("Event handler cannot have more than {0} parameters", MAX_ARGS_IN_DELEGATE));
+                if (throwException)
+                    throw new ArgumentException(
+                        $"Event handler cannot have more than {MAX_ARGS_IN_DELEGATE} parameters"
+                    );
                 return false;
             }
 
-            foreach (ParameterInfo pi in pars)
+            foreach (var pi in pars)
             {
                 if (Framework.Do.IsValueType(pi.ParameterType))
                 {
-                    if (throwException) throw new ArgumentException("Event handler cannot have value type parameters");
+                    if (throwException)
+                        throw new ArgumentException(
+                            "Event handler cannot have value type parameters"
+                        );
                     return false;
                 }
-                else if (pi.ParameterType.IsByRef)
+                if (pi.ParameterType.IsByRef)
                 {
-                    if (throwException) throw new ArgumentException("Event handler cannot have by-ref type parameters");
+                    if (throwException)
+                        throw new ArgumentException(
+                            "Event handler cannot have by-ref type parameters"
+                        );
                     return false;
                 }
             }
@@ -125,14 +149,16 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             return true;
         }
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="EventMemberDescriptor"/> class.
         /// </summary>
         /// <param name="ei">The ei.</param>
         /// <param name="accessMode">The access mode.</param>
 #pragma warning disable IDE0060 // Remove unused parameter
-        public EventMemberDescriptor(EventInfo ei, InteropAccessMode accessMode = InteropAccessMode.Default)
+        public EventMemberDescriptor(
+            EventInfo ei,
+            InteropAccessMode accessMode = InteropAccessMode.Default
+        )
 #pragma warning restore IDE0060 // Remove unused parameter
         {
             CheckEventIsCompatible(ei, true);
@@ -146,12 +172,14 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// Gets the EventInfo object of the event described by this descriptor
         /// </summary>
         public EventInfo EventInfo { get; private set; }
+
         /// <summary>
         /// Gets a value indicating whether the event described by this descriptor is static.
         /// </summary>
         public bool IsStatic { get; private set; }
 
-        private readonly MethodInfo m_Add, m_Remove;
+        private readonly MethodInfo m_Add,
+            m_Remove;
 
         /// <summary>
         /// Gets a dynvalue which is a facade supporting add/remove methods which is callable from scripts
@@ -169,13 +197,15 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             return UserData.Create(new EventFacade(this, obj));
         }
 
-
         internal DynValue AddCallback(object o, ScriptExecutionContext _, CallbackArguments args)
         {
             lock (m_Lock)
             {
-                Closure closure = args.AsType(0, string.Format("userdata<{0}>.{1}.add", EventInfo.DeclaringType, EventInfo.Name),
-                    DataType.Function, false).Function;
+                var closure = args.AsType(
+                    0,
+                    $"userdata<{EventInfo.DeclaringType}>.{EventInfo.Name}.add",
+                    DataType.Function
+                ).Function;
 
                 if (m_Callbacks.Add(o, closure))
                     RegisterCallback(o);
@@ -188,8 +218,11 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         {
             lock (m_Lock)
             {
-                Closure closure = args.AsType(0, string.Format("userdata<{0}>.{1}.remove", EventInfo.DeclaringType, EventInfo.Name),
-                    DataType.Function, false).Function;
+                var closure = args.AsType(
+                    0,
+                    $"userdata<{EventInfo.DeclaringType}>.{EventInfo.Name}.remove",
+                    DataType.Function
+                ).Function;
 
                 if (m_Callbacks.RemoveValue(o, closure))
                     UnregisterCallback(o);
@@ -200,57 +233,183 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
 
         private void RegisterCallback(object o)
         {
-            m_Delegates.GetOrCreate(o, () =>
+            m_Delegates.GetOrCreate(
+                o,
+                () =>
                 {
-                    Delegate d = CreateDelegate(o);
+                    var d = CreateDelegate(o);
 #if NETFX_CORE
-					Delegate handler = d.GetMethodInfo().CreateDelegate(EventInfo.EventHandlerType, d.Target);
+                    Delegate handler = d.GetMethodInfo()
+                        .CreateDelegate(EventInfo.EventHandlerType, d.Target);
 #else
-                    Delegate handler = Delegate.CreateDelegate(EventInfo.EventHandlerType, d.Target, d.Method);
+                    var handler = Delegate.CreateDelegate(
+                        EventInfo.EventHandlerType,
+                        d.Target,
+                        d.Method
+                    );
 #endif
                     m_Add.Invoke(o, new object[] { handler });
                     return handler;
-                });
+                }
+            );
         }
 
         private void UnregisterCallback(object o)
         {
-            Delegate handler = m_Delegates.GetOrDefault(o) ?? throw new InternalErrorException("can't unregister null delegate");
+            var handler =
+                m_Delegates.GetOrDefault(o)
+                ?? throw new InternalErrorException("can't unregister null delegate");
             m_Delegates.Remove(o);
             m_Remove.Invoke(o, new object[] { handler });
         }
 
-
         private Delegate CreateDelegate(object sender)
         {
-            return Framework.Do.GetMethod(EventInfo.EventHandlerType, "Invoke").GetParameters().Length switch
+            return Framework
+                .Do.GetMethod(EventInfo.EventHandlerType, "Invoke")
+                .GetParameters()
+                .Length switch
             {
                 0 => (EventWrapper00)(() => DispatchEvent(sender)),
-                1 => (EventWrapper01)((o1) => DispatchEvent(sender, o1)),
+                1 => (EventWrapper01)(o1 => DispatchEvent(sender, o1)),
                 2 => (EventWrapper02)((o1, o2) => DispatchEvent(sender, o1, o2)),
                 3 => (EventWrapper03)((o1, o2, o3) => DispatchEvent(sender, o1, o2, o3)),
                 4 => (EventWrapper04)((o1, o2, o3, o4) => DispatchEvent(sender, o1, o2, o3, o4)),
-                5 => (EventWrapper05)((o1, o2, o3, o4, o5) => DispatchEvent(sender, o1, o2, o3, o4, o5)),
-                6 => (EventWrapper06)((o1, o2, o3, o4, o5, o6) => DispatchEvent(sender, o1, o2, o3, o4, o5, o6)),
-                7 => (EventWrapper07)((o1, o2, o3, o4, o5, o6, o7) => DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7)),
-                8 => (EventWrapper08)((o1, o2, o3, o4, o5, o6, o7, o8) => DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8)),
-                9 => (EventWrapper09)((o1, o2, o3, o4, o5, o6, o7, o8, o9) => DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8, o9)),
-                10 => (EventWrapper10)((o1, o2, o3, o4, o5, o6, o7, o8, o9, o10) => DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10)),
-                11 => (EventWrapper11)((o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11) => DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11)),
-                12 => (EventWrapper12)((o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12) => DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12)),
-                13 => (EventWrapper13)((o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13) => DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13)),
-                14 => (EventWrapper14)((o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13, o14) => DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13, o14)),
-                15 => (EventWrapper15)((o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13, o14, o15) => DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13, o14, o15)),
-                16 => (EventWrapper16)((o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13, o14, o15, o16) => DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13, o14, o15, o16)),
+                5 => (EventWrapper05)(
+                    (o1, o2, o3, o4, o5) => DispatchEvent(sender, o1, o2, o3, o4, o5)
+                ),
+                6 => (EventWrapper06)(
+                    (o1, o2, o3, o4, o5, o6) => DispatchEvent(sender, o1, o2, o3, o4, o5, o6)
+                ),
+                7 => (EventWrapper07)(
+                    (o1, o2, o3, o4, o5, o6, o7) =>
+                        DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7)
+                ),
+                8 => (EventWrapper08)(
+                    (o1, o2, o3, o4, o5, o6, o7, o8) =>
+                        DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8)
+                ),
+                9 => (EventWrapper09)(
+                    (o1, o2, o3, o4, o5, o6, o7, o8, o9) =>
+                        DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8, o9)
+                ),
+                10 => (EventWrapper10)(
+                    (o1, o2, o3, o4, o5, o6, o7, o8, o9, o10) =>
+                        DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10)
+                ),
+                11 => (EventWrapper11)(
+                    (o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11) =>
+                        DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11)
+                ),
+                12 => (EventWrapper12)(
+                    (o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12) =>
+                        DispatchEvent(sender, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12)
+                ),
+                13 => (EventWrapper13)(
+                    (o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13) =>
+                        DispatchEvent(
+                            sender,
+                            o1,
+                            o2,
+                            o3,
+                            o4,
+                            o5,
+                            o6,
+                            o7,
+                            o8,
+                            o9,
+                            o10,
+                            o11,
+                            o12,
+                            o13
+                        )
+                ),
+                14 => (EventWrapper14)(
+                    (o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13, o14) =>
+                        DispatchEvent(
+                            sender,
+                            o1,
+                            o2,
+                            o3,
+                            o4,
+                            o5,
+                            o6,
+                            o7,
+                            o8,
+                            o9,
+                            o10,
+                            o11,
+                            o12,
+                            o13,
+                            o14
+                        )
+                ),
+                15 => (EventWrapper15)(
+                    (o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13, o14, o15) =>
+                        DispatchEvent(
+                            sender,
+                            o1,
+                            o2,
+                            o3,
+                            o4,
+                            o5,
+                            o6,
+                            o7,
+                            o8,
+                            o9,
+                            o10,
+                            o11,
+                            o12,
+                            o13,
+                            o14,
+                            o15
+                        )
+                ),
+                16 => (EventWrapper16)(
+                    (o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13, o14, o15, o16) =>
+                        DispatchEvent(
+                            sender,
+                            o1,
+                            o2,
+                            o3,
+                            o4,
+                            o5,
+                            o6,
+                            o7,
+                            o8,
+                            o9,
+                            o10,
+                            o11,
+                            o12,
+                            o13,
+                            o14,
+                            o15,
+                            o16
+                        )
+                ),
                 _ => throw new InternalErrorException("too many args in delegate type"),
             };
         }
 
-        private void DispatchEvent(object sender,
-            object o01 = null, object o02 = null, object o03 = null, object o04 = null,
-            object o05 = null, object o06 = null, object o07 = null, object o08 = null,
-            object o09 = null, object o10 = null, object o11 = null, object o12 = null,
-            object o13 = null, object o14 = null, object o15 = null, object o16 = null)
+        private void DispatchEvent(
+            object sender,
+            object o01 = null,
+            object o02 = null,
+            object o03 = null,
+            object o04 = null,
+            object o05 = null,
+            object o06 = null,
+            object o07 = null,
+            object o08 = null,
+            object o09 = null,
+            object o10 = null,
+            object o11 = null,
+            object o12 = null,
+            object o13 = null,
+            object o14 = null,
+            object o15 = null,
+            object o16 = null
+        )
         {
             Closure[] closures = null;
             lock (m_Lock)
@@ -258,9 +417,26 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 closures = m_Callbacks.Find(sender).ToArray();
             }
 
-            foreach (Closure c in closures)
+            foreach (var c in closures)
             {
-                c.Call(o01, o02, o03, o04, o05, o06, o07, o08, o09, o10, o11, o12, o13, o14, o15, o16);
+                c.Call(
+                    o01,
+                    o02,
+                    o03,
+                    o04,
+                    o05,
+                    o06,
+                    o07,
+                    o08,
+                    o09,
+                    o10,
+                    o11,
+                    o12,
+                    o13,
+                    o14,
+                    o15,
+                    o16
+                );
             }
         }
 
@@ -270,18 +446,149 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         private delegate void EventWrapper03(object o1, object o2, object o3);
         private delegate void EventWrapper04(object o1, object o2, object o3, object o4);
         private delegate void EventWrapper05(object o1, object o2, object o3, object o4, object o5);
-        private delegate void EventWrapper06(object o1, object o2, object o3, object o4, object o5, object o6);
-        private delegate void EventWrapper07(object o1, object o2, object o3, object o4, object o5, object o6, object o7);
-        private delegate void EventWrapper08(object o1, object o2, object o3, object o4, object o5, object o6, object o7, object o8);
-        private delegate void EventWrapper09(object o1, object o2, object o3, object o4, object o5, object o6, object o7, object o8, object o9);
-        private delegate void EventWrapper10(object o1, object o2, object o3, object o4, object o5, object o6, object o7, object o8, object o9, object o10);
-        private delegate void EventWrapper11(object o1, object o2, object o3, object o4, object o5, object o6, object o7, object o8, object o9, object o10, object o11);
-        private delegate void EventWrapper12(object o1, object o2, object o3, object o4, object o5, object o6, object o7, object o8, object o9, object o10, object o11, object o12);
-        private delegate void EventWrapper13(object o1, object o2, object o3, object o4, object o5, object o6, object o7, object o8, object o9, object o10, object o11, object o12, object o13);
-        private delegate void EventWrapper14(object o1, object o2, object o3, object o4, object o5, object o6, object o7, object o8, object o9, object o10, object o11, object o12, object o13, object o14);
-        private delegate void EventWrapper15(object o1, object o2, object o3, object o4, object o5, object o6, object o7, object o8, object o9, object o10, object o11, object o12, object o13, object o14, object o15);
-        private delegate void EventWrapper16(object o1, object o2, object o3, object o4, object o5, object o6, object o7, object o8, object o9, object o10, object o11, object o12, object o13, object o14, object o15, object o16);
-
+        private delegate void EventWrapper06(
+            object o1,
+            object o2,
+            object o3,
+            object o4,
+            object o5,
+            object o6
+        );
+        private delegate void EventWrapper07(
+            object o1,
+            object o2,
+            object o3,
+            object o4,
+            object o5,
+            object o6,
+            object o7
+        );
+        private delegate void EventWrapper08(
+            object o1,
+            object o2,
+            object o3,
+            object o4,
+            object o5,
+            object o6,
+            object o7,
+            object o8
+        );
+        private delegate void EventWrapper09(
+            object o1,
+            object o2,
+            object o3,
+            object o4,
+            object o5,
+            object o6,
+            object o7,
+            object o8,
+            object o9
+        );
+        private delegate void EventWrapper10(
+            object o1,
+            object o2,
+            object o3,
+            object o4,
+            object o5,
+            object o6,
+            object o7,
+            object o8,
+            object o9,
+            object o10
+        );
+        private delegate void EventWrapper11(
+            object o1,
+            object o2,
+            object o3,
+            object o4,
+            object o5,
+            object o6,
+            object o7,
+            object o8,
+            object o9,
+            object o10,
+            object o11
+        );
+        private delegate void EventWrapper12(
+            object o1,
+            object o2,
+            object o3,
+            object o4,
+            object o5,
+            object o6,
+            object o7,
+            object o8,
+            object o9,
+            object o10,
+            object o11,
+            object o12
+        );
+        private delegate void EventWrapper13(
+            object o1,
+            object o2,
+            object o3,
+            object o4,
+            object o5,
+            object o6,
+            object o7,
+            object o8,
+            object o9,
+            object o10,
+            object o11,
+            object o12,
+            object o13
+        );
+        private delegate void EventWrapper14(
+            object o1,
+            object o2,
+            object o3,
+            object o4,
+            object o5,
+            object o6,
+            object o7,
+            object o8,
+            object o9,
+            object o10,
+            object o11,
+            object o12,
+            object o13,
+            object o14
+        );
+        private delegate void EventWrapper15(
+            object o1,
+            object o2,
+            object o3,
+            object o4,
+            object o5,
+            object o6,
+            object o7,
+            object o8,
+            object o9,
+            object o10,
+            object o11,
+            object o12,
+            object o13,
+            object o14,
+            object o15
+        );
+        private delegate void EventWrapper16(
+            object o1,
+            object o2,
+            object o3,
+            object o4,
+            object o5,
+            object o6,
+            object o7,
+            object o8,
+            object o9,
+            object o10,
+            object o11,
+            object o12,
+            object o13,
+            object o14,
+            object o15,
+            object o16
+        );
 
         /// <summary>
         /// Gets the name of the member
@@ -309,8 +616,5 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         {
             this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
         }
-
     }
 }
-
-

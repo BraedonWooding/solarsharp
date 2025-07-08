@@ -11,10 +11,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class ResourceLimitExceededException : CriticalSecurityException
     {
-        public ResourceLimitExceededException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.ResourceLimitExceeded, operation, arguments)
-        {
-        }
+        public ResourceLimitExceededException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.ResourceLimitExceeded, operation, arguments) { }
     }
 
     /// <summary>
@@ -22,10 +24,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class ExecutionTimeoutException : CriticalSecurityException
     {
-        public ExecutionTimeoutException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.ExecutionTimeout, operation, arguments)
-        {
-        }
+        public ExecutionTimeoutException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.ExecutionTimeout, operation, arguments) { }
     }
 
     /// <summary>
@@ -33,10 +37,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class MemoryExhaustionException : CriticalSecurityException
     {
-        public MemoryExhaustionException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.MemoryExhaustion, operation, arguments)
-        {
-        }
+        public MemoryExhaustionException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.MemoryExhaustion, operation, arguments) { }
     }
 
     /// <summary>
@@ -44,10 +50,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class CallDepthExceededException : CriticalSecurityException
     {
-        public CallDepthExceededException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.ResourceLimitExceeded, operation, arguments)
-        {
-        }
+        public CallDepthExceededException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.ResourceLimitExceeded, operation, arguments) { }
     }
 
     /// <summary>
@@ -55,10 +63,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class InstructionLimitExceededException : CriticalSecurityException
     {
-        public InstructionLimitExceededException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.ResourceLimitExceeded, operation, arguments)
-        {
-        }
+        public InstructionLimitExceededException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.ResourceLimitExceeded, operation, arguments) { }
     }
 
     /// <summary>
@@ -67,9 +77,7 @@ namespace SolarSharp.Interpreter.Security
     public class PathTraversalException : CriticalSecurityException
     {
         public PathTraversalException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.FileAccessViolation, operation, arguments)
-        {
-        }
+            : base(message, SecurityEventType.FileAccessViolation, operation, arguments) { }
     }
 
     /// <summary>
@@ -78,9 +86,7 @@ namespace SolarSharp.Interpreter.Security
     public class InvalidPathException : CriticalSecurityException
     {
         public InvalidPathException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.FileAccessViolation, operation, arguments)
-        {
-        }
+            : base(message, SecurityEventType.FileAccessViolation, operation, arguments) { }
     }
 
     /// <summary>
@@ -88,15 +94,21 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class ManifestSignatureException : CriticalSecurityException
     {
-        public ManifestSignatureException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.PolicyViolation, operation, arguments)
-        {
-        }
+        public ManifestSignatureException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.PolicyViolation, operation, arguments) { }
 
-        public ManifestSignatureException(string message, Exception innerException, string operation, params object[] arguments)
+        public ManifestSignatureException(
+            string message,
+            Exception innerException,
+            string operation,
+            params object[] arguments
+        )
             : base(message, innerException, SecurityEventType.PolicyViolation, operation, arguments)
-        {
-        }
+        { }
     }
 
     /// <summary>
@@ -105,14 +117,16 @@ namespace SolarSharp.Interpreter.Security
     public class ManifestFormatException : CriticalSecurityException
     {
         public ManifestFormatException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.PolicyViolation, operation, arguments)
-        {
-        }
+            : base(message, SecurityEventType.PolicyViolation, operation, arguments) { }
 
-        public ManifestFormatException(string message, Exception innerException, string operation, params object[] arguments)
+        public ManifestFormatException(
+            string message,
+            Exception innerException,
+            string operation,
+            params object[] arguments
+        )
             : base(message, innerException, SecurityEventType.PolicyViolation, operation, arguments)
-        {
-        }
+        { }
     }
 
     /// <summary>
@@ -120,10 +134,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class UnauthorizedFileWriteException : CriticalSecurityException
     {
-        public UnauthorizedFileWriteException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.FileAccessViolation, operation, arguments)
-        {
-        }
+        public UnauthorizedFileWriteException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.FileAccessViolation, operation, arguments) { }
     }
 
     /// <summary>
@@ -131,10 +147,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class UnauthorizedProcessExecutionException : CriticalSecurityException
     {
-        public UnauthorizedProcessExecutionException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.UnauthorizedOperation, operation, arguments)
-        {
-        }
+        public UnauthorizedProcessExecutionException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.UnauthorizedOperation, operation, arguments) { }
     }
 
     /// <summary>
@@ -142,10 +160,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class LuaFileWriteViolationException : CriticalSecurityException
     {
-        public LuaFileWriteViolationException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.FileAccessViolation, operation, arguments)
-        {
-        }
+        public LuaFileWriteViolationException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.FileAccessViolation, operation, arguments) { }
     }
 
     /// <summary>
@@ -153,10 +173,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class ManifestWriteViolationException : CriticalSecurityException
     {
-        public ManifestWriteViolationException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.FileAccessViolation, operation, arguments)
-        {
-        }
+        public ManifestWriteViolationException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.FileAccessViolation, operation, arguments) { }
     }
 
     // ===============================================
@@ -169,9 +191,7 @@ namespace SolarSharp.Interpreter.Security
     public class FileReadDeniedException : NonCriticalSecurityException
     {
         public FileReadDeniedException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.FileAccessDenied, operation, arguments)
-        {
-        }
+            : base(message, SecurityEventType.FileAccessDenied, operation, arguments) { }
     }
 
     /// <summary>
@@ -179,10 +199,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class DirectoryAccessDeniedException : NonCriticalSecurityException
     {
-        public DirectoryAccessDeniedException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.FileAccessDenied, operation, arguments)
-        {
-        }
+        public DirectoryAccessDeniedException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.FileAccessDenied, operation, arguments) { }
     }
 
     /// <summary>
@@ -190,10 +212,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class NetworkAccessDeniedException : NonCriticalSecurityException
     {
-        public NetworkAccessDeniedException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.NetworkAccessDenied, operation, arguments)
-        {
-        }
+        public NetworkAccessDeniedException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.NetworkAccessDenied, operation, arguments) { }
     }
 
     /// <summary>
@@ -201,10 +225,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class EnvironmentAccessDeniedException : NonCriticalSecurityException
     {
-        public EnvironmentAccessDeniedException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.EnvironmentAccessDenied, operation, arguments)
-        {
-        }
+        public EnvironmentAccessDeniedException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.EnvironmentAccessDenied, operation, arguments) { }
     }
 
     /// <summary>
@@ -212,10 +238,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class ManifestReadViolationException : NonCriticalSecurityException
     {
-        public ManifestReadViolationException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.FileAccessViolation, operation, arguments)
-        {
-        }
+        public ManifestReadViolationException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.FileAccessViolation, operation, arguments) { }
     }
 
     /// <summary>
@@ -223,10 +251,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class BlockedExtensionException : NonCriticalSecurityException
     {
-        public BlockedExtensionException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.FileAccessViolation, operation, arguments)
-        {
-        }
+        public BlockedExtensionException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.FileAccessViolation, operation, arguments) { }
     }
 
     /// <summary>
@@ -234,10 +264,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class ProtectedFileAccessException : NonCriticalSecurityException
     {
-        public ProtectedFileAccessException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.FileAccessViolation, operation, arguments)
-        {
-        }
+        public ProtectedFileAccessException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.FileAccessViolation, operation, arguments) { }
     }
 
     /// <summary>
@@ -245,10 +277,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class MissingCapabilityException : NonCriticalSecurityException
     {
-        public MissingCapabilityException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.AccessDenied, operation, arguments)
-        {
-        }
+        public MissingCapabilityException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.AccessDenied, operation, arguments) { }
     }
 
     /// <summary>
@@ -256,10 +290,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class FilePermissionViolationException : NonCriticalSecurityException
     {
-        public FilePermissionViolationException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.FileAccessViolation, operation, arguments)
-        {
-        }
+        public FilePermissionViolationException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.FileAccessViolation, operation, arguments) { }
     }
 
     /// <summary>
@@ -267,10 +303,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class ProcessExecutionViolationException : NonCriticalSecurityException
     {
-        public ProcessExecutionViolationException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.UnauthorizedOperation, operation, arguments)
-        {
-        }
+        public ProcessExecutionViolationException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.UnauthorizedOperation, operation, arguments) { }
     }
 
     /// <summary>
@@ -278,10 +316,12 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class CommandExecutionViolationException : NonCriticalSecurityException
     {
-        public CommandExecutionViolationException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.UnauthorizedOperation, operation, arguments)
-        {
-        }
+        public CommandExecutionViolationException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.UnauthorizedOperation, operation, arguments) { }
     }
 
     /// <summary>
@@ -290,9 +330,7 @@ namespace SolarSharp.Interpreter.Security
     public class CommandTimeoutException : CriticalSecurityException
     {
         public CommandTimeoutException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.ResourceLimitExceeded, operation, arguments)
-        {
-        }
+            : base(message, SecurityEventType.ResourceLimitExceeded, operation, arguments) { }
     }
 
     /// <summary>
@@ -300,9 +338,11 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class MetatableViolationException : CriticalSecurityException
     {
-        public MetatableViolationException(string message, string operation, params object[] arguments)
-            : base(message, SecurityEventType.UnauthorizedOperation, operation, arguments)
-        {
-        }
+        public MetatableViolationException(
+            string message,
+            string operation,
+            params object[] arguments
+        )
+            : base(message, SecurityEventType.UnauthorizedOperation, operation, arguments) { }
     }
 }

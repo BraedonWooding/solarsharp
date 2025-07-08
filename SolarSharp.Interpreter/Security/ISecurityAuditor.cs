@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SolarSharp.Interpreter.Security.Auditing;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -12,12 +13,22 @@ namespace SolarSharp.Interpreter.Security
         /// <summary>
         /// Logs a capability usage event
         /// </summary>
-        void LogCapabilityUsage(string capabilityName, string operation, object[] parameters, object result, bool success);
+        void LogCapabilityUsage(
+            string capabilityName,
+            string operation,
+            object[] parameters,
+            object result,
+            bool success
+        );
 
         /// <summary>
         /// Logs a security violation
         /// </summary>
-        void LogSecurityViolation(string description, SecurityEventType eventType = SecurityEventType.AccessDenied, Exception exception = null);
+        void LogSecurityViolation(
+            string description,
+            SecurityEventType eventType = SecurityEventType.AccessDenied,
+            Exception exception = null
+        );
 
         /// <summary>
         /// Logs a rate limiting event
@@ -36,23 +47,6 @@ namespace SolarSharp.Interpreter.Security
     }
 
     /// <summary>
-    /// Security audit event
-    /// </summary>
-    public class SecurityAuditEvent
-    {
-        public DateTime Timestamp { get; set; }
-        public SecurityEventType EventType { get; set; }
-        public string Description { get; set; } = string.Empty;
-        public string CapabilityName { get; set; } = string.Empty;
-        public string Operation { get; set; } = string.Empty;
-        public object[] Parameters { get; set; } = Array.Empty<object>();
-        public object Result { get; set; }
-        public bool Success { get; set; }
-        public Exception Exception { get; set; }
-        public Dictionary<string, object> Metadata { get; set; } = new();
-    }
-
-    /// <summary>
     /// Security metrics for monitoring and analysis
     /// </summary>
     public class SecurityMetrics
@@ -61,12 +55,17 @@ namespace SolarSharp.Interpreter.Security
         public int ViolationCount { get; set; }
         public int CapabilityUsageCount { get; set; }
         public int RateLimitViolations { get; set; }
-        public Dictionary<string, int> EventsByType { get; set; } = new();
-        public Dictionary<string, int> ViolationsByCapability { get; set; } = new();
-        public Dictionary<string, CapabilityUsageStats> CapabilityStats { get; set; } = new();
+        public Dictionary<string, int> EventsByType { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, int> ViolationsByCapability { get; set; } =
+            new Dictionary<string, int>();
+        public Dictionary<string, CapabilityUsageStats> CapabilityStats { get; set; } =
+            new Dictionary<string, CapabilityUsageStats>();
         public DateTime FirstEvent { get; set; }
         public DateTime LastEvent { get; set; }
-        public TimeSpan MonitoringDuration => LastEvent - FirstEvent;
+        public TimeSpan MonitoringDuration
+        {
+            get { return LastEvent - FirstEvent; }
+        }
     }
 
     /// <summary>
@@ -74,7 +73,7 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class SecurityAuditor : ISecurityAuditor
     {
-        private readonly List<SecurityAuditEvent> _events = new();
+        private readonly List<SecurityAuditEvent> _events = new List<SecurityAuditEvent>();
         private readonly object _lockObject = new object();
         private readonly int _maxEvents;
 
@@ -83,53 +82,53 @@ namespace SolarSharp.Interpreter.Security
             _maxEvents = maxEvents;
         }
 
-        public void LogCapabilityUsage(string capabilityName, string operation, object[] parameters, object result, bool success)
+        public void LogCapabilityUsage(
+            string capabilityName,
+            string operation,
+            object[] parameters,
+            object result,
+            bool success
+        )
         {
-            var auditEvent = new SecurityAuditEvent
-            {
-                Timestamp = DateTime.UtcNow,
-                EventType = SecurityEventType.CapabilityUsage,
-                Description = $"Capability '{capabilityName}' executed operation '{operation}'",
-                CapabilityName = capabilityName,
-                Operation = operation,
-                Parameters = parameters ?? Array.Empty<object>(),
-                Result = result,
-                Success = success
-            };
+            var auditEvent = GeneralSecurityAuditEvent.CreateCapabilityUsage(
+                capabilityName,
+                operation,
+                parameters,
+                result,
+                success
+            );
 
             AddEvent(auditEvent);
         }
 
-        public void LogSecurityViolation(string description, SecurityEventType eventType = SecurityEventType.AccessDenied, Exception exception = null)
+        public void LogSecurityViolation(
+            string description,
+            SecurityEventType eventType = SecurityEventType.AccessDenied,
+            Exception exception = null
+        )
         {
-            var auditEvent = new SecurityAuditEvent
-            {
-                Timestamp = DateTime.UtcNow,
-                EventType = eventType,
-                Description = description,
-                Exception = exception,
-                Success = false
-            };
+            var auditEvent = GeneralSecurityAuditEvent.CreateSecurityViolation(
+                eventType,
+                description,
+                exception
+            );
 
             AddEvent(auditEvent);
         }
 
-        public void LogRateLimitViolation(string resource, int currentCount, int limit, TimeSpan window)
+        public void LogRateLimitViolation(
+            string resource,
+            int currentCount,
+            int limit,
+            TimeSpan window
+        )
         {
-            var auditEvent = new SecurityAuditEvent
-            {
-                Timestamp = DateTime.UtcNow,
-                EventType = SecurityEventType.RateLimitExceeded,
-                Description = $"Rate limit exceeded for '{resource}': {currentCount}/{limit} in {window}",
-                Success = false,
-                Metadata = new Dictionary<string, object>
-                {
-                    ["Resource"] = resource,
-                    ["CurrentCount"] = currentCount,
-                    ["Limit"] = limit,
-                    ["Window"] = window
-                }
-            };
+            var auditEvent = GeneralSecurityAuditEvent.CreateRateLimitViolation(
+                resource,
+                currentCount,
+                limit,
+                window
+            );
 
             AddEvent(auditEvent);
         }
@@ -151,17 +150,21 @@ namespace SolarSharp.Interpreter.Security
                 {
                     // Count by event type
                     var eventType = evt.EventType.ToString();
-                    metrics.EventsByType[eventType] = metrics.EventsByType.GetValueOrDefault(eventType, 0) + 1;
+                    metrics.EventsByType[eventType] =
+                        metrics.EventsByType.GetValueOrDefault(eventType, 0) + 1;
 
                     // Count violations
                     if (!evt.Success)
                     {
                         metrics.ViolationCount++;
-                        
+
                         if (!string.IsNullOrEmpty(evt.CapabilityName))
                         {
-                            metrics.ViolationsByCapability[evt.CapabilityName] = 
-                                metrics.ViolationsByCapability.GetValueOrDefault(evt.CapabilityName, 0) + 1;
+                            metrics.ViolationsByCapability[evt.CapabilityName] =
+                                metrics.ViolationsByCapability.GetValueOrDefault(
+                                    evt.CapabilityName,
+                                    0
+                                ) + 1;
                         }
                     }
 
@@ -205,5 +208,4 @@ namespace SolarSharp.Interpreter.Security
             }
         }
     }
-
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataTypes;
 
@@ -10,13 +10,13 @@ namespace SolarSharp.Interpreter.Loaders
     /// <summary>
     /// A script loader which can load scripts from assets in Unity3D.
     /// Scripts should be saved as .txt files in a subdirectory of Assets/Resources.
-    /// 
+    ///
     /// When MoonSharp is activated on Unity3D and the default script loader is used,
     /// scripts should be saved as .txt files in Assets/Resources/MoonSharp/Scripts.
     /// </summary>
     public class UnityAssetsScriptLoader : ScriptLoaderBase
     {
-        private readonly Dictionary<string, string> m_Resources = new();
+        private readonly Dictionary<string, string> m_Resources = new Dictionary<string, string>();
 
         /// <summary>
         /// The default path where scripts are meant to be stored (if not changed)
@@ -39,7 +39,6 @@ namespace SolarSharp.Interpreter.Loaders
 #endif
         }
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="UnityAssetsScriptLoader"/> class.
         /// </summary>
@@ -54,7 +53,10 @@ namespace SolarSharp.Interpreter.Loaders
         {
             try
             {
-                UnityEngine.Object[] array = UnityEngine.Resources.LoadAll(assetsPath, typeof(UnityEngine.TextAsset));
+                UnityEngine.Object[] array = UnityEngine.Resources.LoadAll(
+                    assetsPath,
+                    typeof(UnityEngine.TextAsset)
+                );
 
                 for (int i = 0; i < array.Length; i++)
                 {
@@ -78,23 +80,30 @@ namespace SolarSharp.Interpreter.Loaders
         {
             try
             {
-                Type resourcesType = Type.GetType("UnityEngine.Resources, UnityEngine");
-                Type textAssetType = Type.GetType("UnityEngine.TextAsset, UnityEngine");
+                var resourcesType = Type.GetType("UnityEngine.Resources, UnityEngine");
+                var textAssetType = Type.GetType("UnityEngine.TextAsset, UnityEngine");
 
-                MethodInfo textAssetNameGet = Framework.Do.GetGetMethod(Framework.Do.GetProperty(textAssetType, "name"));
-                MethodInfo textAssetTextGet = Framework.Do.GetGetMethod(Framework.Do.GetProperty(textAssetType, "text"));
+                var textAssetNameGet = Framework.Do.GetGetMethod(
+                    Framework.Do.GetProperty(textAssetType, "name")
+                );
+                var textAssetTextGet = Framework.Do.GetGetMethod(
+                    Framework.Do.GetProperty(textAssetType, "text")
+                );
 
-                MethodInfo loadAll = Framework.Do.GetMethod(resourcesType, "LoadAll",
-                    new Type[] { typeof(string), typeof(Type) });
+                var loadAll = Framework.Do.GetMethod(
+                    resourcesType,
+                    "LoadAll",
+                    new[] { typeof(string), typeof(Type) }
+                );
 
-                Array array = (Array)loadAll.Invoke(null, new object[] { assetsPath, textAssetType });
+                var array = (Array)loadAll.Invoke(null, new object[] { assetsPath, textAssetType });
 
-                for (int i = 0; i < array.Length; i++)
+                for (var i = 0; i < array.Length; i++)
                 {
-                    object o = array.GetValue(i);
+                    var o = array.GetValue(i);
 
-                    string name = textAssetNameGet.Invoke(o, null) as string;
-                    string text = textAssetTextGet.Invoke(o, null) as string;
+                    var name = textAssetNameGet.Invoke(o, null) as string;
+                    var text = textAssetTextGet.Invoke(o, null) as string;
 
                     m_Resources.Add(name, text);
                 }
@@ -104,14 +113,14 @@ namespace SolarSharp.Interpreter.Loaders
 #if !(PCL || ENABLE_DOTNET || NETFX_CORE)
                 Console.WriteLine("Error initializing UnityScriptLoader : {0}", ex);
 #endif
-                System.Diagnostics.Debug.WriteLine(string.Format("Error initializing UnityScriptLoader : {0}", ex));
+                Debug.WriteLine($"Error initializing UnityScriptLoader : {ex}");
             }
         }
 #endif
 
         private string GetFileName(string filename)
         {
-            int b = Math.Max(filename.LastIndexOf('\\'), filename.LastIndexOf('/'));
+            var b = Math.Max(filename.LastIndexOf('\\'), filename.LastIndexOf('/'));
 
             if (b > 0)
                 filename = filename[(b + 1)..];
@@ -137,15 +146,12 @@ namespace SolarSharp.Interpreter.Loaders
 
             if (m_Resources.ContainsKey(file))
                 return m_Resources[file];
-            else
-            {
-                var error = string.Format(
-@"Cannot load script '{0}'. By default, scripts should be .txt files placed under a Assets/Resources/{1} directory.
+            var error =
+                $@"Cannot load script '{file}'. By default, scripts should be .txt files placed under a Assets/Resources/{DEFAULT_PATH} directory.
 If you want scripts to be put in another directory or another way, use a custom instance of UnityAssetsScriptLoader or implement
-your own IScriptLoader (possibly extending ScriptLoaderBase).", file, DEFAULT_PATH);
+your own IScriptLoader (possibly extending ScriptLoaderBase).";
 
-                throw new Exception(error);
-            }
+            throw new Exception(error);
         }
 
         /// <summary>
@@ -159,7 +165,6 @@ your own IScriptLoader (possibly extending ScriptLoaderBase).", file, DEFAULT_PA
             return m_Resources.ContainsKey(file);
         }
 
-
         /// <summary>
         /// Gets the list of loaded scripts filenames (useful for debugging purposes).
         /// </summary>
@@ -168,9 +173,5 @@ your own IScriptLoader (possibly extending ScriptLoaderBase).", file, DEFAULT_PA
         {
             return m_Resources.Keys.ToArray();
         }
-
-
-
     }
 }
-

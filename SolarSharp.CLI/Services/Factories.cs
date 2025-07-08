@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.IO.Abstractions;
+using System.Linq;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SolarSharp.Interpreter;
@@ -10,149 +12,107 @@ using SolarSharp.Interpreter.Security.Manifests;
 namespace SolarSharp.CLI.Services
 {
     /// <summary>
-    /// Factory implementation for creating security configurations.
-    /// Handles different security levels and manifest loading.
+    /// Factory implementation for creating security policies.
+    /// Handles different example policies and manifest loading.
     /// </summary>
-    public class SecurityConfigurationFactory : ISecurityConfigurationFactory
+    public class SecurityPolicyFactory : ISecurityPolicyFactory
     {
-        private readonly ILogger<SecurityConfigurationFactory> _logger;
+        private readonly ILogger<SecurityPolicyFactory> _logger;
+        private readonly IFileSystem _fileSystem;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SecurityConfigurationFactory"/> class.
+        /// Initializes a new instance of the <see cref="SecurityPolicyFactory"/> class.
         /// </summary>
         /// <param name="logger">Logger for diagnostic output.</param>
-        public SecurityConfigurationFactory(ILogger<SecurityConfigurationFactory> logger)
+        /// <param name="fileSystem">File system abstraction.</param>
+        public SecurityPolicyFactory(ILogger<SecurityPolicyFactory> logger, IFileSystem fileSystem)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
 
         /// <summary>
-        /// Creates a security configuration based on the specified level and optional manifest.
+        /// Creates a security policy based on the specified policy name and optional manifest.
         /// </summary>
-        /// <param name="level">The security level name.</param>
+        /// <param name="policyName">The example policy name.</param>
         /// <param name="manifestPath">Optional path to a manifest file.</param>
-        /// <returns>A configured SecurityConfiguration instance.</returns>
-        public SecurityConfiguration Create(string level, string manifestPath = null)
+        /// <returns>A configured SecurityPolicy instance.</returns>
+        public SecurityPolicy Create(string policyName, string manifestPath = null)
         {
-            SecurityConfiguration config;
+            SecurityPolicy policy;
 
-            // If manifest is provided, use it regardless of security level
+            // If manifest is provided, use it regardless of policy name
             if (!string.IsNullOrEmpty(manifestPath))
             {
-                _logger.LogDebug("Loading security configuration from manifest: {ManifestPath}", manifestPath);
-                config = LoadFromManifest(manifestPath);
+                _logger.LogDebug(
+                    "Loading security policy from manifest: {ManifestPath}",
+                    manifestPath
+                );
+                policy = LoadFromManifest(manifestPath);
             }
             else
             {
-                // Create configuration based on security level
-                _logger.LogDebug("Creating security configuration for level: {Level}", level);
-                config = CreateFromLevel(level);
+                // Create policy based on example policy name
+                _logger.LogDebug("Creating security policy for: {PolicyName}", policyName);
+                if (!Examples.TryGetPolicy(policyName, out policy))
+                {
+                    throw new ArgumentException(
+                        $"Unknown policy name: {policyName}. Available policies: {string.Join(", ", Examples.GetAvailablePolicyNames())}"
+                    );
+                }
             }
 
-            return config;
+            return policy;
         }
 
         /// <summary>
-        /// Creates a security configuration from a predefined level.
-        /// </summary>
-        /// <param name="level">The security level name.</param>
-        /// <returns>A security configuration for the specified level.</returns>
-        private SecurityConfiguration CreateFromLevel(string level)
-        {
-            return level?.ToLowerInvariant() switch
-            {
-                "none" => CreateNoneConfiguration(),
-                "isolated" => SecurityConfiguration.Isolated(),
-                "desktop" => new SecurityConfiguration(), // Default is desktop
-                "automation" => SecurityConfiguration.Automation(),
-                _ => CreateDefaultWithWarning(level)
-            };
-        }
-
-        /// <summary>
-        /// Creates a default configuration with a warning for unknown levels.
-        /// </summary>
-        /// <param name="level">The unknown security level.</param>
-        /// <returns>A default security configuration.</returns>
-        private SecurityConfiguration CreateDefaultWithWarning(string level)
-        {
-            _logger.LogWarning("Unknown security level '{Level}', using desktop defaults", level);
-            return new SecurityConfiguration();
-        }
-
-        /// <summary>
-        /// Creates a "none" security configuration with minimal restrictions.
-        /// WARNING: This is dangerous and should only be used for trusted code.
-        /// </summary>
-        /// <returns>A minimally restrictive security configuration.</returns>
-        private SecurityConfiguration CreateNoneConfiguration()
-        {
-            _logger.LogWarning("Creating 'none' security configuration - this is dangerous!");
-            
-            var config = new SecurityConfiguration
-            {
-                AllowedModules = CoreModules.Preset_Complete,
-                FileSystem =
-                {
-                    // Disable most security restrictions
-                    DefaultFilePermissions = FilePermissions.ReadWrite,
-                    DefaultDirectoryPermissions = DirectoryPermissions.ListAndCreateFiles
-                },
-                AntiPolymorphism =
-                {
-                    PreventRunString = false,
-                    PreventInternalDynamicCode = false
-                },
-                Execution =
-                {
-                    TimeoutMs = 0, // No timeout
-                    MaxMemoryMB = 0 // No memory limit
-                }
-            };
-
-            return config;
-        }
-
-        /// <summary>
-        /// Loads a security configuration from a manifest file.
+        /// Loads a security policy from a manifest file.
         /// </summary>
         /// <param name="manifestPath">Path to the manifest file.</param>
-        /// <returns>A security configuration based on the manifest.</returns>
-        private SecurityConfiguration LoadFromManifest(string manifestPath)
+        /// <returns>A security policy based on the manifest.</returns>
+        private SecurityPolicy LoadFromManifest(string manifestPath)
         {
             try
             {
-                if (!File.Exists(manifestPath))
+                if (!_fileSystem.File.Exists(manifestPath))
                 {
                     throw new FileNotFoundException($"Manifest file not found: {manifestPath}");
                 }
 
-                var manifestJson = File.ReadAllText(manifestPath);
-                var manifest = JsonSerializer.Deserialize<Manifest>(manifestJson, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                var manifestJson = _fileSystem.File.ReadAllText(manifestPath);
+                var manifest = JsonSerializer.Deserialize<Manifest>(
+                    manifestJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
 
                 if (manifest == null)
                 {
                     throw new InvalidOperationException("Failed to deserialize manifest");
                 }
 
-                // Create base configuration and apply manifest policy settings
-                var config = new SecurityConfiguration();
-                
-                if (manifest.Policy != null)
+                // V2.0 - Extract policy from signed content blocks
+                var policies = manifest
+                    .GetAllPackages()
+                    .SelectMany(p => manifest.GetPoliciesForPackage(p.PackageId))
+                    .ToList();
+
+                if (!policies.Any())
                 {
-                    // Use the manifest's built-in conversion to SecurityConfigurationOverrides
-                    var overrides = manifest.Policy.ToSecurityOverrides();
-                    config = config.WithOverrides(overrides);
+                    throw new InvalidOperationException(
+                        "Manifest must contain at least one security policy in signed content blocks"
+                    );
                 }
 
-                _logger.LogInformation("Loaded manifest with {ModuleCount} modules and {CapabilityCount} capabilities",
-                    manifest.Policy?.AllowedModules?.Count ?? 0,
-                    manifest.Policy?.Capabilities?.Count ?? 0);
+                // TODO: Properly convert V2.0 policies to SecurityPolicy
+                // For now, create a basic restrictive policy
+                var policy = new SecurityPolicy();
 
-                return config;
+                _logger.LogInformation(
+                    "Loaded V2.0 manifest with {PolicyCount} policies",
+                    policies.Count
+                );
+
+                return policy;
             }
             catch (Exception ex)
             {
@@ -169,7 +129,7 @@ namespace SolarSharp.CLI.Services
         private CoreModules ParseModules(string[] moduleNames)
         {
             var modules = CoreModules.None;
-            
+
             foreach (var moduleName in moduleNames)
             {
                 modules |= moduleName.ToLowerInvariant() switch
@@ -187,10 +147,10 @@ namespace SolarSharp.CLI.Services
                     "coroutine" => CoreModules.Coroutine,
                     "json" => CoreModules.Json,
                     "dynamic" => CoreModules.Dynamic,
-                    _ => LogUnknownModule(moduleName)
+                    _ => LogUnknownModule(moduleName),
                 };
             }
-            
+
             return modules;
         }
 
@@ -204,7 +164,6 @@ namespace SolarSharp.CLI.Services
             _logger.LogWarning("Unknown module name: {ModuleName}", moduleName);
             return CoreModules.None;
         }
-
     }
 
     /// <summary>
@@ -224,24 +183,29 @@ namespace SolarSharp.CLI.Services
         }
 
         /// <summary>
-        /// Creates a new Script instance with the specified security configuration.
+        /// Creates a new Script instance with the specified security policy.
         /// </summary>
-        /// <param name="config">The security configuration to apply.</param>
+        /// <param name="policy">The security policy to apply.</param>
         /// <returns>A configured Script instance.</returns>
-        public Script Create(SecurityConfiguration config)
+        public Script Create(SecurityPolicy policy)
         {
-            ArgumentNullException.ThrowIfNull(config);
+            ArgumentNullException.ThrowIfNull(policy);
 
-            _logger.LogDebug("Creating script with security configuration");
-            
-            var script = new Script(config)
+            _logger.LogDebug("Creating script with security policy");
+
+            // Get the corresponding BasePolicySet from Examples
+            var basePolicySet = Examples.GetBasePolicySet(
+                policy.Name.GetValueOrDefault("Desktop").ToLowerInvariant()
+            );
+
+            var script = new Script(basePolicySet)
             {
                 Options =
                 {
                     // Configure script options
                     DebugPrint = Console.WriteLine,
-                    UseLuaErrorLocations = true
-                }
+                    UseLuaErrorLocations = true,
+                },
             };
 
             return script;

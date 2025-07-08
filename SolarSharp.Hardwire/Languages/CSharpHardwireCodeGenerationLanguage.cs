@@ -7,10 +7,14 @@ namespace SolarSharp.Hardwire.Languages
     public class CSharpHardwireCodeGenerationLanguage : HardwireCodeGenerationLanguage
     {
         /// <inheritdoc />
-        public override string Name => "C#";
+        public override string Name
+        {
+            get { return "C#"; }
+        }
 
         /// <inheritdoc />
-        public override CodeDomProvider CodeDomProvider { get; } = CodeDomProvider.CreateProvider("CSharp");
+        public override CodeDomProvider CodeDomProvider { get; } =
+            CodeDomProvider.CreateProvider("CSharp");
 
         /// <inheritdoc />
         public override CodeExpression UnaryPlus(CodeExpression arg)
@@ -61,9 +65,14 @@ namespace SolarSharp.Hardwire.Languages
         }
 
         /// <inheritdoc />
-        public override CodeExpression CreateMultidimensionalArray(string type, CodeExpression[] args)
+        public override CodeExpression CreateMultidimensionalArray(
+            string type,
+            CodeExpression[] args
+        )
         {
-            var idxexp = new CodeSnippetExpression(string.Join(", ", args.Select(e => ExpressionToString(e)).ToArray()));
+            var idxexp = new CodeSnippetExpression(
+                string.Join(", ", args.Select(e => ExpressionToString(e)).ToArray())
+            );
 
             return new CodeArrayCreateExpression(type, idxexp);
         }

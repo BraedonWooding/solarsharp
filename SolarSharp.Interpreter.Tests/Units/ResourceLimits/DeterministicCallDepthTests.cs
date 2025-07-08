@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Security.Operations;
 
 namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
 {
@@ -15,21 +16,39 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
     [Category("CallDepthLimits")]
     public class DeterministicCallDepthTests : ResourceLimitTestBase
     {
+        [Category("Resource.Unit")]
         [Test]
         [Order(1)]
         public void TestCallDepth_SimpleRecursion()
         {
-            var config = new SecurityConfiguration()
-                .WithCallDepth(100) // Low limit
-                .WithInstructionLimit(1_000_000) // High to avoid hitting it
-                .WithMemoryLimitMB(100) // High to avoid hitting it
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxCallDepth = 100, // Low limit
+                MaxInstructions = 1_000_000, // High to avoid hitting it
+                MaxMemoryMB = 100, // High to avoid hitting it
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<CallDepthExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local function recurse(n)
                         if n > 0 then
                             return recurse(n - 1)
@@ -38,28 +57,49 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
                     end
                     
                     recurse(200) -- Will exceed depth of 100
-                ");
+                "
+                );
             });
 
-            Assert.That(exception.Operation, Is.EqualTo("CallDepth"));
-            Assert.That(exception.Message, Does.Contain("100"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(exception.Operation, Is.EqualTo("CallDepth"));
+                Assert.That(exception.Message, Does.Contain("100"));
+            });
         }
 
         [Test]
         [Order(2)]
         public void TestCallDepth_MutualRecursion()
         {
-            var config = new SecurityConfiguration()
-                .WithCallDepth(50)
-                .WithInstructionLimit(1_000_000)
-                .WithMemoryLimitMB(100)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxCallDepth = 50,
+                MaxInstructions = 1_000_000,
+                MaxMemoryMB = 100,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<CallDepthExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local function odd(n)
                         if n == 0 then return false end
                         return even(n - 1)
@@ -71,7 +111,8 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
                     end
                     
                     even(100) -- Will exceed depth of 50
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("CallDepth"));
@@ -81,17 +122,34 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         [Order(3)]
         public void TestCallDepth_NestedFunctionCalls()
         {
-            var config = new SecurityConfiguration()
-                .WithCallDepth(75)
-                .WithInstructionLimit(1_000_000)
-                .WithMemoryLimitMB(100)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxCallDepth = 75,
+                MaxInstructions = 1_000_000,
+                MaxMemoryMB = 100,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<CallDepthExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local function level1(n)
                         if n <= 0 then return 0 end
                         return level2(n - 1) + 1
@@ -108,7 +166,8 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
                     end
                     
                     level1(100)
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("CallDepth"));
@@ -119,18 +178,35 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         public void TestCallDepth_TailCallOptimization()
         {
             // Test that we don't optimize tail calls (Lua does, but we shouldn't for security)
-            var config = new SecurityConfiguration()
-                .WithCallDepth(100)
-                .WithInstructionLimit(1_000_000)
-                .WithMemoryLimitMB(100)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxCallDepth = 100,
+                MaxInstructions = 1_000_000,
+                MaxMemoryMB = 100,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             // Act & Assert - Even tail calls should count toward depth
             var exception = Assert.Throws<CallDepthExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local function tailRecurse(n, acc)
                         if n == 0 then
                             return acc
@@ -139,7 +215,8 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
                     end
                     
                     tailRecurse(200, 0)
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("CallDepth"));
@@ -149,17 +226,34 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         [Order(5)]
         public void TestCallDepth_ClosureRecursion()
         {
-            var config = new SecurityConfiguration()
-                .WithCallDepth(80)
-                .WithInstructionLimit(1_000_000)
-                .WithMemoryLimitMB(100)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxCallDepth = 80,
+                MaxInstructions = 1_000_000,
+                MaxMemoryMB = 100,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<CallDepthExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local function makeCounter()
                         local count = 0
                         local function increment(n)
@@ -172,7 +266,8 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
                     
                     local counter = makeCounter()
                     counter(100)
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("CallDepth"));
@@ -182,17 +277,34 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         [Order(6)]
         public void TestCallDepth_MetatableCall()
         {
-            var config = new SecurityConfiguration()
-                .WithCallDepth(60)
-                .WithInstructionLimit(1_000_000)
-                .WithMemoryLimitMB(100)
-                .WithModules(CoreModules.Basic | CoreModules.Table | CoreModules.Metatables);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxCallDepth = 60,
+                MaxInstructions = 1_000_000,
+                MaxMemoryMB = 100,
+                AllowedModules = CoreModules.Basic | CoreModules.Table | CoreModules.Metatables,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<CallDepthExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local mt = {}
                     mt.__call = function(t, n)
                         if n <= 0 then return 0 end
@@ -201,7 +313,8 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
                     
                     local t = setmetatable({}, mt)
                     t(100)
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("CallDepth"));
@@ -212,25 +325,43 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         public void TestCallDepth_ExactLimit()
         {
             // Test hitting exact limit
-            var config = new SecurityConfiguration()
-                .WithCallDepth(10)
-                .WithInstructionLimit(1_000_000)
-                .WithMemoryLimitMB(100)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxCallDepth = 10,
+                MaxInstructions = 1_000_000,
+                MaxMemoryMB = 100,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             // Act & Assert - Should fail at depth 11
             var exception = Assert.Throws<CallDepthExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local function recurse(n, depth)
                         if n <= 0 then return depth end
                         return recurse(n - 1, depth + 1)
                     end
                     
                     recurse(15, 0) -- Will exceed depth of 10
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Message, Does.Contain("10"));
@@ -241,23 +372,41 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         public void TestCallDepth_NoFalsePositives()
         {
             // Should complete within limit
-            var config = new SecurityConfiguration()
-                .WithCallDepth(20)
-                .WithInstructionLimit(1_000_000)
-                .WithMemoryLimitMB(100)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxCallDepth = 20,
+                MaxInstructions = 1_000_000,
+                MaxMemoryMB = 100,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             // Recursion that should succeed
-            var result = script.DoString(@"
+            var result = script.DoString(
+                @"
                 local function factorial(n)
                     if n <= 1 then return 1 end
                     return n * factorial(n - 1)
                 end
                 
                 return factorial(10) -- Depth of 10, limit is 20
-            ");
+            "
+            );
 
             Assert.That(result.Number, Is.EqualTo(3628800)); // 10!
         }
@@ -266,18 +415,35 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         [Order(9)]
         public void TestCallDepth_ErrorHandling()
         {
-            var config = new SecurityConfiguration()
-                .WithCallDepth(40)
-                .WithInstructionLimit(1_000_000)
-                .WithMemoryLimitMB(100)
-                .WithModules(CoreModules.Basic | CoreModules.ErrorHandling);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxCallDepth = 40,
+                MaxInstructions = 1_000_000,
+                MaxMemoryMB = 100,
+                AllowedModules = CoreModules.Basic | CoreModules.ErrorHandling,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             // Act & Assert - pcall should not prevent depth limit
             var exception = Assert.Throws<CallDepthExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local function recurse(n)
                         if n <= 0 then return 0 end
                         local ok, result = pcall(recurse, n - 1)
@@ -289,7 +455,8 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
                     end
                     
                     recurse(50)
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("CallDepth"));
@@ -299,17 +466,34 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
         [Order(10)]
         public void TestCallDepth_GeneratorPattern()
         {
-            var config = new SecurityConfiguration()
-                .WithCallDepth(30)
-                .WithInstructionLimit(1_000_000)
-                .WithMemoryLimitMB(100)
-                .WithModules(CoreModules.Basic);
+            var config = Examples.IsolatedSecurityPolicy with
+            {
+                MaxCallDepth = 30,
+                MaxInstructions = 1_000_000,
+                MaxMemoryMB = 100,
+                AllowedModules = CoreModules.Basic,
+                AllowExecution = true,
+            };
 
-            var script = new Script(config);
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("test", config)
+                .MapFilePattern("*", "test")
+                .WithDefaultPolicy("test")
+                .Build();
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation should succeed"
+            );
+            var script = new Script(basePolicySetResult.Value);
 
             var exception = Assert.Throws<CallDepthExceededException>(() =>
             {
-                script.DoString(@"
+                script.DoString(
+                    @"
                     local function generator(n)
                         local function iter(i)
                             if i > n then return nil end
@@ -325,7 +509,8 @@ namespace SolarSharp.Interpreter.Tests.Units.ResourceLimits
                         local v
                         v, val = val(0)
                     end
-                ");
+                "
+                );
             });
 
             Assert.That(exception.Operation, Is.EqualTo("CallDepth"));

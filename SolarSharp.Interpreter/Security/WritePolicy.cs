@@ -22,6 +22,6 @@ namespace SolarSharp.Interpreter.Security
         /// Write operations are allowed directly to the real filesystem
         /// Requires explicit override in security configuration
         /// </summary>
-        Allow = 2
+        Allow = 2,
     }
 }

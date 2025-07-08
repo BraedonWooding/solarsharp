@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter
@@ -7,12 +8,13 @@ namespace SolarSharp.Interpreter
     /// </summary>
     public static class ScriptSecurityExtensions
     {
-        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Script, ScriptSecurityData> _securityData = new();
+        private static readonly ConditionalWeakTable<Script, ScriptSecurityData> _securityData =
+            new ConditionalWeakTable<Script, ScriptSecurityData>();
 
         /// <summary>
         /// Gets or sets the security configuration for this script
         /// </summary>
-        public static SecurityConfiguration SecurityConfiguration(this Script script)
+        public static SecurityPolicy SecurityPolicy(this Script script)
         {
             return _securityData.GetOrCreateValue(script).Configuration;
         }
@@ -20,9 +22,9 @@ namespace SolarSharp.Interpreter
         /// <summary>
         /// Sets the security configuration for this script
         /// </summary>
-        public static void SetSecurityConfiguration(this Script script, SecurityConfiguration configuration)
+        public static void SetSecurityPolicy(this Script script, SecurityPolicy policy)
         {
-            _securityData.GetOrCreateValue(script).Configuration = configuration;
+            _securityData.GetOrCreateValue(script).Configuration = policy;
         }
 
         /// <summary>
@@ -46,6 +48,12 @@ namespace SolarSharp.Interpreter
         /// </summary>
         public static SecurityEventHandler SecurityEventHandler(this Script script)
         {
+            // Try to get from service collection first
+            var eventHandler = script.GetService<SecurityEventHandler>();
+            if (eventHandler != null)
+                return eventHandler;
+
+            // Fall back to stored value
             return _securityData.GetOrCreateValue(script).EventHandler;
         }
 
@@ -63,7 +71,31 @@ namespace SolarSharp.Interpreter
         public static bool IsAuthorizedToRun(this Script script)
         {
             var data = _securityData.GetOrCreateValue(script);
+
+            // Host-initiated execution is always allowed (bypasses all policy checks)
+            if (data.IsHostInitiated)
+            {
+                return true;
+            }
+
+            // Script-initiated execution requires a valid security configuration
             return data.Configuration != null;
+        }
+
+        /// <summary>
+        /// Gets or sets whether the current execution was initiated by the host
+        /// </summary>
+        public static bool IsHostInitiatedExecution(this Script script)
+        {
+            return _securityData.GetOrCreateValue(script).IsHostInitiated;
+        }
+
+        /// <summary>
+        /// Sets whether the current execution was initiated by the host
+        /// </summary>
+        public static void SetHostInitiatedExecution(this Script script, bool value)
+        {
+            _securityData.GetOrCreateValue(script).IsHostInitiated = value;
         }
 
         /// <summary>
@@ -71,9 +103,10 @@ namespace SolarSharp.Interpreter
         /// </summary>
         private class ScriptSecurityData
         {
-            public SecurityConfiguration Configuration { get; set; }
+            public SecurityPolicy Configuration { get; set; }
             public ResourceController ResourceController { get; set; }
             public SecurityEventHandler EventHandler { get; set; }
+            public bool IsHostInitiated { get; set; }
         }
     }
 }

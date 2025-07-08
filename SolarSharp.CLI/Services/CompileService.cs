@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -15,18 +16,24 @@ namespace SolarSharp.CLI.Services
     {
         private readonly ILogger<CompileService> _logger;
         private readonly IScriptFactory _scriptFactory;
+        private readonly IFileSystem _fileSystem;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CompileService"/> class.
         /// </summary>
         /// <param name="logger">Logger for diagnostic output.</param>
         /// <param name="scriptFactory">Factory for creating script instances.</param>
+        /// <param name="fileSystem">File system abstraction.</param>
         public CompileService(
             ILogger<CompileService> logger,
-            IScriptFactory scriptFactory)
+            IScriptFactory scriptFactory,
+            IFileSystem fileSystem
+        )
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _scriptFactory = scriptFactory ?? throw new ArgumentNullException(nameof(scriptFactory));
+            _scriptFactory =
+                scriptFactory ?? throw new ArgumentNullException(nameof(scriptFactory));
+            _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
 
         /// <summary>
@@ -38,19 +45,24 @@ namespace SolarSharp.CLI.Services
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task CompileAsync(
-            string inputPath, 
-            string outputPath, 
-            CancellationToken cancellationToken)
+            string inputPath,
+            string outputPath,
+            CancellationToken cancellationToken
+        )
         {
             if (string.IsNullOrEmpty(inputPath))
                 throw new ArgumentNullException(nameof(inputPath));
             if (string.IsNullOrEmpty(outputPath))
                 throw new ArgumentNullException(nameof(outputPath));
 
-            _logger.LogDebug("Compiling script: {InputPath} to {OutputPath}", inputPath, outputPath);
+            _logger.LogDebug(
+                "Compiling script: {InputPath} to {OutputPath}",
+                inputPath,
+                outputPath
+            );
 
             // Validate input file exists
-            if (!File.Exists(inputPath))
+            if (!_fileSystem.File.Exists(inputPath))
             {
                 throw new FileNotFoundException($"Input script not found: {inputPath}");
             }
@@ -58,27 +70,30 @@ namespace SolarSharp.CLI.Services
             try
             {
                 await Task.Run(() => CompileScript(inputPath, outputPath), cancellationToken);
-                
-                _logger.LogInformation("Successfully compiled {InputPath} to {OutputPath}", 
-                    Path.GetFileName(inputPath), Path.GetFileName(outputPath));
+
+                _logger.LogInformation(
+                    "Successfully compiled {InputPath} to {OutputPath}",
+                    _fileSystem.Path.GetFileName(inputPath),
+                    _fileSystem.Path.GetFileName(outputPath)
+                );
             }
             catch (OperationCanceledException)
             {
                 _logger.LogDebug("Compilation cancelled");
-                
+
                 // Clean up partial output file if it exists
-                if (File.Exists(outputPath))
+                if (_fileSystem.File.Exists(outputPath))
                 {
                     try
                     {
-                        File.Delete(outputPath);
+                        _fileSystem.File.Delete(outputPath);
                     }
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, "Failed to clean up partial output file");
                     }
                 }
-                
+
                 throw;
             }
         }
@@ -93,45 +108,50 @@ namespace SolarSharp.CLI.Services
         {
             // Create a minimal script instance for compilation
             // We use the most restrictive security since we're only compiling
-            var script = _scriptFactory.Create(SecurityConfiguration.Isolated());
+            var script = _scriptFactory.Create(Examples.Isolated());
 
             try
             {
                 // Load and compile the script
                 _logger.LogDebug("Loading script from {InputPath}", inputPath);
-                var sourceCode = File.ReadAllText(inputPath);
-                
+                var sourceCode = _fileSystem.File.ReadAllText(inputPath);
+
                 // Compile to function
                 var func = script.LoadString(sourceCode, null, inputPath);
-                
+
                 if (func == null || func.Function == null)
                 {
-                    throw new InvalidOperationException("Failed to compile script - no function produced");
+                    throw new InvalidOperationException(
+                        "Failed to compile script - no function produced"
+                    );
                 }
 
                 // Ensure output directory exists
-                var outputDir = Path.GetDirectoryName(outputPath);
-                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                var outputDir = _fileSystem.Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !_fileSystem.Directory.Exists(outputDir))
                 {
                     _logger.LogDebug("Creating output directory: {OutputDir}", outputDir);
-                    Directory.CreateDirectory(outputDir);
+                    _fileSystem.Directory.CreateDirectory(outputDir);
                 }
 
                 // Save bytecode to file
-                using (var stream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+                using (var stream = _fileSystem.File.Create(outputPath))
                 {
                     script.Dump(func, stream);
                 }
 
                 // Log compilation statistics
-                var inputSize = new FileInfo(inputPath).Length;
-                var outputSize = new FileInfo(outputPath).Length;
+                var inputSize = _fileSystem.FileInfo.New(inputPath).Length;
+                var outputSize = _fileSystem.FileInfo.New(outputPath).Length;
                 var compressionRatio = (1.0 - (double)outputSize / inputSize) * 100;
-                
+
                 _logger.LogInformation(
                     "Compilation complete: {InputSize} bytes -> {OutputSize} bytes ({CompressionRatio:F1}% reduction)",
-                    inputSize, outputSize, compressionRatio);
-                
+                    inputSize,
+                    outputSize,
+                    compressionRatio
+                );
+
                 // Debug information is always stripped from bytecode dumps in SolarSharp
                 _logger.LogInformation("Bytecode saved (debug information stripped)");
             }

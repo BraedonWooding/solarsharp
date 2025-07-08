@@ -3,28 +3,40 @@
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Security Architecture](#security-architecture)
-3. [Manifest System](#manifest-system)
-4. [Sandbox System](#sandbox-system)
-5. [Usage Examples](#usage-examples)
-6. [API Reference](#api-reference)
-7. [Security Best Practices](#security-best-practices)
-8. [Migration Guide](#migration-guide)
+2. [Event-Driven Security Architecture](#event-driven-security-architecture)
+3. [Domain-Driven Design](#domain-driven-design)
+4. [Functional Programming Patterns](#functional-programming-patterns)
+5. [Manifest System](#manifest-system)
+6. [Policy Resolution](#policy-resolution)
+7. [Event Sourcing & Audit Trails](#event-sourcing--audit-trails)
+8. [Reactive Security Updates](#reactive-security-updates)
+9. [Usage Examples](#usage-examples)
+10. [API Reference](#api-reference)
+11. [Security Best Practices](#security-best-practices)
+12. [Migration Guide](#migration-guide)
 
 ## Overview
 
-SolarSharp provides a comprehensive security system designed to safely execute untrusted Lua scripts. The security architecture enforces security through multiple layers:
+SolarSharp provides a comprehensive event-driven security system designed to safely execute untrusted Lua scripts. The security architecture enforces security through multiple layers using modern functional programming and domain-driven design principles:
 
-1. **Built-in Security**: SystemManifests provide effective security policies by default
-2. **Optional Manifests**: Additional declarative policies that can further restrict (or with trust, extend) permissions
-3. **Sandboxing**: Runtime enforcement of security boundaries
+1. **Event-Driven Architecture**: All security operations generate domain events for complete auditability
+2. **Domain-Driven Design**: Proper aggregates, value objects, and domain services with ubiquitous language
+3. **Functional Programming**: Zero nulls, immutable data structures, and pure functions throughout
+4. **Reactive Programming**: Event-driven updates and notifications for real-time security monitoring
+5. **Policy-Based Security**: Multiple policies with scopes that intersect to create effective security
 
 ### Key Features
 
-- **Fluent Security API**: Configure security policies using intuitive builder pattern
-- **Preset Security Levels**: Isolated, DataProcessing, and Automation configurations
-- **Dynamic code control**: PreventDynamicCode option (allowed by default for developer convenience)
-- **Manifest compatibility**: Unified ISecurityPolicy interface for manifests and SecurityConfiguration
+- **Event-Driven Security**: Complete audit trail through domain events and event sourcing
+- **Functional Architecture**: Result<T> and Maybe<T> patterns eliminate nulls and exceptions
+- **Immutable Domain Models**: All policies and scopes are immutable using C# records
+- **Pure Functions**: Policy resolution uses pure functions with no side effects
+- **Reactive Updates**: Real-time security policy updates through event subscriptions
+- **Domain Aggregates**: SecurityPolicyAggregate, ManifestAggregate, TrustStoreAggregate
+- **BasePolicySet API**: Pre-validated security policies with functional transformations
+- **Policy Scope System**: File, Module, Directory, and Global scopes with pattern matching
+- **Policy Intersection**: Most restrictive policy wins through functional composition
+- **Manifest Policy Loading**: Manifests load multiple policies with different scopes
 - **Granular file access control**: Fine-grained permissions for files and directories
 - **Resource limits**: CPU time, memory, and instruction count limits
 - **Anti-polymorphism protection**: Prevents self-modifying code attacks
@@ -32,15 +44,18 @@ SolarSharp provides a comprehensive security system designed to safely execute u
 - **Environment variable configuration**: Security tracing and learning mode support
 - **Auto-generation**: Trace script execution to generate minimal manifests
 
-## Security Architecture
+## Event-Driven Security Architecture
 
 ### Core Principles
 
-1. **Deny all not granted**: Default behavior denies all operations unless explicitly allowed
-2. **Untrusted manifests winnow**: Untrusted manifests can only make security more restrictive
-3. **Trusted manifests replace**: Trusted manifests can grant new permissions
-4. **Least to most specific**: Rules are applied from general to specific scopes
-5. **All or nothing**: If any part of a manifest fails validation, the entire manifest is rejected
+1. **Event-Driven Design**: All security operations generate domain events for complete auditability
+2. **Domain-Driven Design**: Proper aggregates, value objects, and bounded contexts with ubiquitous language
+3. **Functional Programming**: Zero nulls, immutable data structures, and pure functions throughout
+4. **Most Restrictive Wins**: The effective policy is the intersection (most restrictive) of all applicable policies
+5. **Immutable Policies**: All policies and scopes are immutable using C# records
+6. **Pure Functions**: Policy resolution uses pure functions with no side effects
+7. **Event Sourcing**: Complete audit trail through domain events and event sourcing
+8. **Reactive Programming**: Event-driven updates and notifications for real-time security monitoring
 
 ### Component Overview
 
@@ -48,10 +63,30 @@ SolarSharp provides a comprehensive security system designed to safely execute u
 ┌─────────────────────────────────────────────────────────────┐
 │                        Script Instance                       │
 ├─────────────────────────────────────────────────────────────┤
-│                   Security Policy Layer                      │
+│                   Event-Driven Security Layer                │
 │  ┌─────────────────┐         ┌──────────────────────────┐  │
-│  │SecurityConfig   │ ←─────→ │ ISecurityPolicy          │  │
-│  │(Fluent API)     │         │ (Manifest/Config)        │  │
+│  │SecurityPolicy   │ ←─────→ │ IEventPublisher<T>       │  │
+│  │Aggregate        │         │ (Domain Events)          │  │
+│  └─────────────────┘         └──────────────────────────┘  │
+│                               ┌──────────────────────────┐  │
+│                               │ PolicyResolver           │  │
+│                               │ (Pure Functions)         │  │
+│                               └──────────────────────────┘  │
+├─────────────────────────────────────────────────────────────┤
+│                    Policy Resolution Layer                   │
+│  ┌─────────────────┐         ┌──────────────────────────┐  │
+│  │BasePolicySet    │ ←─────→ │ PolicySetOperations      │  │
+│  │(Validated)      │         │ (Functional Transform)   │  │
+│  └─────────────────┘         └──────────────────────────┘  │
+│                               ┌──────────────────────────┐  │
+│                               │ Result<T> / Maybe<T>     │  │
+│                               │ (Error Handling)         │  │
+│                               └──────────────────────────┘  │
+├─────────────────────────────────────────────────────────────┤
+│                    Event Sourcing & Audit                   │
+│  ┌─────────────────┐         ┌──────────────────────────┐  │
+│  │EventStore       │ ←─────→ │ SecurityAuditEvent       │  │
+│  │(Audit Trail)    │         │ (Domain Events)          │  │
 │  └─────────────────┘         └──────────────────────────┘  │
 ├─────────────────────────────────────────────────────────────┤
 │                    Security Enforcement                      │
@@ -63,17 +98,257 @@ SolarSharp provides a comprehensive security system designed to safely execute u
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## Domain-Driven Design
+
+### Domain Aggregates
+
+SolarSharp uses domain aggregates to encapsulate business logic and maintain consistency:
+
+#### SecurityPolicyAggregate
+```csharp
+public sealed class SecurityPolicyAggregate
+{
+    public SecurityPolicyId Id { get; }
+    public ImmutableArray<SecurityPolicy> Policies { get; }
+    public ImmutableArray<SecurityAuditEvent> Events { get; }
+    
+    public Result<SecurityPolicy, PolicyResolutionError> ResolvePolicy(LuaExecutionContext context)
+    {
+        // Pure function policy resolution
+        // Generates PolicyResolutionStarted/Completed events
+    }
+}
+```
+
+#### ManifestAggregate
+```csharp
+public sealed class ManifestAggregate
+{
+    public ManifestId Id { get; }
+    public Maybe<LoadedManifest> Manifest { get; }
+    public ImmutableArray<ManifestValidationEvent> Events { get; }
+    
+    public Result<LoadedManifest, ManifestValidationError> ValidateManifest(string path)
+    {
+        // Pure function manifest validation
+        // Generates ManifestValidationStarted/Completed events
+    }
+}
+```
+
+#### TrustStoreAggregate
+```csharp
+public sealed class TrustStoreAggregate
+{
+    public TrustStoreId Id { get; }
+    public ImmutableDictionary<string, X509Certificate> TrustedCertificates { get; }
+    public ImmutableArray<TrustStoreEvent> Events { get; }
+    
+    public Result<bool, TrustValidationError> ValidateTrust(X509Certificate certificate)
+    {
+        // Pure function trust validation
+        // Generates TrustValidationStarted/Completed events
+    }
+}
+```
+
+### Value Objects
+
+All domain models are immutable value objects using C# records:
+
+```csharp
+public sealed record SecurityPolicy
+{
+    public Maybe<string> Name { get; init; }
+    public int TimeoutMs { get; init; }
+    public int MaxMemoryMB { get; init; }
+    public ImmutableArray<string> AllowedPaths { get; init; }
+    
+    public SecurityPolicy IntersectWith(SecurityPolicy other) => 
+        this with 
+        {
+            TimeoutMs = Math.Min(TimeoutMs, other.TimeoutMs),
+            MaxMemoryMB = Math.Min(MaxMemoryMB, other.MaxMemoryMB),
+            AllowedPaths = AllowedPaths.Intersect(other.AllowedPaths).ToImmutableArray()
+        };
+}
+```
+
+## Functional Programming Patterns
+
+### Result<T> Pattern
+
+All operations return `Result<T>` instead of throwing exceptions:
+
+```csharp
+public Result<SecurityPolicy, PolicyResolutionError> ResolvePolicy(LuaExecutionContext context)
+{
+    return context.Identity
+        .ToResult(new PolicyResolutionError("Missing identity"))
+        .Map(identity => GetPolicyForIdentity(identity))
+        .Bind(policy => ValidatePolicy(policy))
+        .Tap(policy => PublishEvent(new PolicyResolutionCompletedEvent(policy)));
+}
+```
+
+### Maybe<T> Pattern
+
+Optional values use `Maybe<T>` instead of null:
+
+```csharp
+public Maybe<SecurityPolicy> GetPolicyForIdentity(ScriptIdentity identity)
+{
+    return _policies.TryGetValue(identity.PublicKeyToken, out var policy)
+        ? Maybe<SecurityPolicy>.From(policy)
+        : Maybe<SecurityPolicy>.None;
+}
+```
+
+### Immutable Collections
+
+All collections are immutable:
+
+```csharp
+public ImmutableDictionary<string, SecurityPolicy> Policies { get; }
+public ImmutableArray<SecurityAuditEvent> Events { get; }
+```
+
+## Policy Resolution
+
+### Event-Driven Policy Resolution
+
+Policy resolution is an event-driven process that generates domain events for complete auditability:
+
+```csharp
+public sealed class SecurityPolicyResolver
+{
+    private readonly IEventPublisher _eventPublisher;
+    
+    public async Task<Result<SecurityPolicy, PolicyResolutionError>> ResolvePolicy(
+        LuaExecutionContext context)
+    {
+        await _eventPublisher.PublishAsync(new PolicyResolutionStartedEvent(context));
+        
+        return await ResolveDefaultPolicy(context)
+            .Bind(policy => ApplyManifestRestrictions(policy, context))
+            .Tap(policy => _eventPublisher.PublishAsync(new PolicyResolutionCompletedEvent(policy)))
+            .TapError(error => _eventPublisher.PublishAsync(new PolicyResolutionFailedEvent(error)));
+    }
+}
+```
+
+### Policy Resolution Events
+
+- **PolicyResolutionStartedEvent**: Tracks policy resolution initiation
+- **PolicyResolutionCompletedEvent**: Tracks successful policy resolution
+- **PolicyResolutionFailedEvent**: Tracks policy resolution failures
+- **ManifestPolicyAppliedEvent**: Tracks manifest policy application
+- **PolicyIntersectionEvent**: Tracks policy intersection operations
+
+## Event Sourcing & Audit Trails
+
+### Complete Audit Trail
+
+All security operations generate domain events that are persisted in an event store:
+
+```csharp
+public sealed class SecurityEventStore
+{
+    private readonly ImmutableArray<SecurityAuditEvent> _events;
+    
+    public async Task<Result<Unit, EventStoreError>> AppendEvent(SecurityAuditEvent auditEvent)
+    {
+        // Append event to immutable event store
+        // Generate EventAppendedEvent for reactive updates
+    }
+    
+    public ImmutableArray<SecurityAuditEvent> GetEventsForScript(ScriptIdentity identity)
+    {
+        return _events.Where(e => e.ScriptIdentity == identity).ToImmutableArray();
+    }
+}
+```
+
+### Event Types
+
+- **SecurityAuditEvent**: Base class for all security events
+- **EvalExecutionAuthorizedEvent**: Tracks eval execution authorization
+- **EvalExecutionDeniedEvent**: Tracks eval execution denials
+- **ManifestValidationEvent**: Tracks manifest validation lifecycle
+- **TrustStoreEvent**: Tracks trust store operations
+- **PolicyResolutionEvent**: Tracks policy resolution operations
+
+## Reactive Security Updates
+
+### Event-Driven Updates
+
+Security policies can be updated reactively through event subscriptions:
+
+```csharp
+public sealed class ReactiveSecurityUpdater
+{
+    private readonly IEventSubscriber<PolicyUpdatedEvent> _policySubscriber;
+    
+    public async Task HandlePolicyUpdate(PolicyUpdatedEvent policyEvent)
+    {
+        // Reactively update security policies
+        // Generate PolicyUpdateAppliedEvent
+    }
+}
+```
+
+### Real-Time Monitoring
+
+Security events enable real-time monitoring and alerting:
+
+```csharp
+public sealed class SecurityMonitor
+{
+    private readonly IEventSubscriber<SecurityAuditEvent> _auditSubscriber;
+    
+    public async Task HandleSecurityEvent(SecurityAuditEvent auditEvent)
+    {
+        if (auditEvent is EvalExecutionDeniedEvent deniedEvent)
+        {
+            // Generate security alert for denied execution
+            await GenerateSecurityAlert(deniedEvent);
+        }
+    }
+}
+```
+
 ## Manifest System
 
 ### What is a Manifest?
 
-A manifest is a JSON file that declares security policies for Lua scripts. Manifests control:
+A manifest is a JSON file that declares security policies for Lua scripts using domain-driven design principles. Manifests control:
 
 - Resource limits (timeout, memory, instructions)
 - File and directory access permissions
 - Network and environment access
 - Available Lua modules and capabilities
 - Anti-polymorphism rules
+
+### Event-Driven Manifest Validation
+
+Manifest validation generates domain events for complete auditability:
+
+```csharp
+public sealed class EventDrivenManifestValidator
+{
+    public async Task<Result<LoadedManifest, ManifestValidationError>> ValidateManifest(
+        string manifestPath)
+    {
+        await PublishEvent(new ManifestValidationStartedEvent(manifestPath));
+        
+        return await LoadManifest(manifestPath)
+            .Bind(manifest => ValidateSignature(manifest))
+            .Bind(manifest => ValidateTrust(manifest))
+            .Tap(manifest => PublishEvent(new ManifestValidationCompletedEvent(manifest)))
+            .TapError(error => PublishEvent(new ManifestValidationFailedEvent(error)));
+    }
+}
+```
 
 ### Manifest Structure
 
@@ -118,68 +393,68 @@ A manifest is a JSON file that declares security policies for Lua scripts. Manif
 }
 ```
 
-### System Manifests
+### Example Policy Configurations
 
-SolarSharp provides pre-configured system manifests for common scenarios:
+SolarSharp provides pre-validated BasePolicySets for common scenarios:
 
-#### SystemManifest.None
-- **Purpose**: Denies all operations
-- **Use Case**: Fully disabled script execution
-
-#### SystemManifest.Unrestricted
-- **Purpose**: No security limits (dangerous!)
-- **Use Case**: Trusted development environments only
-
-#### SystemManifest.Desktop
-- **Purpose**: PHP-like environment for desktop applications
-- **Settings**:
-  - Timeout: 60 seconds
-  - Memory: 128MB
-  - No chroot (full file system access)
-  - Working directory: Script directory
-  - All standard Lua modules available
-
-#### SystemManifest.Jailed
-- **Purpose**: Maximum security sandbox
+#### Examples.IsolatedBasePolicySet
+- **Purpose**: Maximum security restrictions
 - **Settings**:
   - Timeout: 5 seconds
   - Memory: 10MB
   - No file access
-  - Minimal Lua modules (Basic, Table, String, Math)
+  - Minimal Lua modules
 
-#### SystemManifest.Game
+#### Examples.ConfigurationBasePolicySet
+- **Purpose**: Configuration file processing
+- **Settings**:
+  - Timeout: 30 seconds
+  - Memory: 50MB
+  - Read-only file access
+  - Basic Lua modules
+
+#### Examples.DesktopBasePolicySet
+- **Purpose**: Desktop application scripting
+- **Settings**:
+  - Timeout: 60 seconds
+  - Memory: 256MB
+  - Full file system access
+  - All standard Lua modules
+
+#### Examples.GameBasePolicySet
 - **Purpose**: Game scripting environment
 - **Settings**:
   - Timeout: 300ms per frame
   - Memory: 25MB
   - Sandboxed to application directory
-  - Limited file handles (10 max)
   - Game-appropriate modules
 
-### SystemManifest Validation
+### Policy Validation and Composition
 
-SystemManifests must meet strict validation requirements to ensure they provide effective security coverage:
+Policies are validated and transformed using functional methods:
 
 ```csharp
-// Validate a manifest for SystemManifest promotion
-var validation = ManifestValidator.ValidateSystemManifest(manifest);
-if (!validation.IsValid)
-{
-    throw new ArgumentException($"Invalid SystemManifest: {string.Join(", ", validation.Errors)}");
-}
+// Start with pre-validated BasePolicySet
+var basePolicySet = Examples.DesktopBasePolicySet;
 
-// Promote validated manifest to SystemManifest
-var systemManifest = SystemManifest.FromManifest(manifest);
+// Apply transformations
+var result = basePolicySet
+    .ApplyToAll(p => p with { MaxMemoryMB = 100, TimeoutMs = 30000 })
+    .Bind(bs => bs.ApplyToScope("*.lua", p => p with { MaxMemoryMB = 50 }));
 
-// Validate all built-in SystemManifests (useful for testing)
-var allResults = ManifestValidator.ValidateAllSystemManifests();
-foreach (var result in allResults)
-{
-    if (!result.Value.IsValid)
-    {
-        Console.WriteLine($"SystemManifest.{result.Key} is invalid: {result.Value}");
-    }
-}
+// Handle validation results
+result.Match(
+    success => {
+        var script = new Script(success);
+        // Use script...
+    },
+    error => Console.WriteLine($"Validation failed: {error.Message}")
+);
+
+// Or for tests, fail fast
+var validated = basePolicySet
+    .ApplyToAll(p => p with { MaxMemoryMB = 100 })
+    .GetValueOrThrow();
 ```
 
 **SystemManifest Validation Rules:**
@@ -206,17 +481,21 @@ When multiple manifests are applied to a script, they are composed according to 
 Example composition:
 
 ```csharp
-// Using SecurityConfiguration (C# fluent API)
-var config = SecurityConfiguration.Isolated()
-    .WithTimeout(TimeSpan.FromSeconds(30))
-    .WithMemoryLimitMB(100)
-    .AddModule(CoreModules.IO);
+// Using PolicySetBuilder
+var policySet = new PolicySetBuilder()
+    .DefinePolicy("standard", Examples.DesktopSecurityPolicy)
+    .DefinePolicy("restricted", Examples.IsolatedSecurityPolicy with { MaxMemoryMB = 50 })
+    .MapFilePattern("*.lua", "standard")
+    .MapFilePattern("config/*.lua", "restricted")
+    .WithDefaultPolicy("standard")
+    .Build();
 
-// Or using manifest files
-var manifest = Manifest.LoadFromFile("app.manifest");
+// Create validated BasePolicySet
+var basePolicySet = BasePolicySetFactory.Create(policySet)
+    .GetValueOrThrow();
 
-// Both implement ISecurityPolicy for unified usage
-var script = new Script(config);  // or new Script(manifest)
+// Use with Script
+var script = new Script(basePolicySet);
 ```
 
 ### Scope System
@@ -248,7 +527,7 @@ Rules are composed based on their `RuleCompositionAttribute`:
 When cryptographic keys are loaded into the VM, all subsequent .lua file operations must use signed manifests:
 
 ```csharp
-var script = new Script();
+var script = new Script(Examples.DesktopBasePolicySet);
 
 // Load a public key - this enables strict manifest requirements
 script.LoadKey("-----BEGIN RSA PUBLIC KEY-----...");
@@ -284,13 +563,47 @@ bool hasKeys = script.HasLoadedKeys;
 - **Validation**: Signatures must be valid against one of the loaded keys
 - **Chain Validation**: All included manifests must use the same signing key
 
+### Manifest Signing Principles
+
+Manifest signing serves a specific purpose in SolarSharp's security model:
+
+#### Why Sign Manifests?
+
+**Manifests are signed to change the default policy that is applied to them.** Without signing:
+- Manifests can only make policies more restrictive
+- They inherit the default policy of their execution context
+- They cannot grant new permissions or increase limits
+
+With signing:
+- The manifest can specify its own base policy
+- It can define custom security boundaries for its files
+- Trust is established through cryptographic verification
+
+#### Automatic Security Rules
+
+1. **Digest Files are Read-Only**: Any file listed with a digest in the manifest becomes automatically read-only. This prevents tampering with verified code.
+
+2. **Token-Based Access Control**: A manifest can restrict its files to be readable only by contexts sharing its publicKeyToken:
+   ```json
+   {
+     "policy": {
+       "allowReadByToken": ["a1b2c3d4e5f67890"],
+       "filePermissions": {
+         "*.lua": "none"  // Default: no access
+       }
+     }
+   }
+   ```
+
+3. **Policy Intersection**: Even signed manifests can only make their policies MORE restrictive than the base policy, never less. The effective policy is always the intersection (most restrictive combination) of all applicable policies.
+
 ### Dynamic Code Control
 
 Dynamic code execution is allowed by default for developer convenience but can be disabled for enhanced security:
 
 ```csharp
 // Default - dynamic code allowed (developer friendly)
-var script = new Script(); // PreventDynamicCode = false
+var script = new Script(Examples.DesktopBasePolicySet); // PreventDynamicCode = false
 
 // Disable dynamic code for production
 var config = new SecurityConfiguration()
@@ -344,6 +657,71 @@ When manifests include other manifests, strict same-key validation is enforced:
 - **Recursive Validation**: All levels of includes validated
 - **Fail Fast**: Any invalid signature fails the entire chain
 - **No Overrides**: Cannot disable chain validation
+
+### File-Scoped Policy System (:eval)
+
+SolarSharp uses a file-scoped policy system to control dynamic code execution and other per-file security settings. This replaces the old PreventRunString and PreventInternalDynamicCode properties.
+
+#### How :eval Works
+
+The `:eval` suffix allows you to apply different policies to code that is dynamically evaluated versus code that is directly executed:
+
+```json
+{
+  "filePolicies": {
+    "*.lua": "standard",           // Policy for normal script execution
+    "*.lua:eval": "restricted"     // More restrictive policy for eval'd code
+  },
+  "policyDefinitions": {
+    "standard": {
+      "timeoutMs": 60000,
+      "maxMemoryMB": 256
+    },
+    "restricted": {
+      "timeoutMs": 5000,
+      "maxMemoryMB": 32
+    }
+  }
+}
+```
+
+#### Dynamic Code Execution Control
+
+When a script uses `load()`, `loadstring()`, or similar functions, the `:eval` policy is applied to the dynamically loaded code:
+
+```lua
+-- main.lua executes with "*.lua" policy
+local code = "return 42"
+local fn = load(code)  -- This code runs with "*.lua:eval" policy
+```
+
+#### Policy Resolution Order
+
+1. Check for exact file match with `:eval` suffix (e.g., `script.lua:eval`)
+2. Check for pattern match with `:eval` suffix (e.g., `*.lua:eval`)
+3. Fall back to non-eval policies for the file
+4. Apply manifest's default policy if no specific match
+
+#### Example: Preventing Dynamic Code Execution
+
+```json
+{
+  "filePolicies": {
+    "*.lua": "normal",
+    "*.lua:eval": "deny"
+  },
+  "policyDefinitions": {
+    "normal": {
+      "allowExecution": true
+    },
+    "deny": {
+      "allowExecution": false  // Prevents any dynamic code execution
+    }
+  }
+}
+```
+
+This configuration allows normal script execution but prevents any dynamically loaded code from running, effectively replacing the old PreventRunString functionality.
 
 ## Sandbox System
 
@@ -446,10 +824,15 @@ This two-tier approach provides several benefits:
 
 **Example 1: Read-Only Script**
 ```csharp
-var config = new SecurityConfiguration()
-    .AddCapabilities(ScriptCapabilities.FileRead)  // Enable file reading capability
-    .SetFilePermissions("/app/config.json", FilePermissions.Read)
-    .SetFilePermissions("/app/data/*.txt", FilePermissions.Read);
+var basePolicySet = Examples.ConfigurationBasePolicySet
+    .ApplyToAll(p => p with
+    {
+        Capabilities = ScriptCapabilities.FileRead,
+        FilePermissions = ImmutableDictionary<string, FilePermissions>.Empty
+            .Add("/app/config.json", FilePermissions.Read)
+            .Add("/app/data/*.txt", FilePermissions.Read)
+    })
+    .GetValueOrThrow();
 
 // Result:
 // Can read /app/config.json
@@ -460,10 +843,15 @@ var config = new SecurityConfiguration()
 
 **Example 2: Limited Write Access**
 ```csharp
-var config = new SecurityConfiguration()
-    .AddCapabilities(ScriptCapabilities.FileRead | ScriptCapabilities.FileWrite)
-    .SetFilePermissions("/app/logs/*.log", FilePermissions.ReadWrite)
-    .SetFilePermissions("/app/config/*", FilePermissions.Read);
+var basePolicySet = Examples.DesktopBasePolicySet
+    .ApplyToAll(p => p with
+    {
+        Capabilities = ScriptCapabilities.FileRead | ScriptCapabilities.FileWrite,
+        FilePermissions = ImmutableDictionary<string, FilePermissions>.Empty
+            .Add("/app/logs/*.log", FilePermissions.ReadWrite)
+            .Add("/app/config/*", FilePermissions.Read)
+    })
+    .GetValueOrThrow();
 
 // Result:
 // Can read and write /app/logs/app.log
@@ -474,9 +862,14 @@ var config = new SecurityConfiguration()
 
 **Example 3: Common Mistake - Missing Capability**
 ```csharp
-var config = new SecurityConfiguration()
-    // Forgot to add FileWrite capability!
-    .SetFilePermissions("/app/output/*", FilePermissions.ReadWrite);
+var basePolicySet = Examples.IsolatedBasePolicySet
+    .ApplyToAll(p => p with
+    {
+        // Forgot to add FileWrite capability!
+        FilePermissions = ImmutableDictionary<string, FilePermissions>.Empty
+            .Add("/app/output/*", FilePermissions.ReadWrite)
+    })
+    .GetValueOrThrow();
 
 // Result:
 // Cannot write to /app/output/file.txt
@@ -721,7 +1114,7 @@ var script = new Script(config);
 
 #### Enforcing Signed Manifests
 ```csharp
-var script = new Script();
+var script = new Script(Examples.DesktopBasePolicySet);
 
 // Load public keys to enforce manifest requirements
 script.LoadKey("-----BEGIN RSA PUBLIC KEY-----...");
@@ -744,7 +1137,7 @@ var prodScript = new Script(SystemManifest.Jailed);
 // prodScript.DoString("..."); // Throws SecurityException
 
 // Development: Enable string execution
-var devScript = new Script(SystemManifest.Desktop, StringExecution.True);
+var devScript = new Script(Examples.DesktopBasePolicySet);
 devScript.DoString("return 'Hello from string!'"); // Works
 ```
 
@@ -763,7 +1156,7 @@ script.DoString("io.open('/etc/passwd', 'r')"); // Logs violation but continues
 
 ```csharp
 // Using default desktop security (dynamic code allowed)
-var script = new Script();
+var script = new Script(Examples.DesktopBasePolicySet);
 script.DoString("print('Hello, World!')");
 
 // Using preset security configurations
@@ -805,7 +1198,7 @@ tracer.EnableTracing();
 // Run your script
 script.DoFile("application.lua");
 
-// Generate manifest based on observed behavior
+// Generate manifest based on observed behaviour
 var manifest = tracer.GenerateManifest();
 tracer.SaveManifest("application.manifest");
 
@@ -865,7 +1258,7 @@ internal DynValue DoStringInternal(string code, Table globalContext = null, stri
 internal DynValue LoadStringInternal(string code, Table globalContext = null, string codeFriendlyName = null)
 
 // Manifest management
-public void AddManifest(Manifest manifest, TrustLevel trust = TrustLevel.Untrusted)
+public void AddManifest(Manifest manifest)
 
 // VM-level key loading and security
 public void LoadKey(Security.Manifest.PublicKeyInfo publicKey)
@@ -961,9 +1354,8 @@ var stats = tracer.GetStatistics();
 ManifestTrustStore.AddTrustedKey(publicKeyPem);
 ManifestTrustStore.AddTrustedKeyFromFile("public.pem");
 
-// Check trust
-bool isTrusted = ManifestTrustStore.IsManifestTrusted(manifest);
-var trustLevel = ManifestTrustStore.GetTrustLevel(manifest);
+// Check signature
+bool hasKnownSignature = ManifestTrustStore.HasKnownSignature(manifest);
 
 // Manage keys
 ManifestTrustStore.RemoveTrustedKey(publicKeyPem);
@@ -991,7 +1383,7 @@ var script = new Script(SecurityConfiguration.Isolated());
 var script = new Script(SecurityConfiguration.DataProcessing());
 
 // For development - Desktop configuration (default)
-var script = new Script(); // PreventDynamicCode = false
+var script = new Script(Examples.DesktopBasePolicySet); // PreventDynamicCode = false
 
 // For trusted automation
 var script = new Script(SecurityConfiguration.Automation());
@@ -1021,7 +1413,7 @@ ManifestTrustStore.AddTrustedKeyFromFile("company-public.pem");
 
 // Check manifest trust before use
 var manifest = ManifestAutoLoader.DiscoverManifest(scriptPath);
-if (ManifestTrustStore.GetTrustLevel(manifest) != ManifestTrustLevel.Trusted)
+if (!ManifestTrustStore.HasKnownSignature(manifest))
 {
     throw new SecurityException("Untrusted manifest");
 }
@@ -1183,7 +1575,7 @@ var script = new Script(manifest, StringExecution.True);
 New code:
 ```csharp
 // Dynamic code allowed by default
-var script = new Script(); // PreventDynamicCode = false
+var script = new Script(Examples.DesktopBasePolicySet); // PreventDynamicCode = false
 
 // Disable dynamic code
 var config = new SecurityConfiguration()
@@ -1222,7 +1614,7 @@ var script = new Script(SecurityConfiguration.DataProcessing());
 var script = new Script(SecurityConfiguration.Automation());
 
 // Development - default with dynamic code allowed
-var script = new Script(); // Uses Desktop configuration
+var script = new Script(Examples.DesktopBasePolicySet); // Uses Desktop configuration
 ```
 
 ## Troubleshooting
@@ -1369,22 +1761,10 @@ public void SecurityOverhead_RemainsAcceptable()
 
 ## Trust Levels
 
-While the manifest system primarily uses Untrusted/Trusted levels, you can implement more granular trust management for different deployment environments:
-
-```csharp
-public enum ExtendedTrustLevel
-{
-    Untrusted,      // Default for unknown keys
-    Development,    // Development/testing keys
-    Staging,        // Staging environment keys
-    Production      // Production keys only
-}
-
-// Example usage:
-trusStore.AddTrustedKey(publicKey, algorithm, ExtendedTrustLevel.Production);
-```
-
-This allows different security policies based on the deployment environment.
+The manifest system provides signature verification and restriction enforcement. 
+Initial security restrictions are determined by the SecurityPolicy chosen when 
+creating the Script instance. Manifests can only add further restrictions, 
+never remove them, regardless of signature status.
 
 ## Conclusion
 

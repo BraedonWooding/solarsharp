@@ -8,20 +8,39 @@ namespace WotCI.UI
     /// <summary>
     /// Real-time security dashboard for monitoring plugin security events
     /// </summary>
-    public class SecurityDashboard
+    public class SecurityDashboard(
+        ISecurityAuditor auditor,
+        IScriptMessageBus? messageBus = null,
+        PluginManager? pluginManager = null
+    )
     {
-        private readonly ISecurityAuditor _auditor;
-        private readonly IScriptMessageBus? _messageBus;
-        private readonly PluginManager? _pluginManager;
-        private readonly List<SecurityDisplayEvent> _recentEvents = new();
+        private readonly ISecurityAuditor _auditor =
+            auditor ?? throw new ArgumentNullException(nameof(auditor));
+        private readonly List<SecurityDisplayEvent> _recentEvents =
+            new List<SecurityDisplayEvent>();
         private readonly object _eventsLock = new object();
         private DateTime _lastUpdate = DateTime.UtcNow;
 
-        public SecurityDashboard(ISecurityAuditor auditor, IScriptMessageBus? messageBus = null, PluginManager? pluginManager = null)
+        /// <summary>
+        /// Gets message bus statistics for testing and monitoring
+        /// </summary>
+        public MessageBusStats GetMessageBusStats()
         {
-            _auditor = auditor ?? throw new ArgumentNullException(nameof(auditor));
-            _messageBus = messageBus;
-            _pluginManager = pluginManager;
+            var stats = messageBus?.GetStats();
+            return stats
+                ?? new MessageBusStats
+                {
+                    TotalMessagesProcessed = 0,
+                    ActiveScripts = 0,
+                    DroppedMessages = 0,
+                    TotalSubscriptions = 0,
+                    PolicyViolations = 0,
+                    ExpiredMessages = 0,
+                    MessagesByType = new Dictionary<string, int>(),
+                    AverageProcessingTime = TimeSpan.Zero,
+                    FirstMessage = default,
+                    LastMessage = default,
+                };
         }
 
         /// <summary>
@@ -29,25 +48,25 @@ namespace WotCI.UI
         /// </summary>
         public Layout CreateDashboard()
         {
-            var layout = new Layout("Root")
-                .SplitRows(
-                    new Layout("Header").Size(3),
-                    new Layout("Main").SplitColumns(
-                        new Layout("Left").Ratio(2),
-                        new Layout("Right").Ratio(1)
-                    ),
-                    new Layout("Footer").Size(2)
-                );
+            var layout = new Layout("Root").SplitRows(
+                new Layout("Header").Size(3),
+                new Layout("Main").SplitColumns(
+                    new Layout("Left").Ratio(2),
+                    new Layout("Right").Ratio(1)
+                ),
+                new Layout("Footer").Size(2)
+            );
 
             // Header
             layout["Header"].Update(CreateHeader());
 
             // Main content - enhanced with message bus section
-            layout["Left"].SplitRows(
-                new Layout("Metrics").Size(10),
-                new Layout("MessageBus").Size(8),
-                new Layout("Events")
-            );
+            layout["Left"]
+                .SplitRows(
+                    new Layout("Metrics").Size(10),
+                    new Layout("MessageBus").Size(8),
+                    new Layout("Events")
+                );
 
             layout["Left"]["Metrics"].Update(CreateMetricsPanel());
             layout["Left"]["MessageBus"].Update(CreateMessageBusPanel());
@@ -81,19 +100,11 @@ namespace WotCI.UI
             _lastUpdate = DateTime.UtcNow;
         }
 
-        /// <summary>
-        /// Gets the current message bus statistics
-        /// </summary>
-        public MessageBusStats? GetMessageBusStats()
-        {
-            return _messageBus?.GetStats();
-        }
-
         private IRenderable CreateHeader()
         {
             var headerPanel = new Panel(
-                new Markup("[bold blue]🛡️  SolarSharp Security Dashboard[/]")
-                    .Centered())
+                new Markup("[bold blue]🛡️  SolarSharp Security Dashboard[/]").Centered()
+            )
                 .Border(BoxBorder.Double)
                 .BorderColor(Color.Blue);
 
@@ -103,7 +114,7 @@ namespace WotCI.UI
         private IRenderable CreateMetricsPanel()
         {
             var metrics = _auditor.GetSecurityMetrics();
-            var messageBusStats = _messageBus?.GetStats();
+            var messageBusStats = messageBus?.GetStats();
 
             var table = new Table()
                 .Border(TableBorder.Rounded)
@@ -115,55 +126,84 @@ namespace WotCI.UI
             table.AddColumn("[bold]Status[/]");
 
             // Security metrics
-            var violationColor = metrics.ViolationCount == 0 ? "green" : metrics.ViolationCount < 5 ? "yellow" : "red";
-            table.AddRow("Security Violations", 
-                $"[{violationColor}]{metrics.ViolationCount}[/]", 
-                GetStatusIcon(metrics.ViolationCount, 0, 3));
+            var violationColor =
+                metrics.ViolationCount == 0 ? "green"
+                : metrics.ViolationCount < 5 ? "yellow"
+                : "red";
+            table.AddRow(
+                "Security Violations",
+                $"[{violationColor}]{metrics.ViolationCount}[/]",
+                GetStatusIcon(metrics.ViolationCount, 0, 3)
+            );
 
-            table.AddRow("Total Events", 
-                $"[blue]{metrics.TotalEvents}[/]", 
-                GetStatusIcon(metrics.TotalEvents, 0, 100, true));
+            table.AddRow(
+                "Total Events",
+                $"[blue]{metrics.TotalEvents}[/]",
+                GetStatusIcon(metrics.TotalEvents, 0, 100, true)
+            );
 
-            table.AddRow("Capability Usage", 
-                $"[cyan]{metrics.CapabilityUsageCount}[/]", 
-                GetStatusIcon(metrics.CapabilityUsageCount, 0, 50, true));
+            table.AddRow(
+                "Capability Usage",
+                $"[cyan]{metrics.CapabilityUsageCount}[/]",
+                GetStatusIcon(metrics.CapabilityUsageCount, 0, 50, true)
+            );
 
-            table.AddRow("Rate Limit Violations", 
-                $"[{(metrics.RateLimitViolations == 0 ? "green" : "red")}]{metrics.RateLimitViolations}[/]", 
-                GetStatusIcon(metrics.RateLimitViolations, 0, 2));
+            table.AddRow(
+                "Rate Limit Violations",
+                $"[{(metrics.RateLimitViolations == 0 ? "green" : "red")}]{metrics.RateLimitViolations}[/]",
+                GetStatusIcon(metrics.RateLimitViolations, 0, 2)
+            );
 
             // Message bus metrics
             if (messageBusStats != null)
             {
-                table.AddRow("Messages Processed", 
-                    $"[magenta]{messageBusStats.TotalMessagesProcessed}[/]", 
-                    GetStatusIcon(messageBusStats.TotalMessagesProcessed, 0, 100, true));
+                table.AddRow(
+                    "Messages Processed",
+                    $"[magenta]{messageBusStats.TotalMessagesProcessed}[/]",
+                    GetStatusIcon(messageBusStats.TotalMessagesProcessed, 0, 100, true)
+                );
 
-                table.AddRow("Active Scripts", 
-                    $"[yellow]{messageBusStats.ActiveScripts}[/]", 
-                    GetStatusIcon(messageBusStats.ActiveScripts, 0, 10, true));
+                table.AddRow(
+                    "Active Scripts",
+                    $"[yellow]{messageBusStats.ActiveScripts}[/]",
+                    GetStatusIcon(messageBusStats.ActiveScripts, 0, 10, true)
+                );
 
-                table.AddRow("Dropped Messages", 
-                    $"[{(messageBusStats.DroppedMessages == 0 ? "green" : "red")}]{messageBusStats.DroppedMessages}[/]", 
-                    GetStatusIcon(messageBusStats.DroppedMessages, 0, 5));
+                table.AddRow(
+                    "Dropped Messages",
+                    $"[{(messageBusStats.DroppedMessages == 0 ? "green" : "red")}]{messageBusStats.DroppedMessages}[/]",
+                    GetStatusIcon(messageBusStats.DroppedMessages, 0, 5)
+                );
 
-                table.AddRow("Total Subscriptions", 
-                    $"[blue]{messageBusStats.TotalSubscriptions}[/]", 
-                    GetStatusIcon(messageBusStats.TotalSubscriptions, 0, 50, true));
+                table.AddRow(
+                    "Total Subscriptions",
+                    $"[blue]{messageBusStats.TotalSubscriptions}[/]",
+                    GetStatusIcon(messageBusStats.TotalSubscriptions, 0, 50, true)
+                );
 
-                table.AddRow("Policy Violations", 
-                    $"[{(messageBusStats.PolicyViolations == 0 ? "green" : "red")}]{messageBusStats.PolicyViolations}[/]", 
-                    GetStatusIcon(messageBusStats.PolicyViolations, 0, 3));
+                table.AddRow(
+                    "Policy Violations",
+                    $"[{(messageBusStats.PolicyViolations == 0 ? "green" : "red")}]{messageBusStats.PolicyViolations}[/]",
+                    GetStatusIcon(messageBusStats.PolicyViolations, 0, 3)
+                );
 
-                table.AddRow("Expired Messages", 
-                    $"[{(messageBusStats.ExpiredMessages == 0 ? "green" : "yellow")}]{messageBusStats.ExpiredMessages}[/]", 
-                    GetStatusIcon(messageBusStats.ExpiredMessages, 0, 5));
+                table.AddRow(
+                    "Expired Messages",
+                    $"[{(messageBusStats.ExpiredMessages == 0 ? "green" : "yellow")}]{messageBusStats.ExpiredMessages}[/]",
+                    GetStatusIcon(messageBusStats.ExpiredMessages, 0, 5)
+                );
 
                 if (messageBusStats.AverageProcessingTime.TotalMilliseconds > 0)
                 {
-                    table.AddRow("Avg Processing Time", 
-                        $"[cyan]{messageBusStats.AverageProcessingTime.TotalMilliseconds:F1}ms[/]", 
-                        GetStatusIcon((int)messageBusStats.AverageProcessingTime.TotalMilliseconds, 50, 200));
+                    table.AddRow(
+                        "Avg Processing Time",
+                        $"[cyan]{messageBusStats.AverageProcessingTime.TotalMilliseconds:F1}ms[/]",
+                        GetStatusIcon(
+                            (int)messageBusStats.AverageProcessingTime.TotalMilliseconds,
+                            50,
+                            200
+                        )
+                    );
                 }
             }
 
@@ -172,8 +212,8 @@ namespace WotCI.UI
 
         private IRenderable CreateMessageBusPanel()
         {
-            var messageBusStats = _messageBus?.GetStats();
-            
+            var messageBusStats = messageBus?.GetStats();
+
             if (messageBusStats == null)
             {
                 var emptyPanel = new Panel("[dim]Message Bus not available[/]")
@@ -197,8 +237,8 @@ namespace WotCI.UI
 
             if (messageBusStats.MessagesByType.Any())
             {
-                var topTypes = messageBusStats.MessagesByType
-                    .OrderByDescending(kvp => kvp.Value)
+                var topTypes = messageBusStats
+                    .MessagesByType.OrderByDescending(kvp => kvp.Value)
                     .Take(5);
 
                 foreach (var (type, count) in topTypes)
@@ -215,7 +255,7 @@ namespace WotCI.UI
             }
 
             // Active subscriptions
-            var subscriptions = _messageBus?.GetSubscriptions();
+            var subscriptions = messageBus?.GetSubscriptions();
             var subscriptionsTable = new Table()
                 .Border(TableBorder.None)
                 .HideHeaders()
@@ -225,9 +265,7 @@ namespace WotCI.UI
 
             if (subscriptions != null && subscriptions.Any())
             {
-                var topSubs = subscriptions
-                    .OrderByDescending(kvp => kvp.Value.Count)
-                    .Take(5);
+                var topSubs = subscriptions.OrderByDescending(kvp => kvp.Value.Count).Take(5);
 
                 foreach (var (messageType, subscribers) in topSubs)
                 {
@@ -255,12 +293,13 @@ namespace WotCI.UI
             if (messageBusStats.LastMessage != default && messageBusStats.FirstMessage != default)
             {
                 var duration = messageBusStats.LastMessage - messageBusStats.FirstMessage;
-                var rate = duration.TotalSeconds > 0 
-                    ? messageBusStats.TotalMessagesProcessed / duration.TotalSeconds 
-                    : 0;
+                var rate =
+                    duration.TotalSeconds > 0
+                        ? messageBusStats.TotalMessagesProcessed / duration.TotalSeconds
+                        : 0;
 
                 flowIndicators.AddRow(
-                    $"[blue]Message Rate:[/]",
+                    "[blue]Message Rate:[/]",
                     $"[yellow]{rate:F1} msg/s[/]",
                     GetMessageFlowIndicator(rate)
                 );
@@ -268,10 +307,10 @@ namespace WotCI.UI
 
             grid.AddRow(flowIndicators);
 
-            var panel = new Panel(grid)
-                .Border(BoxBorder.Rounded)
-                .BorderColor(Color.Purple);
-            panel.Header = new PanelHeader($"[bold purple]Message Bus ({messageBusStats.ActiveScripts} scripts)[/]");
+            var panel = new Panel(grid).Border(BoxBorder.Rounded).BorderColor(Color.Purple);
+            panel.Header = new PanelHeader(
+                $"[bold purple]Message Bus ({messageBusStats.ActiveScripts} scripts)[/]"
+            );
             return panel;
         }
 
@@ -283,7 +322,7 @@ namespace WotCI.UI
                 > 5 => "[yellow]▶▶[/]",
                 > 1 => "[green]▶[/]",
                 > 0 => "[dim]•[/]",
-                _ => "[dim]-[/]"
+                _ => "[dim]-[/]",
             };
         }
 
@@ -301,7 +340,11 @@ namespace WotCI.UI
 
             lock (_eventsLock)
             {
-                foreach (var evt in _recentEvents.TakeLast(SecurityConstants.Dashboard.MaxRecentEvents).Reverse())
+                foreach (
+                    var evt in _recentEvents
+                        .TakeLast(SecurityConstants.Dashboard.MaxRecentEvents)
+                        .Reverse()
+                )
                 {
                     var severityColor = evt.Severity switch
                     {
@@ -310,7 +353,7 @@ namespace WotCI.UI
                         SecuritySeverity.Medium => "yellow",
                         SecuritySeverity.Low => "green",
                         SecuritySeverity.Info => "blue",
-                        _ => "white"
+                        _ => "white",
                     };
 
                     var severityIcon = evt.Severity switch
@@ -320,7 +363,7 @@ namespace WotCI.UI
                         SecuritySeverity.Medium => "⚡",
                         SecuritySeverity.Low => "ℹ️",
                         SecuritySeverity.Info => "📝",
-                        _ => "❓"
+                        _ => "❓",
                     };
 
                     table.AddRow(
@@ -333,7 +376,12 @@ namespace WotCI.UI
 
                 if (!_recentEvents.Any())
                 {
-                    table.AddRow("[dim]--:--:--[/]", "[dim]No events[/]", "[dim]System running normally[/]", "[green]✅ OK[/]");
+                    table.AddRow(
+                        "[dim]--:--:--[/]",
+                        "[dim]No events[/]",
+                        "[dim]System running normally[/]",
+                        "[green]✅ OK[/]"
+                    );
                 }
             }
 
@@ -351,10 +399,10 @@ namespace WotCI.UI
             table.AddColumn("[bold]Trust[/]");
             table.AddColumn("[bold]Status[/]");
 
-            if (_pluginManager != null)
+            if (pluginManager != null)
             {
-                var plugins = _pluginManager.GetAvailablePlugins();
-                
+                var plugins = pluginManager.GetAvailablePlugins();
+
                 foreach (var plugin in plugins.OrderBy(p => p.TrustLevel).ThenBy(p => p.Name))
                 {
                     var trustColor = plugin.TrustLevel switch
@@ -362,22 +410,19 @@ namespace WotCI.UI
                         PluginTrustLevel.System => "green",
                         PluginTrustLevel.Partner => "yellow",
                         PluginTrustLevel.User => "blue",
-                        _ => "grey"
+                        _ => "grey",
                     };
 
-                    var statusIcon = plugin.IsEnabled ? 
-                        (plugin.IsHostile ? "[red]🔥 HOSTILE[/]" : "[green]✅ Active[/]") : 
-                        "[grey]⏸️ Disabled[/]";
+                    var statusIcon = plugin.IsEnabled
+                        ? (plugin.IsHostile ? "[red]🔥 HOSTILE[/]" : "[green]✅ Active[/]")
+                        : "[grey]⏸️ Disabled[/]";
 
-                    var pluginName = (plugin.Name?.Length ?? 0) > 15 ? 
-                        plugin.Name?.Substring(0, 12) + "..." : 
-                        plugin.Name ?? "Unknown";
+                    var pluginName =
+                        (plugin.Name?.Length ?? 0) > 15
+                            ? plugin.Name?.Substring(0, 12) + "..."
+                            : plugin.Name ?? "Unknown";
 
-                    table.AddRow(
-                        pluginName,
-                        $"[{trustColor}]{plugin.TrustLevel}[/]",
-                        statusIcon
-                    );
+                    table.AddRow(pluginName, $"[{trustColor}]{plugin.TrustLevel}[/]", statusIcon);
                 }
             }
             else
@@ -392,18 +437,14 @@ namespace WotCI.UI
         {
             var uptimeText = $"Uptime: {DateTime.UtcNow - _lastUpdate:hh\\:mm\\:ss}";
             var timestampText = $"Last Update: {_lastUpdate:HH:mm:ss}";
-            var helpText = "[dim]Press 'q' to quit dashboard, 'r' to refresh, 'p' for plugin management[/]";
+            var helpText =
+                "[dim]Press 'q' to quit dashboard, 'r' to refresh, 'p' for plugin management[/]";
 
-            var grid = new Grid()
-                .AddColumn()
-                .AddColumn()
-                .AddColumn();
+            var grid = new Grid().AddColumn().AddColumn().AddColumn();
 
             grid.AddRow(uptimeText, timestampText.PadLeft(20), helpText.PadLeft(40));
 
-            return new Panel(grid)
-                .Border(BoxBorder.None)
-                .Padding(0, 0);
+            return new Panel(grid).Border(BoxBorder.None).Padding(0, 0);
         }
 
         private void RefreshEvents()
@@ -411,27 +452,33 @@ namespace WotCI.UI
             lock (_eventsLock)
             {
                 _recentEvents.Clear();
-                
-                var auditEvents = _auditor.GetRecentEvents(SecurityConstants.Dashboard.MaxEventsFetch);
+
+                var auditEvents = _auditor.GetRecentEvents(
+                    SecurityConstants.Dashboard.MaxEventsFetch
+                );
                 foreach (var evt in auditEvents)
                 {
-                    _recentEvents.Add(new SecurityDisplayEvent
-                    {
-                        Timestamp = evt.Timestamp,
-                        Type = evt.EventType.ToString(),
-                        Description = evt.Description,
-                        Severity = DetermineSeverity(evt.EventType, evt.Success)
-                    });
+                    _recentEvents.Add(
+                        new SecurityDisplayEvent
+                        {
+                            Timestamp = evt.Timestamp,
+                            Type = evt.EventType.ToString(),
+                            Description = evt.Description,
+                            Severity = DetermineSeverity(evt.EventType, evt.Success),
+                        }
+                    );
                 }
 
                 // Sort by timestamp descending
                 _recentEvents.Sort((a, b) => b.Timestamp.CompareTo(a.Timestamp));
-                
+
                 // Ensure we don't keep more than the maximum allowed events
                 if (_recentEvents.Count > SecurityConstants.Dashboard.MaxEventsFetch)
                 {
-                    _recentEvents.RemoveRange(SecurityConstants.Dashboard.MaxEventsFetch, 
-                        _recentEvents.Count - SecurityConstants.Dashboard.MaxEventsFetch);
+                    _recentEvents.RemoveRange(
+                        SecurityConstants.Dashboard.MaxEventsFetch,
+                        _recentEvents.Count - SecurityConstants.Dashboard.MaxEventsFetch
+                    );
                 }
             }
         }
@@ -449,7 +496,7 @@ namespace WotCI.UI
                     SecurityEventType.ExecutionTimeout => SecuritySeverity.Medium,
                     SecurityEventType.MemoryExhaustion => SecuritySeverity.High,
                     SecurityEventType.RateLimitExceeded => SecuritySeverity.Medium,
-                    _ => SecuritySeverity.Low
+                    _ => SecuritySeverity.Low,
                 };
             }
 
@@ -459,22 +506,26 @@ namespace WotCI.UI
                 SecurityEventType.CapabilityGranted => SecuritySeverity.Info,
                 SecurityEventType.CapabilityRevoked => SecuritySeverity.Low,
                 SecurityEventType.SecurityConfigurationChanged => SecuritySeverity.Medium,
-                _ => SecuritySeverity.Info
+                _ => SecuritySeverity.Info,
             };
         }
 
-        private string GetStatusIcon(int value, int goodThreshold, int badThreshold, bool higherIsBetter = false)
+        private string GetStatusIcon(
+            int value,
+            int goodThreshold,
+            int badThreshold,
+            bool higherIsBetter = false
+        )
         {
             if (higherIsBetter)
             {
-                return value >= badThreshold ? "[green]✅[/]" : 
-                       value >= goodThreshold ? "[yellow]⚠️[/]" : "[red]❌[/]";
+                return value >= badThreshold ? "[green]✅[/]"
+                    : value >= goodThreshold ? "[yellow]⚠️[/]"
+                    : "[red]❌[/]";
             }
-            else
-            {
-                return value <= goodThreshold ? "[green]✅[/]" : 
-                       value <= badThreshold ? "[yellow]⚠️[/]" : "[red]❌[/]";
-            }
+            return value <= goodThreshold ? "[green]✅[/]"
+                : value <= badThreshold ? "[yellow]⚠️[/]"
+                : "[red]❌[/]";
         }
 
         private string TruncateText(string text, int maxLength)
@@ -506,23 +557,20 @@ namespace WotCI.UI
         Low,
         Medium,
         High,
-        Critical
+        Critical,
     }
 
     /// <summary>
     /// Interactive security dashboard controller
     /// </summary>
-    public class InteractiveSecurityDashboard
+    public class InteractiveSecurityDashboard(
+        SecurityDashboard dashboard,
+        GameController? gameController = null
+    )
     {
-        private readonly SecurityDashboard _dashboard;
-        private readonly GameController? _gameController;
-        private bool _isRunning = false;
-
-        public InteractiveSecurityDashboard(SecurityDashboard dashboard, GameController? gameController = null)
-        {
-            _dashboard = dashboard ?? throw new ArgumentNullException(nameof(dashboard));
-            _gameController = gameController;
-        }
+        private readonly SecurityDashboard _dashboard =
+            dashboard ?? throw new ArgumentNullException(nameof(dashboard));
+        private bool _isRunning;
 
         /// <summary>
         /// Runs the interactive dashboard
@@ -532,7 +580,8 @@ namespace WotCI.UI
             _isRunning = true;
             var layout = _dashboard.CreateDashboard();
 
-            await AnsiConsole.Live(layout)
+            await AnsiConsole
+                .Live(layout)
                 .AutoClear(false)
                 .Overflow(VerticalOverflow.Ellipsis)
                 .Cropping(VerticalOverflowCropping.Top)
@@ -570,25 +619,25 @@ namespace WotCI.UI
                 case ConsoleKey.Q:
                     _isRunning = false;
                     break;
-                    
+
                 case ConsoleKey.R:
                     // Force refresh - already happens automatically
                     break;
-                    
+
                 case ConsoleKey.P:
-                    if (_gameController != null)
+                    if (gameController != null)
                     {
                         Stop();
                         // This would return to plugin management
                         // Implementation depends on GameController structure
                     }
                     break;
-                    
+
                 case ConsoleKey.H:
                     ShowHelp();
                     break;
             }
-            
+
             return Task.CompletedTask;
         }
 

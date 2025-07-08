@@ -19,40 +19,79 @@ namespace SolarSharp.Interpreter.Security
         private readonly List<Regex> _blockedArgumentPatterns;
         private readonly EnvironmentEmulator _environmentEmulator;
         private readonly VirtualFileSystemMapper _fileSystemMapper;
-        
-        // Pre-compiled regex patterns for common security checks
-        private static readonly Regex ShellMetaCharsPattern = new Regex(@"[;&|`$()]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex EvalPattern = new Regex(@"--eval|--execute", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex ShortEvalPattern = new Regex(@"-[ec]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex EscapeSequencePattern = new Regex(@"\\[nrt]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex CommandSubstitutionPattern = new Regex(@"\$\(", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex BacktickPattern = new Regex(@"`.*`", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex DeviceAccessPattern = new Regex(@">\s*/dev/", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex OutputRedirectionPattern = new Regex(@"2>&1", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static readonly Regex DeviceInputPattern = new Regex(@"</dev/", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-        public SafeCommandExecutor(SafeCommandPolicy policy, EnvironmentEmulator environmentEmulator = null, VirtualFileSystemMapper fileSystemMapper = null)
+        // Pre-compiled regex patterns for common security checks
+        private static readonly Regex ShellMetaCharsPattern = new Regex(
+            @"[;&|`$()]",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
+        private static readonly Regex EvalPattern = new Regex(
+            @"--eval|--execute",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
+        private static readonly Regex ShortEvalPattern = new Regex(
+            @"-[ec]",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
+        private static readonly Regex EscapeSequencePattern = new Regex(
+            @"\\[nrt]",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
+        private static readonly Regex CommandSubstitutionPattern = new Regex(
+            @"\$\(",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
+        private static readonly Regex BacktickPattern = new Regex(
+            @"`.*`",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
+        private static readonly Regex DeviceAccessPattern = new Regex(
+            @">\s*/dev/",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
+        private static readonly Regex OutputRedirectionPattern = new Regex(
+            @"2>&1",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
+        private static readonly Regex DeviceInputPattern = new Regex(
+            @"</dev/",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
+
+        public SafeCommandExecutor(
+            SafeCommandPolicy policy,
+            EnvironmentEmulator environmentEmulator = null,
+            VirtualFileSystemMapper fileSystemMapper = null
+        )
         {
             _policy = policy ?? throw new ArgumentNullException(nameof(policy));
-            _allowedCommands = new Dictionary<string, CommandDefinition>(StringComparer.OrdinalIgnoreCase);
+            _allowedCommands = new Dictionary<string, CommandDefinition>(
+                StringComparer.OrdinalIgnoreCase
+            );
             _blockedArgumentPatterns = new List<Regex>();
             _environmentEmulator = environmentEmulator;
             _fileSystemMapper = fileSystemMapper;
-            
+
             Initialize();
         }
 
         /// <summary>
         /// Executes a command safely with validation and sandboxing
         /// </summary>
-        public async Task<CommandResult> ExecuteAsync(string commandLine, CancellationToken cancellationToken = default)
+        public async Task<CommandResult> ExecuteAsync(
+            string commandLine,
+            CancellationToken cancellationToken = default
+        )
         {
             if (!_policy.Enabled)
-                throw new CommandExecutionViolationException("Command execution is disabled", "CommandExecution");
+                throw new CommandExecutionViolationException(
+                    "Command execution is disabled",
+                    "CommandExecution"
+                );
 
             // Parse command line
             var (command, arguments) = ParseCommandLine(commandLine);
-            
+
             // Validate command is allowed
             ValidateCommand(command, arguments);
 
@@ -81,7 +120,7 @@ namespace SolarSharp.Interpreter.Security
         {
             // Initialize safe commands
             InitializeSafeCommands();
-            
+
             // Initialize blocked argument patterns
             InitializeBlockedPatterns();
         }
@@ -91,50 +130,165 @@ namespace SolarSharp.Interpreter.Security
             // Text processing commands (always safe)
             var safeCommands = new Dictionary<string, CommandDefinition>
             {
-                ["echo"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(1) },
-                ["printf"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(1) },
-                ["cat"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(5), RequiresFileAccess = true },
-                ["wc"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(5) },
-                ["sort"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(10) },
-                ["uniq"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(10) },
-                ["head"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(5) },
-                ["tail"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(5) },
-                ["cut"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(5) },
-                ["tr"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(5) },
-                ["grep"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(10) },
-                ["awk"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(10), BlockedArguments = new[] { "-f", "--file" } },
-                ["sed"] = new CommandDefinition { Category = CommandCategory.Safe, MaxExecutionTime = TimeSpan.FromSeconds(10), BlockedArguments = new[] { "-f", "--file" } }
+                ["echo"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(1),
+                },
+                ["printf"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(1),
+                },
+                ["cat"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                    RequiresFileAccess = true,
+                },
+                ["wc"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                },
+                ["sort"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(10),
+                },
+                ["uniq"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(10),
+                },
+                ["head"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                },
+                ["tail"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                },
+                ["cut"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                },
+                ["tr"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                },
+                ["grep"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(10),
+                },
+                ["awk"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(10),
+                    BlockedArguments = new[] { "-f", "--file" },
+                },
+                ["sed"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Safe,
+                    MaxExecutionTime = TimeSpan.FromSeconds(10),
+                    BlockedArguments = new[] { "-f", "--file" },
+                },
             };
 
             // Filesystem commands (conditionally safe)
             var filesystemCommands = new Dictionary<string, CommandDefinition>
             {
-                ["ls"] = new CommandDefinition { Category = CommandCategory.Filesystem, MaxExecutionTime = TimeSpan.FromSeconds(5), RequiresFileAccess = true },
-                ["find"] = new CommandDefinition { Category = CommandCategory.Filesystem, MaxExecutionTime = TimeSpan.FromSeconds(30), RequiresFileAccess = true, BlockedArguments = new[] { "-exec", "-execdir" } },
-                ["stat"] = new CommandDefinition { Category = CommandCategory.Filesystem, MaxExecutionTime = TimeSpan.FromSeconds(5), RequiresFileAccess = true },
-                ["file"] = new CommandDefinition { Category = CommandCategory.Filesystem, MaxExecutionTime = TimeSpan.FromSeconds(5), RequiresFileAccess = true },
-                ["du"] = new CommandDefinition { Category = CommandCategory.Filesystem, MaxExecutionTime = TimeSpan.FromSeconds(30), RequiresFileAccess = true },
-                ["df"] = new CommandDefinition { Category = CommandCategory.Filesystem, MaxExecutionTime = TimeSpan.FromSeconds(5) }
+                ["ls"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Filesystem,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                    RequiresFileAccess = true,
+                },
+                ["find"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Filesystem,
+                    MaxExecutionTime = TimeSpan.FromSeconds(30),
+                    RequiresFileAccess = true,
+                    BlockedArguments = new[] { "-exec", "-execdir" },
+                },
+                ["stat"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Filesystem,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                    RequiresFileAccess = true,
+                },
+                ["file"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Filesystem,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                    RequiresFileAccess = true,
+                },
+                ["du"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Filesystem,
+                    MaxExecutionTime = TimeSpan.FromSeconds(30),
+                    RequiresFileAccess = true,
+                },
+                ["df"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Filesystem,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                },
             };
 
             // Development commands (version info only)
             var developmentCommands = new Dictionary<string, CommandDefinition>
             {
-                ["git"] = new CommandDefinition { Category = CommandCategory.Development, MaxExecutionTime = TimeSpan.FromSeconds(10), AllowedArguments = new[] { "status", "log", "diff", "--version" } },
-                ["npm"] = new CommandDefinition { Category = CommandCategory.Development, MaxExecutionTime = TimeSpan.FromSeconds(5), AllowedArguments = new[] { "--version" } },
-                ["node"] = new CommandDefinition { Category = CommandCategory.Development, MaxExecutionTime = TimeSpan.FromSeconds(5), AllowedArguments = new[] { "--version" } },
-                ["python"] = new CommandDefinition { Category = CommandCategory.Development, MaxExecutionTime = TimeSpan.FromSeconds(5), AllowedArguments = new[] { "--version" } },
-                ["python3"] = new CommandDefinition { Category = CommandCategory.Development, MaxExecutionTime = TimeSpan.FromSeconds(5), AllowedArguments = new[] { "--version" } },
-                ["dotnet"] = new CommandDefinition { Category = CommandCategory.Development, MaxExecutionTime = TimeSpan.FromSeconds(5), AllowedArguments = new[] { "--version", "--info" } }
+                ["git"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Development,
+                    MaxExecutionTime = TimeSpan.FromSeconds(10),
+                    AllowedArguments = new[] { "status", "log", "diff", "--version" },
+                },
+                ["npm"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Development,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                    AllowedArguments = new[] { "--version" },
+                },
+                ["node"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Development,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                    AllowedArguments = new[] { "--version" },
+                },
+                ["python"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Development,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                    AllowedArguments = new[] { "--version" },
+                },
+                ["python3"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Development,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                    AllowedArguments = new[] { "--version" },
+                },
+                ["dotnet"] = new CommandDefinition
+                {
+                    Category = CommandCategory.Development,
+                    MaxExecutionTime = TimeSpan.FromSeconds(5),
+                    AllowedArguments = new[] { "--version", "--info" },
+                },
             };
 
             // Add commands based on policy
             if (_policy.AllowedCategories.HasFlag(CommandCategory.Safe))
                 AddCommands(safeCommands);
-            
+
             if (_policy.AllowedCategories.HasFlag(CommandCategory.Filesystem))
                 AddCommands(filesystemCommands);
-                
+
             if (_policy.AllowedCategories.HasFlag(CommandCategory.Development))
                 AddCommands(developmentCommands);
 
@@ -173,7 +327,9 @@ namespace SolarSharp.Interpreter.Security
                 {
                     try
                     {
-                        _blockedArgumentPatterns.Add(new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled));
+                        _blockedArgumentPatterns.Add(
+                            new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled)
+                        );
                     }
                     catch (ArgumentException)
                     {
@@ -189,7 +345,9 @@ namespace SolarSharp.Interpreter.Security
                 throw new ArgumentException("Command line cannot be empty");
 
             // Simple parsing - split on spaces (could be enhanced for quoted arguments)
-            var parts = commandLine.Trim().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            var parts = commandLine
+                .Trim()
+                .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0)
                 throw new ArgumentException("No command specified");
 
@@ -207,7 +365,8 @@ namespace SolarSharp.Interpreter.Security
                 throw new CommandExecutionViolationException(
                     $"Command '{command}' is not allowed",
                     "CommandExecution",
-                    command);
+                    command
+                );
             }
 
             // Validate arguments count
@@ -215,7 +374,8 @@ namespace SolarSharp.Interpreter.Security
             {
                 throw new CommandExecutionViolationException(
                     $"Too many arguments: {arguments.Length} > {_policy.MaxArguments}",
-                    "CommandExecution");
+                    "CommandExecution"
+                );
             }
 
             // Validate argument content
@@ -231,7 +391,8 @@ namespace SolarSharp.Interpreter.Security
                 {
                     throw new CommandExecutionViolationException(
                         $"Argument too long: {argument.Length} > {_policy.MaxArgumentLength}",
-                        "CommandExecution");
+                        "CommandExecution"
+                    );
                 }
 
                 // Check for blocked patterns
@@ -241,16 +402,24 @@ namespace SolarSharp.Interpreter.Security
                     {
                         throw new CommandExecutionViolationException(
                             $"Argument contains blocked pattern: {argument}",
-                            "CommandExecution");
+                            "CommandExecution"
+                        );
                     }
                 }
 
                 // Check command-specific blocked arguments
-                if (commandDef.BlockedArguments != null && commandDef.BlockedArguments.Contains(argument, StringComparer.OrdinalIgnoreCase))
+                if (
+                    commandDef.BlockedArguments != null
+                    && commandDef.BlockedArguments.Contains(
+                        argument,
+                        StringComparer.OrdinalIgnoreCase
+                    )
+                )
                 {
                     throw new CommandExecutionViolationException(
                         $"Argument '{argument}' is not allowed for this command",
-                        "CommandExecution");
+                        "CommandExecution"
+                    );
                 }
             }
 
@@ -259,23 +428,33 @@ namespace SolarSharp.Interpreter.Security
             {
                 foreach (var argument in arguments)
                 {
-                    if (!commandDef.AllowedArguments.Contains(argument, StringComparer.OrdinalIgnoreCase))
+                    if (
+                        !commandDef.AllowedArguments.Contains(
+                            argument,
+                            StringComparer.OrdinalIgnoreCase
+                        )
+                    )
                     {
                         throw new CommandExecutionViolationException(
                             $"Argument '{argument}' is not in allowed list for this command",
-                            "CommandExecution");
+                            "CommandExecution"
+                        );
                     }
                 }
             }
         }
 
-        private async Task<CommandResult> ExecuteCommandSafely(string command, string[] arguments, CancellationToken cancellationToken)
+        private async Task<CommandResult> ExecuteCommandSafely(
+            string command,
+            string[] arguments,
+            CancellationToken cancellationToken
+        )
         {
             var commandDef = _allowedCommands[command];
             var timeout = commandDef.MaxExecutionTime ?? _policy.DefaultMaxExecutionTime;
 
             using var process = new Process();
-            
+
             // Configure process
             process.StartInfo.FileName = command;
             process.StartInfo.UseShellExecute = false;
@@ -305,7 +484,10 @@ namespace SolarSharp.Interpreter.Security
             var errorBuilder = new StringBuilder();
 
             using var timeoutCts = new CancellationTokenSource(timeout);
-            using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+            using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken,
+                timeoutCts.Token
+            );
 
             try
             {
@@ -330,13 +512,16 @@ namespace SolarSharp.Interpreter.Security
                 process.BeginErrorReadLine();
 
                 // Use Task.Run for compatibility with older .NET versions
-                await Task.Run(() =>
-                {
-                    while (!process.HasExited && !combinedCts.Token.IsCancellationRequested)
+                await Task.Run(
+                    () =>
                     {
-                        Thread.Sleep(100);
-                    }
-                }, combinedCts.Token);
+                        while (!process.HasExited && !combinedCts.Token.IsCancellationRequested)
+                        {
+                            Thread.Sleep(100);
+                        }
+                    },
+                    combinedCts.Token
+                );
 
                 result.ExitCode = process.ExitCode;
                 result.Output = outputBuilder.ToString();
@@ -346,11 +531,16 @@ namespace SolarSharp.Interpreter.Security
             catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
             {
                 // Kill process on timeout
-                try { process.Kill(); } catch { }
-                
+                try
+                {
+                    process.Kill();
+                }
+                catch { }
+
                 throw new CommandTimeoutException(
                     $"Command execution timed out after {timeout.TotalSeconds}s",
-                    "CommandExecution");
+                    "CommandExecution"
+                );
             }
             catch (Exception ex)
             {
@@ -405,10 +595,10 @@ namespace SolarSharp.Interpreter.Security
     public enum CommandCategory
     {
         None = 0,
-        Safe = 1,           // Text processing, always safe
-        Filesystem = 2,     // File system inspection
-        Development = 4,    // Development tools (version info only)
-        Custom = 8          // Custom user-defined commands
+        Safe = 1, // Text processing, always safe
+        Filesystem = 2, // File system inspection
+        Development = 4, // Development tools (version info only)
+        Custom = 8, // Custom user-defined commands
     }
 
     /// <summary>
@@ -419,8 +609,8 @@ namespace SolarSharp.Interpreter.Security
         public CommandCategory Category { get; set; }
         public TimeSpan? MaxExecutionTime { get; set; }
         public bool RequiresFileAccess { get; set; }
-        public string[] AllowedArguments { get; set; }  // If set, only these arguments allowed
-        public string[] BlockedArguments { get; set; }  // These arguments are blocked
+        public string[] AllowedArguments { get; set; } // If set, only these arguments allowed
+        public string[] BlockedArguments { get; set; } // These arguments are blocked
     }
 
     /// <summary>

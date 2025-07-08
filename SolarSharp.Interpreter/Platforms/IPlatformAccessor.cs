@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.IO.Abstractions;
 using System.Text;
 using SolarSharp.Interpreter.Modules;
 
@@ -8,11 +9,16 @@ namespace SolarSharp.Interpreter.Platforms
     /// Interface to abstract all accesses made to the underlying platform (OS, framework) by the scripting engine.
     /// Can be used both to support "non-standard" platforms (i.e. non-posix, non-windows) and/or to sandbox the behaviour
     /// of the scripting engine.
-    /// 
+    ///
     /// It's recommended that no class implement IPlatformAccessor directly, and rather extend <see cref="PlatformAccessorBase"/>.
     /// </summary>
     public interface IPlatformAccessor
     {
+        /// <summary>
+        /// Gets the file system abstraction used by this platform accessor
+        /// </summary>
+        IFileSystem FileSystem { get; }
+
         /// <summary>
         /// Filters the CoreModules enumeration to exclude non-supported operations
         /// </summary>
@@ -120,6 +126,5 @@ namespace SolarSharp.Interpreter.Platforms
         /// <param name="cmdline">The cmdline.</param>
         /// <returns></returns>
         int OS_Execute(string cmdline);
-
     }
 }

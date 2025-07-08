@@ -9,9 +9,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
     /// </summary>
     public class AutoDescribingUserDataDescriptor : IUserDataDescriptor
     {
-        private readonly string m_FriendlyName;
-        private readonly Type m_Type;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="AutoDescribingUserDataDescriptor"/> class.
         /// </summary>
@@ -19,25 +16,19 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <param name="friendlyName">Name of the friendly.</param>
         public AutoDescribingUserDataDescriptor(Type type, string friendlyName)
         {
-            m_FriendlyName = friendlyName;
-            m_Type = type;
+            Name = friendlyName;
+            Type = type;
         }
 
         /// <summary>
         /// Gets the name of the descriptor (usually, the name of the type described).
         /// </summary>
-        public string Name
-        {
-            get { return m_FriendlyName; }
-        }
+        public string Name { get; }
 
         /// <summary>
         /// Gets the type this descriptor refers to
         /// </summary>
-        public Type Type
-        {
-            get { return m_Type; }
-        }
+        public Type Type { get; }
 
         /// <summary>
         /// Performs an "index" "get" operation.
@@ -64,7 +55,13 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <param name="value">The value to be set</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        public bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
+        public bool SetIndex(
+            Script script,
+            object obj,
+            DynValue index,
+            DynValue value,
+            bool isDirectIndexing
+        )
         {
             if (obj is IUserDataType u)
                 return u.SetIndex(script, index, value, isDirectIndexing);
@@ -81,16 +78,15 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         {
             if (obj != null)
                 return obj.ToString();
-            else
-                return null;
+            return null;
         }
 
         /// <summary>
         /// Gets a "meta" operation on this userdata. If a descriptor does not support this functionality,
-        /// it should return "null" (not a nil). 
+        /// it should return "null" (not a nil).
         /// These standard metamethods can be supported (the return value should be a function accepting the
         /// classic parameters of the corresponding metamethod):
-        /// __add, __sub, __mul, __div, __div, __pow, __unm, __eq, __lt, __le, __lt, __len, __concat, 
+        /// __add, __sub, __mul, __div, __div, __pow, __unm, __eq, __lt, __le, __lt, __len, __concat,
         /// __pairs, __ipairs, __iterator, __call
         /// These standard metamethods are supported through other calls for efficiency:
         /// __index, __newindex, __tostring
@@ -107,10 +103,9 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             return null;
         }
 
-
         /// <summary>
         /// Determines whether the specified object is compatible with the specified type.
-        /// Unless a very specific behaviour is needed, the correct implementation is a 
+        /// Unless a very specific behaviour is needed, the correct implementation is a
         /// simple " return type.IsInstanceOfType(obj); "
         /// </summary>
         /// <param name="type">The type.</param>

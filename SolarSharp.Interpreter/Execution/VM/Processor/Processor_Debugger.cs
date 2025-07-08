@@ -13,7 +13,7 @@ namespace SolarSharp.Interpreter.Execution.VM
     {
         internal Instruction FindMeta(ref int baseAddress)
         {
-            Instruction meta = m_RootChunk.Code[baseAddress];
+            var meta = m_RootChunk.Code[baseAddress];
 
             // skip nops
             while (meta.OpCode == OpCode.Nop)
@@ -31,7 +31,8 @@ namespace SolarSharp.Interpreter.Execution.VM
         internal void AttachDebugger(IDebugger debugger)
         {
             m_Debug.DebuggerAttached = debugger;
-            m_Debug.LineBasedBreakPoints = (debugger.GetDebuggerCaps() & DebuggerCaps.HasLineBasedBreakpoints) != 0;
+            m_Debug.LineBasedBreakPoints =
+                (debugger.GetDebuggerCaps() & DebuggerCaps.HasLineBasedBreakpoints) != 0;
             debugger.SetDebugService(new DebugService(m_Script, this));
         }
 
@@ -43,13 +44,13 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private void ListenDebugger(Instruction instr, int instructionPtr)
         {
-            bool isOnDifferentRef = false;
+            var isOnDifferentRef = false;
 
             if (instr.SourceCodeRef != null && m_Debug.LastHlRef != null)
             {
                 isOnDifferentRef = m_Debug.LineBasedBreakPoints
-                    ? instr.SourceCodeRef.SourceIdx != m_Debug.LastHlRef.SourceIdx ||
-                        instr.SourceCodeRef.FromLine != m_Debug.LastHlRef.FromLine
+                    ? instr.SourceCodeRef.SourceIdx != m_Debug.LastHlRef.SourceIdx
+                        || instr.SourceCodeRef.FromLine != m_Debug.LastHlRef.FromLine
                     : instr.SourceCodeRef != m_Debug.LastHlRef;
             }
             else if (m_Debug.LastHlRef == null)
@@ -57,8 +58,10 @@ namespace SolarSharp.Interpreter.Execution.VM
                 isOnDifferentRef = instr.SourceCodeRef != null;
             }
 
-            if (m_Debug.DebuggerAttached.IsPauseRequested() ||
-                (instr.SourceCodeRef is { Breakpoint: true } && isOnDifferentRef))
+            if (
+                m_Debug.DebuggerAttached.IsPauseRequested()
+                || (instr.SourceCodeRef is { Breakpoint: true } && isOnDifferentRef)
+            )
             {
                 m_Debug.DebuggerCurrentAction = DebuggerAction.ActionType.None;
                 m_Debug.DebuggerCurrentActionTarget = -1;
@@ -71,17 +74,28 @@ namespace SolarSharp.Interpreter.Execution.VM
                         m_Debug.LastHlRef = instr.SourceCodeRef;
                     return;
                 case DebuggerAction.ActionType.ByteCodeStepOver:
-                    if (m_Debug.DebuggerCurrentActionTarget != instructionPtr) return;
+                    if (m_Debug.DebuggerCurrentActionTarget != instructionPtr)
+                        return;
                     break;
                 case DebuggerAction.ActionType.ByteCodeStepOut:
                 case DebuggerAction.ActionType.StepOut:
-                    if (m_ExecutionStack.Count >= m_Debug.ExStackDepthAtStep) return;
+                    if (m_ExecutionStack.Count >= m_Debug.ExStackDepthAtStep)
+                        return;
                     break;
                 case DebuggerAction.ActionType.StepIn:
-                    if ((m_ExecutionStack.Count >= m_Debug.ExStackDepthAtStep) && (instr.SourceCodeRef == null || instr.SourceCodeRef == m_Debug.LastHlRef)) return;
+                    if (
+                        (m_ExecutionStack.Count >= m_Debug.ExStackDepthAtStep)
+                        && (instr.SourceCodeRef == null || instr.SourceCodeRef == m_Debug.LastHlRef)
+                    )
+                        return;
                     break;
                 case DebuggerAction.ActionType.StepOver:
-                    if (instr.SourceCodeRef == null || instr.SourceCodeRef == m_Debug.LastHlRef || m_ExecutionStack.Count > m_Debug.ExStackDepthAtStep) return;
+                    if (
+                        instr.SourceCodeRef == null
+                        || instr.SourceCodeRef == m_Debug.LastHlRef
+                        || m_ExecutionStack.Count > m_Debug.ExStackDepthAtStep
+                    )
+                        return;
                     break;
             }
 
@@ -89,7 +103,10 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             while (true)
             {
-                var action = m_Debug.DebuggerAttached.GetAction(instructionPtr, instr.SourceCodeRef);
+                var action = m_Debug.DebuggerAttached.GetAction(
+                    instructionPtr,
+                    instr.SourceCodeRef
+                );
 
                 switch (action.Action)
                 {
@@ -145,15 +162,15 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private void ResetBreakPoints(DebuggerAction action)
         {
-            SourceCode src = m_Script.GetSourceCode(action.SourceID);
+            var src = m_Script.GetSourceCode(action.SourceID);
             ResetBreakPoints(src, new HashSet<int>(action.Lines));
         }
 
         internal HashSet<int> ResetBreakPoints(SourceCode src, HashSet<int> lines)
         {
-            HashSet<int> result = new();
+            var result = new HashSet<int>();
 
-            foreach (SourceRef srf in src.Refs)
+            foreach (var srf in src.Refs)
             {
                 if (srf.CannotBreakpoint)
                     continue;
@@ -169,10 +186,10 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private bool ToggleBreakPoint(DebuggerAction action, bool? state)
         {
-            SourceCode src = m_Script.GetSourceCode(action.SourceID);
+            var src = m_Script.GetSourceCode(action.SourceID);
 
-            bool found = false;
-            foreach (SourceRef srf in src.Refs)
+            var found = false;
+            foreach (var srf in src.Refs)
             {
                 if (srf.CannotBreakpoint)
                     continue;
@@ -198,15 +215,19 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             if (!found)
             {
-                int minDistance = int.MaxValue;
+                var minDistance = int.MaxValue;
                 SourceRef nearest = null;
 
-                foreach (SourceRef srf in src.Refs)
+                foreach (var srf in src.Refs)
                 {
                     if (srf.CannotBreakpoint)
                         continue;
 
-                    int dist = srf.GetLocationDistance(action.SourceID, action.SourceLine, action.SourceCol);
+                    var dist = srf.GetLocationDistance(
+                        action.SourceID,
+                        action.SourceLine,
+                        action.SourceCol
+                    );
 
                     if (dist < minDistance)
                     {
@@ -232,24 +253,22 @@ namespace SolarSharp.Interpreter.Execution.VM
 
                     return true;
                 }
-                else
-                    return false;
+                return false;
             }
-            else
-                return true;
+            return true;
         }
 
         private void RefreshDebugger(bool hard, int instructionPtr)
         {
-            SourceRef sref = GetCurrentSourceRef(instructionPtr);
-            ScriptExecutionContext context = new(this, sref);
+            var sref = GetCurrentSourceRef(instructionPtr);
+            var context = new ScriptExecutionContext(this, sref);
 
-            List<DynamicExpression> watchList = m_Debug.DebuggerAttached.GetWatchItems();
-            List<WatchItem> callStack = Debugger_GetCallStack(sref);
-            List<WatchItem> watches = Debugger_RefreshWatches(context, watchList);
-            List<WatchItem> vstack = Debugger_RefreshVStack();
-            List<WatchItem> locals = Debugger_RefreshLocals(context);
-            List<WatchItem> threads = Debugger_RefreshThreads(context);
+            var watchList = m_Debug.DebuggerAttached.GetWatchItems();
+            var callStack = Debugger_GetCallStack(sref);
+            var watches = Debugger_RefreshWatches(context, watchList);
+            var vstack = Debugger_RefreshVStack();
+            var locals = Debugger_RefreshLocals(context);
+            var threads = Debugger_RefreshThreads(context);
 
             m_Debug.DebuggerAttached.Update(WatchType.CallStack, callStack);
             m_Debug.DebuggerAttached.Update(WatchType.Watches, watches);
@@ -263,132 +282,142 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private List<WatchItem> Debugger_RefreshThreads(ScriptExecutionContext context)
         {
-            List<Processor> coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : m_CoroutinesStack;
+            var coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : m_CoroutinesStack;
 
-            return coroutinesStack.Select(c => new WatchItem()
-            {
-                Address = c.AssociatedCoroutine.ReferenceID,
-                Name = "coroutine #" + c.AssociatedCoroutine.ReferenceID.ToString()
-            }).ToList();
+            return coroutinesStack
+                .Select(c => new WatchItem
+                {
+                    Address = c.AssociatedCoroutine.ReferenceID,
+                    Name = "coroutine #" + c.AssociatedCoroutine.ReferenceID,
+                })
+                .ToList();
         }
 
         private List<WatchItem> Debugger_RefreshVStack()
         {
-            List<WatchItem> lwi = new();
-            for (int i = 0; i < Math.Min(32, m_ValueStack.Count); i++)
+            var lwi = new List<WatchItem>();
+            for (var i = 0; i < Math.Min(32, m_ValueStack.Count); i++)
             {
-                lwi.Add(new WatchItem()
-                {
-                    Address = i,
-                    Value = m_ValueStack.Peek(i)
-                });
+                lwi.Add(new WatchItem { Address = i, Value = m_ValueStack.Peek(i) });
             }
 
             return lwi;
         }
 
-        private List<WatchItem> Debugger_RefreshWatches(ScriptExecutionContext context, List<DynamicExpression> watchList)
+        private List<WatchItem> Debugger_RefreshWatches(
+            ScriptExecutionContext context,
+            List<DynamicExpression> watchList
+        )
         {
             return watchList.Select(w => Debugger_RefreshWatch(context, w)).ToList();
         }
 
         private List<WatchItem> Debugger_RefreshLocals(ScriptExecutionContext context)
         {
-            List<WatchItem> locals = new();
+            var locals = new List<WatchItem>();
             var top = m_ExecutionStack.Peek();
 
             if (top is { Debug_Symbols: not null, LocalScope: not null })
             {
-                int len = Math.Min(top.Debug_Symbols.Length, top.LocalScope.Length);
+                var len = Math.Min(top.Debug_Symbols.Length, top.LocalScope.Length);
 
-                for (int i = 0; i < len; i++)
+                for (var i = 0; i < len; i++)
                 {
-                    locals.Add(new WatchItem()
-                    {
-                        IsError = false,
-                        LValue = top.Debug_Symbols[i],
-                        Value = top.LocalScope[i],
-                        Name = top.Debug_Symbols[i].i_Name
-                    });
+                    locals.Add(
+                        new WatchItem
+                        {
+                            IsError = false,
+                            LValue = top.Debug_Symbols[i],
+                            Value = top.LocalScope[i],
+                            Name = top.Debug_Symbols[i].i_Name,
+                        }
+                    );
                 }
             }
 
             return locals;
         }
 
-        private WatchItem Debugger_RefreshWatch(ScriptExecutionContext context, DynamicExpression dynExpr)
+        private WatchItem Debugger_RefreshWatch(
+            ScriptExecutionContext context,
+            DynamicExpression dynExpr
+        )
         {
             try
             {
-                SymbolRef L = dynExpr.FindSymbol(context);
-                DynValue v = dynExpr.Evaluate(context);
+                var L = dynExpr.FindSymbol(context);
+                var v = dynExpr.Evaluate(context);
 
-                return new WatchItem()
+                return new WatchItem
                 {
                     IsError = dynExpr.IsConstant(),
                     LValue = L,
                     Value = v,
-                    Name = dynExpr.ExpressionCode
+                    Name = dynExpr.ExpressionCode,
                 };
             }
             catch (Exception ex)
             {
-                return new WatchItem()
+                return new WatchItem
                 {
                     IsError = true,
                     Value = DynValue.NewString(ex.Message),
-                    Name = dynExpr.ExpressionCode
+                    Name = dynExpr.ExpressionCode,
                 };
             }
         }
 
         internal List<WatchItem> Debugger_GetCallStack(SourceRef startingRef)
         {
-            List<WatchItem> wis = new();
+            var wis = new List<WatchItem>();
 
-            for (int i = 0; i < m_ExecutionStack.Count; i++)
+            for (var i = 0; i < m_ExecutionStack.Count; i++)
             {
                 var c = m_ExecutionStack.Peek(i);
 
                 var I = m_RootChunk.Code[c.Debug_EntryPoint];
 
-                string callname = I.OpCode == OpCode.Meta ? I.Name : null;
+                var callname = I.OpCode == OpCode.Meta ? I.Name : null;
 
                 if (c.ClrFunction != null)
                 {
-                    wis.Add(new WatchItem()
-                    {
-                        Address = -1,
-                        BasePtr = -1,
-                        RetAddress = c.ReturnAddress,
-                        Location = startingRef,
-                        Name = c.ClrFunction.Name
-                    });
+                    wis.Add(
+                        new WatchItem
+                        {
+                            Address = -1,
+                            BasePtr = -1,
+                            RetAddress = c.ReturnAddress,
+                            Location = startingRef,
+                            Name = c.ClrFunction.Name,
+                        }
+                    );
                 }
                 else
                 {
-                    wis.Add(new WatchItem()
-                    {
-                        Address = c.Debug_EntryPoint,
-                        BasePtr = c.BasePointer,
-                        RetAddress = c.ReturnAddress,
-                        Name = callname,
-                        Location = startingRef,
-                    });
+                    wis.Add(
+                        new WatchItem
+                        {
+                            Address = c.Debug_EntryPoint,
+                            BasePtr = c.BasePointer,
+                            RetAddress = c.ReturnAddress,
+                            Name = callname,
+                            Location = startingRef,
+                        }
+                    );
                 }
 
                 startingRef = c.CallingSourceRef;
 
                 if (c.Continuation != null)
                 {
-                    wis.Add(new WatchItem()
-                    {
-                        Name = c.Continuation.Name,
-                        Location = SourceRef.GetClrLocation()
-                    });
+                    wis.Add(
+                        new WatchItem
+                        {
+                            Name = c.Continuation.Name,
+                            Location = SourceRef.GetClrLocation(),
+                        }
+                    );
                 }
-
-
             }
 
             return wis;

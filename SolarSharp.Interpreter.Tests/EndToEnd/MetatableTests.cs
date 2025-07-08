@@ -2,18 +2,21 @@
 using SolarSharp.Interpreter.CoreLib;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
     [NonParallelizable] // Uses global UserData registration
-    [Category("IntegrationTest")]
+    [Category("VM.Integration")]
     public class MetatableTests
     {
+        [Category("VM.E2E")]
         [Test]
         public void TableIPairsWithMetatable()
         {
-            var script = @"    
+            var script =
+                @"    
 				test = { 2, 4, 6 }
 
 				meta = { }
@@ -39,7 +42,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return x;";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -51,7 +54,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableAddWithMetatable()
         {
-            var script = @"    
+            var script =
+                @"    
 				v1 = { 'aaaa' }
 				v2 = { 'aaaaaa' } 
 
@@ -70,11 +74,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return(v1 + v2);";
 
-            var S = new Script();
+            var S = new Script(Examples.DesktopBasePolicySet);
             var globalCtx = S.Globals;
 
-            globalCtx.RegisterModuleType<TableIteratorsModule>();
-            globalCtx.RegisterModuleType<MetaTableModule>();
+            globalCtx.RegisterModuleType<TableIteratorsModule>(S);
+            globalCtx.RegisterModuleType<MetaTableModule>(S);
 
             var res = S.DoString(script);
 
@@ -88,7 +92,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void MetatableEquality()
         {
-            var script = @"    
+            var script =
+                @"    
 				t1a = {}
 				t1b = {}
 				t2  = {}
@@ -102,7 +107,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return ( t1a == t1b ), ( t1a == t2 ) 
 				";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -115,7 +120,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void MetatableCall2()
         {
-            var script = @"    
+            var script =
+                @"    
 					t = { }
 					meta = { }
 
@@ -131,7 +137,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return t;
 				";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
             var tbl = S.DoString(script);
             var res = S.Call(tbl, 3);
@@ -146,7 +152,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void MetatableCall()
         {
-            var script = @"    
+            var script =
+                @"    
 					t = { }
 					meta = { }
 
@@ -162,7 +169,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return x;
 				";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -174,7 +181,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void MetatableIndexAndSetIndexFuncs()
         {
-            var script = @"    
+            var script =
+                @"    
 					T = { a = 'a', b = 'b', c = 'c' };
 
 					t = { };
@@ -203,7 +211,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return(s);
 				";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -215,7 +223,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void MetatableIndexAndSetIndexBounce()
         {
-            var script = @"    
+            var script =
+                @"    
 					T = { a = 'a', b = 'b', c = 'c' };
 
 					t = { };
@@ -235,7 +244,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					return(s);
 				";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -255,7 +264,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void MetatableExtensibleObjectSample()
         {
-            var code = @"    
+            var code =
+                @"    
 
 				--declare this once for all
 				extensibleObjectMeta = {
@@ -274,7 +284,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return myobj.extended() * myobj.getSomething();
 				";
 
-            Script script = new();
+            var script = new Script(Examples.DesktopBasePolicySet);
             UserData.RegisterType<MyObject>();
             script.Globals["o"] = new MyObject();
 
@@ -290,7 +300,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void IndexSetDoesNotWrackStack()
         {
-            var scriptCode = @"
+            var scriptCode =
+                @"
 
 local aClass = {}
 setmetatable(aClass, {__newindex = function() end, __index = function() end })
@@ -304,7 +315,7 @@ end
 
 ";
 
-            Script script = new();
+            var script = new Script(Examples.DesktopBasePolicySet);
 
             var res = script.DoString(scriptCode);
         }

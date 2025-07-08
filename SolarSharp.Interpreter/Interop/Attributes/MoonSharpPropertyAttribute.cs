@@ -2,11 +2,10 @@
 
 namespace SolarSharp.Interpreter.Interop.Attributes
 {
-
     /// <summary>
     /// Marks a property as a configruation property
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
     public sealed class MoonSharpPropertyAttribute : Attribute
     {
         /// <summary>
@@ -14,14 +13,10 @@ namespace SolarSharp.Interpreter.Interop.Attributes
         /// </summary>
         public string Name { get; private set; }
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="MoonSharpPropertyAttribute"/> class.
         /// </summary>
-        public MoonSharpPropertyAttribute()
-        {
-
-        }
+        public MoonSharpPropertyAttribute() { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MoonSharpPropertyAttribute"/> class.
@@ -32,5 +27,4 @@ namespace SolarSharp.Interpreter.Interop.Attributes
             Name = name;
         }
     }
-
 }

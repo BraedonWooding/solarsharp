@@ -44,16 +44,21 @@ SolarSharp includes built-in security features for safe script execution:
 
 ```C#
 // Default: Desktop configuration with reasonable limits
-var script = new Script();
+var script = new Script(Examples.DesktopBasePolicySet);
 
 // Maximum security for untrusted code:
-var script = new Script(SecurityConfiguration.Isolated());
+var script = new Script(Examples.IsolatedBasePolicySet);
+
+// Key-based directory access control:
+var policy = SecurityPolicy.CreateRestrictive()
+    .WithDirectoryAccessRule("/secure/*", FilePermissions.Read, "sha256:trusted-key");
+var script = new Script(new BasePolicySet("*", policy));
 
 // Custom configuration:
-var config = SecurityConfiguration.Isolated()
-    .WithTimeoutMs(30000)
-    .SetFileAccess("/app/data", FileAccess.Read);
-var script = new Script(config);
+var customPolicySet = Examples.IsolatedBasePolicySet
+    .ApplyToAll(p => p with { TimeoutMs = 30000 })
+    .GetValueOrThrow();
+var script = new Script(customPolicySet);
 ```
 
 For detailed security documentation, see:

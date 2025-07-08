@@ -15,7 +15,7 @@ namespace SolarSharp.Interpreter.Tests.Units
     ///     Dependencies: None
     /// </remarks>
     [TestFixture]
-    [Category("DataStructureTest")]
+    [Category("Security.Unit")]
     public class JsonCanonicalizerTests
     {
         /// <summary>
@@ -99,12 +99,24 @@ namespace SolarSharp.Interpreter.Tests.Units
                 Assert.That(JsonCanonicalizer.Canonicalize("\"\""), Is.EqualTo("\"\""));
 
                 // Escape sequences
-                Assert.That(JsonCanonicalizer.Canonicalize("\"\\\"quoted\\\"\""), Is.EqualTo("\"\\\"quoted\\\"\""));
-                Assert.That(JsonCanonicalizer.Canonicalize("\"line\\nbreak\""), Is.EqualTo("\"line\\nbreak\""));
-                Assert.That(JsonCanonicalizer.Canonicalize("\"tab\\there\""), Is.EqualTo("\"tab\\there\""));
+                Assert.That(
+                    JsonCanonicalizer.Canonicalize("\"\\\"quoted\\\"\""),
+                    Is.EqualTo("\"\\\"quoted\\\"\"")
+                );
+                Assert.That(
+                    JsonCanonicalizer.Canonicalize("\"line\\nbreak\""),
+                    Is.EqualTo("\"line\\nbreak\"")
+                );
+                Assert.That(
+                    JsonCanonicalizer.Canonicalize("\"tab\\there\""),
+                    Is.EqualTo("\"tab\\there\"")
+                );
 
                 // Control characters should be escaped (input must be valid JSON)
-                Assert.That(JsonCanonicalizer.Canonicalize("\"\\u0001\""), Is.EqualTo("\"\\u0001\""));
+                Assert.That(
+                    JsonCanonicalizer.Canonicalize("\"\\u0001\""),
+                    Is.EqualTo("\"\\u0001\"")
+                );
             });
         }
 
@@ -143,8 +155,14 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Assert.That(JsonCanonicalizer.Canonicalize("[1,2,3]"), Is.EqualTo("[1,2,3]"));
                 Assert.That(JsonCanonicalizer.Canonicalize("[1, 2, 3]"), Is.EqualTo("[1,2,3]"));
-                Assert.That(JsonCanonicalizer.Canonicalize("[\"a\",\"b\",\"c\"]"), Is.EqualTo("[\"a\",\"b\",\"c\"]"));
-                Assert.That(JsonCanonicalizer.Canonicalize("[true,false,null]"), Is.EqualTo("[true,false,null]"));
+                Assert.That(
+                    JsonCanonicalizer.Canonicalize("[\"a\",\"b\",\"c\"]"),
+                    Is.EqualTo("[\"a\",\"b\",\"c\"]")
+                );
+                Assert.That(
+                    JsonCanonicalizer.Canonicalize("[true,false,null]"),
+                    Is.EqualTo("[true,false,null]")
+                );
             });
         }
 
@@ -181,7 +199,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestNestedObjects()
         {
-            const string input = @"{
+            const string input =
+                @"{
                 ""person"": {
                     ""name"": ""John"",
                     ""age"": 30
@@ -203,7 +222,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestComplexExample()
         {
-            const string input = @"{
+            const string input =
+                @"{
                 ""numbers"": [1, 2, 3],
                 ""string"": ""hello\nworld"",
                 ""nested"": {
@@ -228,7 +248,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestExcludeField()
         {
-            const string input = @"{
+            const string input =
+                @"{
                 ""data"": ""value"",
                 ""signature"": ""sig123"",
                 ""timestamp"": 12345
@@ -251,7 +272,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestExcludeNestedField()
         {
-            const string input = @"{
+            const string input =
+                @"{
                 ""data"": ""value"",
                 ""security"": {
                     ""signature"": ""sig123"",
@@ -260,7 +282,10 @@ namespace SolarSharp.Interpreter.Tests.Units
             }";
 
             // Exclude nested signature field
-            var canonicalized = JsonCanonicalizer.CanonicalizeExcluding(input, "security.signature");
+            var canonicalized = JsonCanonicalizer.CanonicalizeExcluding(
+                input,
+                "security.signature"
+            );
             const string expected = "{\"data\":\"value\",\"security\":{\"algorithm\":\"RSA\"}}";
             Assert.That(canonicalized, Is.EqualTo(expected));
         }
@@ -276,7 +301,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestExtractField()
         {
-            const string input = @"{
+            const string input =
+                @"{
                 ""data"": ""value"",
                 ""security"": {
                     ""signature"": {
@@ -299,7 +325,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestWhitespaceHandling()
         {
-            const string input = @"{
+            const string input =
+                @"{
                 ""a""    :    1   ,
                 ""b""    :    ""test""
             }";
@@ -321,8 +348,14 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.Multiple(static () =>
             {
                 // Control characters should be escaped (input must be valid JSON)
-                Assert.That(JsonCanonicalizer.Canonicalize("\"\\u0000\""), Is.EqualTo("\"\\u0000\""));
-                Assert.That(JsonCanonicalizer.Canonicalize("\"\\u001f\""), Is.EqualTo("\"\\u001f\""));
+                Assert.That(
+                    JsonCanonicalizer.Canonicalize("\"\\u0000\""),
+                    Is.EqualTo("\"\\u0000\"")
+                );
+                Assert.That(
+                    JsonCanonicalizer.Canonicalize("\"\\u001f\""),
+                    Is.EqualTo("\"\\u001f\"")
+                );
 
                 // Regular Unicode should pass through
                 Assert.That(JsonCanonicalizer.Canonicalize("\"café\""), Is.EqualTo("\"café\""));
@@ -362,16 +395,20 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// <remarks>
         ///     This test ensures that the JSON canonicalizer detects malformed JSON input
         ///     and raises an exception of type <c>JsonException</c>, validating its robustness against invalid data.
-        /// </remarks>
+        /// </remarks>    [Category("Serialization.Unit")]
         [Test]
         public void TestInvalidJson()
         {
             // JsonReaderException is a subclass of JsonException
-            Assert.That(static () => JsonCanonicalizer.Canonicalize("{invalid}"),
-                Throws.InstanceOf<JsonException>());
+            Assert.That(
+                static () => JsonCanonicalizer.Canonicalize("{invalid}"),
+                Throws.InstanceOf<JsonException>()
+            );
 
-            Assert.That(static () => JsonCanonicalizer.Canonicalize("{\"key\": }"),
-                Throws.InstanceOf<JsonException>());
+            Assert.That(
+                static () => JsonCanonicalizer.Canonicalize("{\"key\": }"),
+                Throws.InstanceOf<JsonException>()
+            );
         }
     }
 }

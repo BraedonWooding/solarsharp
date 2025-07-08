@@ -9,9 +9,8 @@ namespace SolarSharp.Interpreter.Execution.Scopes
         bool IsBoundary();
     }
 
-
     internal class LoopTracker
     {
-        public FastStack<ILoop> Loops = new(16384);
+        public FastStack<ILoop> Loops = new FastStack<ILoop>(16384);
     }
 }

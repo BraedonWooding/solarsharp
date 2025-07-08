@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace SolarSharp.Interpreter.DataTypes
 {
@@ -10,31 +11,39 @@ namespace SolarSharp.Interpreter.DataTypes
     public class ReadOnlyScriptState
     {
         private readonly Dictionary<string, object> _state;
-        private readonly DateTime _snapshotTime;
 
         /// <summary>
         /// Creates a read-only state snapshot
         /// </summary>
         public ReadOnlyScriptState(IDictionary<string, object> state)
         {
-            _state = state != null ? new Dictionary<string, object>(state) : new Dictionary<string, object>();
-            _snapshotTime = DateTime.UtcNow;
+            _state =
+                state != null
+                    ? new Dictionary<string, object>(state)
+                    : new Dictionary<string, object>();
+            SnapshotTime = DateTime.UtcNow;
         }
 
         /// <summary>
         /// Gets the time when this snapshot was taken
         /// </summary>
-        public DateTime SnapshotTime => _snapshotTime;
+        public DateTime SnapshotTime { get; }
 
         /// <summary>
         /// Gets all available keys
         /// </summary>
-        public IReadOnlyCollection<string> Keys => _state.Keys;
+        public IReadOnlyCollection<string> Keys
+        {
+            get { return _state.Keys; }
+        }
 
         /// <summary>
         /// Gets the number of state entries
         /// </summary>
-        public int Count => _state.Count;
+        public int Count
+        {
+            get { return _state.Count; }
+        }
 
         /// <summary>
         /// Checks if a key exists in the state
@@ -75,7 +84,7 @@ namespace SolarSharp.Interpreter.DataTypes
         public bool TryGetValue<T>(string key, out T value)
         {
             value = default;
-            
+
             if (_state.TryGetValue(key, out var objValue))
             {
                 if (objValue is T typedValue)
@@ -94,7 +103,7 @@ namespace SolarSharp.Interpreter.DataTypes
                     return false;
                 }
             }
-            
+
             return false;
         }
 
@@ -108,7 +117,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public ReadOnlyScriptState Filter(params string[] keys)
         {
-            var filtered = _state.Where(kvp => keys.Contains(kvp.Key)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            var filtered = _state
+                .Where(kvp => keys.Contains(kvp.Key))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
             return new ReadOnlyScriptState(filtered);
         }
 
@@ -117,7 +128,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public ReadOnlyScriptState Exclude(params string[] keys)
         {
-            var filtered = _state.Where(kvp => !keys.Contains(kvp.Key)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            var filtered = _state
+                .Where(kvp => !keys.Contains(kvp.Key))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
             return new ReadOnlyScriptState(filtered);
         }
 
@@ -126,8 +139,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public ReadOnlyScriptState WithPrefix(string prefix)
         {
-            var filtered = _state.Where(kvp => kvp.Key.StartsWith(prefix))
-                                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            var filtered = _state
+                .Where(kvp => kvp.Key.StartsWith(prefix))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
             return new ReadOnlyScriptState(filtered);
         }
 
@@ -136,13 +150,13 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public Table ToLuaTable(Script script)
         {
-            var table = new Table(script);
-            
+            var table = new Table();
+
             foreach (var (key, value) in _state)
             {
                 table[key] = ConvertValueToLua(value, script);
             }
-            
+
             return table;
         }
 
@@ -158,13 +172,13 @@ namespace SolarSharp.Interpreter.DataTypes
                 string s => DynValue.NewString(s),
                 IDictionary<string, object> dict => ConvertDictionaryToLua(dict, script),
                 IEnumerable<object> list => ConvertListToLua(list, script),
-                _ => DynValue.FromObject(script, value)
+                _ => DynValue.FromObject(script, value),
             };
         }
 
         private DynValue ConvertDictionaryToLua(IDictionary<string, object> dict, Script script)
         {
-            var table = new Table(script);
+            var table = new Table();
             foreach (var (key, value) in dict)
             {
                 table[key] = ConvertValueToLua(value, script);
@@ -174,14 +188,14 @@ namespace SolarSharp.Interpreter.DataTypes
 
         private DynValue ConvertListToLua(IEnumerable<object> list, Script script)
         {
-            var table = new Table(script);
-            int index = 1;
-            
+            var table = new Table();
+            var index = 1;
+
             foreach (var item in list)
             {
                 table[index++] = ConvertValueToLua(item, script);
             }
-            
+
             return DynValue.NewTable(table);
         }
     }
@@ -191,7 +205,7 @@ namespace SolarSharp.Interpreter.DataTypes
     /// </summary>
     public class StateSnapshotBuilder
     {
-        private readonly Dictionary<string, object> _state = new();
+        private readonly Dictionary<string, object> _state = new Dictionary<string, object>();
 
         /// <summary>
         /// Adds a value to the state snapshot
@@ -228,10 +242,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public StateSnapshotBuilder AddFromObject(object obj, string prefix = null)
         {
-            if (obj == null) return this;
+            if (obj == null)
+                return this;
 
             var type = obj.GetType();
-            var properties = type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
             foreach (var prop in properties)
             {
@@ -240,7 +255,9 @@ namespace SolarSharp.Interpreter.DataTypes
                     try
                     {
                         var value = prop.GetValue(obj);
-                        var key = string.IsNullOrEmpty(prefix) ? prop.Name : $"{prefix}.{prop.Name}";
+                        var key = string.IsNullOrEmpty(prefix)
+                            ? prop.Name
+                            : $"{prefix}.{prop.Name}";
                         _state[key] = value;
                     }
                     catch
@@ -264,26 +281,26 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Creates an empty state snapshot
         /// </summary>
-        public static ReadOnlyScriptState Empty() => new(new Dictionary<string, object>());
+        public static ReadOnlyScriptState Empty() =>
+            new ReadOnlyScriptState(new Dictionary<string, object>());
     }
 
     /// <summary>
     /// Immutable table implementation that prevents modifications
     /// </summary>
-    public class ImmutableTable : IScriptPrivateResource
+    public class ImmutableTable
     {
         private readonly Table _sourceTable;
         private readonly Dictionary<DynValue, DynValue> _pairs;
-        private readonly Script _script;
 
         /// <summary>
         /// Creates an immutable view of a table
         /// </summary>
-        public ImmutableTable(Table sourceTable)
+        public ImmutableTable(Table sourceTable, Script script)
         {
             _sourceTable = sourceTable ?? throw new ArgumentNullException(nameof(sourceTable));
-            _script = sourceTable.OwnerScript;
-            
+            OwnerScript = script;
+
             // Create immutable snapshot of all pairs
             var pairs = new Dictionary<DynValue, DynValue>();
             foreach (var pair in sourceTable)
@@ -296,27 +313,39 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Gets the owning script
         /// </summary>
-        public Script OwnerScript => _script;
+        public Script OwnerScript { get; }
 
         /// <summary>
         /// Gets the length of the table
         /// </summary>
-        public int Length => _sourceTable.Length;
+        public int Length
+        {
+            get { return _sourceTable.Length; }
+        }
 
         /// <summary>
         /// Gets all key-value pairs
         /// </summary>
-        public IEnumerable<KeyValuePair<DynValue, DynValue>> Pairs => _pairs;
+        public IEnumerable<KeyValuePair<DynValue, DynValue>> Pairs
+        {
+            get { return _pairs; }
+        }
 
         /// <summary>
         /// Gets all keys
         /// </summary>
-        public IEnumerable<DynValue> Keys => _pairs.Keys;
+        public IEnumerable<DynValue> Keys
+        {
+            get { return _pairs.Keys; }
+        }
 
         /// <summary>
         /// Gets all values
         /// </summary>
-        public IEnumerable<DynValue> Values => _pairs.Values;
+        public IEnumerable<DynValue> Values
+        {
+            get { return _pairs.Values; }
+        }
 
         /// <summary>
         /// Gets a value by key
@@ -355,7 +384,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public Table ToMutableTable()
         {
-            var newTable = new Table(_script);
+            var newTable = new Table();
             foreach (var (key, value) in _pairs)
             {
                 newTable.Set(key, value);
@@ -368,12 +397,12 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public ImmutableTable Filter(Func<DynValue, DynValue, bool> predicate)
         {
-            var filteredTable = new Table(_script);
+            var filteredTable = new Table();
             foreach (var (key, value) in _pairs.Where(kvp => predicate(kvp.Key, kvp.Value)))
             {
                 filteredTable.Set(key, value);
             }
-            return new ImmutableTable(filteredTable);
+            return new ImmutableTable(filteredTable, OwnerScript);
         }
 
         /// <summary>
@@ -381,7 +410,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public ImmutableTable Map(Func<DynValue, DynValue, DynValue> mapper)
         {
-            var mappedTable = new Table(_script);
+            var mappedTable = new Table();
             foreach (var (key, value) in _pairs)
             {
                 var mappedValue = mapper(key, value);
@@ -390,7 +419,7 @@ namespace SolarSharp.Interpreter.DataTypes
                     mappedTable.Set(key, mappedValue);
                 }
             }
-            return new ImmutableTable(mappedTable);
+            return new ImmutableTable(mappedTable, OwnerScript);
         }
     }
 
@@ -402,15 +431,17 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Creates an immutable view of a table
         /// </summary>
-        public static ImmutableTable ToImmutable(this Table table)
+        public static ImmutableTable ToImmutable(this Table table, Script script)
         {
-            return new ImmutableTable(table);
+            return new ImmutableTable(table, script);
         }
 
         /// <summary>
         /// Creates a read-only state from a dictionary
         /// </summary>
-        public static ReadOnlyScriptState ToReadOnlyState(this IDictionary<string, object> dictionary)
+        public static ReadOnlyScriptState ToReadOnlyState(
+            this IDictionary<string, object> dictionary
+        )
         {
             return new ReadOnlyScriptState(dictionary);
         }

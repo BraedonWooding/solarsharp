@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Threading.Tasks;
 using SolarSharp.CertUtil.Commands;
 
 namespace SolarSharp.CertUtil
@@ -25,7 +24,7 @@ namespace SolarSharp.CertUtil
                 IssueCertCommand.Create(),
                 SignManifestCommand.Create(),
                 VerifyCertCommand.Create(),
-                VerifyManifestCommand.Create()
+                VerifyManifestCommand.Create(),
             };
 
             return await rootCommand.InvokeAsync(args);

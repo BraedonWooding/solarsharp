@@ -21,13 +21,19 @@ namespace SolarSharp.Hardwire.Languages
         /// It is the default language used in the absence of any other specified language for
         /// the <see cref="HardwireGenerator"/> class.
         /// </remarks>
-        public static HardwireCodeGenerationLanguage CSharp => new CSharpHardwireCodeGenerationLanguage();
+        public static HardwireCodeGenerationLanguage CSharp
+        {
+            get { return new CSharpHardwireCodeGenerationLanguage(); }
+        }
 
         /// <summary>
         /// Gets a VB.NET-specific implementation of the hardwire code generation language.
         /// This property provides access to functionalities for generating VB.NET code constructs and configurations.
         /// </summary>
-        public static HardwireCodeGenerationLanguage VbNet => new VbNetHardwireCodeGenerationLanguage();
+        public static HardwireCodeGenerationLanguage VbNet
+        {
+            get { return new VbNetHardwireCodeGenerationLanguage(); }
+        }
 
         /// <summary>
         /// Gets the name of the code generation language.
@@ -107,7 +113,10 @@ namespace SolarSharp.Hardwire.Languages
         /// <param name="type">The element type for the array.</param>
         /// <param name="args">An array of expressions representing the dimensions of the multidimensional array.</param>
         /// <returns>A <see cref="CodeExpression"/> that represents the constructed multidimensional array.</returns>
-        public abstract CodeExpression CreateMultidimensionalArray(string type, CodeExpression[] args);
+        public abstract CodeExpression CreateMultidimensionalArray(
+            string type,
+            CodeExpression[] args
+        );
 
         /// <summary>
         /// Returns an array of strings containing the initial comment for the generated code files.
@@ -124,8 +133,12 @@ namespace SolarSharp.Hardwire.Languages
         /// <returns>A string representation of the provided <see cref="CodeExpression"/>.</returns>
         protected string ExpressionToString(CodeExpression exp)
         {
-            using StringWriter sourceWriter = new();
-            CodeDomProvider.GenerateCodeFromExpression(exp, sourceWriter, new CodeGeneratorOptions());
+            using var sourceWriter = new StringWriter();
+            CodeDomProvider.GenerateCodeFromExpression(
+                exp,
+                sourceWriter,
+                new CodeGeneratorOptions()
+            );
             return sourceWriter.ToString();
         }
 
@@ -138,7 +151,10 @@ namespace SolarSharp.Hardwire.Languages
         protected CodeExpression SnippetExpression(string format, params CodeExpression[] args)
         {
             var fmt = "(" + format + ")";
-            var res = string.Format(fmt, args.Select(ExpressionToString).OfType<object>().ToArray());
+            var res = string.Format(
+                fmt,
+                args.Select(ExpressionToString).OfType<object>().ToArray()
+            );
             return new CodeSnippetExpression(res);
         }
     }

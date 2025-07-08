@@ -4,6 +4,7 @@ using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using System.CommandLine.Parsing;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,8 +30,14 @@ namespace SolarSharp.CLI
         /// <returns>Exit code (0 for success, non-zero for failure).</returns>
         public static async Task<int> Main(string[] args)
         {
+            var fileSystem = new FileSystem();
+
             // Support backward compatibility: if first arg is a .lua file, run it
-            if (args.Length > 0 && args[0].EndsWith(".lua", StringComparison.OrdinalIgnoreCase) && File.Exists(args[0]))
+            if (
+                args.Length > 0
+                && args[0].EndsWith(".lua", StringComparison.OrdinalIgnoreCase)
+                && fileSystem.File.Exists(args[0])
+            )
             {
                 // Transform "solarsharp script.lua [options]" to "solarsharp run script.lua [options]"
                 var newArgs = new string[args.Length + 1];
@@ -43,8 +50,8 @@ namespace SolarSharp.CLI
             {
                 // Check if any args are subcommands
                 var subcommands = new[] { "repl", "run", "compile", "hardwire" };
-                bool hasSubcommand = args.Any(arg => subcommands.Contains(arg));
-                
+                var hasSubcommand = args.Any(arg => subcommands.Contains(arg));
+
                 if (!hasSubcommand)
                 {
                     // Transform to "solarsharp repl [options]"
@@ -56,16 +63,20 @@ namespace SolarSharp.CLI
             }
 
             var rootCommand = BuildRootCommand();
-            
+
             var parser = new CommandLineBuilder(rootCommand)
-                .UseHost(_ => Host.CreateDefaultBuilder(),
+                .UseHost(
+                    _ => Host.CreateDefaultBuilder(),
                     host =>
                     {
-                        host.ConfigureServices((context, services) =>
-                        {
-                            ConfigureServices(services);
-                        });
-                    })
+                        host.ConfigureServices(
+                            (context, services) =>
+                            {
+                                ConfigureServices(services);
+                            }
+                        );
+                    }
+                )
                 .UseDefaults()
                 .Build();
 
@@ -80,14 +91,15 @@ namespace SolarSharp.CLI
         {
             var rootCommand = new RootCommand("SolarSharp - A secure Lua interpreter for .NET")
             {
-                Name = "solarsharp"
+                Name = "solarsharp",
             };
 
             // Global options
             var verbosityOption = new Option<LogLevel>(
                 new[] { "--verbosity", "-v" },
                 getDefaultValue: () => LogLevel.Information,
-                description: "Set the verbosity level");
+                description: "Set the verbosity level"
+            );
 
             rootCommand.AddGlobalOption(verbosityOption);
 
@@ -97,7 +109,7 @@ namespace SolarSharp.CLI
             rootCommand.AddCommand(BuildCompileCommand());
             rootCommand.AddCommand(BuildHardwireCommand());
 
-            // Default behavior when no subcommand is specified
+            // Default behaviour when no subcommand is specified
             rootCommand.SetHandler(() => { });
 
             return rootCommand;
@@ -111,46 +123,49 @@ namespace SolarSharp.CLI
         {
             var replCommand = new Command("repl", "Start an interactive Lua REPL session");
 
-            var securityLevelOption = new Option<string>(
-                new[] { "--security-level", "-s" },
+            var policyOption = new Option<string>(
+                new[] { "--policy", "-p" },
                 getDefaultValue: () => "desktop",
-                description: "Security level: none, isolated, desktop, automation")
-                .FromAmong("none", "isolated", "desktop", "automation");
+                description: $"Example policy: {string.Join(", ", Examples.GetAvailablePolicyNames())}"
+            ).FromAmong(Examples.GetAvailablePolicyNames());
 
             var manifestOption = new Option<FileInfo>(
                 new[] { "--manifest", "-m" },
-                description: "Path to a security manifest file");
+                description: "Path to a security manifest file"
+            );
 
             var timeoutOption = new Option<int?>(
                 new[] { "--timeout", "-t" },
-                description: "Execution timeout in milliseconds (-1 for no timeout)");
+                description: "Execution timeout in milliseconds (-1 for no timeout)"
+            );
 
             var memoryOption = new Option<int?>(
                 new[] { "--memory", "-M" },
-                description: "Memory limit in MB");
+                description: "Memory limit in MB"
+            );
 
-            replCommand.AddOption(securityLevelOption);
+            replCommand.AddOption(policyOption);
             replCommand.AddOption(manifestOption);
             replCommand.AddOption(timeoutOption);
             replCommand.AddOption(memoryOption);
 
-            replCommand.SetHandler(async (context) =>
+            replCommand.SetHandler(async context =>
             {
                 var host = context.BindingContext.GetService<IHost>();
                 var logger = host.Services.GetRequiredService<ILogger<ReplService>>();
                 var replService = host.Services.GetRequiredService<IReplService>();
-                
-                var securityLevel = context.ParseResult.GetValueForOption(securityLevelOption);
+
+                var policyName = context.ParseResult.GetValueForOption(policyOption);
                 var manifestFile = context.ParseResult.GetValueForOption(manifestOption);
                 var timeout = context.ParseResult.GetValueForOption(timeoutOption);
                 var memory = context.ParseResult.GetValueForOption(memoryOption);
 
                 var options = new ReplOptions
                 {
-                    SecurityLevel = securityLevel,
+                    PolicyName = policyName,
                     ManifestPath = manifestFile?.FullName,
                     TimeoutMs = timeout,
-                    MemoryMb = memory
+                    MemoryMb = memory,
                 };
 
                 await replService.RunAsync(options, context.GetCancellationToken());
@@ -169,46 +184,51 @@ namespace SolarSharp.CLI
 
             var scriptArgument = new Argument<FileInfo>(
                 "script",
-                description: "Path to the Lua script file to execute");
+                description: "Path to the Lua script file to execute"
+            );
 
-            var securityLevelOption = new Option<string>(
-                new[] { "--security-level", "-s" },
+            var policyOption = new Option<string>(
+                new[] { "--policy", "-p" },
                 getDefaultValue: () => "desktop",
-                description: "Security level: none, isolated, desktop, automation")
-                .FromAmong("none", "isolated", "desktop", "automation");
+                description: $"Example policy: {string.Join(", ", Examples.GetAvailablePolicyNames())}"
+            ).FromAmong(Examples.GetAvailablePolicyNames());
 
             var manifestOption = new Option<FileInfo>(
                 new[] { "--manifest", "-m" },
-                description: "Path to a security manifest file");
+                description: "Path to a security manifest file"
+            );
 
             var argsOption = new Option<string[]>(
                 new[] { "--args", "-a" },
-                description: "Arguments to pass to the script");
+                description: "Arguments to pass to the script"
+            );
 
             runCommand.AddArgument(scriptArgument);
-            runCommand.AddOption(securityLevelOption);
+            runCommand.AddOption(policyOption);
             runCommand.AddOption(manifestOption);
             runCommand.AddOption(argsOption);
 
-            runCommand.SetHandler(async (context) =>
+            runCommand.SetHandler(async context =>
             {
                 var host = context.BindingContext.GetService<IHost>();
                 var scriptService = host.Services.GetRequiredService<IScriptService>();
                 var logger = host.Services.GetRequiredService<ILogger<ScriptService>>();
-                
+
                 var scriptFile = context.ParseResult.GetValueForArgument(scriptArgument);
-                var securityLevel = context.ParseResult.GetValueForOption(securityLevelOption);
+                var policyName = context.ParseResult.GetValueForOption(policyOption);
                 var manifestFile = context.ParseResult.GetValueForOption(manifestOption);
-                var scriptArgs = context.ParseResult.GetValueForOption(argsOption) ?? Array.Empty<string>();
+                var scriptArgs =
+                    context.ParseResult.GetValueForOption(argsOption) ?? Array.Empty<string>();
 
                 try
                 {
                     var result = await scriptService.RunScriptAsync(
                         scriptFile.FullName,
-                        securityLevel,
+                        policyName,
                         manifestFile?.FullName,
                         scriptArgs,
-                        context.GetCancellationToken());
+                        context.GetCancellationToken()
+                    );
 
                     if (result.Success)
                     {
@@ -243,27 +263,30 @@ namespace SolarSharp.CLI
 
             var inputArgument = new Argument<FileInfo>(
                 "input",
-                description: "Input Lua script file");
+                description: "Input Lua script file"
+            );
 
             var outputOption = new Option<FileInfo>(
                 new[] { "--output", "-o" },
-                description: "Output bytecode file");
+                description: "Output bytecode file"
+            );
 
             compileCommand.AddArgument(inputArgument);
             compileCommand.AddOption(outputOption);
 
-            compileCommand.SetHandler(async (context) =>
+            compileCommand.SetHandler(async context =>
             {
                 var host = context.BindingContext.GetService<IHost>();
                 var compileService = host.Services.GetRequiredService<ICompileService>();
                 var logger = host.Services.GetRequiredService<ILogger<CompileService>>();
-                
+
                 var inputFile = context.ParseResult.GetValueForArgument(inputArgument);
                 var outputFile = context.ParseResult.GetValueForOption(outputOption);
 
                 if (outputFile == null)
                 {
-                    var outputPath = Path.ChangeExtension(inputFile.FullName, ".luac");
+                    var fileSystem = host.Services.GetRequiredService<IFileSystem>();
+                    var outputPath = fileSystem.Path.ChangeExtension(inputFile.FullName, ".luac");
                     outputFile = new FileInfo(outputPath);
                 }
 
@@ -272,10 +295,14 @@ namespace SolarSharp.CLI
                     await compileService.CompileAsync(
                         inputFile.FullName,
                         outputFile.FullName,
-                        context.GetCancellationToken());
+                        context.GetCancellationToken()
+                    );
 
-                    logger.LogInformation("Successfully compiled {Input} to {Output}", 
-                        inputFile.Name, outputFile.Name);
+                    logger.LogInformation(
+                        "Successfully compiled {Input} to {Output}",
+                        inputFile.Name,
+                        outputFile.Name
+                    );
                 }
                 catch (Exception ex)
                 {
@@ -293,36 +320,38 @@ namespace SolarSharp.CLI
         /// <returns>The configured hardwire command.</returns>
         private static Command BuildHardwireCommand()
         {
-            var hardwireCommand = new Command("hardwire", "Generate C# code from compiled Lua bytecode");
+            var hardwireCommand = new Command(
+                "hardwire",
+                "Generate C# code from compiled Lua bytecode"
+            );
 
-            var inputArgument = new Argument<FileInfo>(
-                "input",
-                description: "Input bytecode file");
+            var inputArgument = new Argument<FileInfo>("input", description: "Input bytecode file");
 
-            var outputArgument = new Argument<FileInfo>(
-                "output",
-                description: "Output C# file");
+            var outputArgument = new Argument<FileInfo>("output", description: "Output C# file");
 
             var namespaceOption = new Option<string>(
                 new[] { "--namespace", "-n" },
                 getDefaultValue: () => "SolarSharp.Generated",
-                description: "C# namespace for generated code");
+                description: "C# namespace for generated code"
+            );
 
             var classOption = new Option<string>(
                 new[] { "--class", "-c" },
                 getDefaultValue: () => "GeneratedScript",
-                description: "C# class name for generated code");
+                description: "C# class name for generated code"
+            );
 
             var languageOption = new Option<string>(
                 new[] { "--language", "-l" },
                 getDefaultValue: () => "cs",
-                description: "Output language: cs (C#) or vb (VB.NET)")
-                .FromAmong("cs", "vb");
+                description: "Output language: cs (C#) or vb (VB.NET)"
+            ).FromAmong("cs", "vb");
 
             var internalsOption = new Option<bool>(
                 new[] { "--internals", "-i" },
                 getDefaultValue: () => false,
-                description: "Include internal SolarSharp types");
+                description: "Include internal SolarSharp types"
+            );
 
             hardwireCommand.AddArgument(inputArgument);
             hardwireCommand.AddArgument(outputArgument);
@@ -331,12 +360,12 @@ namespace SolarSharp.CLI
             hardwireCommand.AddOption(languageOption);
             hardwireCommand.AddOption(internalsOption);
 
-            hardwireCommand.SetHandler(async (context) =>
+            hardwireCommand.SetHandler(async context =>
             {
                 var host = context.BindingContext.GetService<IHost>();
                 var hardwireService = host.Services.GetRequiredService<IHardwireService>();
                 var logger = host.Services.GetRequiredService<ILogger<HardwireService>>();
-                
+
                 var inputFile = context.ParseResult.GetValueForArgument(inputArgument);
                 var outputFile = context.ParseResult.GetValueForArgument(outputArgument);
                 var ns = context.ParseResult.GetValueForOption(namespaceOption);
@@ -353,10 +382,14 @@ namespace SolarSharp.CLI
                         className,
                         language,
                         internals,
-                        context.GetCancellationToken());
+                        context.GetCancellationToken()
+                    );
 
-                    logger.LogInformation("Successfully generated {Language} code to {Output}", 
-                        language.ToUpperInvariant(), outputFile.Name);
+                    logger.LogInformation(
+                        "Successfully generated {Language} code to {Output}",
+                        language.ToUpperInvariant(),
+                        outputFile.Name
+                    );
                 }
                 catch (Exception ex)
                 {
@@ -374,10 +407,16 @@ namespace SolarSharp.CLI
         /// <param name="services">The service collection to configure.</param>
         private static void ConfigureServices(IServiceCollection services)
         {
+            // File system abstraction
+            services.AddSingleton<IFileSystem, FileSystem>();
+
             // Core services
-            services.AddSingleton<ISecurityConfigurationFactory, SecurityConfigurationFactory>();
+            services.AddSingleton<ISecurityPolicyFactory>(provider => new SecurityPolicyFactory(
+                provider.GetRequiredService<ILogger<SecurityPolicyFactory>>(),
+                provider.GetRequiredService<IFileSystem>()
+            ));
             services.AddSingleton<IScriptFactory, ScriptFactory>();
-            
+
             // Command services
             services.AddTransient<IReplService, ReplService>();
             services.AddTransient<IScriptService, ScriptService>();
@@ -398,7 +437,7 @@ namespace SolarSharp.CLI
     /// </summary>
     public class ReplOptions
     {
-        public string SecurityLevel { get; set; } = "desktop";
+        public string PolicyName { get; set; } = "desktop";
         public string ManifestPath { get; set; }
         public int? TimeoutMs { get; set; }
         public int? MemoryMb { get; set; }
@@ -417,8 +456,13 @@ namespace SolarSharp.CLI
     /// </summary>
     public interface IScriptService
     {
-        Task<ScriptResult> RunScriptAsync(string scriptPath, string securityLevel, string manifestPath, 
-            string[] args, CancellationToken cancellationToken);
+        Task<ScriptResult> RunScriptAsync(
+            string scriptPath,
+            string policyName,
+            string manifestPath,
+            string[] args,
+            CancellationToken cancellationToken
+        );
     }
 
     /// <summary>
@@ -436,8 +480,7 @@ namespace SolarSharp.CLI
     /// </summary>
     public interface ICompileService
     {
-        Task CompileAsync(string inputPath, string outputPath, 
-            CancellationToken cancellationToken);
+        Task CompileAsync(string inputPath, string outputPath, CancellationToken cancellationToken);
     }
 
     /// <summary>
@@ -445,17 +488,23 @@ namespace SolarSharp.CLI
     /// </summary>
     public interface IHardwireService
     {
-        Task GenerateAsync(string inputPath, string outputPath, string namespaceName, 
-            string className, string language, bool includeInternals, 
-            CancellationToken cancellationToken);
+        Task GenerateAsync(
+            string inputPath,
+            string outputPath,
+            string namespaceName,
+            string className,
+            string language,
+            bool includeInternals,
+            CancellationToken cancellationToken
+        );
     }
 
     /// <summary>
-    /// Factory for creating security configurations.
+    /// Factory for creating security policies.
     /// </summary>
-    public interface ISecurityConfigurationFactory
+    public interface ISecurityPolicyFactory
     {
-        SecurityConfiguration Create(string level, string manifestPath = null);
+        SecurityPolicy Create(string policyName, string manifestPath = null);
     }
 
     /// <summary>
@@ -463,6 +512,6 @@ namespace SolarSharp.CLI
     /// </summary>
     public interface IScriptFactory
     {
-        Script Create(SecurityConfiguration config);
+        Script Create(SecurityPolicy policy);
     }
 }

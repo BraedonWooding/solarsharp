@@ -33,16 +33,16 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class CapabilityManager : ICapabilityManager
     {
-        private readonly SecurityConfiguration _config;
+        private readonly SecurityPolicy _policy;
         private ScriptCapabilities _grantedCapabilities;
 
         /// <summary>
         /// Creates a new capability manager
         /// </summary>
-        public CapabilityManager(SecurityConfiguration config)
+        public CapabilityManager(SecurityPolicy policy)
         {
-            _config = config ?? throw new ArgumentNullException(nameof(config));
-            _grantedCapabilities = config.Capabilities;
+            _policy = policy ?? throw new ArgumentNullException(nameof(policy));
+            _grantedCapabilities = policy.Capabilities;
         }
 
         /// <summary>
@@ -57,7 +57,8 @@ namespace SolarSharp.Interpreter.Security
             {
                 throw new MissingCapabilityException(
                     $"Operation '{operation}' requires capability '{required}' which is not granted.",
-                    operation);
+                    operation
+                );
             }
         }
 
@@ -67,7 +68,7 @@ namespace SolarSharp.Interpreter.Security
         public void GrantCapability(ScriptCapabilities capability)
         {
             // Only allow granting capabilities that were originally configured
-            if ((capability & _config.Capabilities) == capability)
+            if ((capability & _policy.Capabilities) == capability)
             {
                 _grantedCapabilities |= capability;
             }
@@ -75,7 +76,8 @@ namespace SolarSharp.Interpreter.Security
             {
                 throw new MissingCapabilityException(
                     $"Cannot grant capability '{capability}' as it exceeds configured security level.",
-                    "GrantCapability");
+                    "GrantCapability"
+                );
             }
         }
 

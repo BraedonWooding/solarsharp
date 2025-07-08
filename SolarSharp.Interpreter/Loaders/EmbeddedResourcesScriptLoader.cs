@@ -23,7 +23,9 @@ namespace SolarSharp.Interpreter.Loaders
             if (resourceAssembly == null)
             {
 #if NETFX_CORE || DOTNET_CORE
-				throw new NotSupportedException("Assembly.GetCallingAssembly is not supported on target framework.");
+                throw new NotSupportedException(
+                    "Assembly.GetCallingAssembly is not supported on target framework."
+                );
 #else
                 resourceAssembly = Assembly.GetCallingAssembly();
 #endif

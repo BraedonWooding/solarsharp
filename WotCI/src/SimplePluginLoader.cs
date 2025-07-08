@@ -1,7 +1,10 @@
+using System.IO.Abstractions;
 using System.Text.Json;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Security.Operations;
 using Spectre.Console;
 
 namespace WotCI
@@ -13,15 +16,19 @@ namespace WotCI
     {
         private readonly GameSimulator _game;
         private readonly IAnsiConsole _console;
+        private readonly IFileSystem _fileSystem;
 
-        public SimplePluginLoader(GameSimulator game) : this(game, AnsiConsole.Console)
-        {
-        }
+        public SimplePluginLoader(GameSimulator game)
+            : this(game, AnsiConsole.Console, new FileSystem()) { }
 
         public SimplePluginLoader(GameSimulator game, IAnsiConsole console)
+            : this(game, console, new FileSystem()) { }
+
+        public SimplePluginLoader(GameSimulator game, IAnsiConsole console, IFileSystem fileSystem)
         {
             _game = game ?? throw new ArgumentNullException(nameof(game));
             _console = console ?? throw new ArgumentNullException(nameof(console));
+            _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
 
         public virtual void LoadPluginDirectory(string pluginDir)
@@ -29,8 +36,8 @@ namespace WotCI
             _console.WriteLine($"\nLoading plugins from: {pluginDir}");
 
             // Check for manifest
-            var manifestPath = Path.Combine(pluginDir, "manifest.json");
-            if (!File.Exists(manifestPath))
+            var manifestPath = _fileSystem.Path.Combine(pluginDir, "manifest.json");
+            if (!_fileSystem.File.Exists(manifestPath))
             {
                 _console.WriteLine($"✗ No manifest found in {pluginDir}");
                 return;
@@ -39,13 +46,17 @@ namespace WotCI
             try
             {
                 // Read and parse manifest JSON
-                var manifestJson = File.ReadAllText(manifestPath);
+                var manifestJson = _fileSystem.File.ReadAllText(manifestPath);
                 var manifest = JsonSerializer.Deserialize<SimpleManifest>(manifestJson);
-                
-                if (manifest == null)
-                    throw new InvalidOperationException($"Failed to deserialize manifest from {manifestPath}");
 
-                _console.WriteLine($"✓ Found manifest: {manifest.name} v{manifest.version} by {manifest.author}");
+                if (manifest == null)
+                    throw new InvalidOperationException(
+                        $"Failed to deserialize manifest from {manifestPath}"
+                    );
+
+                _console.WriteLine(
+                    $"✓ Found manifest: {manifest.name} v{manifest.version} by {manifest.author}"
+                );
 
                 // Create script with appropriate security
                 var script = CreateSecureScript(manifest, pluginDir);
@@ -54,17 +65,22 @@ namespace WotCI
                 script.Globals["game"] = _game.CreateApi();
 
                 // Load all Lua files (sorted for consistent order)
-                var luaFiles = Directory.GetFiles(pluginDir, "*.lua").OrderBy(f => Path.GetFileName(f)).ToArray();
+                var luaFiles = _fileSystem
+                    .Directory.GetFiles(pluginDir, "*.lua")
+                    .OrderBy(f => _fileSystem.Path.GetFileName(f))
+                    .ToArray();
                 foreach (var luaFile in luaFiles)
                 {
                     try
                     {
-                        _console.WriteLine($"  Loading: {Path.GetFileName(luaFile)}");
+                        _console.WriteLine($"  Loading: {_fileSystem.Path.GetFileName(luaFile)}");
                         script.DoFile(luaFile);
                     }
                     catch (Exception ex)
                     {
-                        _console.WriteLine($"  ✗ Failed to load {Path.GetFileName(luaFile)}: {ex.Message}");
+                        _console.WriteLine(
+                            $"  ✗ Failed to load {_fileSystem.Path.GetFileName(luaFile)}: {ex.Message}"
+                        );
                     }
                 }
 
@@ -79,7 +95,7 @@ namespace WotCI
 
         public virtual void LoadUserScripts(string userDir)
         {
-            if (!Directory.Exists(userDir))
+            if (!_fileSystem.Directory.Exists(userDir))
             {
                 _console.WriteLine($"User scripts directory not found: {userDir}");
                 return;
@@ -87,74 +103,145 @@ namespace WotCI
 
             _console.WriteLine($"\nLoading user scripts from: {userDir}");
 
-            foreach (var luaFile in Directory.GetFiles(userDir, "*.lua"))
+            foreach (var luaFile in _fileSystem.Directory.GetFiles(userDir, "*.lua"))
             {
                 try
                 {
-                    _console.WriteLine($"  Loading: {Path.GetFileName(luaFile)}");
-                    
+                    _console.WriteLine($"  Loading: {_fileSystem.Path.GetFileName(luaFile)}");
+
                     // User scripts get minimal security
-                    var config = SecurityConfiguration.Isolated();
-                    var script = new Script(config)
+                    var script = new Script(Examples.IsolatedBasePolicySet)
                     {
                         Globals =
                         {
                             // Very limited API
-                            ["print"] = (Action<string>)(msg => _console.WriteLine($"[User] {msg}")),
-                            ["game"] = _game.CreateApi() // Limited API
-                        }
+                            ["print"] =
+                                (Action<string>)(msg => _console.WriteLine($"[User] {msg}")),
+                            ["game"] = _game.CreateApi(), // Limited API
+                        },
                     };
 
                     script.DoFile(luaFile);
                 }
                 catch (Exception ex)
                 {
-                    _console.WriteLine($"  ✗ Failed to load {Path.GetFileName(luaFile)}: {ex.Message}");
+                    _console.WriteLine(
+                        $"  ✗ Failed to load {_fileSystem.Path.GetFileName(luaFile)}: {ex.Message}"
+                    );
                 }
             }
         }
 
         private Script CreateSecureScript(SimpleManifest manifest, string pluginDir)
         {
-            // Create security configuration based on manifest
-            var config = new SecurityConfiguration();
-            
-            // Apply timeout from manifest
-            if (manifest.policy?.timeout > 0)
+            // Create security policy based on manifest
+            var policy = Examples.Isolated();
+
+            // Apply manifest policy if available
+            if (manifest.policy != null)
             {
-                config.Execution.Timeout = TimeSpan.FromSeconds(manifest.policy.timeout);
+                // Apply allowed modules
+                if (
+                    manifest.policy.allowedModules != null
+                    && manifest.policy.allowedModules.Length > 0
+                )
+                {
+                    var modules = CoreModules.None;
+                    foreach (var module in manifest.policy.allowedModules)
+                    {
+                        if (Enum.TryParse<CoreModules>(module, true, out var parsedModule))
+                        {
+                            modules |= parsedModule;
+                        }
+                    }
+                    // When allowedModules is specified in manifest, use those modules
+                    policy = policy with
+                    {
+                        AllowedModules = modules,
+                    };
+                }
+
+                // Apply timeout
+                if (manifest.policy.timeout > 0)
+                {
+                    policy = policy with { TimeoutMs = manifest.policy.timeout * 1000 };
+                }
+
+                // Apply memory limit
+                if (manifest.policy.memoryLimit > 0)
+                {
+                    policy = policy with { MaxMemoryMB = manifest.policy.memoryLimit };
+                }
             }
 
-            // Apply memory limit from manifest
-            if (manifest.policy?.memoryLimit > 0)
+            // Create a custom BasePolicySet with the policy
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("plugin", policy)
+                .MapFilePattern("*.lua", "plugin")
+                .WithDefaultPolicy("plugin")
+                .Build();
+
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            if (basePolicySetResult.IsFailure)
             {
-                config.Execution.MaxMemoryMB = manifest.policy.memoryLimit;
+                // Fall back to isolated policy set if creation fails
+                _console.WriteLine(
+                    $"  Warning: Failed to create custom policy set: {basePolicySetResult.Error}"
+                );
+                return CreateBasicScript();
             }
 
-            // Create script with security configuration
-            var script = new Script(config)
+            var script = new Script(basePolicySetResult.Value)
             {
                 Globals =
                 {
                     // Set up sandboxed print
-                    ["print"] = DynValue.NewCallback((ctx, args) => 
-                    {
-                        if (args.Count > 0)
+                    ["print"] = DynValue.NewCallback(
+                        (ctx, args) =>
                         {
-                            var parts = new string[args.Count];
-                            for (int i = 0; i < args.Count; i++)
+                            if (args.Count > 0)
                             {
-                                parts[i] = args[i].CastToString();
+                                var parts = new string[args.Count];
+                                for (var i = 0; i < args.Count; i++)
+                                {
+                                    parts[i] = args[i].CastToString();
+                                }
+                                var msg = string.Join(" ", parts);
+                                _console.WriteLine($"[Plugin] {msg}");
                             }
-                            var msg = string.Join(" ", parts);
-                            _console.WriteLine($"[Plugin] {msg}");
+                            return DynValue.Nil;
                         }
-                        return DynValue.Nil;
-                    })
-                }
+                    ),
+                },
             };
 
             return script;
+        }
+
+        private Script CreateBasicScript()
+        {
+            return new Script(Examples.IsolatedBasePolicySet)
+            {
+                Globals =
+                {
+                    ["print"] = DynValue.NewCallback(
+                        (ctx, args) =>
+                        {
+                            if (args.Count > 0)
+                            {
+                                var parts = new string[args.Count];
+                                for (var i = 0; i < args.Count; i++)
+                                {
+                                    parts[i] = args[i].CastToString();
+                                }
+                                var msg = string.Join(" ", parts);
+                                _console.WriteLine($"[Plugin] {msg}");
+                            }
+                            return DynValue.Nil;
+                        }
+                    ),
+                },
+            };
         }
     }
 
@@ -169,6 +256,12 @@ namespace WotCI
         public SimpleManifestPolicy? policy { get; set; }
         public object? files { get; set; }
         public SimpleManifestSecurity? security { get; set; }
+
+        // Properties with capital letters for backward compatibility
+        public string? Version => version;
+        public string? Name => name;
+        public string? Author => author;
+        public SimpleManifestPolicy? Policy => policy;
     }
 
     public class SimpleManifestPolicy
@@ -180,6 +273,12 @@ namespace WotCI
         public string? defaultFileAccess { get; set; }
         public string? defaultDirectoryAccess { get; set; }
         public object? filePermissions { get; set; }
+
+        // Properties with capital letters for backward compatibility
+        public string[]? AllowedModules => allowedModules;
+        public string[]? Capabilities => capabilities;
+        public int Timeout => timeout;
+        public int MemoryLimit => memoryLimit;
     }
 
     public class SimpleManifestSecurity

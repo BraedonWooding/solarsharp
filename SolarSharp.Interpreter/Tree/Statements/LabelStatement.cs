@@ -17,9 +17,8 @@ namespace SolarSharp.Interpreter.Tree.Statements
         internal int DefinedVarsCount { get; private set; }
         internal string LastDefinedVarName { get; private set; }
 
-        private readonly List<GotoStatement> m_Gotos = new();
+        private readonly List<GotoStatement> m_Gotos = new List<GotoStatement>();
         private RuntimeScopeBlock m_StackFrame;
-
 
         public LabelStatement(ScriptLoadingContext lcontext)
             : base(lcontext)
@@ -45,7 +44,6 @@ namespace SolarSharp.Interpreter.Tree.Statements
             m_Gotos.Add(gotostat);
         }
 
-
         public override void Compile(ByteCode bc)
         {
             bc.Emit_Clean(m_StackFrame);
@@ -62,4 +60,3 @@ namespace SolarSharp.Interpreter.Tree.Statements
         }
     }
 }
-

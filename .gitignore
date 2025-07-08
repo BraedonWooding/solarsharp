@@ -184,3 +184,4 @@ TestResults/
 
 # Game demo artifacts (if not intended for production)
 /game/saves/autosave.sav
+/SolarSharp.CLI/packages/

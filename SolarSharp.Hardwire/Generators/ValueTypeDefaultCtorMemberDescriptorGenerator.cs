@@ -10,11 +10,15 @@ namespace SolarSharp.Hardwire.Generators
             get { return "SolarSharp.Interpreter.Interop.ValueTypeDefaultCtorMemberDescriptor"; }
         }
 
-        public CodeExpression[] Generate(Table table, HardwireCodeGenerationContext generator, CodeTypeMemberCollection members)
+        public CodeExpression[] Generate(
+            Table table,
+            HardwireCodeGenerationContext generator,
+            CodeTypeMemberCollection members
+        )
         {
-            MethodMemberDescriptorGenerator mgen = new("VTDC");
+            var mgen = new MethodMemberDescriptorGenerator("VTDC");
 
-            Table mt = new(null)
+            var mt = new Table(null)
             {
                 ["params"] = new Table(null),
                 ["name"] = "__new",
@@ -23,9 +27,8 @@ namespace SolarSharp.Hardwire.Generators
                 ["extension"] = false,
                 ["decltype"] = table["type"],
                 ["ret"] = table["type"],
-                ["special"] = false
+                ["special"] = false,
             };
-
 
             return mgen.Generate(mt, generator, members);
         }

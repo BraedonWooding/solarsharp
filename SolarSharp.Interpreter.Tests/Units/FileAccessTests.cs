@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.IO.Abstractions;
+using System.IO.Abstractions.TestingHelpers;
 using NUnit.Framework;
 using SolarSharp.Interpreter.Security;
 
@@ -13,13 +15,18 @@ namespace SolarSharp.Interpreter.Tests.Units
     /// The tests evaluate permission settings, inheritance mechanisms, wildcard matching for file and directory operations, and overall file system security rules.
     /// </remarks>
     /// <example>
-    /// This class is utilized in a testing context to confirm expected behaviors of file access operations and permissions management.
+    /// This class is utilized in a testing context to confirm expected behaviours of file access operations and permissions management.
     /// Common scenarios tested include permission inheritance, compatibility checks, wildcard pattern matching, and validation of security configurations.
     /// </example>
     [TestFixture]
-    [Category("SecurityTest")]
+    [Category("Security.General")]
     public class FilePermissionsTests
     {
+        /// <summary>
+        /// File system abstraction for testing.
+        /// </summary>
+        private IFileSystem _fileSystemMock;
+
         /// <summary>
         /// Temporary directory path used for file system operations, created during setup
         /// for test isolation and automatically cleaned up after the tests are completed.
@@ -37,16 +44,20 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// <summary>
         /// Sets up the required environment and resources needed for testing file and directory
         /// permissions within the context of the FilePermissionsTests class. This method:
-        /// - Creates a unique temporary directory for each test run.
+        /// - Creates a mock file system for testing.
         /// - Initializes an instance of the FileSystemSecurity class to configure and verify
-        /// file system behaviors during tests.
+        /// file system behaviours during tests.
         /// </summary>
         [SetUp]
         public void Setup()
         {
-            _tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_tempDir);
-            
+            _fileSystemMock = new MockFileSystem();
+            _tempDir = _fileSystemMock.Path.Combine(
+                _fileSystemMock.Path.GetTempPath(),
+                Guid.NewGuid().ToString()
+            );
+            _fileSystemMock.Directory.CreateDirectory(_tempDir);
+
             _fileSystem = new FileSystemSecurity();
         }
 
@@ -54,16 +65,16 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// Cleans up resources and temporary data created during the test execution.
         /// </summary>
         /// <remarks>
-        /// Deletes the temporary directory created in the setup phase to ensure a clean state
-        /// after each test execution. It verifies if the directory exists before attempting to delete it.
+        /// Cleans up the mock file system created in the setup phase to ensure a clean state
+        /// after each test execution.
         /// This method is executed after each test in the test fixture.
         /// </remarks>
         [TearDown]
         public void TearDown()
         {
-            if (Directory.Exists(_tempDir))
+            if (_fileSystemMock.Directory.Exists(_tempDir))
             {
-                Directory.Delete(_tempDir, true);
+                _fileSystemMock.Directory.Delete(_tempDir, true);
             }
         }
 
@@ -80,13 +91,11 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void SetFilePermissions_SetsSpecificFilePermissions()
         {
-            var filePath = Path.Combine(_tempDir, "test.txt");
-            
+            var filePath = _fileSystemMock.Path.Combine(_tempDir, "test.txt");
 
             _fileSystem.SetFilePermissions(filePath, FilePermissions.Read);
 
             Assert.That(_fileSystem.GetFilePermissions(filePath), Is.EqualTo(FilePermissions.Read));
-
         }
 
         /// <summary>
@@ -106,11 +115,14 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void SetDirectoryAccess_SetsSpecificDirectoryPermissions()
         {
-            var dirPath = Path.Combine(_tempDir, "subdir");
+            var dirPath = _fileSystemMock.Path.Combine(_tempDir, "subdir");
 
             _fileSystem.SetDirectoryPermissions(dirPath, DirectoryPermissions.List);
 
-            Assert.That(_fileSystem.GetDirectoryPermissions(dirPath), Is.EqualTo(DirectoryPermissions.List));
+            Assert.That(
+                _fileSystem.GetDirectoryPermissions(dirPath),
+                Is.EqualTo(DirectoryPermissions.List)
+            );
         }
 
         /// <summary>
@@ -121,7 +133,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void GetFilePermissions_ReturnsDefaultForUnspecifiedFiles()
         {
-            var filePath = Path.Combine(_tempDir, "unspecified.txt");
+            var filePath = _fileSystemMock.Path.Combine(_tempDir, "unspecified.txt");
 
             var access = _fileSystem.GetFilePermissions(filePath);
 
@@ -136,12 +148,12 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// <remarks>
         /// This test ensures that the system applies default permissions to
         /// unspecified directories, specifically verifying that the returned
-        /// permissions match the expected behavior defined by the application.
+        /// permissions match the expected behaviour defined by the application.
         /// </remarks>
         [Test]
         public void GetDirectoryPermissions_ReturnsDefaultForUnspecifiedDirectories()
         {
-            var dirPath = Path.Combine(_tempDir, "unspecified");
+            var dirPath = _fileSystemMock.Path.Combine(_tempDir, "unspecified");
 
             var access = _fileSystem.GetDirectoryPermissions(dirPath);
 
@@ -154,7 +166,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// has its permissions set to "None".
         /// </summary>
         /// <remarks>
-        /// This method ensures the behavior of file permission inheritance when
+        /// This method ensures the behaviour of file permission inheritance when
         /// the parent directory denies all access. It verifies that the inherited
         /// permissions prevent any file access by default.
         /// </remarks>
@@ -165,7 +177,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void GetFilePermissions_InheritsDeniedAccessFromParentDirectory()
         {
-            var parentDir = Path.Combine(_tempDir, "parent");
+            var parentDir = _fileSystemMock.Path.Combine(_tempDir, "parent");
             var filePath = Path.Combine(parentDir, "file.txt");
 
             _fileSystem.SetDirectoryPermissions(parentDir, DirectoryPermissions.None);
@@ -180,7 +192,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// </summary>
         /// <remarks>
         /// This test ensures that when a file is granted the read permission, the read operation is permitted by the implemented file system security.
-        /// It validates the correct behavior of the <see cref="FileSystemSecurity.IsFileOperationPermitted"/> method for the read operation.
+        /// It validates the correct behaviour of the <see cref="FileSystemSecurity.IsFileOperationPermitted"/> method for the read operation.
         /// </remarks>
         /// <exception cref="AssertionException">
         /// Thrown if the result of the read permission check does not match the expected value.
@@ -188,7 +200,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void IsFileOperationAllowed_ReadAllowedWithReadPermission()
         {
-            var filePath = Path.Combine(_tempDir, "readable.txt");
+            var filePath = _fileSystemMock.Path.Combine(_tempDir, "readable.txt");
             _fileSystem.SetFilePermissions(filePath, FilePermissions.Read);
 
             var allowed = _fileSystem.IsFileOperationPermitted(filePath, FileOperation.Read);
@@ -206,7 +218,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void IsFileOperationAllowed_WriteBlockedWithReadOnlyPermission()
         {
-            var filePath = Path.Combine(_tempDir, "readonly.txt");
+            var filePath = _fileSystemMock.Path.Combine(_tempDir, "readonly.txt");
             _fileSystem.SetFilePermissions(filePath, FilePermissions.Read);
 
             var allowed = _fileSystem.IsFileOperationPermitted(filePath, FileOperation.Write);
@@ -217,7 +229,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// <summary>
         /// Verifies that file creation operations are only permitted when the file
         /// has a minimum permission level of SandboxedReadWrite or higher.
-        /// This method checks the behavior of the file system security by asserting
+        /// This method checks the behaviour of the file system security by asserting
         /// that file creation is not allowed for files with Read-only permission
         /// but is permitted for files that have SandboxedReadWrite permission.
         /// Test Scenario:
@@ -235,16 +247,22 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void IsFileOperationAllowed_CreateRequiresSandboxedOrHigher()
         {
-            var filePath1 = Path.Combine(_tempDir, "read-only.txt");
-            var filePath2 = Path.Combine(_tempDir, "sandboxed.txt");
+            var filePath1 = _fileSystemMock.Path.Combine(_tempDir, "read-only.txt");
+            var filePath2 = _fileSystemMock.Path.Combine(_tempDir, "sandboxed.txt");
 
             _fileSystem.SetFilePermissions(filePath1, FilePermissions.Read);
             _fileSystem.SetFilePermissions(filePath2, FilePermissions.SandboxedReadWrite);
 
             Assert.Multiple(() =>
             {
-                Assert.That(_fileSystem.IsFileOperationPermitted(filePath1, FileOperation.Create), Is.False);
-                Assert.That(_fileSystem.IsFileOperationPermitted(filePath2, FileOperation.Create), Is.True);
+                Assert.That(
+                    _fileSystem.IsFileOperationPermitted(filePath1, FileOperation.Create),
+                    Is.False
+                );
+                Assert.That(
+                    _fileSystem.IsFileOperationPermitted(filePath2, FileOperation.Create),
+                    Is.True
+                );
             });
         }
 
@@ -263,16 +281,22 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void IsFileOperationAllowed_DeleteRequiresFullReadWrite()
         {
-            var filePath1 = Path.Combine(_tempDir, "sandboxed.txt");
-            var filePath2 = Path.Combine(_tempDir, "full-access.txt");
+            var filePath1 = _fileSystemMock.Path.Combine(_tempDir, "sandboxed.txt");
+            var filePath2 = _fileSystemMock.Path.Combine(_tempDir, "full-access.txt");
 
             _fileSystem.SetFilePermissions(filePath1, FilePermissions.SandboxedReadWrite);
             _fileSystem.SetFilePermissions(filePath2, FilePermissions.ReadWrite);
 
             Assert.Multiple(() =>
             {
-                Assert.That(_fileSystem.IsFileOperationPermitted(filePath1, FileOperation.Delete), Is.False);
-                Assert.That(_fileSystem.IsFileOperationPermitted(filePath2, FileOperation.Delete), Is.True);
+                Assert.That(
+                    _fileSystem.IsFileOperationPermitted(filePath1, FileOperation.Delete),
+                    Is.False
+                );
+                Assert.That(
+                    _fileSystem.IsFileOperationPermitted(filePath2, FileOperation.Delete),
+                    Is.True
+                );
             });
         }
 
@@ -289,7 +313,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void IsFileOperationAllowed_RequiresDirectoryAccess()
         {
-            var parentDir = Path.Combine(_tempDir, "restricted");
+            var parentDir = _fileSystemMock.Path.Combine(_tempDir, "restricted");
             var filePath = Path.Combine(parentDir, "file.txt");
 
             _fileSystem.SetDirectoryPermissions(parentDir, DirectoryPermissions.None);
@@ -298,8 +322,14 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.Multiple(() =>
             {
                 // File has ReadWrite but directory has None - should block all operations
-                Assert.That(_fileSystem.IsFileOperationPermitted(filePath, FileOperation.Read), Is.False);
-                Assert.That(_fileSystem.IsFileOperationPermitted(filePath, FileOperation.Write), Is.False);
+                Assert.That(
+                    _fileSystem.IsFileOperationPermitted(filePath, FileOperation.Read),
+                    Is.False
+                );
+                Assert.That(
+                    _fileSystem.IsFileOperationPermitted(filePath, FileOperation.Write),
+                    Is.False
+                );
             });
         }
 
@@ -310,7 +340,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// <remarks>
         /// This test focuses on specific directory and file permissions to ensure that create operations
         /// are affected by the permissions set on the parent directory. It uses the DirectoryPermissions.List
-        /// and FilePermissions.SandboxedReadWrite for validating behavior. The test case evaluates scenarios
+        /// and FilePermissions.SandboxedReadWrite for validating behaviour. The test case evaluates scenarios
         /// where reading a file is allowed but creating it is blocked due to insufficient directory permissions.
         /// </remarks>
         /// <seealso cref="SolarSharp.Interpreter.Security.DirectoryPermissions"/>
@@ -318,7 +348,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void IsFileOperationAllowed_CreateRequiresListAndCreateFiles()
         {
-            var parentDir = Path.Combine(_tempDir, "listonly");
+            var parentDir = _fileSystemMock.Path.Combine(_tempDir, "listonly");
             var filePath = Path.Combine(parentDir, "newfile.txt");
 
             _fileSystem.SetDirectoryPermissions(parentDir, DirectoryPermissions.List);
@@ -327,8 +357,14 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.Multiple(() =>
             {
                 // Can read but not create in list-only directory
-                Assert.That(_fileSystem.IsFileOperationPermitted(filePath, FileOperation.Read), Is.True);
-                Assert.That(_fileSystem.IsFileOperationPermitted(filePath, FileOperation.Create), Is.False);
+                Assert.That(
+                    _fileSystem.IsFileOperationPermitted(filePath, FileOperation.Read),
+                    Is.True
+                );
+                Assert.That(
+                    _fileSystem.IsFileOperationPermitted(filePath, FileOperation.Create),
+                    Is.False
+                );
             });
         }
 
@@ -338,7 +374,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// operations conform to the restrictions or allowances set by directory access permissions.
         /// </summary>
         /// <remarks>
-        /// The method performs multiple assertions to verify the expected behavior of the
+        /// The method performs multiple assertions to verify the expected behaviour of the
         /// compatibility check. It tests allowed and denied scenarios based on different
         /// levels of file and directory permissions.
         /// </remarks>
@@ -350,10 +386,24 @@ namespace SolarSharp.Interpreter.Tests.Units
         {
             Assert.Multiple(() =>
             {
-                Assert.That(FilePermissions.Read.IsCompatibleWith(DirectoryPermissions.List), Is.True);
-                Assert.That(FilePermissions.SandboxedReadWrite.IsCompatibleWith(DirectoryPermissions.ListAndCreateFiles), Is.True);
-                Assert.That(FilePermissions.SandboxedReadWrite.IsCompatibleWith(DirectoryPermissions.List), Is.False);
-                Assert.That(FilePermissions.Read.IsCompatibleWith(DirectoryPermissions.None), Is.False);
+                Assert.That(
+                    FilePermissions.Read.IsCompatibleWith(DirectoryPermissions.List),
+                    Is.True
+                );
+                Assert.That(
+                    FilePermissions.SandboxedReadWrite.IsCompatibleWith(
+                        DirectoryPermissions.ListAndCreateFiles
+                    ),
+                    Is.True
+                );
+                Assert.That(
+                    FilePermissions.SandboxedReadWrite.IsCompatibleWith(DirectoryPermissions.List),
+                    Is.False
+                );
+                Assert.That(
+                    FilePermissions.Read.IsCompatibleWith(DirectoryPermissions.None),
+                    Is.False
+                );
             });
         }
 
@@ -382,7 +432,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         }
 
         /// <summary>
-        /// Tests the behavior of a string path matching recursive wildcard patterns.
+        /// Tests the behaviour of a string path matching recursive wildcard patterns.
         /// </summary>
         /// <remarks>
         /// Verifies that the path correctly matches recursive wildcard patterns (**),
@@ -428,31 +478,40 @@ namespace SolarSharp.Interpreter.Tests.Units
         }
 
         /// <summary>
-        /// Validates that the <see cref="SecurityConfiguration.SetFilePermissions"/> method
+        /// Validates that the <see cref="SecurityPolicy.SetFilePermissions"/> method
         /// correctly updates the file system permissions for a specified file.
         /// </summary>
         /// <remarks>
         /// This test ensures that when file permissions are set via the <see cref="SetFilePermissions"/> method,
         /// the specified permissions are accurately reflected within the <see cref="FileSystemSecurity"/> instance.
-        /// </remarks>
+        /// </remarks>    [Category("Security.Unit")]
+        [Category("Security.Unit")]
         [Test]
-        public void SecurityConfiguration_SetFilePermissions_UpdatesFileSystem()
+        public void SecurityPolicy_SetFilePermissions_UpdatesFileSystem()
         {
-            var config = new SecurityConfiguration();
-            var filePath = Path.Combine(_tempDir, "test.txt");
+            var config = new SecurityPolicy();
+            var filePath = _fileSystemMock.Path.Combine(_tempDir, "test.txt");
 
-            config.SetFilePermissions(filePath, FilePermissions.Read);
+            config = config with
+            {
+                FilePermissions = config.FilePermissions.Add(filePath, FilePermissions.Read),
+            };
 
-            Assert.That(config.FileSystem.GetFilePermissions(filePath), Is.EqualTo(FilePermissions.Read));
+            Assert.That(
+                config.FilePermissions.TryGetValue(filePath, out var perm)
+                    ? perm
+                    : FilePermissions.None,
+                Is.EqualTo(FilePermissions.Read)
+            );
         }
 
         /// <summary>
-        /// Tests the SecurityConfiguration class to ensure that setting directory access permissions
-        /// updates the corresponding FileSystem behavior.
+        /// Tests the SecurityPolicy class to ensure that setting directory access permissions
+        /// updates the corresponding FileSystem behaviour.
         /// </summary>
         /// <remarks>
         /// This method verifies that when directory access permissions are set using the
-        /// <see cref="SolarSharp.Interpreter.Security.SecurityConfiguration.SetDirectoryPermissions"/> method,
+        /// <see cref="SolarSharp.Interpreter.Security.SecurityPolicy.SetDirectoryPermissions"/> method,
         /// the changes are reflected correctly in the FileSystem's directory permissions.
         /// </remarks>
         /// <example>
@@ -460,35 +519,48 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// <see cref="SolarSharp.Interpreter.Security.DirectoryPermissions"/>, behaves as expected when queried through
         /// the <see cref="SolarSharp.Interpreter.Security.FileSystemSecurity.GetDirectoryPermissions"/> method.
         /// </example>
-        /// <seealso cref="SolarSharp.Interpreter.Security.SecurityConfiguration"/>
+        /// <seealso cref="SolarSharp.Interpreter.Security.SecurityPolicy"/>
         /// <seealso cref="SolarSharp.Interpreter.Security.DirectoryPermissions"/>
-        /// <seealso cref="SolarSharp.Interpreter.Security.FileSystemSecurity"/>
+        /// <seealso cref="SolarSharp.Interpreter.Security.FileSystemSecurity"/>    [Category("Security.Unit")]
+        [Category("Security.Unit")]
         [Test]
-        public void SecurityConfiguration_SetDirectoryAccess_UpdatesFileSystem()
+        public void SecurityPolicy_SetDirectoryAccess_UpdatesFileSystem()
         {
-            var config = new SecurityConfiguration();
-            var dirPath = Path.Combine(_tempDir, "testdir");
+            var config = new SecurityPolicy();
+            var dirPath = _fileSystemMock.Path.Combine(_tempDir, "testdir");
 
-            config.SetDirectoryPermissions(dirPath, DirectoryPermissions.List);
+            config = config with
+            {
+                DirectoryPermissions = config.DirectoryPermissions.Add(
+                    dirPath,
+                    DirectoryPermissions.List
+                ),
+            };
 
-            Assert.That(config.FileSystem.GetDirectoryPermissions(dirPath), Is.EqualTo(DirectoryPermissions.List));
+            Assert.That(
+                config.DirectoryPermissions.TryGetValue(dirPath, out var dirPerm)
+                    ? dirPerm
+                    : DirectoryPermissions.None,
+                Is.EqualTo(DirectoryPermissions.List)
+            );
         }
 
         /// <summary>
-        /// Verifies that the fluent API methods of the <see cref="SecurityConfiguration"/> class chain correctly.
+        /// Verifies that the fluent API methods of the <see cref="SecurityPolicy"/> class chain correctly.
         /// </summary>
         /// <remarks>
-        /// This test initializes a <see cref="SecurityConfiguration"/> instance and chains multiple calls to its methods.
+        /// This test initializes a <see cref="SecurityPolicy"/> instance and chains multiple calls to its methods.
         /// It then verifies that the resulting configuration contains the expected file and directory permissions,
         /// as well as default permissions for files and directories.
         /// </remarks>
         /// <exception cref="AssertionException">
         /// Thrown when the configured permissions do not match the expected values.
-        /// </exception>
+        /// </exception>    [Category("Security.Unit")]
+        [Category("Security.Unit")]
         [Test]
-        public void SecurityConfiguration_FluentAPI_ChainsCorrectly()
+        public void SecurityPolicy_FluentAPI_ChainsCorrectly()
         {
-            var config = new SecurityConfiguration()
+            var config = new SecurityPolicy()
                 .SetFilePermissions("/app/config.txt", FilePermissions.Read)
                 .SetDirectoryPermissions("/app/data", DirectoryPermissions.ListAndCreateFiles)
                 .WithDefaultFilePermissions(FilePermissions.Read)
@@ -496,10 +568,20 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             Assert.Multiple(() =>
             {
-                Assert.That(config.FileSystem.GetFilePermissions("/app/config.txt"), Is.EqualTo(FilePermissions.Read));
-                Assert.That(config.FileSystem.GetDirectoryPermissions("/app/data"), Is.EqualTo(DirectoryPermissions.ListAndCreateFiles));
-                Assert.That(config.FileSystem.DefaultFilePermissions, Is.EqualTo(FilePermissions.Read));
-                Assert.That(config.FileSystem.DefaultDirectoryPermissions, Is.EqualTo(DirectoryPermissions.List));
+                Assert.That(
+                    config.FilePermissions.TryGetValue("/app/config.txt", out var filePerm)
+                        ? filePerm
+                        : FilePermissions.None,
+                    Is.EqualTo(FilePermissions.Read)
+                );
+                Assert.That(
+                    config.DirectoryPermissions.TryGetValue("/app/data", out var dirPerm)
+                        ? dirPerm
+                        : DirectoryPermissions.None,
+                    Is.EqualTo(DirectoryPermissions.ListAndCreateFiles)
+                );
+                Assert.That(config.DefaultFileAccess, Is.EqualTo(FilePermissions.Read));
+                Assert.That(config.DefaultDirectoryAccess, Is.EqualTo(DirectoryPermissions.List));
             });
         }
 
@@ -516,13 +598,17 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void FileSystemValidator_AllowsValidOperations()
         {
-            var filePath = Path.Combine(_tempDir, "valid.txt");
+            var filePath = _fileSystemMock.Path.Combine(_tempDir, "valid.txt");
             _fileSystem.SetFilePermissions(filePath, FilePermissions.ReadWrite);
 
             var validator = new FileSystemValidator(_fileSystem);
 
-            Assert.DoesNotThrow(() => validator.ValidateFilePermissions(filePath, FileOperation.Read));
-            Assert.DoesNotThrow(() => validator.ValidateFilePermissions(filePath, FileOperation.Write));
+            Assert.DoesNotThrow(() =>
+                validator.ValidateFilePermissions(filePath, FileOperation.Read)
+            );
+            Assert.DoesNotThrow(() =>
+                validator.ValidateFilePermissions(filePath, FileOperation.Write)
+            );
         }
 
         /// <summary>
@@ -541,13 +627,17 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void FileSystemValidator_BlocksInvalidOperations()
         {
-            var filePath = Path.Combine(_tempDir, "readonly.txt");
+            var filePath = _fileSystemMock.Path.Combine(_tempDir, "readonly.txt");
             _fileSystem.SetFilePermissions(filePath, FilePermissions.Read);
 
             var validator = new FileSystemValidator(_fileSystem);
 
-            Assert.DoesNotThrow(() => validator.ValidateFilePermissions(filePath, FileOperation.Read));
-            Assert.Throws<FilePermissionViolationException>(() => validator.ValidateFilePermissions(filePath, FileOperation.Write));
+            Assert.DoesNotThrow(() =>
+                validator.ValidateFilePermissions(filePath, FileOperation.Read)
+            );
+            Assert.Throws<FilePermissionViolationException>(() =>
+                validator.ValidateFilePermissions(filePath, FileOperation.Write)
+            );
         }
 
         /// <summary>
@@ -564,7 +654,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// defines a sandbox root directory. Paths attempting to navigate outside the
         /// sandbox (e.g., using `../..` constructs) are validated and flagged as security risks.
         /// </example>
-        /// <exception cref="PathTraversalException">
+        /// <exception cref="FilePermissionViolationException">
         /// Thrown when a path traversal attempt is detected during file system validation.
         /// </exception>
         [Test]
@@ -573,14 +663,16 @@ namespace SolarSharp.Interpreter.Tests.Units
             // Configure a sandbox to enable path traversal detection
             var sandboxedFileSystem = new FileSystemSecurity
             {
-                SandboxRoot = _tempDir // Set the temp directory as the sandbox root
+                SandboxRoot = _tempDir, // Set the temp directory as the sandbox root
             };
             var validator = new FileSystemValidator(sandboxedFileSystem);
 
-            Assert.Throws<PathTraversalException>(() =>
-                validator.ValidateFilePermissions("../../../etc/passwd", FileOperation.Read));
-            Assert.Throws<PathTraversalException>(() =>
-                validator.ValidateFilePermissions("..\\..\\windows\\system32", FileOperation.Read));
+            Assert.Throws<FilePermissionViolationException>(() =>
+                validator.ValidateFilePermissions("../../../etc/passwd", FileOperation.Read)
+            );
+            Assert.Throws<FilePermissionViolationException>(() =>
+                validator.ValidateFilePermissions("..\\..\\windows\\system32", FileOperation.Read)
+            );
         }
 
         /// <summary>
@@ -599,13 +691,17 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void FileSystemValidator_ValidatesDirectoryOperations()
         {
-            var dirPath = Path.Combine(_tempDir, "listonly");
+            var dirPath = _fileSystemMock.Path.Combine(_tempDir, "listonly");
             _fileSystem.SetDirectoryPermissions(dirPath, DirectoryPermissions.List);
 
             var validator = new FileSystemValidator(_fileSystem);
 
-            Assert.DoesNotThrow(() => validator.ValidateDirectoryAccess(dirPath, DirectoryOperation.List));
-            Assert.Throws<FilePermissionViolationException>(() => validator.ValidateDirectoryAccess(dirPath, DirectoryOperation.Create));
+            Assert.DoesNotThrow(() =>
+                validator.ValidateDirectoryAccess(dirPath, DirectoryOperation.List)
+            );
+            Assert.Throws<FilePermissionViolationException>(() =>
+                validator.ValidateDirectoryAccess(dirPath, DirectoryOperation.Create)
+            );
         }
 
         /// <summary>
@@ -632,9 +728,18 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Assert.That("none".ParseFilePermissions(), Is.EqualTo(FilePermissions.None));
                 Assert.That("read".ParseFilePermissions(), Is.EqualTo(FilePermissions.Read));
-                Assert.That("readwrite".ParseFilePermissions(), Is.EqualTo(FilePermissions.ReadWrite));
-                Assert.That("sandboxedreadwrite".ParseFilePermissions(), Is.EqualTo(FilePermissions.SandboxedReadWrite));
-                Assert.That("invalid".ParseFilePermissions(), Is.EqualTo(FilePermissions.SandboxedReadWrite)); // Default
+                Assert.That(
+                    "readwrite".ParseFilePermissions(),
+                    Is.EqualTo(FilePermissions.ReadWrite)
+                );
+                Assert.That(
+                    "sandboxedreadwrite".ParseFilePermissions(),
+                    Is.EqualTo(FilePermissions.SandboxedReadWrite)
+                );
+                Assert.That(
+                    "invalid".ParseFilePermissions(),
+                    Is.EqualTo(FilePermissions.SandboxedReadWrite)
+                ); // Default
             });
         }
 
@@ -658,8 +763,14 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Assert.That("none".ParseDirectoryAccess(), Is.EqualTo(DirectoryPermissions.None));
                 Assert.That("list".ParseDirectoryAccess(), Is.EqualTo(DirectoryPermissions.List));
-                Assert.That("listandcreatefiles".ParseDirectoryAccess(), Is.EqualTo(DirectoryPermissions.ListAndCreateFiles));
-                Assert.That("invalid".ParseDirectoryAccess(), Is.EqualTo(DirectoryPermissions.ListAndCreateFiles)); // Default
+                Assert.That(
+                    "listandcreatefiles".ParseDirectoryAccess(),
+                    Is.EqualTo(DirectoryPermissions.ListAndCreateFiles)
+                );
+                Assert.That(
+                    "invalid".ParseDirectoryAccess(),
+                    Is.EqualTo(DirectoryPermissions.ListAndCreateFiles)
+                ); // Default
             });
         }
 
@@ -672,7 +783,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// each enumeration value for file and directory permissions, such as None, Read,
         /// ReadWrite, and SandboxReadWrite for files, and None, List, ListAndCreateFiles for directories,
         /// maps to the expected lowercase string values.
-        /// </remarks>
+        /// </remarks>    [Category("Manifest.Unit")]
+        [Category("Manifest.Unit")]
         [Test]
         public void ToManifestString_ConvertsEnumsCorrectly()
         {
@@ -681,11 +793,17 @@ namespace SolarSharp.Interpreter.Tests.Units
                 Assert.That(FilePermissions.None.ToManifestString(), Is.EqualTo("none"));
                 Assert.That(FilePermissions.Read.ToManifestString(), Is.EqualTo("read"));
                 Assert.That(FilePermissions.ReadWrite.ToManifestString(), Is.EqualTo("readwrite"));
-                Assert.That(FilePermissions.SandboxedReadWrite.ToManifestString(), Is.EqualTo("sandboxedreadwrite"));
+                Assert.That(
+                    FilePermissions.SandboxedReadWrite.ToManifestString(),
+                    Is.EqualTo("sandboxedreadwrite")
+                );
 
                 Assert.That(DirectoryPermissions.None.ToManifestString(), Is.EqualTo("none"));
                 Assert.That(DirectoryPermissions.List.ToManifestString(), Is.EqualTo("list"));
-                Assert.That(DirectoryPermissions.ListAndCreateFiles.ToManifestString(), Is.EqualTo("listandcreatefiles"));
+                Assert.That(
+                    DirectoryPermissions.ListAndCreateFiles.ToManifestString(),
+                    Is.EqualTo("listandcreatefiles")
+                );
             });
         }
 
@@ -707,8 +825,14 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             Assert.Multiple(() =>
             {
-                Assert.That(fs.DefaultFilePermissions, Is.EqualTo(FilePermissions.SandboxedReadWrite));
-                Assert.That(fs.DefaultDirectoryPermissions, Is.EqualTo(DirectoryPermissions.ListAndCreateFiles));
+                Assert.That(
+                    fs.DefaultFilePermissions,
+                    Is.EqualTo(FilePermissions.SandboxedReadWrite)
+                );
+                Assert.That(
+                    fs.DefaultDirectoryPermissions,
+                    Is.EqualTo(DirectoryPermissions.ListAndCreateFiles)
+                );
             });
         }
 
@@ -722,7 +846,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void DefaultAccess_AllowsCommonOperations()
         {
             var fs = new FileSystemSecurity();
-            var filePath = Path.Combine(_tempDir, "default.txt");
+            var filePath = _fileSystemMock.Path.Combine(_tempDir, "default.txt");
 
             Assert.Multiple(() =>
             {
@@ -738,7 +862,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// from its parent directory if no explicit permissions are set for the child.
         /// </summary>
         /// <remarks>
-        /// This method tests the behavior of directory permission inheritance within
+        /// This method tests the behaviour of directory permission inheritance within
         /// the file system security context. It ensures that when a parent directory
         /// is configured with restrictive permissions, any child directories default
         /// to the same restrictive permissions unless explicitly overridden.
@@ -750,7 +874,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void GetDirectoryAccess_InheritsFromParent()
         {
-            var parentDir = Path.Combine(_tempDir, "parent");
+            var parentDir = _fileSystemMock.Path.Combine(_tempDir, "parent");
             var childDir = Path.Combine(parentDir, "child");
 
             _fileSystem.SetDirectoryPermissions(parentDir, DirectoryPermissions.List);
@@ -782,7 +906,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void GetDirectoryAccess_DoesNotInheritLessRestrictive()
         {
-            var parentDir = Path.Combine(_tempDir, "parent");
+            var parentDir = _fileSystemMock.Path.Combine(_tempDir, "parent");
             var childDir = Path.Combine(parentDir, "child");
 
             // Set parent to full access, child to restricted

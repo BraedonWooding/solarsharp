@@ -1,20 +1,23 @@
 using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [Category("IntegrationTest")]
+    [Category("VM.Integration")]
     public class DynamicTests
     {
+        [Category("VM.E2E")]
         [Test]
         public void DynamicAccessEval()
         {
-            var script = @"
+            var script =
+                @"
 				return dynamic.eval('5+1');		
 				";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -26,12 +29,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void DynamicAccessPrepare()
         {
-            var script = @"
+            var script =
+                @"
 				x = dynamic.prepare('5+1');		
 				return dynamic.eval(x);
 				";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -43,7 +47,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void DynamicAccessScope()
         {
-            var script = @"
+            var script =
+                @"
 				a = 3;
 
 				x = dynamic.prepare('a+1');		
@@ -56,7 +61,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return f();
 				";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -68,7 +73,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void DynamicAccessScopeSecurity()
         {
-            var script = @"
+            var script =
+                @"
 				a = 5;
 
 				local x = dynamic.prepare('a');		
@@ -84,20 +90,21 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return f();
 				";
 
-            var res = new Script().DoString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.That(res.Type, Is.EqualTo(DataType.Nil));
-            //Assert.AreEqual(6, res.Number);
+            //Assert.That(res.Number, Is.EqualTo(6));
         }
 
         [Test]
         public void DynamicAccessFromCSharp()
         {
-            var code = @"
+            var code =
+                @"
 				t = { ciao = { 'hello' } }
 				";
 
-            Script script = new();
+            var script = new Script(Examples.DesktopBasePolicySet);
             script.DoString(code);
 
             var v = script.CreateDynamicExpression("t.ciao[1] .. ' world'").Evaluate();

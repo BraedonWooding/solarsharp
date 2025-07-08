@@ -10,7 +10,10 @@ namespace SolarSharp.Hardwire.Generators
             get { return "SolarSharp.Interpreter.Interop.PropertyMemberDescriptor"; }
         }
 
-        protected override CodeExpression GetMemberAccessExpression(CodeExpression thisObj, string name)
+        protected override CodeExpression GetMemberAccessExpression(
+            CodeExpression thisObj,
+            string name
+        )
         {
             return new CodePropertyReferenceExpression(thisObj, name);
         }

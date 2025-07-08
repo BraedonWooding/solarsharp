@@ -2,18 +2,20 @@
 
 ## Quick Start - Do You Need a Manifest?
 
-### Running Untrusted Code? Use SecurityConfiguration!
+### Running Untrusted Code? Use BasePolicySet!
 
-SolarSharp provides a fluent C# API for security configuration. For most use cases, you don't need manifest files:
+SolarSharp provides pre-validated BasePolicySets for security configuration. For most use cases, you don't need manifest files:
 
 ```csharp
-// Secure by default - Desktop configuration
-var script = new Script(); // PreventDynamicCode = false for development
+// Use pre-configured security policies
+var script = new Script(Examples.DesktopBasePolicySet); // Development environment
+var script = new Script(Examples.IsolatedBasePolicySet); // Maximum restrictions
 
-// Need stricter security? Use preset configurations
-var script = new Script(SecurityConfiguration.Isolated()); // Maximum restrictions
-var script = new Script(SecurityConfiguration.DataProcessing()); // Limited I/O
-var script = new Script(SecurityConfiguration.Automation()); // Trusted scripts
+// Need custom security? Transform existing policies
+var customPolicySet = Examples.IsolatedBasePolicySet
+    .ApplyToAll(p => p with { MaxMemoryMB = 10, TimeoutMs = 5000 })
+    .GetValueOrThrow();
+var script = new Script(customPolicySet);
 ```
 
 ### When You Need Custom Manifests
@@ -25,11 +27,11 @@ Custom manifests are optional security policies for specific scenarios:
 3. **Reusable Security Policies** - When managing security across multiple scripts
 4. **Cryptographic Enforcement** - When you need signed manifests to ensure script integrity
 
-### Security Configuration vs Manifests
+### BasePolicySet vs Manifests
 
-- **SecurityConfiguration** - Fluent C# API for programmatic security control
+- **BasePolicySet** - Pre-validated policies with functional transformations
+- **PolicySetBuilder** - Fluent API for building custom policy sets
 - **Manifests** - JSON files for declarative security policies
-- **ISecurityPolicy** - Both implement this interface for unified usage
 - **Automatic Discovery** - SolarSharp can still find and apply manifest files from script directories
 
 ## Table of Contents
@@ -142,16 +144,16 @@ interface ManifestPolicy {
   
   // Security features
   enableChroot?: boolean;
-  // Note: antiPolymorphism is implemented through specific rules, not a boolean policy
   antiPolymorphism?: boolean;  // Convenience property that sets multiple anti-polymorphism rules
   allowOnlyLuaExtension?: boolean;
-  preventLuaFileWrites?: boolean;
-  preventDynamicCode?: boolean;
-  blockManifestAccess?: boolean;
   
-  // Application
-  applicationName?: string;
-  enableManifestDiscovery?: boolean;
+  // Note: The following properties have been removed:
+  // - preventLuaFileWrites: Use file permissions instead
+  // - preventDynamicCode: Use :eval policy system
+  // - preventRunString: Use :eval policy system  
+  // - preventInternalDynamicCode: Use :eval policy system
+  // - applicationName: No longer needed
+  // - enableManifestDiscovery: Always enabled
 }
 ```
 
@@ -188,22 +190,15 @@ namespace SolarSharp.Interpreter.Security.Manifests
         public List<string> includes { get; set; }
         
         // Runtime properties
-        public TrustLevel TrustLevel { get; set; }
+        // Trust level removed - trust is determined by initial SecurityPolicy and manifest restrictions
         
         // ISecurityPolicy implementation
         public Manifest ToManifest() => this;
     }
 }
 
-public enum TrustLevel
-{
-    Unsigned = 0,    // Manifest has no signature
-    Untrusted = 1,   // Manifest has signature but not from trusted key - can only restrict
-    Trusted = 2      // Manifest is signed by trusted key - can replace rules and grant permissions
-}
-
-// Note: This enum consolidates the former TrustLevel and ManifestTrustLevel enums
-// Previously there was a DRY violation with two separate enums - now unified
+// TrustLevel enum removed - manifests provide restrictions and signature verification,
+// not trust levels. Initial restrictions are set by SecurityPolicy.
     
     // Runtime properties (not serialized)
     public string ParentPath { get; set; }
@@ -656,6 +651,28 @@ public class ManifestValidationResult
 
 ## Signing and Trust
 
+### Core Signing Principles
+
+1. **Purpose of Signing**: Manifests are signed to change the default policy that is applied to them. Without signing, manifests can only restrict, never expand permissions.
+
+2. **Automatic Read-Only**: Any file with a digest in the manifest becomes automatically read-only. This prevents tampering with verified code.
+
+3. **Token-Based Access**: Manifests can restrict their files to be readable only by contexts sharing their publicKeyToken:
+   ```json
+   {
+     "policy": {
+       "allowReadByToken": ["a1b2c3d4e5f67890"],
+       "filePermissions": {
+         "*.lua": "none"  // Default deny, only token holders can read
+       }
+     }
+   }
+   ```
+
+4. **Policy Intersection**: Even signed manifests can only make their policies MORE restrictive than the base policy. The effective policy is always the intersection (most restrictive) of all applicable policies.
+
+5. **Fail-Closed**: If any part of manifest validation fails, execution STOPS. This prevents fail-open security vulnerabilities.
+
 ### ManifestSigner
 
 ```csharp
@@ -683,9 +700,8 @@ public static class ManifestTrustStore
     public static void ClearTrustedKeys();
     
     // Verification
-    public static bool IsManifestTrusted(Manifest manifest);
+    public static bool HasKnownSignature(Manifest manifest);
     public static bool HasSignature(Manifest manifest);
-    public static TrustLevel GetTrustLevel(Manifest manifest);
     
     // Properties
     public static int TrustedKeyCount { get; }
@@ -748,7 +764,7 @@ public class Script
 }
 ```
 
-**Key Loading Behavior:**
+**Key Loading behaviour:**
 - **No Keys Loaded**: Normal operation, manifests are optional
 - **Keys Loaded**: ALL .lua files must have manifests AND be signed with one of the loaded keys
 - **Enforcement**: Applies to DoFile(), LoadFile(), dofile(), require() 
@@ -768,7 +784,7 @@ ManifestSigner.SignManifest("app.manifest", privateKey);
 ManifestTrustStore.AddTrustedKey(publicKey);
 
 // Option 2: Load key into specific VM instance
-var script = new Script();
+var script = new Script(Examples.DesktopBasePolicySet);
 script.LoadKey(publicKey);
 
 // Verify trust

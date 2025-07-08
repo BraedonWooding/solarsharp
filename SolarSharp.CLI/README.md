@@ -313,7 +313,7 @@ The CLI is built with clean architecture principles:
 
 - **Commands**: Each command (repl, run, compile, hardwire) is self-contained
 - **Services**: Business logic separated into testable service classes
-- **Factories**: Centralized creation of Script and SecurityConfiguration instances
+- **Factories**: Centralized creation of Script and SecurityPolicy instances
 - **Dependency Injection**: Uses Microsoft.Extensions.DependencyInjection
 - **Async/Await**: All operations are async for better responsiveness
 

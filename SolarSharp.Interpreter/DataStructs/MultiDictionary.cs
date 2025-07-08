@@ -29,7 +29,6 @@ namespace SolarSharp.Interpreter.DataStructs
             m_Map = new Dictionary<K, List<V>>(eqComparer);
         }
 
-
         /// <summary>
         /// Adds the specified key. Returns true if this is the first value for a given key
         /// </summary>
@@ -38,37 +37,30 @@ namespace SolarSharp.Interpreter.DataStructs
         /// <returns></returns>
         public bool Add(K key, V value)
         {
-            if (m_Map.TryGetValue(key, out List<V> list))
+            if (m_Map.TryGetValue(key, out var list))
             {
                 list.Add(value);
                 return false;
             }
-            else
-            {
-                list = new List<V>
-                {
-                    value
-                };
-                m_Map.Add(key, list);
-                return true;
-            }
+            list = new List<V> { value };
+            m_Map.Add(key, list);
+            return true;
         }
 
         /// <summary>
-        /// Finds all the values associated with the specified key. 
+        /// Finds all the values associated with the specified key.
         /// An empty collection is returned if not found.
         /// </summary>
         /// <param name="key">The key.</param>
         public IEnumerable<V> Find(K key)
         {
-            if (m_Map.TryGetValue(key, out List<V> list))
+            if (m_Map.TryGetValue(key, out var list))
                 return list;
-            else
-                return m_DefaultRet;
+            return m_DefaultRet;
         }
 
         /// <summary>
-        /// Determines whether this contains the specified key 
+        /// Determines whether this contains the specified key
         /// </summary>
         /// <param name="key">The key.</param>
         public bool ContainsKey(K key)
@@ -109,8 +101,7 @@ namespace SolarSharp.Interpreter.DataStructs
         /// <returns></returns>
         public bool RemoveValue(K key, V value)
         {
-
-            if (m_Map.TryGetValue(key, out List<V> list))
+            if (m_Map.TryGetValue(key, out var list))
             {
                 list.Remove(value);
 
@@ -123,6 +114,5 @@ namespace SolarSharp.Interpreter.DataStructs
 
             return false;
         }
-
     }
 }
