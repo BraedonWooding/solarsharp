@@ -34,6 +34,25 @@ Features:
 * Support for coroutines, including invocation of coroutines as C# iterators
 * REPL interpreter, plus facilities to easily implement your own REPL in few lines of code
 
+**Installation**
+
+```bash
+# Clone and build from source
+git clone https://github.com/BraedonWooding/solarsharp.git
+cd solarsharp
+dotnet build
+
+# Run tests to verify installation
+dotnet test
+
+# Build in Release mode for production use
+dotnet build -c Release
+```
+
+**Requirements**
+- .NET 6.0 or later
+- Windows, Linux, or macOS
+
 **License**
 
 The program and libraries are released under a 3-clause BSD license - see the license section.
@@ -43,22 +62,27 @@ The program and libraries are released under a 3-clause BSD license - see the li
 SolarSharp includes built-in security features for safe script execution:
 
 ```C#
-// Default: Desktop configuration with reasonable limits
-var script = new Script(Examples.DesktopBasePolicySet);
+// Scripts require security policies - use pre-configured policy sets:
 
-// Maximum security for untrusted code:
-var script = new Script(Examples.IsolatedBasePolicySet);
+// Desktop configuration with reasonable limits
+var desktopPolicySet = Examples.DesktopBasePolicySet();
 
-// Key-based directory access control:
+// Maximum security for untrusted code
+var isolatedPolicySet = Examples.IsolatedBasePolicySet();
+
+// Key-based directory access control
 var policy = SecurityPolicy.CreateRestrictive()
-    .WithDirectoryAccessRule("/secure/*", FilePermissions.Read, "sha256:trusted-key");
-var script = new Script(new BasePolicySet("*", policy));
+    .WithDirectoryAccessRule("/secure/*", FilePermissions.Read, "sha256:trusted-key")
+    .Build();
+var policySet = new BasePolicySet
+{
+    Policies = new[] { ("*.lua", policy) }
+};
 
-// Custom configuration:
-var customPolicySet = Examples.IsolatedBasePolicySet
-    .ApplyToAll(p => p with { TimeoutMs = 30000 })
-    .GetValueOrThrow();
-var script = new Script(customPolicySet);
+// Custom timeout configuration
+var customPolicy = SecurityPolicy.CreateRestrictive()
+    .WithTimeout(30000)  // 30 second timeout
+    .Build();
 ```
 
 For detailed security documentation, see:
@@ -85,7 +109,9 @@ double Factorial()
 
 	return fact(5)";
 
-	DynValue res = Script.RunString(script);
+	// Use a basic security policy
+	var policySet = Examples.IsolatedBasePolicySet();
+	DynValue res = Script.RunString(script, Environment.CurrentDirectory, policySet);
 	return res.Number;
 }
 ```
@@ -158,28 +184,39 @@ SolarSharp provides security features for safely executing untrusted scripts:
 Build custom configurations with the fluent API:
 
 ```C#
-var config = SecurityConfiguration.Isolated()
-    .WithTimeoutMs(30000)
-    .WithMemoryLimitMB(50)
-    .SetFileAccess("/app/data", FileAccess.Read)
-    .AddModules(CoreModules.Math);
+var policy = SecurityPolicy.CreateRestrictive()
+    .WithTimeout(30000)  // 30 second timeout
+    .WithMaxMemory(50 * 1024 * 1024)  // 50MB
+    .WithFileAccess("/app/data", FilePermissions.Read)
+    .WithCapability(ScriptCapabilities.MathModule)
+    .Build();
 ```
 
 ### Quick Start Examples
 
 ```C#
-// Run a file with automatic security
-var result = Script.RunFile("script.lua");
+// Run a file with security policy
+var policySet = Examples.DesktopBasePolicySet();
+var result = Script.RunFile("script.lua", policySet);
 
-// Run with specific security level
-var script = new Script(SecurityConfiguration.Isolated());
-var result = script.DoString("return 2 + 2");
+// Run string with isolated security
+var isolatedPolicySet = Examples.IsolatedBasePolicySet();
+var result = Script.RunString(
+    "return 2 + 2", 
+    Environment.CurrentDirectory, 
+    isolatedPolicySet
+);
 
-// Custom configuration
-var config = SecurityConfiguration.DataProcessing()
-    .SetFileAccess("/data", FileAccess.ReadWrite)
-    .WithTimeoutMs(300000);
-var script = new Script(config);
+// Custom configuration for data processing
+var dataPolicy = SecurityPolicy.CreateRestrictive()
+    .WithFileAccess("/data", FilePermissions.ReadWrite)
+    .WithTimeout(300000)  // 5 minutes
+    .Build();
+
+var policySet = new BasePolicySet
+{
+    Policies = new[] { ("*.lua", dataPolicy) }
+};
 ```
 
 For comprehensive security documentation, please refer to:
