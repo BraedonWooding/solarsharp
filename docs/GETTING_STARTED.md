@@ -727,7 +727,7 @@ Now that you understand the basics:
 
 3. **Check Examples**
     - Browse the test suite for real-world examples
-    - Study the WotCI plugin system implementation
+    - Study the WotCI (Wrath of the Continuous Integration) plugin system implementation
     - Review security test cases for edge cases
 
 ## Getting Help

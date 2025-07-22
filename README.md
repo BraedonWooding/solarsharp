@@ -226,7 +226,7 @@ For comprehensive security documentation, please refer to:
 
 ## WotCI Demo - Advanced Security Showcase
 
-WotCI (Wrath of the CI King) is a comprehensive demo that showcases SolarSharp's advanced security features through an interactive game environment. It demonstrates sophisticated security boundaries, capability-based access control, and inter-script communication.
+WotCI (Wrath of the Continuous Integration) is a comprehensive demo that showcases SolarSharp's advanced security features through an interactive game environment. It demonstrates sophisticated security boundaries, capability-based access control, and inter-script communication.
 
 ### Key Features Demonstrated
 

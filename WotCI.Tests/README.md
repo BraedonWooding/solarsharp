@@ -1,6 +1,6 @@
 # WotCI Test Suite
 
-This test suite provides comprehensive coverage for the "Wrath of the CI King" (WotCI) plugin system demo, testing all major components and security features.
+This test suite provides comprehensive coverage for the "Wrath of the Continuous Integration" (WotCI) plugin system demo, testing all major components and security features.
 
 ## Test Categories
 

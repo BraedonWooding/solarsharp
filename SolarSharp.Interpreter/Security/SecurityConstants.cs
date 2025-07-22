@@ -180,7 +180,7 @@ namespace SolarSharp.Interpreter.Security
         }
 
         /// <summary>
-        /// Game-specific constants for WotCI demo
+        /// Game-specific constants for WotCI (Wrath of the Continuous Integration) demo
         /// </summary>
         public static class WotCIGame
         {

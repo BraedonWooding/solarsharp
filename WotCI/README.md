@@ -1,4 +1,4 @@
-# WotCI - Wrath of the CI King
+# WotCI - Wrath of the Continuous Integration
 
 A ProgressQuest-style game demo showcasing SolarSharp's advanced security features through a sophisticated plugin ecosystem with comprehensive security boundaries, capability-based access control, and inter-script communication.
 

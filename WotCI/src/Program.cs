@@ -13,7 +13,7 @@ namespace WotCI
             AnsiConsole.Write(titlePanel);
 
             var subtitlePanel = new Panel(
-                new Markup("[bold]Wrath of the CI King - ProgressQuest Style Game[/]").Centered()
+                new Markup("[bold]Wrath of the Continuous Integration - ProgressQuest Style Game[/]").Centered()
             )
                 .Border(BoxBorder.Rounded)
                 .BorderColor(Color.Blue);

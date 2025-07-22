@@ -7,7 +7,7 @@ using Table = SolarSharp.Interpreter.DataTypes.Table;
 namespace WotCI
 {
     /// <summary>
-    /// Core game simulation engine for the "Wrath of the CI King" demonstration.
+    /// Core game simulation engine for the "Wrath of the Continuous Integration" demonstration.
     /// Manages game state, plugin integration, and provides a secure API surface for plugins
     /// to interact with game mechanics. Handles player stats, game progression, and plugin lifecycle.
     /// </summary>
@@ -30,7 +30,7 @@ namespace WotCI
         public virtual void Initialize()
         {
             _console.WriteLine("Initializing game world...");
-            _console.WriteLine("🎮 Wrath of the CI King - Game Engine Initialized");
+            _console.WriteLine("🎮 Wrath of the Continuous Integration - Game Engine Initialized");
             _console.WriteLine("Starting with 100 health and 50 gold");
 
             // Create game directories
