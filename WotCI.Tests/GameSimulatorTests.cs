@@ -42,7 +42,7 @@ namespace WotCI.Tests
             ((int)gameState["day"]).Should().Be(1);
             ((int)gameState["enemies_defeated"]).Should().Be(0);
 
-            _console.Output.Should().Contain("🎮 Wrath of the CI King - Game Engine Initialized");
+            _console.Output.Should().Contain("🎮 Wrath of the Continuous Integration - Game Engine Initialized");
             _console.Output.Should().Contain("Starting with 100 health and 50 gold");
         }
 
