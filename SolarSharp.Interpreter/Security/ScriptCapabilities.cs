@@ -79,5 +79,12 @@ namespace SolarSharp.Interpreter.Security
         /// Safe computation only
         /// </summary>
         SafeCompute = None,
+
+        /// <summary>
+        /// All capabilities enabled - use only for benchmarking or fully trusted code
+        /// </summary>
+        All = FileRead | FileWrite | FileDelete | ProcessExecution | NetworkAccess | 
+              EnvironmentAccess | SystemInformation | ReflectionAccess | NativeInterop | 
+              DirectoryOperations
     }
 }

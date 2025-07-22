@@ -48,6 +48,9 @@ namespace SolarSharp.Interpreter.Security
         private static readonly Lazy<BasePolicySet> _noEvalBasePolicySet = new(() =>
             CreateValidatedBasePolicySet(CreateNoEvalPolicySet())
         );
+        private static readonly Lazy<BasePolicySet> _benchmarkUnlimitedBasePolicySet = new(() =>
+            CreateValidatedBasePolicySet(CreateBenchmarkUnlimitedPolicySet())
+        );
 
         /// <summary>
         /// Helper method to create validated BasePolicySet instances for Examples
@@ -109,6 +112,11 @@ namespace SolarSharp.Interpreter.Security
         public static BasePolicySet NoEvalBasePolicySet => _noEvalBasePolicySet.Value;
 
         /// <summary>
+        /// Gets a BasePolicySet with unlimited resources for benchmarking
+        /// </summary>
+        public static BasePolicySet BenchmarkUnlimitedBasePolicySet => _benchmarkUnlimitedBasePolicySet.Value;
+
+        /// <summary>
         /// Common BasePolicySet instances for easy access.
         /// These delegate to the Examples BasePolicySet properties.
         /// </summary>
@@ -153,6 +161,11 @@ namespace SolarSharp.Interpreter.Security
             /// Gets a validated BasePolicySet that prevents all dynamic code execution
             /// </summary>
             public static BasePolicySet NoEval => NoEvalBasePolicySet;
+
+            /// <summary>
+            /// Gets a validated BasePolicySet with unlimited resources for benchmarking
+            /// </summary>
+            public static BasePolicySet BenchmarkUnlimited => BenchmarkUnlimitedBasePolicySet;
         }
 
         // Backward compatibility methods - delegate to static properties
@@ -517,6 +530,62 @@ namespace SolarSharp.Interpreter.Security
             }
         }
 
+        /// <summary>
+        /// Benchmark unlimited security policy for performance testing
+        /// - Zero resource limits (unlimited)
+        /// - Full access to all operations
+        /// - All modules enabled
+        /// - WARNING: Only use for benchmarking, never in production
+        /// </summary>
+        public static SecurityPolicy BenchmarkUnlimitedSecurityPolicy
+        {
+            get
+            {
+                return new SecurityPolicy
+                {
+                    Name = Maybe<string>.From("BenchmarkUnlimited"),
+                    TimeoutMs = 0,          // 0 = unlimited
+                    MaxMemoryMB = 0,        // 0 = unlimited
+                    MaxInstructions = 0,    // 0 = unlimited
+                    MaxCallDepth = 0,       // 0 = unlimited
+                    AllowExecution = true,
+
+                    // File system - full access
+                    DefaultFileAccess = FilePermissions.ReadWrite,
+                    DefaultDirectoryAccess = DirectoryPermissions.ListAndCreateFiles,
+                    FilePermissions = ImmutableDictionary<string, FilePermissions>.Empty,
+                    DirectoryPermissions = ImmutableDictionary<string, DirectoryPermissions>.Empty,
+                    EnableChroot = false,
+
+                    // Network - full access
+                    AllowNetworkAccess = true,
+                    AllowedHosts = ImmutableArray<string>.Empty, // Empty means all hosts allowed
+
+                    // Environment - full access
+                    AllowEnvironmentAccess = true,
+                    AllowedEnvironmentVariables = ImmutableArray<string>.Empty, // Empty means all vars allowed
+
+                    // Modules - everything enabled
+                    AllowedModules = CoreModules.Preset_Complete | CoreModules.PubSub,
+                    Capabilities = ScriptCapabilities.All,
+
+                    // PubSub - full permissions
+                    PubSubPermissions = new PubSubPermissions
+                    {
+                        Publish = ImmutableArray.Create("*"),
+                        Subscribe = ImmutableArray.Create("*"),
+                    },
+
+                    // Token access - none for benchmarking
+                    AllowReadByToken = ImmutableHashSet<string>.Empty,
+                    AllowWriteByToken = ImmutableHashSet<string>.Empty,
+                    PreventSignedModification = false,
+
+                    // Manifest behaviour
+                };
+            }
+        }
+
         // PolicySet factory implementations
 
         /// <summary>
@@ -702,6 +771,18 @@ namespace SolarSharp.Interpreter.Security
         }
 
         /// <summary>
+        /// Creates a benchmark unlimited PolicySet for performance testing
+        /// </summary>
+        private static PolicySet CreateBenchmarkUnlimitedPolicySet()
+        {
+            return new PolicySetBuilder()
+                .DefinePolicy("benchmarkunlimited", BenchmarkUnlimitedSecurityPolicy)
+                .MapFilePattern("*.lua", "benchmarkunlimited")
+                .WithDefaultPolicy("benchmarkunlimited")
+                .Build();
+        }
+
+        /// <summary>
         /// Gets all available example policy names.
         /// </summary>
         /// <returns>Array of available policy names.</returns>
@@ -734,6 +815,7 @@ namespace SolarSharp.Interpreter.Security
                 "production",
                 "pluginsystem",
                 "noeval",
+                "benchmarkunlimited",
             };
         }
 
@@ -817,6 +899,7 @@ namespace SolarSharp.Interpreter.Security
                 "production" => ProductionBasePolicySet,
                 "pluginsystem" => PluginSystemBasePolicySet,
                 "noeval" => NoEvalBasePolicySet,
+                "benchmarkunlimited" => BenchmarkUnlimitedBasePolicySet,
                 _ => throw new ArgumentException(
                     $"Unknown BasePolicySet name: {name}",
                     nameof(name)

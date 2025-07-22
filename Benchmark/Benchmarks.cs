@@ -8,6 +8,7 @@ namespace Benchmark
 {
     [MaxIterationCount(30)]
     [JsonExporterAttribute.FullCompressed]
+    [MemoryDiagnoser]  // Track memory allocations
     public class Benchmarks
     {
         [ParamsSource(nameof(Impls))]

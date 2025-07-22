@@ -68,27 +68,14 @@ namespace SolarSharp.Interpreter.CoreLib
             if (meta != null)
                 return meta;
 
-            // TODO: Should we check if someone is calling this wrong?  i.e. if they do something like callback = pairs(); callback("BOO")
-            //       we could compare the dynvalues to check that the keys are the same (can use ref checks even) and in case they aren't fallback to next
-            // we use an efficient iterator when using pairs()
-            // over the slower next(), this should save quite a few cycles
-            using var it = table.Table.GetEnumerator();
+            // Use next() directly for better compatibility with table modifications
+            // This ensures correct behavior when elements are removed during iteration
             return DynValue.NewTuple(
                 DynValue.NewCallback(
-                    (ex, args) =>
-                    {
-                        if (args[1].Equals(it.Current.Key))
-                        {
-                            return it.MoveNext()
-                                ? DynValue.NewTuple(it.Current.Key, it.Current.Value)
-                                : DynValue.Nil;
-                        }
-
-                        // fallback to next
-                        return next(executionContext, args);
-                    }
+                    (ex, args) => next(executionContext, args)
                 ),
-                table
+                table,
+                DynValue.Nil
             );
         }
 

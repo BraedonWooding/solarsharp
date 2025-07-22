@@ -3,7 +3,7 @@
 using Benchmark;
 using Benchmark.Implementations;
 
-var file = new LuaFile("./Tests/specific_features/table_map_pairs_remove.lua");
+var file = new LuaFile("../Benchmark/Tests/sieve.lua");
 var itCount = 300;
 
 var impl = new SolarSharpImplementation();

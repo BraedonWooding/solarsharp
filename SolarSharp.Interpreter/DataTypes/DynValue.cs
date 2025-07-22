@@ -426,6 +426,8 @@ namespace SolarSharp.Interpreter.DataTypes
             {
                 case DataType.String:
                     return String;
+                case DataType.Number:
+                    return StringCache.NumberToString(Number);
                 case DataType.Tuple:
                     return string.Join("\t", Tuple.Select(t => t.ToPrintString()).ToArray());
                 case DataType.TailCallRequest:
@@ -485,7 +487,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 DataType.Void => "void",
                 DataType.Nil => "nil",
                 DataType.Boolean => Boolean.ToString().ToLower(),
-                DataType.Number => Number.ToString(CultureInfo.InvariantCulture),
+                DataType.Number => StringCache.NumberToString(Number),
                 DataType.String => "\"" + String + "\"",
                 DataType.Function => $"(Function {Function.EntryPointByteCodeLocation:X8})",
                 DataType.ClrFunction => string.Format("(Function CLR)", Function),
@@ -617,7 +619,7 @@ namespace SolarSharp.Interpreter.DataTypes
             var rv = ToScalar();
             if (rv.Type == DataType.Number)
             {
-                return rv.Number.ToString();
+                return StringCache.NumberToString(rv.Number);
             }
             if (rv.Type == DataType.String)
             {
