@@ -1,6 +1,7 @@
 # SolarSharp Security Reference
 
-This document provides the definitive reference for SolarSharp's security architecture, policies, and implementation patterns.
+This document provides the definitive reference for SolarSharp's security architecture, policies, and implementation
+patterns.
 
 ## Table of Contents
 
@@ -19,7 +20,8 @@ This document provides the definitive reference for SolarSharp's security archit
 
 ## Security Architecture Overview
 
-SolarSharp implements a comprehensive, multi-layered security model designed to safely execute untrusted Lua scripts while maintaining strict security boundaries.
+SolarSharp implements a comprehensive, multi-layered security model designed to safely execute untrusted Lua scripts
+while maintaining strict security boundaries.
 
 ### Core Security Principles
 
@@ -35,27 +37,27 @@ SolarSharp implements a comprehensive, multi-layered security model designed to 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        Script Instance                       │
+│                        Script Instance                      │
 ├─────────────────────────────────────────────────────────────┤
-│                   Event-Driven Security Layer                │
-│  ┌─────────────────┐         ┌──────────────────────────┐  │
-│  │SecurityPolicy   │ ←─────→ │ IEventPublisher<T>       │  │
-│  │Aggregate        │         │ (Domain Events)          │  │
-│  └─────────────────┘         └──────────────────────────┘  │
+│                   Event-Driven Security Layer               │
+│  ┌─────────────────┐         ┌──────────────────────────┐   │
+│  │SecurityPolicy   │ ←─────→ │ IEventPublisher<T>       │   │
+│  │Aggregate        │         │ (Domain Events)          │   │
+│  └─────────────────┘         └──────────────────────────┘   │
+├─────────────────────────────────────────────────────────-───┤
+│                    Policy Resolution Layer                  │
+│  ┌─────────────────┐         ┌──────────────────────────┐   │
+│  │BasePolicySet    │ ←─────→ │ PolicySetOperations      │   │
+│  │(Validated)      │         │ (Functional Transform)   │   │
+│  └─────────────────┘         └──────────────────────────┘   │
 ├─────────────────────────────────────────────────────────────┤
-│                    Policy Resolution Layer                   │
-│  ┌─────────────────┐         ┌──────────────────────────┐  │
-│  │BasePolicySet    │ ←─────→ │ PolicySetOperations      │  │
-│  │(Validated)      │         │ (Functional Transform)   │  │
-│  └─────────────────┘         └──────────────────────────┘  │
+│                Two-Tier Security Enforcement                │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────────┐     │
+│  │ Capabilities │→ │ Permissions  │→ │ Manifest Rules │     │
+│  │   (Tier 1)   │  │   (Tier 2)   │  │  (Validation)  │     │
+│  └──────────────┘  └──────────────┘  └────────────────┘     │
 ├─────────────────────────────────────────────────────────────┤
-│                Two-Tier Security Enforcement                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────────┐   │
-│  │ Capabilities │→ │ Permissions  │→ │ Manifest Rules │   │
-│  │   (Tier 1)   │  │   (Tier 2)   │  │  (Validation)  │   │
-│  └──────────────┘  └──────────────┘  └────────────────┘   │
-├─────────────────────────────────────────────────────────────┤
-│                         Lua VM                               │
+│                         Lua VM                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -113,9 +115,9 @@ Every operation goes through BOTH security checks in sequence:
 │ Script attempts │ --> │ Capability Check │ --> │ Permission   │ --> Success
 │ file.Read()     │     │ Has FileRead?    │     │ Check        │
 └─────────────────┘     └──────────────────┘     │ Can read     │
-                               │                  │ this path?   │
-                               ▼                  └──────────────┘
-                        Access Denied                    │
+                               │                 │ this path?   │
+                               ▼                 └──────────────┘
+                        Access Denied                   │
                                                         ▼
                                                   Access Denied
 ```
@@ -257,13 +259,13 @@ result.Match(
 
 When multiple policies could apply, SolarSharp always uses the **most restrictive** combination:
 
-| Policy Type | Intersection Rule | Example |
-|-------------|------------------|---------|
-| Numeric Limits | Minimum value wins | `Min(100MB, 50MB) = 50MB` |
-| Boolean Permissions | False wins | `true AND false = false` |
-| Path Lists | Intersection only | `["/a", "/b"] ∩ ["/b", "/c"] = ["/b"]` |
-| Module Access | Bitwise AND | `All & Basic = Basic` |
-| Capabilities | Bitwise AND | `(Read|Write) & Read = Read` |
+| Policy Type         | Intersection Rule  | Example                                |
+|---------------------|--------------------|----------------------------------------|
+| Numeric Limits      | Minimum value wins | `Min(100MB, 50MB) = 50MB`              |
+| Boolean Permissions | False wins         | `true AND false = false`               |
+| Path Lists          | Intersection only  | `["/a", "/b"] ∩ ["/b", "/c"] = ["/b"]` |
+| Module Access       | Bitwise AND        | `All & Basic = Basic`                  |
+| Capabilities        | Bitwise AND        | `(Read Write) & Read = Read`           |
 
 ### Policy Resolution Flow
 
@@ -312,7 +314,8 @@ var manifestPolicy = SecurityPolicy.CreateRestrictive()
 
 ## DirectoryAccessRule System
 
-DirectoryAccessRule provides sophisticated key-based directory access control that integrates seamlessly with the manifest signing system.
+DirectoryAccessRule provides sophisticated key-based directory access control that integrates seamlessly with the
+manifest signing system.
 
 ### Core Concepts
 
@@ -348,12 +351,12 @@ var rule = DirectoryAccessRule.Create("/logs/*/audit", FilePermissions.Read, "au
 
 Patterns use Microsoft.Extensions.FileSystemGlobbing for consistent cross-platform matching:
 
-| Pattern | Matches | Doesn't Match |
-|---------|---------|---------------|
-| `/data/*` | `/data/file.txt` | `/data/sub/file.txt` |
-| `/data/**` | `/data/sub/deep/file.txt` | `/other/file.txt` |
-| `/logs/*/app` | `/logs/2024/app/log.txt` | `/logs/app.txt` |
-| `/config/*.xml` | `/config/app.xml` | `/config/sub/app.xml` |
+| Pattern         | Matches                   | Doesn't Match         |
+|-----------------|---------------------------|-----------------------|
+| `/data/*`       | `/data/file.txt`          | `/data/sub/file.txt`  |
+| `/data/**`      | `/data/sub/deep/file.txt` | `/other/file.txt`     |
+| `/logs/*/app`   | `/logs/2024/app/log.txt`  | `/logs/app.txt`       |
+| `/config/*.xml` | `/config/app.xml`         | `/config/sub/app.xml` |
 
 ### Precedence Rules
 
@@ -444,11 +447,13 @@ var policy = SecurityPolicy.CreateRestrictive()
 
 ## File-Scoped Policies (:eval)
 
-The `:eval` suffix system allows different security policies for dynamically evaluated code versus normal script execution.
+The `:eval` suffix system allows different security policies for dynamically evaluated code versus normal script
+execution.
 
 ### How It Works
 
-When code is evaluated using `load()`, `loadstring()`, or similar functions, the `:eval` suffix is automatically appended to the source file pattern for policy resolution.
+When code is evaluated using `load()`, `loadstring()`, or similar functions, the `:eval` suffix is automatically
+appended to the source file pattern for policy resolution.
 
 ```csharp
 var policySet = new PolicySet

@@ -1,11 +1,14 @@
 # SolarSharp Documentation
 
-Welcome to the SolarSharp documentation! SolarSharp is a secure, high-performance Lua 5.2 interpreter for .NET with comprehensive security features.
+Welcome to the SolarSharp documentation! SolarSharp is a secure, high-performance Lua 5.2 interpreter for .NET with
+comprehensive security features.
 
 ## Documentation Overview
 
 ### [Getting Started Guide](GETTING_STARTED.md)
+
 Start here if you're new to SolarSharp. This guide covers:
+
 - Quick start examples
 - Basic security policies
 - Common usage patterns
@@ -13,7 +16,9 @@ Start here if you're new to SolarSharp. This guide covers:
 - Troubleshooting tips
 
 ### [Security Reference](SECURITY_REFERENCE.md)
+
 Comprehensive security documentation including:
+
 - Two-tier security model (Policy System + Manifest System)
 - SecurityPolicy composition patterns
 - DirectoryAccessRule for key-based access control
@@ -22,7 +27,9 @@ Comprehensive security documentation including:
 - Best practices and examples
 
 ### [API Reference](API_REFERENCE.md)
+
 Complete API documentation covering:
+
 - Script class and builder patterns
 - SecurityPolicy and SecurityPolicyBuilder
 - Manifest system APIs
@@ -31,7 +38,9 @@ Complete API documentation covering:
 - Extension methods and utilities
 
 ### [Architecture Overview](architecture.md)
+
 Deep dive into SolarSharp's architecture:
+
 - Core design principles
 - Performance optimizations
 - Migration guide from MoonSharp

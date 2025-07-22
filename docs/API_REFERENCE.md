@@ -1,6 +1,7 @@
 # SolarSharp API Reference
 
-This document provides comprehensive API documentation for SolarSharp's public interfaces, combining information from the Script class, SecurityPolicy system, Manifest APIs, Message Bus, and all related components.
+This document provides comprehensive API documentation for SolarSharp's public interfaces, combining information from
+the Script class, SecurityPolicy system, Manifest APIs, Message Bus, and all related components.
 
 ## Table of Contents
 
@@ -27,9 +28,11 @@ public Script(BasePolicySet basePolicySet)
 Creates a new Script instance with the specified security policies. Scripts cannot run without authorization.
 
 **Parameters:**
+
 - `basePolicySet`: Pre-validated security policies (required)
 
 **Example:**
+
 ```csharp
 // Use preset configurations
 var script = new Script(Examples.IsolatedBasePolicySet);
@@ -62,6 +65,7 @@ public DynValue DoString(string code, Table globalContext = null, string codeFri
 Executes Lua code from a string.
 
 **Parameters:**
+
 - `code`: The Lua code to execute
 - `globalContext`: Optional global context table
 - `codeFriendlyName`: Optional name for debugging (defaults to "chunk")
@@ -69,6 +73,7 @@ Executes Lua code from a string.
 **Returns:** `DynValue` - The result of the execution
 
 **Example:**
+
 ```csharp
 var result = script.DoString("return 2 + 2");
 Console.WriteLine(result.Number); // 4
@@ -88,6 +93,7 @@ public DynValue DoFile(string filename, Table globalContext = null, string codeF
 Executes a Lua script file. If manifest keys are loaded, the file must have a signed manifest.
 
 **Parameters:**
+
 - `filename`: Path to the Lua file
 - `globalContext`: Optional global context table
 - `codeFriendlyName`: Optional name for debugging
@@ -95,6 +101,7 @@ Executes a Lua script file. If manifest keys are loaded, the file must have a si
 **Returns:** `DynValue` - The result of the execution
 
 **Example:**
+
 ```csharp
 var result = script.DoFile("scripts/main.lua");
 
@@ -112,6 +119,7 @@ public DynValue LoadFile(string filename, Table globalContext = null, string cod
 Loads and compiles a Lua file without executing it.
 
 **Parameters:**
+
 - `filename`: Path to the Lua file
 - `globalContext`: Optional global context table
 - `codeFriendlyName`: Optional name for debugging
@@ -119,6 +127,7 @@ Loads and compiles a Lua file without executing it.
 **Returns:** `DynValue` - A function that can be called to execute the loaded code
 
 **Example:**
+
 ```csharp
 var func = script.LoadFile("scripts/utility.lua");
 var result = script.Call(func); // Execute later
@@ -133,13 +142,16 @@ public void LoadKey(string pemPublicKey)
 public void LoadKey(Security.Manifests.PublicKeyInfo publicKey)
 ```
 
-Loads a public key for manifest signature verification. Once keys are loaded, all subsequent .lua files must have signed manifests.
+Loads a public key for manifest signature verification. Once keys are loaded, all subsequent .lua files must have signed
+manifests.
 
 **Parameters:**
+
 - `pemPublicKey`: PEM-encoded public key string
 - `publicKey`: PublicKeyInfo object with algorithm and key data
 
 **Example:**
+
 ```csharp
 // Load from PEM string
 script.LoadKey(@"-----BEGIN RSA PUBLIC KEY-----
@@ -167,6 +179,7 @@ public bool HasLoadedKeys { get; }
 Indicates whether any cryptographic keys have been loaded.
 
 **Example:**
+
 ```csharp
 if (script.HasLoadedKeys)
 {
@@ -184,6 +197,7 @@ public T GetService<T>() where T : class
 Registers and retrieves services for use within the script environment.
 
 **Example:**
+
 ```csharp
 // Register services
 var messageBus = new MessageBus();
@@ -206,6 +220,7 @@ public static DynValue RunString(string code, string applicationDirectory)
 Convenience methods for running scripts with manifest discovery.
 
 **Example:**
+
 ```csharp
 // Automatically discovers and applies manifest
 var result = Script.RunFile("app/script.lua");
@@ -294,6 +309,7 @@ Creates a builder with restrictive defaults (no permissions).
 ```
 
 **Comprehensive Example:**
+
 ```csharp
 var policy = SecurityPolicy.CreateRestrictive()
     // Resource limits
@@ -349,6 +365,7 @@ public sealed record DirectoryAccessRule
 ```
 
 **Example Usage:**
+
 ```csharp
 // Single key requirement
 var rule1 = DirectoryAccessRule.Create(
@@ -387,6 +404,7 @@ public sealed record PolicySet
 ```
 
 **Fields:**
+
 - `PolicyDefinitions`: Named security policies
 - `FilePolicies`: Maps file patterns to policy names (supports `:eval` suffix)
 - `FallbackPolicyName`: Default policy when no pattern matches
@@ -416,6 +434,7 @@ public static class BasePolicySetFactory
 ```
 
 **Example with Multiple Policies:**
+
 ```csharp
 var policySet = new PolicySet
 {
@@ -509,6 +528,7 @@ public static class Examples
 ```
 
 **Usage Examples:**
+
 ```csharp
 // Maximum security for untrusted code
 var script = new Script(Examples.IsolatedBasePolicySet);
@@ -585,6 +605,7 @@ public sealed record ManifestPolicy
 ### ManifestLoader
 
 Loads manifests from the file system following strict rules:
+
 - One manifest per directory (LuaManifest.json)
 - Same directory only (no parent directory walking)
 - No circular references
@@ -600,6 +621,7 @@ public class ManifestLoader
 ```
 
 **Example:**
+
 ```csharp
 var loader = new ManifestLoader(fileSystem, logger);
 var result = loader.LoadForFile("app/scripts/main.lua");
@@ -641,6 +663,7 @@ public class V2ManifestBuilder
 ```
 
 **Example:**
+
 ```csharp
 var manifest = V2ManifestBuilder.CreateUnsigned("com.example.app-v1.0", "main")
     .WithFile("main", "script.lua", "sha256:abc123...")
@@ -691,6 +714,7 @@ public class EventDrivenManifestValidator
 ```
 
 **Example:**
+
 ```csharp
 var validator = new EventDrivenManifestValidator(
     signatureValidator,
@@ -725,6 +749,7 @@ public class ManifestSigner
 ```
 
 **Example:**
+
 ```csharp
 // Generate a key pair
 var privateKey = ManifestSigner.CreateKeyPair("RSA", 2048);
@@ -787,6 +812,7 @@ public class TracingStatistics
 ```
 
 **Example:**
+
 ```csharp
 var script = new Script(Examples.DesktopBasePolicySet);
 var tracer = new ManifestTracer(script);
@@ -861,11 +887,13 @@ local response, error = pubsub.request("api.user.get", request, 5.0)
 ```
 
 **Parameters:**
+
 - `topic`: Target topic string
 - `data`: Request data (table or JSON string)
 - `timeout`: Timeout in seconds (max 600 seconds)
 
-**Returns:** 
+**Returns:**
+
 - Success: (response_data, nil)
 - Failure: (nil, error_message)
 
@@ -881,6 +909,7 @@ print("Public key token:", identity.token)
 ```
 
 **Returns:** Table with fields:
+
 - `name`: Script name
 - `version`: Script version (semantic versioning)
 - `token`: Public key token (hex string)
@@ -1068,6 +1097,7 @@ public enum CoreModules
 ```
 
 **Important:** The `LoadMethods` module controls dynamic code execution:
+
 - With `LoadMethods`: `load()`, `loadstring()`, `loadfile()`, `dofile()`, `require()` available
 - Without `LoadMethods`: These functions are not available in Lua
 
@@ -1405,6 +1435,7 @@ public static class PathNormalizer
 ```
 
 **Path Normalization Examples:**
+
 ```csharp
 // Windows paths
 PathNormalizer.NormalizePath(@"C:\data\file.txt")     // "/C/data/file.txt"
@@ -1439,6 +1470,7 @@ public static class PolicyTransformers
 ```
 
 **Transformation Examples:**
+
 ```csharp
 // Single transformation
 var restricted = PolicyTransformers.WithMaxMemory(50)(policy);
@@ -1503,6 +1535,7 @@ public static class GlobMatcher
 ```
 
 **Glob Pattern Examples:**
+
 ```csharp
 // Basic patterns
 GlobMatcher.IsMatch("file.txt", "*.txt")              // true
@@ -1516,7 +1549,7 @@ GlobMatcher.IsMatch("app.config", "app.{config,json}") // true
 
 ## WotCI Game-Specific APIs
 
-WotCI (World of the Crescent Islands) provides additional game-specific APIs through the Enhanced Game API Facade.
+WotCI (Wrath of the Continuous Integration) provides additional game-specific APIs through the Enhanced Game API Facade.
 
 ### Enhanced Game API Setup
 
@@ -1748,4 +1781,5 @@ catch (SecurityException ex)
 }
 ```
 
-This completes the comprehensive SolarSharp API Reference, combining all public APIs, the manifest system, message bus, and WotCI game-specific extensions into a single reference document.
+This completes the comprehensive SolarSharp API Reference, combining all public APIs, the manifest system, message bus,
+and WotCI game-specific extensions into a single reference document.

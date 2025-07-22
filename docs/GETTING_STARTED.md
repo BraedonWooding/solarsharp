@@ -1,6 +1,7 @@
 # SolarSharp Getting Started Guide
 
-Welcome to SolarSharp, a security-focused Lua 5.2 interpreter for .NET. This guide will help you get up and running quickly, starting with simple examples and progressively introducing more advanced features.
+Welcome to SolarSharp, a security-focused Lua 5.2 interpreter for .NET. This guide will help you get up and running
+quickly, starting with simple examples and progressively introducing more advanced features.
 
 ## Table of Contents
 
@@ -47,23 +48,25 @@ That's it! You've just run your first secure Lua script with SolarSharp.
 
 ### Security is Mandatory
 
-Unlike other Lua interpreters, SolarSharp **requires** explicit security policies for every script. There is no "unsafe" mode - this is by design to ensure secure execution.
+Unlike other Lua interpreters, SolarSharp **requires** explicit security policies for every script. There is no "unsafe"
+mode - this is by design to ensure secure execution.
 
 ### Two-Tier Security Model
 
 SolarSharp uses two complementary security layers:
 
 1. **Capabilities**: What types of operations can the script perform?
-   - `FileRead`, `FileWrite`, `NetworkAccess`, `EnvironmentAccess`, etc.
+    - `FileRead`, `FileWrite`, `NetworkAccess`, `EnvironmentAccess`, etc.
 
 2. **Permissions**: Which specific resources can be accessed?
-   - Specific file paths, network hosts, environment variables, etc.
+    - Specific file paths, network hosts, environment variables, etc.
 
 **Important**: Both capability AND permission must be granted for an operation to succeed.
 
 ### Start Restrictive, Add as Needed
 
-Always begin with minimal permissions and add only what your script actually needs. This principle ensures maximum security.
+Always begin with minimal permissions and add only what your script actually needs. This principle ensures maximum
+security.
 
 ## Pre-Built Security Configurations
 
@@ -86,6 +89,7 @@ script.DoString(@"
 ```
 
 **Features:**
+
 - Basic computation (math, strings)
 - No file system access
 - No network access
@@ -111,6 +115,7 @@ script.DoString(@"
 ```
 
 **Features:**
+
 - Read-only access to config files (*.json, *.config, *.yaml, etc.)
 - Basic Lua modules (string, table, math, io)
 - No write permissions
@@ -128,6 +133,7 @@ script.DoFile("app/main.lua");
 ```
 
 **Features:**
+
 - Full file system access
 - Network access
 - All Lua modules
@@ -154,6 +160,7 @@ script.DoString(@"
 ```
 
 **Features:**
+
 - Read/write access to data directories
 - Support for CSV, JSON, XML, TXT files
 - No network access (data should be local)
@@ -178,6 +185,7 @@ script.DoFile("system/core.lua");
 ```
 
 **Features:**
+
 - **User plugins**: Sandboxed, limited to their directory
 - **Trusted plugins**: Read access, limited eval
 - **System plugins**: Full access
@@ -669,6 +677,7 @@ var policySet = new PolicySetBuilder()
 ## Quick Reference
 
 ### Capabilities
+
 - `ScriptCapabilities.None` - No capabilities
 - `ScriptCapabilities.FileRead` - Read files
 - `ScriptCapabilities.FileWrite` - Write files
@@ -678,6 +687,7 @@ var policySet = new PolicySetBuilder()
 - `ScriptCapabilities.EnvironmentAccess` - Read environment variables
 
 ### Core Modules
+
 - `CoreModules.Basic` - print, type, pairs, etc.
 - `CoreModules.String` - String manipulation
 - `CoreModules.Math` - Mathematical functions
@@ -687,12 +697,14 @@ var policySet = new PolicySetBuilder()
 - `CoreModules.LoadMethods` - load/loadstring
 
 ### File Permissions
+
 - `FilePermissions.None` - No access
 - `FilePermissions.Read` - Read-only
 - `FilePermissions.ReadWrite` - Full access
 - `FilePermissions.SandboxedReadWrite` - Only modify created files
 
 ### Pre-Built Configurations
+
 - `Examples.IsolatedBasePolicySet` - Most secure, no external access
 - `Examples.ConfigurationBasePolicySet` - Read config files only
 - `Examples.DesktopBasePolicySet` - Desktop apps, full access
@@ -704,19 +716,19 @@ var policySet = new PolicySetBuilder()
 Now that you understand the basics:
 
 1. **Explore Advanced Features**
-   - [Security Reference](SECURITY_REFERENCE.md) - Deep dive into security
-   - [API Reference](API_REFERENCE.md) - Complete API documentation
-   - [Manifest System](Manifest_API_Reference.md) - File integrity and signing
+    - [Security Reference](SECURITY_REFERENCE.md) - Deep dive into security
+    - [API Reference](API_REFERENCE.md) - Complete API documentation
+    - [Manifest System](Manifest_API_Reference.md) - File integrity and signing
 
 2. **Learn Specialized Topics**
-   - [Message Bus Guide](Message_Bus_Guide.md) - Inter-script communication
-   - [Eval Policy System](Eval_Policy_System.md) - Advanced eval control
-   - [Policy System Design](Policy_System_Design.md) - Architecture details
+    - [Message Bus Guide](Message_Bus_Guide.md) - Inter-script communication
+    - [Eval Policy System](Eval_Policy_System.md) - Advanced eval control
+    - [Policy System Design](Policy_System_Design.md) - Architecture details
 
 3. **Check Examples**
-   - Browse the test suite for real-world examples
-   - Study the WotCI plugin system implementation
-   - Review security test cases for edge cases
+    - Browse the test suite for real-world examples
+    - Study the WotCI plugin system implementation
+    - Review security test cases for edge cases
 
 ## Getting Help
 

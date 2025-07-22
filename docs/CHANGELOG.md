@@ -8,16 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Comprehensive documentation for all security features
 - DirectoryAccessRule API documentation in API_DESIGN.md
 - Call depth limiting explainer documentation
 
 ### Changed
+
 - Updated documentation to align with actual implementation
 - Clarified V2.0 manifest format status
 - Improved security documentation accuracy
 
 ### Fixed
+
 - Call depth preset values in documentation
 - Tail call optimization documentation accuracy
 - Special value handling for MaxCallDepth = 0
@@ -25,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.0] - 2025-07-08
 
 ### Added
+
 - Comprehensive security system with capability-based access control
 - Cross-platform path canonicalization with attack prevention
 - Message bus system for secure inter-script communication
@@ -41,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PathNormalizer for consistent cross-platform path handling
 
 ### Changed
+
 - **BREAKING**: Replaced System.Security.Cryptography with BouncyCastle
 - **BREAKING**: All scripts now require explicit security policies
 - **BREAKING**: Deny-by-default security model (no implicit permissions)
@@ -52,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 100% test coverage for all security components
 
 ### Removed
+
 - **BREAKING**: Legacy V1.0 manifest support entirely
 - **BREAKING**: Trust chain and includes system
 - **BREAKING**: Implicit file system access
@@ -61,6 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unicode-based path traversal blocks
 
 ### Security
+
 - Deny-by-default security model enforced
 - PIV-compliant signing key requirements (RSA-1024/2048, ECDSA-P256/P384)
 - Comprehensive path security validation
@@ -72,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2024-09-01
 
 ### Added
+
 - Initial fork from MoonSharp with performance focus
 - Custom dictionary implementation for improved table performance
 - Iterator optimizations for pairs() and ipairs()
@@ -81,15 +89,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Virtual file system abstraction
 
 ### Changed
+
 - Simplified ScriptExecutionContext for better performance
 - Optimized table operations and array handling
 - Improved memory allocation patterns
 
 ### Fixed
+
 - Regression in pairs() iterator optimization
 - Array performance regressions
 - Various MoonSharp compatibility issues
 
 [Unreleased]: https://github.com/mistial-dev/solarsharp/compare/v2.0.0...HEAD
+
 [2.0.0]: https://github.com/mistial-dev/solarsharp/compare/v1.0.0...v2.0.0
+
 [1.0.0]: https://github.com/mistial-dev/solarsharp/releases/tag/v1.0.0

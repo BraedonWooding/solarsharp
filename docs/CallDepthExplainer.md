@@ -2,7 +2,9 @@
 
 ## Overview
 
-Call depth limiting is a security feature in SolarSharp that prevents stack overflow attacks and excessive recursion. This document explains how call depth limiting works, how to configure it, and best practices for open source developers.
+Call depth limiting is a security feature in SolarSharp that prevents stack overflow attacks and excessive recursion.
+This document explains how call depth limiting works, how to configure it, and best practices for open source
+developers.
 
 ## How Call Depth Limiting Works
 
@@ -144,7 +146,9 @@ Examples.DataProcessingSecurityPolicy // MaxCallDepth = 150
 - `MaxCallDepth > 0`: Specific limit enforced
 - `MaxCallDepth < 0`: Invalid (will be treated as 0/unlimited)
 
-**Note**: While the `SecurityPolicy` record uses a non-nullable `int` for `MaxCallDepth`, the underlying `ExecutionLimits` class uses a nullable `int?`. A value of 0 in SecurityPolicy is converted to null (unlimited) in the ResourceController via the `ApplySecurityPolicy` method.
+**Note**: While the `SecurityPolicy` record uses a non-nullable `int` for `MaxCallDepth`, the underlying
+`ExecutionLimits` class uses a nullable `int?`. A value of 0 in SecurityPolicy is converted to null (unlimited) in the
+ResourceController via the `ApplySecurityPolicy` method.
 
 ## Exception Handling
 
@@ -177,6 +181,7 @@ catch (CallDepthExceededException ex)
 ### 1. All Function Calls Count
 
 Every function call increments the depth counter, including:
+
 - Regular function calls
 - Method calls (`:` syntax)
 - Metatable `__call` invocations
@@ -210,11 +215,13 @@ tailRecurse(1000, 0)  -- Behavior depends on TCO threshold and MaxCallDepth
 
 ### 3. Nested Execution Contexts
 
-Call depth is tracked per execution context. Starting a new Script.DoString() within a Lua function resets the depth counter for that new execution.
+Call depth is tracked per execution context. Starting a new Script.DoString() within a Lua function resets the depth
+counter for that new execution.
 
 ### 4. Thread Safety
 
-The ResourceController properly handles multi-threaded scenarios with thread-safe increment/decrement operations and volatile flags.
+The ResourceController properly handles multi-threaded scenarios with thread-safe increment/decrement operations and
+volatile flags.
 
 ## Best Practices
 
@@ -308,7 +315,8 @@ public void ExecuteUserScript(string code)
 
 ### 2. Forgetting About Library Functions
 
-Some Lua standard library functions use recursion internally. Ensure your limit accounts for both user code and library usage.
+Some Lua standard library functions use recursion internally. Ensure your limit accounts for both user code and library
+usage.
 
 ### 3. Not Testing Recursive Algorithms
 
@@ -390,6 +398,9 @@ end
 
 ## Conclusion
 
-Call depth limiting is a security feature that prevents stack overflow attacks while allowing legitimate recursive algorithms. By understanding how it works and following best practices, you can create secure Lua scripting environments that protect against malicious code while supporting complex logic.
+Call depth limiting is a security feature that prevents stack overflow attacks while allowing legitimate recursive
+algorithms. By understanding how it works and following best practices, you can create secure Lua scripting environments
+that protect against malicious code while supporting complex logic.
 
-Remember: Always err on the side of caution with untrusted code. It's better to have a script fail due to legitimate deep recursion than to allow potential stack overflow exploits.
+Remember: Always err on the side of caution with untrusted code. It's better to have a script fail due to legitimate
+deep recursion than to allow potential stack overflow exploits.

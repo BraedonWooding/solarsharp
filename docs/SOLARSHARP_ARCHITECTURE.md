@@ -10,29 +10,34 @@ This document covers SolarSharp's internal architecture, design principles, and 
 
 ## Overview
 
-SolarSharp is a security-focused Lua 5.2 interpreter for the .NET ecosystem. It's a performance-oriented fork of MoonSharp with comprehensive security features, event-driven architecture, and strict functional programming principles.
+SolarSharp is a security-focused Lua 5.2 interpreter for the .NET ecosystem. It's a performance-oriented fork of
+MoonSharp with comprehensive security features, event-driven architecture, and strict functional programming principles.
 
 ## Core Design Principles
 
 ### 1. Security First
+
 - **Deny-by-default**: No implicit permissions
 - **Capability-based access control**: Fine-grained permission management
 - **Sandboxed execution**: Complete isolation from host system
 - **Cryptographic verification**: PIV-compliant manifest signing
 
 ### 2. Functional Programming
+
 - **Immutable data structures**: All domain objects are immutable records
 - **Pure functions**: No side effects in core logic
 - **Result<T> error handling**: No exceptions in domain layer
 - **Maybe<T> for optionals**: Zero nulls policy
 
 ### 3. Event-Driven Architecture
+
 - **Domain events**: All state changes generate events
 - **Event sourcing**: Complete audit trail
 - **CQRS pattern**: Separation of commands and queries
 - **Reactive updates**: Event-based system notifications
 
 ### 4. Domain-Driven Design
+
 - **Bounded contexts**: Clear separation of concerns
 - **Aggregates**: SecurityPolicyAggregate manages policy state
 - **Value objects**: Immutable domain primitives
@@ -120,51 +125,53 @@ SolarSharp is a security-focused Lua 5.2 interpreter for the .NET ecosystem. It'
 ### Security Policy Resolution Flow
 
 1. **Script Initialization**
-   - Script created with BasePolicySet
-   - Policies mapped to file patterns
-   - Mutual exclusion enforced
+    - Script created with BasePolicySet
+    - Policies mapped to file patterns
+    - Mutual exclusion enforced
 
 2. **Manifest Loading**
-   - Check for LuaManifest.json in script directory
-   - Validate signatures if present
-   - Extract signing keys for DirectoryAccessRule
+    - Check for LuaManifest.json in script directory
+    - Validate signatures if present
+    - Extract signing keys for DirectoryAccessRule
 
 3. **Policy Application**
-   - Match script path to policy pattern
-   - Apply SecurityPolicy to Script
-   - Configure ResourceController with limits
+    - Match script path to policy pattern
+    - Apply SecurityPolicy to Script
+    - Configure ResourceController with limits
 
 4. **Runtime Enforcement**
-   - FileSystemSecurity checks each file access
-   - DirectoryAccessRule evaluates key-based permissions
-   - ResourceController enforces execution limits
+    - FileSystemSecurity checks each file access
+    - DirectoryAccessRule evaluates key-based permissions
+    - ResourceController enforces execution limits
 
 ### Event Flow
 
 1. **Domain Events**
-   - SecurityPolicyAggregate publishes PolicyUpdatedEvent
-   - ManifestValidator publishes ValidationCompletedEvent
-   - FileSystemSecurity publishes AccessDeniedEvent
+    - SecurityPolicyAggregate publishes PolicyUpdatedEvent
+    - ManifestValidator publishes ValidationCompletedEvent
+    - FileSystemSecurity publishes AccessDeniedEvent
 
 2. **Event Propagation**
-   - IEventPublisher sends to subscribers
-   - Subscribers process events asynchronously
-   - Correlation IDs track related events
+    - IEventPublisher sends to subscribers
+    - Subscribers process events asynchronously
+    - Correlation IDs track related events
 
 3. **Audit Trail**
-   - All security events logged
-   - Complete operation history
-   - Forensic analysis capability
+    - All security events logged
+    - Complete operation history
+    - Forensic analysis capability
 
 ## Key Components
 
 ### Core Execution
+
 - **Script**: Main API entry point
 - **ScriptRunner**: Execution orchestration
 - **VM/Processor**: Bytecode interpreter
 - **ResourceController**: Resource limit enforcement
 
 ### Security System
+
 - **SecurityPolicy**: Immutable policy configuration
 - **SecurityPolicyAggregate**: Policy state management
 - **FileSystemSecurity**: File access control
@@ -172,6 +179,7 @@ SolarSharp is a security-focused Lua 5.2 interpreter for the .NET ecosystem. It'
 - **PathNormalizer**: Cross-platform path handling
 
 ### Manifest System
+
 - **Manifest**: V1.0/V2.0 format definitions
 - **ManifestLoader**: Filesystem loading
 - **ManifestValidator**: Signature verification
@@ -179,6 +187,7 @@ SolarSharp is a security-focused Lua 5.2 interpreter for the .NET ecosystem. It'
 - **TrustStore**: Key management
 
 ### Event System
+
 - **IEventPublisher<T>**: Event publishing interface
 - **IEventSubscriber<T>**: Event subscription interface
 - **SecurityAuditEvent**: Base security event
@@ -187,6 +196,7 @@ SolarSharp is a security-focused Lua 5.2 interpreter for the .NET ecosystem. It'
 ## Implementation Status
 
 ### Completed Features
+
 - Core security policy system
 - DirectoryAccessRule with key-based access
 - Cross-platform path security
@@ -198,11 +208,13 @@ SolarSharp is a security-focused Lua 5.2 interpreter for the .NET ecosystem. It'
 - 100% test coverage for security components
 
 ### In Progress
+
 - Full reactive security monitoring
 - ManifestAggregate implementation
 - TrustStoreAggregate implementation
 
 ### Planned Features
+
 - Policy composition UI
 - Real-time security dashboard
 - Extended event sourcing
@@ -211,18 +223,21 @@ SolarSharp is a security-focused Lua 5.2 interpreter for the .NET ecosystem. It'
 ## Performance Characteristics
 
 ### Optimizations
+
 - Custom dictionary implementation for Lua tables
 - Optimized iterator performance
 - Minimal allocation patterns
 - Efficient path caching (currently disabled)
 
 ### Resource Limits
+
 - Configurable memory limits
 - Instruction count limiting
 - Execution timeout support
 - Call depth restrictions
 
 ### Security Overhead
+
 - Minimal performance impact (~5-10%)
 - O(n) directory rule evaluation
 - Cached permission lookups
@@ -231,12 +246,14 @@ SolarSharp is a security-focused Lua 5.2 interpreter for the .NET ecosystem. It'
 ## Security Boundaries
 
 ### Trust Levels
+
 1. **Untrusted**: Minimal permissions, heavily sandboxed
 2. **User**: Standard permissions, file access restrictions
 3. **Partner**: Extended permissions, broader file access
 4. **System**: Full permissions (use with caution)
 
 ### Isolation Mechanisms
+
 - Process isolation via ResourceController
 - Memory isolation via heap limits
 - I/O isolation via VFS layer
@@ -245,6 +262,7 @@ SolarSharp is a security-focused Lua 5.2 interpreter for the .NET ecosystem. It'
 ## Migration from MoonSharp
 
 ### Breaking Changes
+
 - Immutable SecurityPolicy (was mutable)
 - Mandatory security policies (was optional)
 - No implicit file access (was allowed)
@@ -253,6 +271,7 @@ SolarSharp is a security-focused Lua 5.2 interpreter for the .NET ecosystem. It'
 - StringExecution enum removed (use CoreModules.LoadMethods)
 
 ### Migration Path
+
 1. Create SecurityPolicy for existing scripts
 2. Define BasePolicySet with patterns
 3. Update file access to use VFS
@@ -262,6 +281,7 @@ SolarSharp is a security-focused Lua 5.2 interpreter for the .NET ecosystem. It'
 ### Code Migration Examples
 
 #### Old MoonSharp Code
+
 ```csharp
 // Old: Optional security
 var script = new Script();
@@ -278,6 +298,7 @@ script.Globals["config"] = new Table(script);
 ```
 
 #### New SolarSharp Code
+
 ```csharp
 // New: Mandatory security with pre-built policy
 var script = new Script(Examples.IsolatedBasePolicySet);
