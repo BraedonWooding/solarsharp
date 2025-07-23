@@ -191,12 +191,24 @@ namespace SolarSharp.Interpreter.Security.Operations
             // Create a builder from the existing policy set
             var builder = new PolicySetBuilder(policySet);
 
-            // Find the default policy or create one that allows execution
-            var defaultPolicyResult = basePolicySet.GetDefaultPolicy();
-            var evalPolicy = defaultPolicyResult.Match(
-                success => success with { AllowExecution = true },
-                failure => Examples.Desktop() // Use Desktop as a sensible default for eval
-            );
+            // Try to get the policy for regular files (pattern "*") as a base
+            // This ensures we inherit reasonable defaults instead of the fallback policy
+            SecurityPolicy evalPolicy;
+            if (policySet.FilePolicies.TryGetValue("*", out var starPolicyName) &&
+                policySet.PolicyDefinitions.TryGetValue(starPolicyName, out var starPolicy))
+            {
+                // Use the "*" pattern policy as base and ensure execution is allowed
+                evalPolicy = starPolicy with { AllowExecution = true };
+            }
+            else
+            {
+                // Fall back to default policy or Desktop as last resort
+                var defaultPolicyResult = basePolicySet.GetDefaultPolicy();
+                evalPolicy = defaultPolicyResult.Match(
+                    success => success with { AllowExecution = true },
+                    failure => Examples.Desktop() // Use Desktop as a sensible default for eval
+                );
+            }
 
             // Ensure the eval policy has a name
             var evalPolicyName = "eval-allowed";
@@ -302,8 +314,8 @@ namespace SolarSharp.Interpreter.Security.Operations
         {
             if (basePolicySet == null)
                 throw new ArgumentNullException(nameof(basePolicySet));
-            if (ms < 0)
-                throw new ArgumentException("Timeout must be non-negative", nameof(ms));
+            if (ms < -1)
+                throw new ArgumentException("Timeout must be -1 (unlimited) or >= 0", nameof(ms));
 
             return basePolicySet
                 .ApplyToAll(policy => policy with { TimeoutMs = ms })
@@ -323,8 +335,8 @@ namespace SolarSharp.Interpreter.Security.Operations
         {
             if (basePolicySet == null)
                 throw new ArgumentNullException(nameof(basePolicySet));
-            if (mb < 0)
-                throw new ArgumentException("Memory limit must be non-negative", nameof(mb));
+            if (mb < -1)
+                throw new ArgumentException("Memory limit must be -1 (unlimited) or >= 0", nameof(mb));
 
             return basePolicySet
                 .ApplyToAll(policy => policy with { MaxMemoryMB = mb })
@@ -334,6 +346,136 @@ namespace SolarSharp.Interpreter.Security.Operations
                         throw new InvalidOperationException(
                             $"Failed to set memory limit: {error.Message}"
                         )
+                );
+        }
+
+        /// <summary>
+        /// Creates a new BasePolicySet with the specified table limit for all policies.
+        /// A value of -1 means unlimited tables, 0 means deny (immediate failure).
+        /// </summary>
+        public static BasePolicySet WithMaxTables(this BasePolicySet basePolicySet, int maxTables)
+        {
+            if (basePolicySet == null)
+                throw new ArgumentNullException(nameof(basePolicySet));
+            if (maxTables < -1)
+                throw new ArgumentException("Table limit must be -1 (unlimited) or >= 0", nameof(maxTables));
+
+            return basePolicySet
+                .ApplyToAll(policy => policy with { MaxTables = maxTables })
+                .Match(
+                    success => success,
+                    error =>
+                        throw new InvalidOperationException(
+                            $"Failed to set table limit: {error.Message}"
+                        )
+                );
+        }
+
+        /// <summary>
+        /// Creates a new BasePolicySet with the specified instruction limit for all policies.
+        /// A value of -1 means unlimited instructions, 0 means deny (immediate failure).
+        /// </summary>
+        public static BasePolicySet WithMaxInstructions(this BasePolicySet basePolicySet, long maxInstructions)
+        {
+            if (basePolicySet == null)
+                throw new ArgumentNullException(nameof(basePolicySet));
+            if (maxInstructions < -1)
+                throw new ArgumentException("Instruction limit must be -1 (unlimited) or >= 0", nameof(maxInstructions));
+
+            return basePolicySet
+                .ApplyToAll(policy => policy with { MaxInstructions = maxInstructions })
+                .Match(
+                    success => success,
+                    error =>
+                        throw new InvalidOperationException(
+                            $"Failed to set instruction limit: {error.Message}"
+                        )
+                );
+        }
+
+        /// <summary>
+        /// Creates a new BasePolicySet with the specified call depth limit for all policies.
+        /// A value of -1 means unlimited call depth, 0 means deny (immediate failure).
+        /// </summary>
+        public static BasePolicySet WithMaxCallDepth(this BasePolicySet basePolicySet, int maxCallDepth)
+        {
+            if (basePolicySet == null)
+                throw new ArgumentNullException(nameof(basePolicySet));
+            if (maxCallDepth < -1)
+                throw new ArgumentException("Call depth limit must be -1 (unlimited) or >= 0", nameof(maxCallDepth));
+
+            return basePolicySet
+                .ApplyToAll(policy => policy with { MaxCallDepth = maxCallDepth })
+                .Match(
+                    success => success,
+                    error =>
+                        throw new InvalidOperationException(
+                            $"Failed to set call depth limit: {error.Message}"
+                        )
+                );
+        }
+
+        /// <summary>
+        /// Creates a new BasePolicySet with the specified resource limit scope for all policies.
+        /// </summary>
+        public static BasePolicySet WithResourceLimitScope(this BasePolicySet basePolicySet, ResourceLimitScope scope)
+        {
+            if (basePolicySet == null)
+                throw new ArgumentNullException(nameof(basePolicySet));
+
+            return basePolicySet
+                .ApplyToAll(policy => policy with { ResourceLimitScope = scope })
+                .Match(
+                    success => success,
+                    error =>
+                        throw new InvalidOperationException(
+                            $"Failed to set resource limit scope: {error.Message}"
+                        )
+                );
+        }
+
+        /// <summary>
+        /// Creates a new BasePolicySet that denies eval execution.
+        /// If :eval pattern already exists, updates it to deny execution.
+        /// If not, creates a new deny policy for :eval based on the default/fallback policy.
+        /// </summary>
+        public static BasePolicySet WithDenyEval(this BasePolicySet basePolicySet)
+        {
+            if (basePolicySet == null)
+                throw new ArgumentNullException(nameof(basePolicySet));
+                
+            var policySet = basePolicySet.PolicySet;
+            var builder = new PolicySetBuilder(policySet);
+            
+            // Check if :eval pattern already exists
+            if (policySet.FilePolicies.TryGetValue(":eval", out var evalPolicyName))
+            {
+                // Update existing eval policy to deny execution
+                if (policySet.PolicyDefinitions.TryGetValue(evalPolicyName, out var evalPolicy))
+                {
+                    var deniedPolicy = evalPolicy with { AllowExecution = false };
+                    builder.DefinePolicy(evalPolicyName, deniedPolicy);
+                }
+            }
+            else
+            {
+                // Create new deny policy for eval
+                // Use CreateDenyAll for explicit denial
+                var denyEvalPolicy = SecurityPolicyBuilder.CreateDenyAll() with 
+                { 
+                    Name = Maybe<string>.From("deny-eval")
+                };
+                
+                builder
+                    .DefinePolicy("deny-eval", denyEvalPolicy)
+                    .MapFilePattern(":eval", "deny-eval");
+            }
+            
+            var newPolicySet = builder.Build();
+            return BasePolicySetFactory.Create(newPolicySet)
+                .Match(
+                    success => success,
+                    error => throw new InvalidOperationException($"Failed to create deny eval policy: {error.Message}")
                 );
         }
     }

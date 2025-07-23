@@ -64,7 +64,6 @@ namespace SolarSharp.Interpreter
         internal ITrustStore TrustStore { get; private set; } = ScriptTrustStore.Empty;
         private IManifestValidationService _manifestValidator;
         private ContextualFunctionRegistry _functionRegistry = new ContextualFunctionRegistry();
-        private SecurityFunctionChecker _securityChecker;
 
         /// <summary>
         /// Gets the platform accessor for this script instance.
@@ -695,6 +694,9 @@ namespace SolarSharp.Interpreter
         /// </summary>
         private void ApplySecurityPolicy(SecurityPolicy policy)
         {
+            // Capture the previous policy before updating
+            var previousPolicy = m_ActivePolicy;
+            
             // Store security policy as the primary source of truth
             m_ActivePolicy = policy;
 
@@ -714,15 +716,17 @@ namespace SolarSharp.Interpreter
             UserData.DefaultAccessMode = InteropAccessMode.LazyOptimized;
 
             // Initialize resource controller for execution limits
+            // NEW SEMANTICS: -1 = unlimited (→ null), 0 = deny, >0 = actual limit
             var limits = new ExecutionLimits
             {
-                TimeoutMs = policy.TimeoutMs > 0 ? policy.TimeoutMs : null,
-                MaxMemoryMB = policy.MaxMemoryMB > 0 ? policy.MaxMemoryMB : null,
-                MaxInstructions = policy.MaxInstructions > 0 ? policy.MaxInstructions : null,
-                MaxCallDepth = policy.MaxCallDepth > 0 ? policy.MaxCallDepth : null,
-                MaxTables = 10_000, // Default table limit
-                MaxStringLength = 1_000_000, // Default string length limit
-                MaxCoroutineResumes = 10_000, // Default coroutine resume limit
+                TimeoutMs = policy.TimeoutMs >= 0 ? policy.TimeoutMs : null,
+                MaxMemoryMB = policy.MaxMemoryMB >= 0 ? policy.MaxMemoryMB : null,
+                MaxInstructions = policy.MaxInstructions >= 0 ? policy.MaxInstructions : null,
+                MaxCallDepth = policy.MaxCallDepth >= 0 ? policy.MaxCallDepth : null,
+                MaxTables = policy.MaxTables >= 0 ? policy.MaxTables : null,
+                ResourceLimitScope = policy.ResourceLimitScope,
+                MaxStringLength = SecurityConstants.DefaultMaxStringLength >= 0 ? SecurityConstants.DefaultMaxStringLength : null,
+                MaxCoroutineResumes = SecurityConstants.DefaultMaxCoroutineResumes >= 0 ? SecurityConstants.DefaultMaxCoroutineResumes : null,
 
                 // Enable test mode for deterministic behavior in tests
                 TestMode = Environment.GetEnvironmentVariable("SOLARSHARP_TEST_MODE") == "true",
@@ -738,12 +742,31 @@ namespace SolarSharp.Interpreter
                     Environment.GetEnvironmentVariable("SOLARSHARP_STABLE_MEMORY") == "true",
             };
 
-            var resourceController = new ResourceController(limits);
-            this.SetResourceController(resourceController);
+            // Check if we should preserve the existing ResourceController for cumulative tracking
+            var existingController = this.ResourceController();
+            var shouldPreserveController = existingController != null && 
+                                          policy.ResourceLimitScope == ResourceLimitScope.Cumulative &&
+                                          previousPolicy != null &&
+                                          previousPolicy.ResourceLimitScope == ResourceLimitScope.Cumulative;
+            
+            if (shouldPreserveController)
+            {
+                // Keep existing controller to preserve cumulative counters
+                // The existing controller will continue to track cumulative usage
+            }
+            else
+            {
+                // Create new ResourceController
+                var resourceController = new ResourceController(limits);
+                this.SetResourceController(resourceController);
+            }
 
             // Subscribe to resource limit events
-            resourceController.ResourceLimitExceeded += (sender, args) =>
+            var activeController = this.ResourceController();
+            if (activeController != null)
             {
+                activeController.ResourceLimitExceeded += (sender, args) =>
+                {
                 var ev = new SecurityEvent
                 {
                     Type = SecurityEventType.ResourceLimitExceeded,
@@ -755,7 +778,8 @@ namespace SolarSharp.Interpreter
                     ViolationHandling = SecurityViolationHandling.ThrowError,
                 };
                 m_SecurityLogger.LogSecurityEvent(ev);
-            };
+                };
+            }
 
             // Initialize VFS if chroot is enabled
             if (policy.EnableChroot)
@@ -873,7 +897,7 @@ namespace SolarSharp.Interpreter
         /// </summary>
         /// <param name="code">The code.</param>
         /// <param name="globalTable">The global table to bind to this chunk.</param>
-        /// <param name="codeFriendlyName">Name of the code - used to report errors, etc. Also used by debuggers to locate the original source file.</param>
+        /// <param name="chunkname">Name of the chunk - used to report errors, etc. Also used by debuggers to locate the original source file.</param>
         /// <returns>
         /// A DynValue containing a function which will execute the loaded code.
         /// </returns>
@@ -887,17 +911,17 @@ namespace SolarSharp.Interpreter
                 Maybe<string>.None
             );
 
-        public DynValue LoadString(string code, Table globalTable, string codeFriendlyName) =>
+        public DynValue LoadString(string code, Table globalTable, string chunkname) =>
             LoadString(
                 code,
                 globalTable != null ? Maybe<Table>.From(globalTable) : Maybe<Table>.None,
-                codeFriendlyName != null ? Maybe<string>.From(codeFriendlyName) : Maybe<string>.None
+                chunkname != null ? Maybe<string>.From(chunkname) : Maybe<string>.None
             );
 
         private DynValue LoadString(
             string code,
             Maybe<Table> globalTable,
-            Maybe<string> codeFriendlyName
+            Maybe<string> chunkname
         )
         {
             if (code.StartsWith(StringModule.BASE64_DUMP_HEADER))
@@ -908,14 +932,14 @@ namespace SolarSharp.Interpreter
                 return LoadStream(
                     ms,
                     globalTable.GetValueOrDefault(),
-                    codeFriendlyName.GetValueOrDefault()
+                    chunkname.GetValueOrDefault()
                 );
             }
 
-            var chunkName = $"{codeFriendlyName.GetValueOrDefault() ?? "chunk_" + m_Sources.Count}";
+            var chunkName = $"{chunkname.GetValueOrDefault() ?? "chunk_" + m_Sources.Count}";
 
             var source = new SourceCode(
-                codeFriendlyName.GetValueOrDefault() ?? chunkName,
+                chunkname.GetValueOrDefault() ?? chunkName,
                 code,
                 m_Sources.Count,
                 this
@@ -936,14 +960,14 @@ namespace SolarSharp.Interpreter
         /// </summary>
         /// <param name="stream">The stream containing code.</param>
         /// <param name="globalTable">The global table to bind to this chunk.</param>
-        /// <param name="codeFriendlyName">Name of the code - used to report errors, etc.</param>
+        /// <param name="chunkname">Name of the chunk - used to report errors, etc.</param>
         /// <returns>
         /// A DynValue containing a function which will execute the loaded code.
         /// </returns>
         public DynValue LoadStream(
             Stream stream,
             Table globalTable = null,
-            string codeFriendlyName = null
+            string chunkname = null
         )
         {
             // Script ownership check removed
@@ -954,12 +978,12 @@ namespace SolarSharp.Interpreter
             {
                 using var sr = new StreamReader(codeStream);
                 var scriptCode = sr.ReadToEnd();
-                return LoadStringInternal(scriptCode, globalTable, codeFriendlyName);
+                return LoadStringInternal(scriptCode, globalTable, chunkname);
             }
-            var chunkName = $"{codeFriendlyName ?? "dump_" + m_Sources.Count}";
+            var chunkName = $"{chunkname ?? "dump_" + m_Sources.Count}";
 
             var source = new SourceCode(
-                codeFriendlyName ?? chunkName,
+                chunkname ?? chunkName,
                 $"-- This script was decoded from a binary dump - dump_{m_Sources.Count}",
                 m_Sources.Count,
                 this
@@ -1227,48 +1251,101 @@ namespace SolarSharp.Interpreter
         /// </summary>
         /// <param name="code">The code.</param>
         /// <param name="globalContext">The global context.</param>
-        /// <param name="codeFriendlyName">Name of the code - used to report errors, etc. Also used by debuggers to locate the original source file.</param>
+        /// <param name="chunkname">Name of the chunk - used to report errors, etc. Also used by debuggers to locate the original source file.</param>
         /// <returns>
         /// A DynValue containing the result of the processing of the loaded chunk.
         /// </returns>
         public DynValue DoString(
             string code,
             Table globalContext = null,
-            string codeFriendlyName = null
+            string chunkname = null
         )
         {
-            // DoString called from C# host application - ALWAYS ALLOWED
-            // Security restrictions only apply to dynamic execution from within Lua (load/loadstring)
-            // This is a fundamental principle: the host application has full control
+            // DoString always executes in :eval context for proper security scoping
+            // Create execution context for eval
+            var contextResult = LuaExecutionContext.CreateFromPath(":eval");
+            if (contextResult.IsFailure)
+            {
+                throw new ScriptRuntimeException(
+                    $"Failed to create eval context: {contextResult.Error}"
+                );
+            }
 
-            // Mark this as host-initiated execution
-            this.SetHostInitiatedExecution(true);
+            var executionContext = contextResult.Value;
+
+            // Get the policy resolver from services
+            var resolver = this.GetService<SecurityPolicyResolver>();
+            if (resolver == null)
+            {
+                throw new InvalidOperationException("SecurityPolicyResolver not found in services");
+            }
+            
+            // Resolve policy for :eval context
+            // This will check patterns like *, *:eval, :eval and combine matching policies
+            var policyResult = resolver.ResolvePolicy(executionContext);
+            if (policyResult.IsFailure)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to resolve policy for :eval: {policyResult.Error.Message}"
+                );
+            }
+
+            var policy = policyResult.Value;
+
+            // Apply the resolved policy temporarily
+            var originalPolicy = m_ActivePolicy;
             try
             {
-                var func = LoadStringInternal(code, globalContext, codeFriendlyName);
-                return Call(func);
-            }
-            catch (Exception ex)
-            {
-                // Convert any exception to the appropriate script error type
-                // This maintains consistent error handling across the API
-                throw ex switch
-                {
-                    SyntaxErrorException => ex,
-                    ResourceLimitExceededException => ex,
-                    MemoryExhaustionException => ex,
-                    ExecutionTimeoutException => ex,
-                    CallDepthExceededException => ex,
-                    InstructionLimitExceededException => ex,
-                    ScriptRuntimeException => ex,
-                    SecurityException => ex,
-                    _ => new ScriptRuntimeException($"Script execution failed: {ex.Message}", ex),
-                };
+                ApplySecurityPolicy(policy);
+
+                // Execute within the eval context with proper policy
+                var executionResult = ExecutionContextManager.WithContext(
+                    executionContext,
+                    _ =>
+                    {
+                        // Mark this as host-initiated execution
+                        this.SetHostInitiatedExecution(true);
+                        try
+                        {
+                            var func = LoadStringInternal(code, globalContext, chunkname ?? ":eval");
+                            var result = Call(func);
+                            return Result.Success<DynValue, ExecutionError>(result);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Convert any exception to the appropriate script error type
+                            // This maintains consistent error handling across the API
+                            throw ex switch
+                            {
+                                SyntaxErrorException => ex,
+                                ResourceLimitExceededException => ex,
+                                MemoryExhaustionException => ex,
+                                ExecutionTimeoutException => ex,
+                                CallDepthExceededException => ex,
+                                InstructionLimitExceededException => ex,
+                                ScriptRuntimeException => ex,
+                                SecurityException => ex,
+                                _ => new ScriptRuntimeException($"Script execution failed: {ex.Message}", ex),
+                            };
+                        }
+                        finally
+                        {
+                            // Reset the host-initiated flag after execution completes
+                            this.SetHostInitiatedExecution(false);
+                        }
+                    }
+                );
+
+                return executionResult.Match(
+                    success => success,
+                    error =>
+                        throw new ScriptRuntimeException($"Script execution failed: {error.Message}")
+                );
             }
             finally
             {
-                // Reset the host-initiated flag after execution completes
-                this.SetHostInitiatedExecution(false);
+                // Restore original policy
+                ApplySecurityPolicy(originalPolicy);
             }
         }
 
@@ -1313,10 +1390,10 @@ namespace SolarSharp.Interpreter
         internal DynValue DoStringInternal(
             string code,
             Table globalContext = null,
-            string codeFriendlyName = null
+            string chunkname = null
         )
         {
-            var func = LoadStringInternal(code, globalContext, codeFriendlyName);
+            var func = LoadStringInternal(code, globalContext, chunkname);
             return Call(func);
         }
 
@@ -1326,7 +1403,7 @@ namespace SolarSharp.Interpreter
         internal DynValue LoadStringInternal(
             string code,
             Table globalTable = null,
-            string codeFriendlyName = null
+            string chunkname = null
         )
         {
             // Script ownership check removed
@@ -1336,12 +1413,12 @@ namespace SolarSharp.Interpreter
                 code = code[StringModule.BASE64_DUMP_HEADER.Length..];
                 var data = Convert.FromBase64String(code);
                 using var ms = new MemoryStream(data);
-                return LoadStream(ms, globalTable, codeFriendlyName);
+                return LoadStream(ms, globalTable, chunkname);
             }
 
-            var chunkName = $"{codeFriendlyName ?? "chunk_" + m_Sources.Count}";
+            var chunkName = $"{chunkname ?? "chunk_" + m_Sources.Count}";
 
-            var source = new SourceCode(codeFriendlyName ?? chunkName, code, m_Sources.Count, this);
+            var source = new SourceCode(chunkname ?? chunkName, code, m_Sources.Count, this);
 
             m_Sources.Add(source);
 
@@ -1358,17 +1435,17 @@ namespace SolarSharp.Interpreter
         /// </summary>
         /// <param name="stream">The stream.</param>
         /// <param name="globalContext">The global context.</param>
-        /// <param name="codeFriendlyName">Name of the code - used to report errors, etc. Also used by debuggers to locate the original source file.</param>
+        /// <param name="chunkname">Name of the chunk - used to report errors, etc. Also used by debuggers to locate the original source file.</param>
         /// <returns>
         /// A DynValue containing the result of the processing the loaded chunk.
         /// </returns>
         public DynValue DoStream(
             Stream stream,
             Table globalContext = null,
-            string codeFriendlyName = null
+            string chunkname = null
         )
         {
-            var func = LoadStream(stream, globalContext, codeFriendlyName);
+            var func = LoadStream(stream, globalContext, chunkname);
             return Call(func);
         }
 
@@ -1379,7 +1456,7 @@ namespace SolarSharp.Interpreter
         /// </summary>
         /// <param name="filename">The filename.</param>
         /// <param name="globalContext">The global context.</param>
-        /// <param name="codeFriendlyName">Name of the code - used to report errors, etc. Also used by debuggers to locate the original source file.</param>
+        /// <param name="chunkname">Name of the chunk - used to report errors, etc. Also used by debuggers to locate the original source file.</param>
         /// <returns>
         /// A DynValue containing the result of the processing of the loaded chunk.
         /// </returns>

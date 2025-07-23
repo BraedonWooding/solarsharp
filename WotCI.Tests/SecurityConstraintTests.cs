@@ -443,9 +443,10 @@ namespace WotCI.Tests
         [Test]
         public void AntiPolymorphism_PreventsSelfModification()
         {
-            var config = SolarSharp.Interpreter.Security.Examples.Isolated();
+            // Create a specific anti-polymorphism policy that denies execution
+            var config = SecurityPolicyBuilder.CreateDenyAll();
 
-            // Anti-polymorphism is now policy-based
+            // Anti-polymorphism is now policy-based - deny all policy prevents execution
             config.AllowExecution.Should().BeFalse();
         }
 

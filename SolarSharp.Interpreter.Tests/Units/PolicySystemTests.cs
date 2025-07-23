@@ -155,6 +155,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                     MaxMemoryMB = 512,
                     MaxInstructions = 50_000_000,
                     MaxCallDepth = 500,
+                    MaxTables = 100_000,
+                    AllowExecution = true,
                     AllowedModules = CoreModules.Preset_Complete,
                     Capabilities =
                         ScriptCapabilities.FileRead
@@ -175,6 +177,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                     MaxMemoryMB = 256,
                     MaxInstructions = 10_000_000,
                     MaxCallDepth = 200,
+                    MaxTables = 50_000,
+                    AllowExecution = true,
                     AllowedModules =
                         CoreModules.Basic
                         | CoreModules.String
@@ -193,6 +197,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                     MaxMemoryMB = 32,
                     MaxInstructions = 100_000,
                     MaxCallDepth = 50,
+                    MaxTables = 1_000,
+                    AllowExecution = true,
                     AllowedModules = CoreModules.Basic,
                     Capabilities = ScriptCapabilities.SafeCompute,
                 },
@@ -207,6 +213,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                     MaxMemoryMB = 128,
                     MaxInstructions = 5_000_000,
                     MaxCallDepth = 100,
+                    MaxTables = 10_000,
+                    AllowExecution = true,
                     AllowedModules = CoreModules.Basic | CoreModules.String | CoreModules.Math,
                     Capabilities = ScriptCapabilities.SafeCompute | ScriptCapabilities.FileRead,
                 },

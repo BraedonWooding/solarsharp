@@ -189,6 +189,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                 TimeoutMs = 300000, // 5 minutes
                 MaxMemoryMB = 100,
                 MaxInstructions = 10_000_000,
+                MaxCallDepth = 100,
+                MaxTables = 10_000,
                 AllowExecution = true,
                 DefaultFileAccess = FilePermissions.None,
                 AllowedModules =
@@ -317,6 +319,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                 TimeoutMs = 300000, // 5 minutes
                 MaxMemoryMB = 100,
                 MaxInstructions = 10_000_000,
+                MaxCallDepth = 100,
+                MaxTables = 10_000,
                 AllowExecution = true,
                 DefaultFileAccess = FilePermissions.None, // Default to no access
                 AllowedModules =
@@ -1565,6 +1569,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                 TimeoutMs = 300000, // 5 minutes
                 MaxMemoryMB = 100,
                 MaxInstructions = 10_000_000,
+                MaxCallDepth = 100,
+                MaxTables = 10_000,
                 AllowExecution = true,
                 DefaultFileAccess = FilePermissions.None,
                 AllowedModules =
@@ -1621,6 +1627,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                 TimeoutMs = 1800000, // 30 minutes
                 MaxMemoryMB = 500,
                 MaxInstructions = 100_000_000,
+                MaxCallDepth = 200,
+                MaxTables = 100_000,
                 AllowExecution = true,
                 DefaultFileAccess = FilePermissions.ReadWrite,
                 AllowedModules =

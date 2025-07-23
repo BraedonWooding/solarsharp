@@ -9,6 +9,22 @@ using SolarSharp.Interpreter.Security.Manifests;
 namespace SolarSharp.Interpreter.Security
 {
     /// <summary>
+    /// Defines how resource limits are tracked across multiple executions within a Script instance
+    /// </summary>
+    public enum ResourceLimitScope
+    {
+        /// <summary>
+        /// Resource limits reset for each top-level DoString/DoFile execution (default)
+        /// </summary>
+        PerExecution = 0,
+        
+        /// <summary>
+        /// Resource limits accumulate across all executions within the Script instance
+        /// </summary>
+        Cumulative = 1
+    }
+    
+    /// <summary>
     /// Collection of directories to scan for manifests
     /// </summary>
     public sealed record DirectorySet(ImmutableArray<string> Directories) : IEnumerable<string>

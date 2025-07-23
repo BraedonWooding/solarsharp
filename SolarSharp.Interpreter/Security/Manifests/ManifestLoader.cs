@@ -184,7 +184,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
                             // Create a dummy certificate for compatibility
                             // TODO: Refactor LoadedManifest to not require X509Certificate
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             // Ignore certificate extraction errors for now
                         }

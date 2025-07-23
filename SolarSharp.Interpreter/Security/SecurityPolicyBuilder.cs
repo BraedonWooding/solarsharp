@@ -49,6 +49,23 @@ namespace SolarSharp.Interpreter.Security
         ) => policy with { MaxCallDepth = maxCallDepth };
 
         /// <summary>
+        /// Sets the maximum number of tables that can be created.
+        /// NEW SEMANTICS: -1 = unlimited, 0 = deny, >0 = actual limit
+        /// </summary>
+        public static SecurityPolicy WithMaxTables(
+            this SecurityPolicy policy,
+            int maxTables
+        ) => policy with { MaxTables = maxTables };
+
+        /// <summary>
+        /// Sets how resource limits are tracked across multiple executions
+        /// </summary>
+        public static SecurityPolicy WithResourceLimitScope(
+            this SecurityPolicy policy,
+            ResourceLimitScope scope
+        ) => policy with { ResourceLimitScope = scope };
+
+        /// <summary>
         /// Sets whether execution is allowed
         /// </summary>
         public static SecurityPolicy WithExecutionAllowed(
@@ -502,26 +519,81 @@ namespace SolarSharp.Interpreter.Security
             };
 
         /// <summary>
-        /// Creates a restrictive base policy
+        /// Creates a deny-all policy that prevents any script execution.
+        /// All resource limits are set to 0 (deny), causing immediate failure.
+        /// This is typically used as a fallback policy, with specific patterns
+        /// mapped to more permissive policies.
+        /// </summary>
+        public static SecurityPolicy CreateDenyAll() =>
+            new SecurityPolicy
+            {
+                Name = Maybe<string>.From("DenyAll"),
+                AllowExecution = false,
+                TimeoutMs = SecurityConstants.DenyLimit,        // 0 = deny
+                MaxMemoryMB = SecurityConstants.DenyLimit,      // 0 = deny
+                MaxInstructions = SecurityConstants.DenyLimit,  // 0 = deny
+                MaxCallDepth = SecurityConstants.DenyLimit,     // 0 = deny
+                MaxTables = SecurityConstants.DenyLimit,        // 0 = deny
+                ResourceLimitScope = ResourceLimitScope.PerExecution,
+                DefaultFileAccess = FilePermissions.None,
+                DefaultDirectoryAccess = DirectoryPermissions.None,
+                FilePermissions = ImmutableDictionary<string, FilePermissions>.Empty,
+                DirectoryPermissions = ImmutableDictionary<string, DirectoryPermissions>.Empty,
+                AllowHiddenFiles = false,
+                MaxFileSize = 0,  // Deny file operations
+                EnableChroot = true,
+                AllowNetworkAccess = false,
+                AllowedHosts = ImmutableArray<string>.Empty,
+                AllowEnvironmentAccess = false,
+                AllowedEnvironmentVariables = ImmutableArray<string>.Empty,
+                AllowedModules = CoreModules.None,
+                Capabilities = ScriptCapabilities.None,
+                PubSubPermissions = new PubSubPermissions(),
+                AllowReadByToken = ImmutableHashSet<string>.Empty,
+                AllowWriteByToken = ImmutableHashSet<string>.Empty,
+                PreventSignedModification = true,
+                DirectoryAccessRules = ImmutableArray<DirectoryAccessRule>.Empty,
+            };
+
+        /// <summary>
+        /// Creates a restrictive base policy with minimal permissions and tight resource limits.
+        /// This policy allows execution with very limited resources:
+        /// - Timeout: 5 seconds
+        /// - Memory: 10MB
+        /// - Instructions: 100,000
+        /// - Call depth: 50
+        /// - Tables: 1,000
+        /// Use this as a starting point and selectively enable only what you need.
         /// </summary>
         public static SecurityPolicy CreateRestrictive() =>
             new SecurityPolicy
             {
                 Name = Maybe<string>.From("Restrictive"),
-                AllowExecution = false,
-                TimeoutMs = 0,
-                MaxMemoryMB = 0,
-                MaxInstructions = 0,
-                MaxCallDepth = 0,
+                AllowExecution = true,  // Allow execution with limits
+                TimeoutMs = SecurityConstants.DefaultTimeoutMs,         // 5 seconds
+                MaxMemoryMB = SecurityConstants.DefaultMaxMemoryMB,     // 10MB
+                MaxInstructions = SecurityConstants.DefaultMaxInstructions,  // 100k
+                MaxCallDepth = SecurityConstants.DefaultMaxCallDepth,   // 50
+                MaxTables = SecurityConstants.DefaultMaxTables,         // 1,000
+                ResourceLimitScope = ResourceLimitScope.PerExecution,
                 DefaultFileAccess = FilePermissions.None,
                 DefaultDirectoryAccess = DirectoryPermissions.None,
+                FilePermissions = ImmutableDictionary<string, FilePermissions>.Empty,
+                DirectoryPermissions = ImmutableDictionary<string, DirectoryPermissions>.Empty,
                 AllowHiddenFiles = false,
+                MaxFileSize = 1024 * 1024,  // 1MB max file size
                 EnableChroot = true,
                 AllowNetworkAccess = false,
+                AllowedHosts = ImmutableArray<string>.Empty,
                 AllowEnvironmentAccess = false,
-                AllowedModules = CoreModules.None,
+                AllowedEnvironmentVariables = ImmutableArray<string>.Empty,
+                AllowedModules = CoreModules.Basic | CoreModules.String,  // Minimal modules
                 Capabilities = ScriptCapabilities.None,
+                PubSubPermissions = new PubSubPermissions(),
+                AllowReadByToken = ImmutableHashSet<string>.Empty,
+                AllowWriteByToken = ImmutableHashSet<string>.Empty,
                 PreventSignedModification = true,
+                DirectoryAccessRules = ImmutableArray<DirectoryAccessRule>.Empty,
             };
 
         /// <summary>

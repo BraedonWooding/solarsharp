@@ -16,6 +16,7 @@ namespace Benchmark.Implementations
             // - 0 = unlimited instructions
             // - 0 = unlimited timeout
             // - 0 = unlimited call depth
+            // - 0 = unlimited tables
             // WARNING: Only for benchmarking, never use in production
             var benchmarkBasePolicySet = Examples.BenchmarkUnlimitedBasePolicySet;
             Script.WarmUp(benchmarkBasePolicySet);
@@ -62,17 +63,7 @@ namespace Benchmark.Implementations
 
         public override object Run(string file)
         {
-            try
-            {
-                return script.DoString(file);
-            }
-            catch (ScriptRuntimeException ex) when (ex.Message.Contains("Table limit exceeded"))
-            {
-                // Known limitation: SolarSharp has a hard-coded table limit of 10,000
-                // Some benchmarks like mandel.lua create many more tables
-                // Return a marker value so the benchmark can continue
-                return "FAILED: Table limit exceeded (hard-coded limit of 10,000 tables)";
-            }
+            return script.DoString(file);
         }
 
     }

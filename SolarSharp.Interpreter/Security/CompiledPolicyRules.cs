@@ -51,7 +51,7 @@ namespace SolarSharp.Interpreter.Security
         }
 
         /// <summary>
-        /// Resolves policy for an execution context with optimized performance
+        /// Resolves policy for an execution context with optimized performance.
         /// </summary>
         public Result<SecurityPolicy, PolicyResolutionError> ResolvePolicy(
             LuaExecutionContext context
@@ -66,8 +66,8 @@ namespace SolarSharp.Interpreter.Security
                         new PolicyResolutionError("Execution context cannot be null")
                     );
 
-                // Create cache key for this resolution with hint to avoid duplicate work
-                var (cacheKey, hint) = CreateCacheKeyWithHint(context);
+                // Create cache key for this resolution
+                var cacheKey = CreateCacheKey(context);
 
                 // Check cache first
                 if (_policyCache.TryGetValue(cacheKey, out var cachedPolicy))
@@ -76,21 +76,68 @@ namespace SolarSharp.Interpreter.Security
                     return Result.Success<SecurityPolicy, PolicyResolutionError>(cachedPolicy);
                 }
 
-                // Use the hint to avoid re-doing the policy resolution work
-                var defaultPolicy =
-                    hint.ResolvedPolicy != null
-                        ? hint.ResolvedPolicy.WithName(hint.PolicyName)
-                        : _fallbackPolicy.WithName("Fallback");
+                // Use hierarchy: signature > path > unsigned > fallback
+                
+                // 1. Check for specific signature policy (highest precedence)
+                if (context.Identity.HasValue)
+                {
+                    var publicKeyToken = CertificateManager.TokenToHex(
+                        context.Identity.Value.PublicKeyToken
+                    );
+                    var signaturePolicy = _signatureRules.FindPolicy(publicKeyToken);
+                    if (signaturePolicy != null)
+                    {
+                        var policy = signaturePolicy.WithName($"Signature[{publicKeyToken}]");
+                        _policyCache[cacheKey] = policy;
+                        Stats.RecordCacheMiss();
+                        return Result.Success<SecurityPolicy, PolicyResolutionError>(policy);
+                    }
+                }
 
+                // 2. Check path-based policies (second precedence)
+                var pathPolicies = _pathRules.FindAllPolicies(context.SourceFile);
+                if (pathPolicies.Any())
+                {
+                    // Use the most specific path policy (longest pattern)
+                    var bestPathPolicy = pathPolicies
+                        .OrderByDescending(p => p.Name.GetValueOrDefault("").Length)
+                        .First();
+                    var policy = bestPathPolicy;
+                    
+                    // Apply manifest policies if present
+                    if (_manifestRules != null)
+                        policy = _manifestRules.ApplyManifestPolicies(policy, context);
+                        
+                    _policyCache[cacheKey] = policy;
+                    Stats.RecordCacheMiss();
+                    return Result.Success<SecurityPolicy, PolicyResolutionError>(policy);
+                }
+
+                // 3. Check for unsigned policy (third precedence)
+                var unsignedPolicy = _signatureRules.FindPolicy("");
+                if (unsignedPolicy != null)
+                {
+                    var policy = unsignedPolicy.WithName("Unsigned");
+                    
+                    // Apply manifest policies if present
+                    if (_manifestRules != null)
+                        policy = _manifestRules.ApplyManifestPolicies(policy, context);
+                        
+                    _policyCache[cacheKey] = policy;
+                    Stats.RecordCacheMiss();
+                    return Result.Success<SecurityPolicy, PolicyResolutionError>(policy);
+                }
+
+                // 4. Use fallback policy (lowest precedence)
+                var fallbackPolicy = _fallbackPolicy.WithName("Fallback");
+                
                 // Apply manifest policies if present
-                var effectivePolicy =
-                    _manifestRules?.ApplyManifestPolicies(defaultPolicy, context) ?? defaultPolicy;
-
-                // Cache the result
-                _policyCache[cacheKey] = effectivePolicy;
+                if (_manifestRules != null)
+                    fallbackPolicy = _manifestRules.ApplyManifestPolicies(fallbackPolicy, context);
+                    
+                _policyCache[cacheKey] = fallbackPolicy;
                 Stats.RecordCacheMiss();
-
-                return Result.Success<SecurityPolicy, PolicyResolutionError>(effectivePolicy);
+                return Result.Success<SecurityPolicy, PolicyResolutionError>(fallbackPolicy);
             }
             finally
             {
@@ -99,110 +146,17 @@ namespace SolarSharp.Interpreter.Security
         }
 
         /// <summary>
-        /// Resolves the default policy using compiled signature and path rules
+        /// Creates a cache key for policy resolution
         /// </summary>
-        private SecurityPolicy ResolveDefaultPolicy(LuaExecutionContext context)
-        {
-            // Check signature-based policy first (highest precedence) if identity is available
-            if (context.Identity.HasValue)
-            {
-                var publicKeyToken = CertificateManager.TokenToHex(
-                    context.Identity.Value.PublicKeyToken
-                );
-                var signaturePolicy = _signatureRules.FindPolicy(publicKeyToken);
-                if (signaturePolicy != null)
-                {
-                    return signaturePolicy.WithName($"Signature[{publicKeyToken}]");
-                }
-            }
-
-            // Check path-based policy (before unsigned fallback)
-            var pathPolicy = _pathRules.FindPolicy(context.SourceFile);
-            if (pathPolicy != null)
-            {
-                return pathPolicy.WithName($"Path[{Path.GetDirectoryName(context.SourceFile)}]");
-            }
-
-            // Special case: Check for unsigned/unknown signature policy (after path check)
-            var unsignedPolicy = _signatureRules.FindPolicy("");
-            if (unsignedPolicy != null)
-            {
-                return unsignedPolicy.WithName("Unsigned");
-            }
-
-            // Use fallback policy
-            return _fallbackPolicy.WithName("Fallback");
-        }
-
-        /// <summary>
-        /// Creates a cache key for policy resolution based on policy resolution rules, not exact file paths
-        /// </summary>
-        private (string cacheKey, PolicyResolutionHint hint) CreateCacheKeyWithHint(
-            LuaExecutionContext context
-        )
+        private string CreateCacheKey(LuaExecutionContext context)
         {
             var token = context.Identity.HasValue
                 ? CertificateManager.TokenToHex(context.Identity.Value.PublicKeyToken)
                 : "no-identity";
-            var isEval = context.SourceFile.Contains(":eval");
-
-            // For better caching, determine which rule would match this context
-            string policyPattern = "fallback";
-            PolicyResolutionHint hint = new PolicyResolutionHint();
-
-            // Check signature-based policy first (highest precedence)
-            if (context.Identity.HasValue)
-            {
-                var publicKeyToken = CertificateManager.TokenToHex(
-                    context.Identity.Value.PublicKeyToken
-                );
-                var signaturePolicy = _signatureRules.FindPolicy(publicKeyToken);
-                if (signaturePolicy != null)
-                {
-                    policyPattern = $"signature:{publicKeyToken}";
-                    hint.ResolvedPolicy = signaturePolicy;
-                    hint.PolicyType = "Signature";
-                    hint.PolicyName = $"Signature[{publicKeyToken}]";
-                }
-            }
-
-            // If no signature policy found, check path-based policy (before unsigned fallback)
-            if (hint.ResolvedPolicy == null)
-            {
-                var matchingPattern = _pathRules.FindMatchingPattern(context.SourceFile);
-                if (matchingPattern != null)
-                {
-                    policyPattern = $"path:{matchingPattern}";
-                    hint.ResolvedPolicy = _pathRules.FindPolicy(context.SourceFile);
-                    hint.PolicyType = "Path";
-                    hint.PolicyName = $"Path[{Path.GetDirectoryName(context.SourceFile)}]";
-                }
-                else
-                {
-                    var unsignedPolicy = _signatureRules.FindPolicy("");
-                    if (unsignedPolicy != null)
-                    {
-                        policyPattern = "signature:unsigned";
-                        hint.ResolvedPolicy = unsignedPolicy;
-                        hint.PolicyType = "Unsigned";
-                        hint.PolicyName = "Unsigned";
-                    }
-                }
-            }
-
-            // Include manifest hash in cache key if manifest exists
             var manifestHash = _manifestRules != null ? _manifestRules.GetHashCode() : 0;
-
-            var cacheKey = $"{token}:{policyPattern}:{isEval}:{manifestHash}";
-            return (cacheKey, hint);
+            return $"{token}:{context.SourceFile}:{manifestHash}";
         }
 
-        private class PolicyResolutionHint
-        {
-            public SecurityPolicy ResolvedPolicy { get; set; }
-            public string PolicyType { get; set; }
-            public string PolicyName { get; set; }
-        }
 
         /// <summary>
         /// Clears the policy cache
@@ -302,6 +256,29 @@ namespace SolarSharp.Interpreter.Security
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Finds all policies that match the given source file
+        /// </summary>
+        public List<SecurityPolicy> FindAllPolicies(string sourceFile)
+        {
+            var matchingPolicies = new List<SecurityPolicy>();
+            
+            if (string.IsNullOrEmpty(sourceFile))
+                return matchingPolicies;
+
+            var normalizedPath = NormalizePath(sourceFile);
+
+            foreach (var rule in _rules)
+            {
+                if (IsMatch(rule, normalizedPath))
+                {
+                    matchingPolicies.Add(rule.Policy.WithName($"Path[{rule.Pattern}]"));
+                }
+            }
+
+            return matchingPolicies;
         }
 
         /// <summary>

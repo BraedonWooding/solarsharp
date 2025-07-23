@@ -105,44 +105,44 @@ namespace SolarSharp.Interpreter.Security
         }
 
         /// <summary>
-        /// Gets the default policy following the hierarchy:
-        /// 1. Signature-based (by public key token) - HIGHEST PRECEDENCE
-        /// 2. Path-based (by file path pattern)
-        /// 3. Fallback (absolute last resort)
+        /// Gets the default policy using hierarchy:
+        /// 1. Signature-based policies (highest precedence)
+        /// 2. Path-based policies
+        /// 3. Fallback policy (lowest precedence)
         /// </summary>
         private SecurityPolicy GetDefaultPolicy(LuaExecutionContext context)
         {
-            // Step 1: Check for signature-based default policy (HIGHEST PRECEDENCE) if identity is available
+            // 1. Check signature-based policies first (highest precedence)
             if (context.Identity.HasValue)
             {
                 var publicKeyToken = CertificateManager.TokenToHex(
                     context.Identity.Value.PublicKeyToken
                 );
-                if (_signatureDefaultPolicies.TryGetValue(publicKeyToken, out var signaturePolicy))
+                if (_signatureDefaultPolicies.TryGetValue(publicKeyToken, out var sigPolicy))
                 {
-                    return signaturePolicy.WithName($"Signature[{publicKeyToken}]");
+                    return sigPolicy.WithName($"Signature[{publicKeyToken}]");
                 }
             }
-
-            // Step 2: Check for path-based default policy (before unsigned fallback)
-            var pathPolicy = FindPathBasedPolicy(context.SourceFile);
-            if (pathPolicy != null)
+            
+            // 2. Check path-based policies (second precedence)
+            var matchingPathPolicy = FindPathBasedPolicy(context.SourceFile);
+            if (matchingPathPolicy != null)
             {
-                return pathPolicy.WithName($"Path[{Path.GetDirectoryName(context.SourceFile)}]");
+                return matchingPathPolicy;
             }
-
-            // Special case: Check for unsigned/unknown signature policy (after path check)
+            
+            // 3. Check for unsigned/default signature policy (third precedence)
             if (_signatureDefaultPolicies.TryGetValue("", out var unsignedPolicy))
             {
                 return unsignedPolicy.WithName("Unsigned");
             }
-
-            // Step 3: Use fallback default policy (LOWEST PRECEDENCE)
+            
+            // 4. Use fallback policy (lowest precedence)
             return _fallbackDefaultPolicy.WithName("Fallback");
         }
 
         /// <summary>
-        /// Finds the most specific path-based policy that matches the source file
+        /// Finds the best matching path-based policy for the source file
         /// </summary>
         private SecurityPolicy FindPathBasedPolicy(string sourceFile)
         {
@@ -150,9 +150,8 @@ namespace SolarSharp.Interpreter.Security
                 return null;
 
             var normalizedPath = Path.GetFullPath(sourceFile).Replace('\\', '/');
-
-            // Find all matching patterns and select the most specific one
-            var matchingPolicies = new List<KeyValuePair<string, SecurityPolicy>>();
+            SecurityPolicy bestMatch = null;
+            int bestSpecificity = -1;
 
             foreach (var kvp in _pathDefaultPolicies)
             {
@@ -161,16 +160,20 @@ namespace SolarSharp.Interpreter.Security
                 // Check if the pattern matches the normalized path
                 if (IsPathPatternMatch(normalizedPath, pattern))
                 {
-                    matchingPolicies.Add(kvp);
+                    // Use pattern length as a simple specificity measure
+                    // Longer patterns are more specific
+                    int specificity = pattern.Length;
+                    if (specificity > bestSpecificity)
+                    {
+                        bestMatch = kvp.Value.WithName($"Path[{pattern}]");
+                        bestSpecificity = specificity;
+                    }
                 }
             }
 
-            // Order by specificity (length of pattern)
-            return matchingPolicies
-                .OrderByDescending(kvp => kvp.Key.Length)
-                .Select(kvp => kvp.Value)
-                .FirstOrDefault();
+            return bestMatch;
         }
+
 
         /// <summary>
         /// Checks if a file path matches a pattern

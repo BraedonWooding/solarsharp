@@ -8,55 +8,67 @@ namespace SolarSharp.Interpreter.Security
     public class ExecutionLimits
     {
         /// <summary>
-        /// Maximum execution time before script is terminated (in milliseconds)
-        /// Use 0 or null for no timeout limit (unlimited execution time).
+        /// Maximum execution time before script is terminated (in milliseconds).
+        /// NEW SEMANTICS: null or -1 = unlimited, 0 = deny immediately, >0 = actual timeout
+        /// Default: <see cref="SecurityConstants.DefaultTimeoutMs"/> (5 seconds).
         /// </summary>
-        public int? TimeoutMs { get; set; } = 30000;
+        public int? TimeoutMs { get; set; } = SecurityConstants.DefaultTimeoutMs;
 
         /// <summary>
-        /// Maximum number of VM instructions before termination
-        /// Use 0 or null for no instruction limit (unlimited instructions).
+        /// Maximum number of VM instructions before termination.
+        /// NEW SEMANTICS: null or -1 = unlimited, 0 = deny immediately, >0 = actual limit
+        /// Default: <see cref="SecurityConstants.DefaultMaxInstructions"/> (100,000).
         /// </summary>
-        public long? MaxInstructions { get; set; } = 1_000_000;
+        public long? MaxInstructions { get; set; } = SecurityConstants.DefaultMaxInstructions;
 
         /// <summary>
-        /// Maximum memory usage in megabytes
-        /// Use 0 or null for no memory limit (unlimited memory).
+        /// Maximum memory usage in megabytes.
+        /// NEW SEMANTICS: null or -1 = unlimited, 0 = deny immediately, >0 = actual limit
+        /// Default: <see cref="SecurityConstants.DefaultMaxMemoryMB"/> (10 MB).
         /// </summary>
-        public int? MaxMemoryMB { get; set; } = 50;
+        public int? MaxMemoryMB { get; set; } = SecurityConstants.DefaultMaxMemoryMB;
 
         /// <summary>
-        /// Maximum function call depth (stack depth)
-        /// Use 0 or null for no call depth limit (unlimited recursion).
+        /// Maximum function call depth (stack depth).
+        /// NEW SEMANTICS: null or -1 = unlimited, 0 = deny immediately, >0 = actual limit
+        /// Default: <see cref="SecurityConstants.DefaultMaxCallDepth"/> (50).
         /// </summary>
-        public int? MaxCallDepth { get; set; } = 1000;
+        public int? MaxCallDepth { get; set; } = SecurityConstants.DefaultMaxCallDepth;
 
         /// <summary>
-        /// Maximum number of tables that can be created
-        /// Use 0 or null for no table limit (unlimited tables).
+        /// Maximum number of tables that can be created.
+        /// NEW SEMANTICS: null or -1 = unlimited, 0 = deny immediately, >0 = actual limit
+        /// Default: <see cref="SecurityConstants.DefaultMaxTables"/> (1,000).
         /// </summary>
-        public int? MaxTables { get; set; } = 10_000;
+        public int? MaxTables { get; set; } = SecurityConstants.DefaultMaxTables;
 
         /// <summary>
-        /// Maximum string length for any single string
-        /// Use 0 or null for no string length limit (unlimited string size).
+        /// Maximum string length for any single string.
+        /// NEW SEMANTICS: null or -1 = unlimited, 0 = deny immediately, >0 = actual limit
+        /// Default: <see cref="SecurityConstants.DefaultMaxStringLength"/> (1 million characters).
         /// </summary>
-        public int? MaxStringLength { get; set; } = 1_000_000;
+        public int? MaxStringLength { get; set; } = SecurityConstants.DefaultMaxStringLength;
 
         /// <summary>
-        /// Maximum number of coroutine resumes allowed
-        /// Use 0 or null for no coroutine resume limit (unlimited resumes).
+        /// Maximum number of coroutine resumes allowed.
+        /// NEW SEMANTICS: null or -1 = unlimited, 0 = deny immediately, >0 = actual limit
+        /// Default: <see cref="SecurityConstants.DefaultMaxCoroutineResumes"/> (10,000).
         /// </summary>
-        public int? MaxCoroutineResumes { get; set; } = 10_000;
+        public int? MaxCoroutineResumes { get; set; } = SecurityConstants.DefaultMaxCoroutineResumes;
+
+        /// <summary>
+        /// Defines how resource limits are tracked across multiple executions
+        /// </summary>
+        public ResourceLimitScope ResourceLimitScope { get; set; } = ResourceLimitScope.PerExecution;
 
         /// <summary>
         /// Convenience property for timeout as TimeSpan.
-        /// Returns null when timeout is disabled (TimeoutMs == 0).
+        /// Returns null when timeout is unlimited (TimeoutMs == -1 or null).
         /// </summary>
         public TimeSpan? Timeout
         {
-            get { return TimeoutMs == 0 ? null : TimeSpan.FromMilliseconds(TimeoutMs ?? 0); }
-            set { TimeoutMs = value.HasValue ? (int)value.Value.TotalMilliseconds : 0; }
+            get { return (TimeoutMs == null || TimeoutMs < 0) ? null : TimeSpan.FromMilliseconds(TimeoutMs.Value); }
+            set { TimeoutMs = value.HasValue ? (int)value.Value.TotalMilliseconds : -1; }
         }
 
         /// <summary>
@@ -64,8 +76,8 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public int TimeoutSeconds
         {
-            get { return (TimeoutMs ?? 0) / 1000; }
-            set { TimeoutMs = value * 1000; }
+            get { return (TimeoutMs == null || TimeoutMs < 0) ? -1 : TimeoutMs.Value / 1000; }
+            set { TimeoutMs = value < 0 ? -1 : value * 1000; }
         }
 
         /// <summary>

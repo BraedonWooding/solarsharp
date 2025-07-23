@@ -342,7 +342,7 @@ namespace WotCI.UI
             {
                 foreach (
                     var evt in _recentEvents
-                        .TakeLast(SecurityConstants.Dashboard.MaxRecentEvents)
+                        .TakeLast(WotCISecurityConstants.Dashboard.MaxRecentEvents)
                         .Reverse()
                 )
                 {
@@ -454,7 +454,7 @@ namespace WotCI.UI
                 _recentEvents.Clear();
 
                 var auditEvents = _auditor.GetRecentEvents(
-                    SecurityConstants.Dashboard.MaxEventsFetch
+                    WotCISecurityConstants.Dashboard.MaxEventsFetch
                 );
                 foreach (var evt in auditEvents)
                 {
@@ -473,11 +473,11 @@ namespace WotCI.UI
                 _recentEvents.Sort((a, b) => b.Timestamp.CompareTo(a.Timestamp));
 
                 // Ensure we don't keep more than the maximum allowed events
-                if (_recentEvents.Count > SecurityConstants.Dashboard.MaxEventsFetch)
+                if (_recentEvents.Count > WotCISecurityConstants.Dashboard.MaxEventsFetch)
                 {
                     _recentEvents.RemoveRange(
-                        SecurityConstants.Dashboard.MaxEventsFetch,
-                        _recentEvents.Count - SecurityConstants.Dashboard.MaxEventsFetch
+                        WotCISecurityConstants.Dashboard.MaxEventsFetch,
+                        _recentEvents.Count - WotCISecurityConstants.Dashboard.MaxEventsFetch
                     );
                 }
             }

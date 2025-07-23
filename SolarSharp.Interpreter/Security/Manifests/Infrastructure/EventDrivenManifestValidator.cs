@@ -197,12 +197,12 @@ namespace SolarSharp.Interpreter.Security.Manifests.Infrastructure
 
                 return Result.Success<Manifest, ManifestValidationError>(manifest);
             }
-            catch (PathTraversalException ex)
+            catch (PathTraversalException)
             {
                 // Re-throw path traversal exceptions as-is
                 throw;
             }
-            catch (ManifestFormatException ex)
+            catch (ManifestFormatException)
             {
                 // Re-throw manifest format exceptions as-is
                 throw;

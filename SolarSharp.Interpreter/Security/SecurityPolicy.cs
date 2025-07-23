@@ -60,6 +60,21 @@ namespace SolarSharp.Interpreter.Security
         public int MaxCallDepth { get; init; } // 0 = no execution
 
         /// <summary>
+        /// Maximum number of tables that can be created.
+        /// Set to <see cref="SecurityConstants.UnlimitedTables"/> (0) for unlimited table creation.
+        /// Default: <see cref="SecurityConstants.DefaultMaxTables"/> (10,000 tables).
+        /// </summary>
+        [JsonPropertyName("maxTables")]
+        public int MaxTables { get; init; } = SecurityConstants.DefaultMaxTables;
+
+        /// <summary>
+        /// Defines how resource limits are tracked across multiple executions
+        /// </summary>
+        [JsonPropertyName("resourceLimitScope")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public ResourceLimitScope ResourceLimitScope { get; init; } = ResourceLimitScope.PerExecution;
+
+        /// <summary>
         /// Whether execution is allowed (false prevents all execution)
         /// </summary>
         [JsonPropertyName("allowExecution")]
@@ -213,7 +228,8 @@ namespace SolarSharp.Interpreter.Security
         // Computed properties
 
         /// <summary>
-        /// Checks if execution is prevented by any policy settings
+        /// Checks if execution is prevented by any policy settings.
+        /// NEW SEMANTICS: 0 = deny, so any limit set to 0 prevents execution
         /// </summary>
         [JsonIgnore]
         public bool PreventsExecution
@@ -221,9 +237,11 @@ namespace SolarSharp.Interpreter.Security
             get
             {
                 return !AllowExecution
-                    || TimeoutMs == 0
-                    || MaxMemoryMB == 0
-                    || MaxInstructions == 0;
+                    || TimeoutMs == SecurityConstants.DenyLimit
+                    || MaxMemoryMB == SecurityConstants.DenyLimit
+                    || MaxInstructions == SecurityConstants.DenyLimit
+                    || MaxCallDepth == SecurityConstants.DenyLimit
+                    || MaxTables == SecurityConstants.DenyLimit;
             }
         }
 
@@ -255,10 +273,12 @@ namespace SolarSharp.Interpreter.Security
             return this with
             {
                 Name = Maybe<string>.From($"{thisName}∩{otherName}"),
-                TimeoutMs = Math.Min(TimeoutMs, other.TimeoutMs),
-                MaxMemoryMB = Math.Min(MaxMemoryMB, other.MaxMemoryMB),
-                MaxInstructions = Math.Min(MaxInstructions, other.MaxInstructions),
-                MaxCallDepth = Math.Min(MaxCallDepth, other.MaxCallDepth),
+                TimeoutMs = IntersectNumericLimit(TimeoutMs, other.TimeoutMs),
+                MaxMemoryMB = IntersectNumericLimit(MaxMemoryMB, other.MaxMemoryMB),
+                MaxInstructions = IntersectNumericLimit(MaxInstructions, other.MaxInstructions),
+                MaxCallDepth = IntersectNumericLimit(MaxCallDepth, other.MaxCallDepth),
+                MaxTables = IntersectNumericLimit(MaxTables, other.MaxTables),
+                ResourceLimitScope = (ResourceLimitScope)Math.Max((int)ResourceLimitScope, (int)other.ResourceLimitScope), // More restrictive wins
                 AllowExecution = AllowExecution && other.AllowExecution,
 
                 // File system - take most restrictive
@@ -276,7 +296,7 @@ namespace SolarSharp.Interpreter.Security
                     other.DirectoryPermissions
                 ),
                 AllowHiddenFiles = AllowHiddenFiles && other.AllowHiddenFiles,
-                MaxFileSize = Math.Min(MaxFileSize, other.MaxFileSize),
+                MaxFileSize = IntersectNumericLimit(MaxFileSize, other.MaxFileSize),
                 EnableChroot = EnableChroot || other.EnableChroot,
 
                 // Network - intersection
@@ -307,6 +327,48 @@ namespace SolarSharp.Interpreter.Security
                 // Directory access rules - combine both sets
                 DirectoryAccessRules = DirectoryAccessRules.AddRange(other.DirectoryAccessRules),
             };
+        }
+
+        /// <summary>
+        /// Intersects two numeric limits, taking the most restrictive value.
+        /// NEW SEMANTICS: 0 = deny (always wins), -1 = unlimited, >0 = actual limit
+        /// </summary>
+        /// <param name="a">First limit value</param>
+        /// <param name="b">Second limit value</param>
+        /// <returns>The most restrictive limit</returns>
+        private static int IntersectNumericLimit(int a, int b)
+        {
+            // 0 (deny) always wins
+            if (a == SecurityConstants.DenyLimit || b == SecurityConstants.DenyLimit) 
+                return SecurityConstants.DenyLimit;
+            
+            // If either is unlimited (-1), use the other
+            if (a == SecurityConstants.UnlimitedTables) return b;
+            if (b == SecurityConstants.UnlimitedTables) return a;
+            
+            // Both are positive limits, use the smaller (more restrictive)
+            return Math.Min(a, b);
+        }
+
+        /// <summary>
+        /// Intersects two numeric limits (long version), taking the most restrictive value.
+        /// NEW SEMANTICS: 0 = deny (always wins), -1 = unlimited, >0 = actual limit
+        /// </summary>
+        /// <param name="a">First limit value</param>
+        /// <param name="b">Second limit value</param>
+        /// <returns>The most restrictive limit</returns>
+        private static long IntersectNumericLimit(long a, long b)
+        {
+            // 0 (deny) always wins
+            if (a == 0 || b == 0) 
+                return 0;
+            
+            // If either is unlimited (-1), use the other
+            if (a == SecurityConstants.UnlimitedInstructions) return b;
+            if (b == SecurityConstants.UnlimitedInstructions) return a;
+            
+            // Both are positive limits, use the smaller (more restrictive)
+            return Math.Min(a, b);
         }
 
         private static FilePermissions GetMostRestrictiveFileAccess(

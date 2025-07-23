@@ -13,7 +13,7 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public class FileSystemSecurity
     {
-        private DirectoryAccessRuleCache _ruleCache;
+        private DirectoryAccessRuleCache _ruleCache = new DirectoryAccessRuleCache(ImmutableArray<DirectoryAccessRule>.Empty, TimeSpan.FromMinutes(5));
 
         /// <summary>
         /// File-specific access permissions
@@ -58,7 +58,7 @@ namespace SolarSharp.Interpreter.Security
         /// Sandbox root directory - if defined, all file access must be within this directory (chroot-style).
         /// If null, no sandbox restrictions apply (default behaviour).
         /// </summary>
-        public string SandboxRoot { get; set; } = null;
+        public string? SandboxRoot { get; set; }
 
         private ImmutableArray<DirectoryAccessRule> _directoryAccessRules =
             ImmutableArray<DirectoryAccessRule>.Empty;
