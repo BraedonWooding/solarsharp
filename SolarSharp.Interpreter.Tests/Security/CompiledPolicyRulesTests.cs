@@ -99,7 +99,7 @@ namespace SolarSharp.Interpreter.Tests.Security
         public void ResolvePolicy_WithSignaturePolicy_ReturnsSignaturePolicy()
         {
             // Arrange
-            var publicKeyToken = CertificateManager.TokenToHex(_testIdentity.PublicKeyToken);
+            var publicKeyToken = Convert.ToHexString(_testIdentity.PublicKeyToken);
             var signaturePolicies = ImmutableDictionary<string, SecurityPolicy>.Empty.Add(
                 publicKeyToken,
                 _testPolicy1
@@ -310,7 +310,7 @@ namespace SolarSharp.Interpreter.Tests.Security
         public void ResolvePolicy_SignaturePolicyTakesPrecedenceOverPath()
         {
             // Arrange
-            var publicKeyToken = CertificateManager.TokenToHex(_testIdentity.PublicKeyToken);
+            var publicKeyToken = Convert.ToHexString(_testIdentity.PublicKeyToken);
             var signaturePolicies = ImmutableDictionary<string, SecurityPolicy>.Empty.Add(
                 publicKeyToken,
                 _testPolicy1

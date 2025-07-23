@@ -7,29 +7,108 @@ using SolarSharp.Interpreter.Security.Manifests;
 namespace SolarSharp.Interpreter.Tests.TestHelpers
 {
     /// <summary>
-    /// Helper methods for creating V2.0 manifests in tests
+    /// Test helper methods for V2.0 manifests to replace removed compatibility properties
     /// </summary>
     public static class ManifestTestHelpers
     {
         /// <summary>
-        /// Creates a V2.0 manifest with a single signed content block containing one package and one policy
+        /// Gets the name of the first package for testing (replaces manifest.Identity.Name)
+        /// </summary>
+        public static string GetFirstPackageName(this Manifest manifest)
+        {
+            var firstPackage = manifest.GetAllPackages().FirstOrDefault();
+            return firstPackage.Package?.Metadata?.Name ?? "";
+        }
+        
+        /// <summary>
+        /// Gets the version of the first package for testing (replaces manifest.Identity.Version)
+        /// </summary>
+        public static string GetFirstPackageVersion(this Manifest manifest)
+        {
+            var firstPackage = manifest.GetAllPackages().FirstOrDefault();
+            return firstPackage.Package?.Metadata?.Version ?? "1.0.0";
+        }
+        
+        /// <summary>
+        /// Gets the description of the first package for testing (replaces manifest.Description)
+        /// </summary>
+        public static string GetFirstPackageDescription(this Manifest manifest)
+        {
+            var firstPackage = manifest.GetAllPackages().FirstOrDefault();
+            return firstPackage.Package?.Metadata?.Description ?? "";
+        }
+
+        /// <summary>
+        /// Legacy Description property for testing compatibility
+        /// </summary>
+        public static string Description(this Manifest manifest) => manifest.GetFirstPackageDescription();
+
+        /// <summary>
+        /// Legacy Policy property for testing compatibility - returns the first policy
+        /// </summary>
+        public static ManifestPolicy? Policy(this Manifest manifest)
+        {
+            var firstBlock = manifest.SignedContent.FirstOrDefault();
+            return firstBlock?.Policies.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Legacy FilePolicies property for testing compatibility - returns empty dictionary for V2.0
+        /// </summary>
+        public static ImmutableDictionary<string, object> FilePolicies(this Manifest manifest) 
+            => ImmutableDictionary<string, object>.Empty;
+
+        /// <summary>
+        /// Legacy PolicyDefinitions property for testing compatibility - returns empty dictionary for V2.0
+        /// </summary>
+        public static ImmutableDictionary<string, object> PolicyDefinitions(this Manifest manifest) 
+            => ImmutableDictionary<string, object>.Empty;
+        
+        /// <summary>
+        /// Gets the public key token of the first signed block for testing (replaces manifest.Identity.PublicKeyToken)
+        /// </summary>
+        public static string GetFirstKeyToken(this Manifest manifest)
+        {
+            var firstBlock = manifest.SignedContent.FirstOrDefault();
+            return firstBlock?.GetKeyFingerprint() ?? "";
+        }
+
+        /// <summary>
+        /// Creates a test identity info for compatibility
+        /// </summary>
+        public static ScriptIdentityInfo GetTestIdentity(this Manifest manifest)
+        {
+            return new ScriptIdentityInfo
+            {
+                Name = manifest.GetFirstPackageName(),
+                Version = manifest.GetFirstPackageVersion(),
+                PublicKeyToken = manifest.GetFirstKeyToken()
+            };
+        }
+
+        /// <summary>
+        /// Creates a V2.0 manifest for testing
         /// </summary>
         public static Manifest CreateV2Manifest(
-            string manifestId = "test-manifest",
-            string packageId = "test-package",
-            string packageName = "Test Package",
+            string packageName,
             string packageVersion = "1.0.0",
-            string packageDescription = "Test package description",
-            string keyId =
-                "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-            string signature = "test-signature",
-            ImmutableDictionary<string, string>? files = null,
-            ImmutableArray<ManifestPolicy>? policies = null,
-            string? publicKey = null
-        )
+            string packageDescription = "Test package",
+            string manifestId = "test-manifest",
+            string packageId = null,
+            ImmutableDictionary<string, string> files = default,
+            ImmutableArray<ManifestPolicy> policies = default)
         {
-            files ??= ImmutableDictionary<string, string>.Empty;
-            policies ??= ImmutableArray.Create(CreateDefaultPolicy(packageId));
+            if (policies.IsDefault)
+            {
+                policies = ImmutableArray.Create(CreateDefaultPolicy());
+            }
+
+            packageId = packageId ?? packageName;
+            
+            if (files == null || files.IsEmpty)
+            {
+                files = ImmutableDictionary<string, string>.Empty.Add("test.lua", "sha256:test");
+            }
 
             var package = new ManifestPackage
             {
@@ -38,248 +117,149 @@ namespace SolarSharp.Interpreter.Tests.TestHelpers
                 {
                     Name = packageName,
                     Version = packageVersion,
-                    Description = packageDescription,
-                },
+                    Description = packageDescription
+                }
             };
 
-            var signedContentBlock = new SignedContentBlock
+            var signedBlock = new SignedContentBlock
             {
-                KeyId = keyId,
-                Signature = signature,
-                PublicKey = publicKey ?? GetTestPublicKey(),
-                Packages = ImmutableDictionary
-                    .Create<string, ManifestPackage>()
-                    .Add(packageId, package),
-                Policies = policies.Value,
+                KeyId = "sha256:test",
+                Signature = "",
+                PublicKey = "",
+                Packages = ImmutableDictionary<string, ManifestPackage>.Empty.Add(packageId, package),
+                Policies = policies
             };
 
             return new Manifest
             {
-                ManifestId = manifestId,
                 Version = "2.0",
-                SignedContent = ImmutableArray.Create(signedContentBlock),
+                ManifestId = manifestId,
+                SignedContent = ImmutableArray.Create(signedBlock)
             };
         }
 
         /// <summary>
-        /// Creates a V2.0 manifest with multiple signed content blocks
+        /// Creates a default policy for testing
         /// </summary>
-        public static Manifest CreateMultiBlockV2Manifest(
-            string manifestId = "multi-block-manifest",
-            params (
-                string keyId,
-                string signature,
-                ImmutableDictionary<string, ManifestPackage> packages,
-                ImmutableArray<ManifestPolicy> policies,
-                string? publicKey
-            )[] blocks
-        )
-        {
-            var signedContentBlocks = blocks
-                .Select(block => new SignedContentBlock
-                {
-                    KeyId = block.keyId,
-                    Signature = block.signature,
-                    PublicKey = block.publicKey ?? GetTestPublicKey(),
-                    Packages = block.packages,
-                    Policies = block.policies,
-                })
-                .ToImmutableArray();
-
-            return new Manifest
-            {
-                ManifestId = manifestId,
-                Version = "2.0",
-                SignedContent = signedContentBlocks,
-            };
-        }
-
-        /// <summary>
-        /// Creates a default manifest policy for testing
-        /// </summary>
-        public static ManifestPolicy CreateDefaultPolicy(
-            string packageId,
-            string selector = ":file"
-        )
+        public static ManifestPolicy CreateDefaultPolicy(string packageName = "*", string selector = ":file")
         {
             return new ManifestPolicy
             {
-                Packages = ImmutableArray.Create(packageId),
+                Packages = ImmutableArray.Create(packageName),
                 Selector = selector,
                 Grant = new PolicyGrant
                 {
-                    FileRead = ImmutableArray.Create("/app/data/*"),
-                    FileWrite = ImmutableArray<string>.Empty,
-                    Network = ImmutableArray<string>.Empty,
-                    Roles = ImmutableArray<string>.Empty,
-                    Capabilities = ImmutableArray<string>.Empty,
+                    Modules = ImmutableArray.Create("basic", "string")
                 },
                 Restrict = new PolicyRestrictions
                 {
-                    MaxMemory = "64MB",
-                    Timeout = "30s",
-                    Deny = ImmutableArray<string>.Empty,
-                    InheritFromFile = true,
-                },
-                DenyIfSignedBy = ImmutableArray<string>.Empty,
-                DenyAll = false,
-            };
-        }
-
-        /// <summary>
-        /// Creates a restrictive policy that denies execution
-        /// </summary>
-        public static ManifestPolicy CreateRestrictivePolicy(string packageId)
-        {
-            return new ManifestPolicy
-            {
-                Packages = ImmutableArray.Create(packageId),
-                Selector = ":file",
-                Grant = new PolicyGrant() { Modules = ImmutableArray.Create("basic") },
-                Restrict = new PolicyRestrictions
-                {
-                    MaxMemory = "1MB",
-                    Timeout = "1s",
-                    Deny = ImmutableArray.Create("eval", "io", "network"),
-                    InheritFromFile = false,
-                },
-                DenyIfSignedBy = ImmutableArray<string>.Empty,
-                DenyAll = true,
+                    MaxMemory = "50MB",
+                    Timeout = "10s"
+                }
             };
         }
 
         /// <summary>
         /// Creates a permissive policy for testing
         /// </summary>
-        public static ManifestPolicy CreatePermissivePolicy(string packageId)
+        public static ManifestPolicy CreatePermissivePolicy(string packageName = "*", string selector = ":file")
         {
-            return new ManifestPolicy
+            var basePolicy = CreateDefaultPolicy(packageName, selector);
+            return basePolicy with
             {
-                Packages = ImmutableArray.Create(packageId),
-                Selector = ":file",
-                Grant = new PolicyGrant
+                Grant = basePolicy.Grant with
                 {
-                    FileRead = ImmutableArray.Create("/**"),
-                    FileWrite = ImmutableArray.Create("/temp/**"),
-                    Network = ImmutableArray.Create("*"),
-                    Roles = ImmutableArray.Create("admin"),
-                    Capabilities = ImmutableArray.Create("eval", "reflection", "io", "network"),
+                    Capabilities = ImmutableArray.Create("FileRead", "FileWrite"),
+                    Modules = ImmutableArray.Create("basic", "string", "math")
                 },
-                Restrict = new PolicyRestrictions
+                Restrict = basePolicy.Restrict with
                 {
-                    MaxMemory = "1GB",
-                    Timeout = "10m",
-                    Deny = ImmutableArray<string>.Empty,
-                    InheritFromFile = true,
-                },
-                DenyIfSignedBy = ImmutableArray<string>.Empty,
-                DenyAll = false,
+                    MaxMemory = "100MB",
+                    Timeout = "30s"
+                }
             };
         }
 
         /// <summary>
-        /// Creates a test package with specified files
+        /// Creates a restrictive policy for testing
+        /// </summary>
+        public static ManifestPolicy CreateRestrictivePolicy(string packageName = "*", string selector = ":file")
+        {
+            var basePolicy = CreateDefaultPolicy(packageName, selector);
+            return basePolicy with
+            {
+                Grant = basePolicy.Grant with
+                {
+                    Modules = ImmutableArray.Create("basic")
+                },
+                Restrict = basePolicy.Restrict with
+                {
+                    MaxMemory = "10MB",
+                    Timeout = "5s"
+                }
+            };
+        }
+
+        /// <summary>
+        /// Creates test files dictionary for manifest
+        /// </summary>
+        public static ImmutableDictionary<string, string> CreateTestFiles(params (string fileName, string hash)[] files)
+        {
+            var builder = ImmutableDictionary.CreateBuilder<string, string>();
+            foreach (var (fileName, hash) in files)
+            {
+                builder[fileName] = hash.StartsWith("sha256:") ? hash : $"sha256:{hash}";
+            }
+            return builder.ToImmutable();
+        }
+
+        /// <summary>
+        /// Creates a test package for manifest testing
         /// </summary>
         public static ManifestPackage CreateTestPackage(
-            string name = "Test Package",
+            string packageName = "TestPackage",
             string version = "1.0.0",
             string description = "Test package",
-            ImmutableDictionary<string, string>? files = null
-        )
+            ImmutableDictionary<string, string> files = default)
         {
-            files ??= ImmutableDictionary
-                .Create<string, string>()
-                .Add("test.lua", "sha256:test-file-hash");
+            if (files == null || files.IsEmpty)
+            {
+                files = ImmutableDictionary<string, string>.Empty.Add("test.lua", "sha256:test");
+            }
 
             return new ManifestPackage
             {
                 Files = files,
                 Metadata = new PackageMetadata
                 {
-                    Name = name,
+                    Name = packageName,
                     Version = version,
-                    Description = description,
-                },
+                    Description = description
+                }
             };
         }
 
         /// <summary>
-        /// Creates a legacy V1.0 compatible manifest identity for testing
-        /// </summary>
-        public static SolarSharp.Interpreter.Security.ScriptIdentityInfo CreateV2IdentityInfo(
-            string name = "Test Script",
-            string version = "1.0.0",
-            string description = "Test script description",
-            string publisher = "Test Publisher"
-        )
-        {
-            return new SolarSharp.Interpreter.Security.ScriptIdentityInfo
-            {
-                Name = name,
-                Version = version,
-            };
-        }
-
-        /// <summary>
-        /// Creates files dictionary for testing
-        /// </summary>
-        public static ImmutableDictionary<string, string> CreateTestFiles(
-            params (string path, string hash)[] files
-        )
-        {
-            var builder = ImmutableDictionary.CreateBuilder<string, string>();
-            foreach (var (path, hash) in files)
-            {
-                var fullHash = hash.StartsWith("sha256:") ? hash : $"sha256:{hash}";
-                builder.Add(path, fullHash);
-            }
-            return builder.ToImmutable();
-        }
-
-        /// <summary>
-        /// Creates a security policy dictionary for V1.0 compatibility
-        /// </summary>
-        public static ImmutableDictionary<string, SecurityPolicy> CreateLegacyPolicyDefinitions(
-            params (string name, SecurityPolicy policy)[] policies
-        )
-        {
-            var builder = ImmutableDictionary.CreateBuilder<string, SecurityPolicy>();
-            foreach (var (name, policy) in policies)
-            {
-                builder.Add(name, policy);
-            }
-            return builder.ToImmutable();
-        }
-
-        /// <summary>
-        /// Creates a file policies mapping for V1.0 compatibility
-        /// </summary>
-        public static ImmutableDictionary<string, string> CreateLegacyFilePolicies(
-            params (string filePattern, string policyName)[] mappings
-        )
-        {
-            var builder = ImmutableDictionary.CreateBuilder<string, string>();
-            foreach (var (filePattern, policyName) in mappings)
-            {
-                builder.Add(filePattern, policyName);
-            }
-            return builder.ToImmutable();
-        }
-
-        /// <summary>
-        /// Gets a default test public key in PEM format for manifest signing tests
+        /// Gets a test public key for testing
         /// </summary>
         public static string GetTestPublicKey()
         {
-            return @"-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0vx7agoebGcQSuuPiLJX
-ZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tS
-oc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt
-7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0
-zgdAZHzu6qMQvRL5hajrn1n91CbOpbISO3-61FnQwB_h3BnyGYCtF3MQ_Bz8xgH1
-5uq6O1P9_D5WTsQ0QyLvqI3bYhWEKk5Pr5vZmWqKKqQKhP0nHKRl2RbdXKBCTwaq
-JQIDAQAB
------END PUBLIC KEY-----";
+            return "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----";
+        }
+
+        /// <summary>
+        /// Creates a deny-all policy for testing
+        /// </summary>
+        public static ManifestPolicy CreateDenyAllPolicy(string packageName = "*", string selector = ":file")
+        {
+            return new ManifestPolicy
+            {
+                Packages = ImmutableArray.Create(packageName),
+                Selector = selector,
+                DenyAll = true,
+                Grant = new PolicyGrant(),
+                Restrict = new PolicyRestrictions()
+            };
         }
     }
 }

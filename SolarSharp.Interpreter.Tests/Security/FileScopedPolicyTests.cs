@@ -48,12 +48,12 @@ namespace SolarSharp.Interpreter.Tests.Security
                 Assert.That(signedBlock.Packages.Count, Is.EqualTo(1));
                 Assert.That(signedBlock.Policies.Length, Is.EqualTo(2));
 
-                // Test legacy compatibility works
-                var legacyFilePolicies = manifest.FilePolicies;
+                // Test V2.0 structure has files
+                var firstPackage = signedBlock.Packages.FirstOrDefault();
                 Assert.That(
-                    legacyFilePolicies.Count,
+                    firstPackage.Value?.Files.Count,
                     Is.GreaterThan(0),
-                    "Legacy file policies should be available"
+                    "Package should contain files"
                 );
             });
         }
@@ -179,15 +179,14 @@ namespace SolarSharp.Interpreter.Tests.Security
             );
 
             // Verify that eval policy is more restrictive
-            var legacyPolicies = manifest.PolicyDefinitions;
+            var policies = manifest.SignedContent[0].Policies;
             Assert.That(
-                legacyPolicies.Count,
+                policies.Length,
                 Is.GreaterThan(0),
-                "Should have legacy policy definitions"
+                "Should have policy definitions"
             );
 
             // Verify V2.0 structure
-            var policies = manifest.SignedContent[0].Policies;
             var filePolicy = policies.FirstOrDefault(p => p.Selector == ":file");
             var evalPolicy = policies.FirstOrDefault(p => p.Selector == ":eval");
 
@@ -250,12 +249,12 @@ namespace SolarSharp.Interpreter.Tests.Security
                 var signedBlock = manifest.SignedContent[0];
                 Assert.That(signedBlock.Policies.Length, Is.EqualTo(3));
 
-                // Test legacy compatibility for FilePolicies
-                var legacyFilePolicies = manifest.FilePolicies;
+                // Test V2.0 structure for files
+                var firstPackage = manifest.SignedContent[0].Packages.FirstOrDefault();
                 Assert.That(
-                    legacyFilePolicies.Count,
+                    firstPackage.Value?.Files.Count,
                     Is.GreaterThan(0),
-                    "Legacy file policies should be available"
+                    "Package should contain files"
                 );
             });
         }
@@ -416,7 +415,7 @@ namespace SolarSharp.Interpreter.Tests.Security
         private static int GetSpecificity(string pattern)
         {
             // More sophisticated specificity calculation for tests
-            int specificity = 0;
+            var specificity = 0;
 
             // Base specificity
             if (pattern == "*")

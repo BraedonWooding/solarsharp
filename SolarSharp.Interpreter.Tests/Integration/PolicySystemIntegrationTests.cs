@@ -13,6 +13,7 @@ using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
 using SolarSharp.Interpreter.Security.Identity;
 using SolarSharp.Interpreter.Security.Manifests;
+using SolarSharp.Interpreter.Tests.TestHelpers;
 
 namespace SolarSharp.Interpreter.Tests.Integration
 {
@@ -407,7 +408,7 @@ return count
             // Case 1: Signed script in restricted path
             // Signature policy wins over path policy
             var context1 = CreateTestContext(
-                CertificateManager.ParseHexToken("aabbccddaabbccddaabbccddaabbccdd"),
+                Convert.FromHexString("aabbccddaabbccddaabbccddaabbccdd"),
                 "/restricted/script.lua",
                 manifest
             );
@@ -432,7 +433,7 @@ return count
             // Case 2: Unsigned script in restricted path
             // No signature match, so uses path policy
             var context2 = CreateTestContext(
-                CertificateManager.ParseHexToken("00000000000000000000000000000000"),
+                Convert.FromHexString("00000000000000000000000000000000"),
                 "/restricted/script.lua",
                 manifest
             );
@@ -447,14 +448,14 @@ return count
                 );
             Assert.Multiple(() =>
             {
-                Assert.That(policy2.Name.GetValueOrDefault(), Is.EqualTo("Path[/restricted]"));
+                Assert.That(policy2.Name.GetValueOrDefault(), Is.EqualTo("Path[/restricted/*]"));
                 Assert.That(policy2.TimeoutMs, Is.EqualTo(10_000)); // Gets path timeout
             });
 
             // Case 3: Unsigned script in unrestricted path
             // No signature or path match, uses fallback
             var context3 = CreateTestContext(
-                CertificateManager.ParseHexToken("00000000000000000000000000000000"),
+                Convert.FromHexString("00000000000000000000000000000000"),
                 "/other/script.lua",
                 manifest
             );
@@ -485,8 +486,8 @@ return count
         )
         {
             var identity = new ScriptIdentity(
-                manifest.Identity.Name,
-                NuGetVersion.Parse(manifest.Identity.Version),
+                manifest.GetTestIdentity().Name,
+                NuGetVersion.Parse(manifest.GetTestIdentity().Version),
                 publicKeyToken
             );
 

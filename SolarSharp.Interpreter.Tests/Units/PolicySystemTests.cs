@@ -317,8 +317,6 @@ namespace SolarSharp.Interpreter.Tests.Units
                 packageName: "TestManifest",
                 packageVersion: "1.0.0",
                 packageDescription: "Test manifest for policy application",
-                keyId: "sha256:a1b2c3d4e5f67890a1b2c3d4e5f67890",
-                signature: "test-signature",
                 files: ManifestTestHelpers.CreateTestFiles(("api/test.lua", "api-hash")),
                 policies: ImmutableArray.Create(apiPolicy, evalPolicy)
             );

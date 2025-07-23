@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.FileSystemGlobbing;
 using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security.Manifests;
 
 namespace SolarSharp.Interpreter.Security
@@ -79,11 +80,9 @@ namespace SolarSharp.Interpreter.Security
                 // Use hierarchy: signature > path > unsigned > fallback
                 
                 // 1. Check for specific signature policy (highest precedence)
-                if (context.Identity.HasValue)
+                if (context.Identity.HasValue && context.Identity.Value.PublicKeyToken != null && context.Identity.Value.PublicKeyToken.Length > 0)
                 {
-                    var publicKeyToken = CertificateManager.TokenToHex(
-                        context.Identity.Value.PublicKeyToken
-                    );
+                    var publicKeyToken = BitConverter.ToString(context.Identity.Value.PublicKeyToken).Replace("-", "");
                     var signaturePolicy = _signatureRules.FindPolicy(publicKeyToken);
                     if (signaturePolicy != null)
                     {
@@ -150,8 +149,8 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         private string CreateCacheKey(LuaExecutionContext context)
         {
-            var token = context.Identity.HasValue
-                ? CertificateManager.TokenToHex(context.Identity.Value.PublicKeyToken)
+            var token = context.Identity.HasValue && context.Identity.Value.PublicKeyToken != null && context.Identity.Value.PublicKeyToken.Length > 0
+                ? BitConverter.ToString(context.Identity.Value.PublicKeyToken).Replace("-", "")
                 : "no-identity";
             var manifestHash = _manifestRules != null ? _manifestRules.GetHashCode() : 0;
             return $"{token}:{context.SourceFile}:{manifestHash}";
@@ -173,10 +172,26 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     internal sealed class CompiledSignatureRules
     {
+        /// <summary>
+        /// Immutable dictionary mapping token strings to their associated security policies,
+        /// enabling fast lookup of security rules based on provided tokens.
+        /// </summary>
         private readonly ImmutableDictionary<string, SecurityPolicy> _tokenToPolicyMap;
+
+        /// <summary>
+        /// Represents the default security policy to apply when no specific token-based policy is matched.
+        /// </summary>
         private readonly SecurityPolicy _unsignedPolicy;
+
+        /// <summary>
+        /// Indicates whether any token-based security policies are defined.
+        /// </summary>
         private readonly bool _hasAnyTokenPolicies;
 
+        /// <summary>
+        /// Provides a set of compiled rules for mapping signatures to their respective security policies,
+        /// optimizing policy lookup and enforcement for enhanced performance and accuracy.
+        /// </summary>
         public CompiledSignatureRules(IReadOnlyDictionary<string, SecurityPolicy> signaturePolicies)
         {
             var builder = ImmutableDictionary.CreateBuilder<string, SecurityPolicy>();
@@ -199,16 +214,16 @@ namespace SolarSharp.Interpreter.Security
             _hasAnyTokenPolicies = _tokenToPolicyMap.Count > 0;
         }
 
+        /// <summary>
+        /// Finds a specific security policy associated with the given public key token.
+        /// </summary>
+        /// <param name="publicKeyToken">The public key token used to identify and retrieve the security policy.</param>
+        /// <returns>The associated <see cref="SecurityPolicy"/> for the provided public key token, or the default unsigned policy if no matching policy exists.</returns>
         public SecurityPolicy FindPolicy(string publicKeyToken)
         {
             // Fast path: if no token policies exist, return unsigned immediately
-            if (!_hasAnyTokenPolicies)
-                return _unsignedPolicy;
+            return !_hasAnyTokenPolicies ? _unsignedPolicy : CollectionExtensions.GetValueOrDefault(_tokenToPolicyMap, publicKeyToken, _unsignedPolicy);
 
-            if (_tokenToPolicyMap.TryGetValue(publicKeyToken, out var policy))
-                return policy;
-
-            return _unsignedPolicy;
         }
     }
 
@@ -247,15 +262,8 @@ namespace SolarSharp.Interpreter.Security
 
             var normalizedPath = NormalizePath(sourceFile);
 
-            foreach (var rule in _rules)
-            {
-                if (IsMatch(rule, normalizedPath))
-                {
-                    return rule.Policy;
-                }
-            }
+            return (from rule in _rules where IsMatch(rule, normalizedPath) select rule.Policy).FirstOrDefault();
 
-            return null;
         }
 
         /// <summary>
@@ -270,13 +278,7 @@ namespace SolarSharp.Interpreter.Security
 
             var normalizedPath = NormalizePath(sourceFile);
 
-            foreach (var rule in _rules)
-            {
-                if (IsMatch(rule, normalizedPath))
-                {
-                    matchingPolicies.Add(rule.Policy.WithName($"Path[{rule.Pattern}]"));
-                }
-            }
+            matchingPolicies.AddRange(from rule in _rules where IsMatch(rule, normalizedPath) select rule.Policy.WithName($"Path[{rule.Pattern}]"));
 
             return matchingPolicies;
         }
@@ -291,15 +293,8 @@ namespace SolarSharp.Interpreter.Security
 
             var normalizedPath = NormalizePath(sourceFile);
 
-            foreach (var rule in _rules)
-            {
-                if (IsMatch(rule, normalizedPath))
-                {
-                    return rule.Pattern;
-                }
-            }
+            return (from rule in _rules where IsMatch(rule, normalizedPath) select rule.Pattern).FirstOrDefault();
 
-            return null;
         }
 
         /// <summary>
@@ -400,126 +395,225 @@ namespace SolarSharp.Interpreter.Security
 
         public CompiledManifestRules(Manifest manifest)
         {
-            var builder = ImmutableArray.CreateBuilder<CompiledScopeRule>();
+            var rulesBuilder = ImmutableArray.CreateBuilder<CompiledScopeRule>();
+            var policiesBuilder = ImmutableDictionary.CreateBuilder<string, SecurityPolicy>();
 
-            // For V2.0 manifests, we use the legacy Policy property which extracts
-            // the first policy from the first signed content block
-            if (manifest.Policy != null)
+            // Process V2.0 signed content blocks
+            if (manifest.HasSignedContent)
             {
-                // Create a single catch-all rule that applies the manifest policy to all files
-                var fileMatcher = new Matcher();
-                fileMatcher.AddInclude("**/*");
-
-                var evalMatcher = new Matcher();
-                evalMatcher.AddInclude("**/*");
-
-                builder.Add(
-                    new CompiledScopeRule(
-                        Pattern: "**/*",
-                        PolicyName: "manifest-policy",
-                        FileMatcher: fileMatcher,
-                        EvalMatcher: evalMatcher,
-                        AppliesToFile: true,
-                        AppliesToEval: true
-                    )
-                );
-
-                _policyDefinitions = ImmutableDictionary<string, SecurityPolicy>.Empty.Add(
-                    "manifest-policy",
-                    manifest.Policy
-                );
-            }
-            else
-            {
-                _policyDefinitions = ImmutableDictionary<string, SecurityPolicy>.Empty;
-            }
-
-            // TODO: V2.0 - Process policies from signed content blocks
-            // Disabled - V1 legacy code
-            /*
-            if (manifest.FilePolicies is { Count: > 0 })
-            {
-                foreach (var kvp in manifest.FilePolicies)
+                int blockIndex = 0;
+                foreach (var block in manifest.SignedContent)
                 {
-                    var pattern = kvp.Key;
-                    var policyName = kvp.Value;
-                    
-                    var isEvalPattern = pattern.EndsWith(":eval");
-                    var fileMatcher = new Matcher();
-                    var evalMatcher = new Matcher();
-                    
-                    if (isEvalPattern)
+                    // Process each policy in the block
+                    int policyIndex = 0;
+                    foreach (var policy in block.Policies)
                     {
-                        // This is an eval-specific pattern
-                        evalMatcher.AddInclude(pattern.Replace(":eval", ""));
-                        builder.Add(
-                            new CompiledScopeRule(
-                                pattern,
-                                policyName,
-                                fileMatcher,
-                                evalMatcher,
-                                false, // Doesn't apply to regular files
-                                true   // Applies to eval contexts
-                            )
-                        );
-                    }
-                    else
-                    {
-                        // This pattern applies to regular files
-                        fileMatcher.AddInclude(pattern);
-                        evalMatcher.AddInclude(pattern); // Eval contexts use the same pattern for filename matching
+                        var policyName = $"block-{blockIndex}-policy-{policyIndex}";
                         
-                        builder.Add(
-                            new CompiledScopeRule(
-                                pattern,
-                                policyName,
-                                fileMatcher,
-                                evalMatcher,
-                                true,  // Applies to regular files
-                                true   // Also applies to eval contexts
-                            )
-                        );
+                        // Convert ManifestPolicy to SecurityPolicy
+                        var securityPolicy = ConvertManifestPolicyToSecurityPolicy(policy);
+                        policiesBuilder[policyName] = securityPolicy;
+                        
+                        // Create rules for each package this policy applies to
+                        foreach (var packageId in policy.Packages)
+                        {
+                            // Get all files in this package from the same block
+                            if (packageId == "*")
+                            {
+                                // Apply to all packages in this block
+                                foreach (var pkg in block.Packages)
+                                {
+                                    CreateRulesForPackage(pkg.Key, pkg.Value, policy, policyName, rulesBuilder);
+                                }
+                            }
+                            else if (block.Packages.TryGetValue(packageId, out var package))
+                            {
+                                CreateRulesForPackage(packageId, package, policy, policyName, rulesBuilder);
+                            }
+                        }
+                        policyIndex++;
                     }
+                    blockIndex++;
                 }
             }
-            */
+            
 
-            // TODO: V2.0 - Process files from signed content blocks
-            // Disabled - V1 legacy code
-            /*
-            if (manifest.Files is { Count: > 0 })
+            _scopeRules = rulesBuilder.ToImmutable();
+            _policyDefinitions = policiesBuilder.ToImmutable();
+        }
+        
+        private void CreateRulesForPackage(
+            string packageId,
+            ManifestPackage package,
+            ManifestPolicy policy,
+            string policyName,
+            ImmutableArray<CompiledScopeRule>.Builder rulesBuilder)
+        {
+            // Create rules for each file in the package
+            foreach (var fileName in package.Files.Keys)
             {
-                foreach (var entry in manifest.Files.Values)
+                var isEvalSelector = policy.Selector == ":eval";
+                var fileMatcher = new Matcher();
+                var evalMatcher = new Matcher();
+                
+                if (isEvalSelector)
                 {
-                    var filePattern = entry.Pattern;
-                    var evalPattern = entry.Pattern.EndsWith(":eval")
-                        ? entry.Pattern
-                        : $"{entry.Pattern}:eval";
-
-                    var fileMatcher = new Matcher();
-                    fileMatcher.AddInclude(filePattern);
-
-                    var evalMatcher = new Matcher();
-                    evalMatcher.AddInclude(evalPattern);
-
-                    builder.Add(
+                    // This policy only applies to eval contexts for this file
+                    evalMatcher.AddInclude(fileName);
+                    rulesBuilder.Add(
                         new CompiledScopeRule(
-                            entry.Pattern,
-                            "FilePolicy", // Use a default policy name since we have the actual policy
+                            $"{fileName}:eval",
+                            policyName,
                             fileMatcher,
                             evalMatcher,
-                            true, // Applies to file by default
-                            false
+                            false, // Doesn't apply to regular files
+                            true   // Applies to eval contexts
                         )
-                    ); // Doesn't apply to eval by default
+                    );
+                }
+                else
+                {
+                    // This policy applies to regular file access
+                    fileMatcher.AddInclude(fileName);
+                    // Also apply to eval contexts unless selector is ":file" only
+                    if (policy.Selector == ":file" || string.IsNullOrEmpty(policy.Selector))
+                    {
+                        evalMatcher.AddInclude(fileName);
+                    }
+                    
+                    rulesBuilder.Add(
+                        new CompiledScopeRule(
+                            fileName,
+                            policyName,
+                            fileMatcher,
+                            evalMatcher,
+                            true,  // Applies to regular files
+                            policy.Selector != ":file" // Also applies to eval if not file-only
+                        )
+                    );
                 }
             }
-            */
-
-            _scopeRules = builder.ToImmutable();
-            // _policyDefinitions is already set above when manifest.Policy is available
+        }
+        
+        private SecurityPolicy ConvertManifestPolicyToSecurityPolicy(ManifestPolicy policy)
+        {
+            // Handle deny-all policies
+            if (policy.DenyAll)
+            {
+                return SecurityPolicyBuilder.CreateDenyAll();
+            }
+            
+            // Extract capabilities
+            var capabilities = ScriptCapabilities.None;
+            foreach (var cap in policy.Grant.Capabilities)
+            {
+                if (Enum.TryParse<ScriptCapabilities>(cap, true, out var parsedCap))
+                    capabilities |= parsedCap;
+            }
+            
+            // Extract modules  
+            var modules = CoreModules.None;
+            foreach (var mod in policy.Grant.Modules)
+            {
+                if (Enum.TryParse<CoreModules>(mod, true, out var parsedMod))
+                    modules |= parsedMod;
+            }
+            
+            // Parse timeout from string format
+            var timeoutMs = -1; // Default unlimited if not specified
+            if (!string.IsNullOrEmpty(policy.Restrict.Timeout))
+            {
+                timeoutMs = ParseTimeoutString(policy.Restrict.Timeout);
+            }
+            
+            // Parse memory from string format
+            var memoryMb = -1; // Default unlimited if not specified
+            if (!string.IsNullOrEmpty(policy.Restrict.MaxMemory))
+            {
+                memoryMb = ParseMemoryString(policy.Restrict.MaxMemory);
+            }
+            
+            return new SecurityPolicy
+            {
+                AllowExecution = !policy.DenyAll,
+                Capabilities = capabilities,
+                AllowedModules = modules,
+                TimeoutMs = timeoutMs,
+                MaxMemoryMB = memoryMb,
+                // File access permissions are set via FilePermissions dictionary
+                // TODO: Convert Grant.FileRead/FileWrite arrays to FilePermissions entries
+            };
+        }
+        
+        private int ParseTimeoutString(string timeout)
+        {
+            var normalized = timeout.ToLowerInvariant().Trim();
+            
+            // Handle TimeSpan format (00:00:00.00)
+            if (normalized.Contains(':'))
+            {
+                if (TimeSpan.TryParse(normalized, out var timespan))
+                {
+                    return (int)timespan.TotalMilliseconds;
+                }
+                throw new ManifestFormatException($"Invalid timeout format: '{timeout}'. Expected format: HH:MM:SS or value with suffix (ms, s, m)", "ParseTimeout");
+            }
+            
+            // Handle suffix formats
+            if (normalized.EndsWith("ms"))
+            {
+                if (int.TryParse(normalized.Replace("ms", ""), out var ms))
+                    return ms;
+                throw new ManifestFormatException($"Invalid timeout format: '{timeout}'. Could not parse milliseconds value", "ParseTimeout");
+            }
+            else if (normalized.EndsWith("s"))
+            {
+                if (int.TryParse(normalized.Replace("s", ""), out var seconds))
+                    return seconds * 1000;
+                throw new ManifestFormatException($"Invalid timeout format: '{timeout}'. Could not parse seconds value", "ParseTimeout");
+            }
+            else if (normalized.EndsWith("m"))
+            {
+                if (int.TryParse(normalized.Replace("m", ""), out var minutes))
+                    return minutes * 60 * 1000;
+                throw new ManifestFormatException($"Invalid timeout format: '{timeout}'. Could not parse minutes value", "ParseTimeout");
+            }
+            
+            throw new ManifestFormatException($"Invalid timeout format: '{timeout}'. Expected suffix: ms, s, or m", "ParseTimeout");
+        }
+        
+        private int ParseMemoryString(string memory)
+        {
+            var normalized = memory.ToUpperInvariant().Trim();
+            
+            if (normalized.EndsWith("KB"))
+            {
+                if (int.TryParse(normalized.Replace("KB", ""), out var kb))
+                    return kb / 1024; // Convert to MB
+                throw new ManifestFormatException($"Invalid memory format: '{memory}'. Could not parse KB value", "ParseMemory");
+            }
+            else if (normalized.EndsWith("MB"))
+            {
+                if (int.TryParse(normalized.Replace("MB", ""), out var mb))
+                    return mb;
+                throw new ManifestFormatException($"Invalid memory format: '{memory}'. Could not parse MB value", "ParseMemory");
+            }
+            else if (normalized.EndsWith("GB"))
+            {
+                if (int.TryParse(normalized.Replace("GB", ""), out var gb))
+                    return gb * 1024;
+                throw new ManifestFormatException($"Invalid memory format: '{memory}'. Could not parse GB value", "ParseMemory");
+            }
+            
+            throw new ManifestFormatException($"Invalid memory format: '{memory}'. Expected suffix: KB, MB, or GB", "ParseMemory");
         }
 
+        /// <summary>
+        /// Applies manifest-specific policies to a given default security policy based on the execution context.
+        /// </summary>
+        /// <param name="defaultPolicy">The default security policy to be modified or augmented by the manifest rules.</param>
+        /// <param name="context">The execution context containing information about the script's source and execution details.</param>
+        /// <returns>A new or modified SecurityPolicy instance incorporating any applicable manifest-specific rules.</returns>
         public SecurityPolicy ApplyManifestPolicies(
             SecurityPolicy defaultPolicy,
             LuaExecutionContext context
@@ -539,28 +633,30 @@ namespace SolarSharp.Interpreter.Security
             {
                 var shouldApply = isEvalContext ? rule.AppliesToEval : rule.AppliesToFile;
 
-                if (shouldApply)
+                if (!shouldApply)
                 {
-                    var matcher = isEvalContext ? rule.EvalMatcher : rule.FileMatcher;
+                    continue;
+                }
 
-                    // Use the same matching approach as CompiledPathRules
-                    var result = matcher.Match(".", pathForMatching);
+                var matcher = isEvalContext ? rule.EvalMatcher : rule.FileMatcher;
 
-                    // For simple patterns like "*.lua", also try matching just the filename
-                    if (!result.HasMatches && !rule.Pattern.Contains("/"))
-                    {
-                        var fileName = Path.GetFileName(pathForMatching);
-                        result = matcher.Match(".", fileName);
-                    }
+                // Use the same matching approach as CompiledPathRules
+                var result = matcher.Match(".", pathForMatching);
 
-                    if (
-                        result.HasMatches
-                        && _policyDefinitions.TryGetValue(rule.PolicyName, out var policy)
-                    )
-                    {
-                        // Apply manifest policy by intersection (most restrictive wins)
-                        effectivePolicy = effectivePolicy.IntersectWith(policy);
-                    }
+                // For simple patterns like "*.lua", also try matching just the filename
+                if (!result.HasMatches && !rule.Pattern.Contains("/"))
+                {
+                    var fileName = Path.GetFileName(pathForMatching);
+                    result = matcher.Match(".", fileName);
+                }
+
+                if (
+                    result.HasMatches
+                    && _policyDefinitions.TryGetValue(rule.PolicyName, out var policy)
+                )
+                {
+                    // Apply manifest policy by intersection (most restrictive wins)
+                    effectivePolicy = effectivePolicy.IntersectWith(policy);
                 }
             }
 
@@ -583,20 +679,56 @@ namespace SolarSharp.Interpreter.Security
     );
 
     /// <summary>
-    /// Performance statistics for compiled policy rules
+    /// Performance statistics for evaluating and resolving compiled policy rules.
+    /// Tracks metrics such as cache hits, misses, clears, and resolution times
+    /// to provide insight into the efficiency of policy rule executions.
     /// </summary>
     public sealed class CompiledPolicyStats
     {
         private TimeSpan _totalResolutionTime = TimeSpan.Zero;
 
+        /// <summary>
+        /// Tracks the number of successful cache hits during the evaluation of
+        /// compiled policy rules. A cache hit occurs when a policy resolution
+        /// operation retrieves a previously computed result from the cache,
+        /// improving overall performance by avoiding redundant computation.
+        /// </summary>
         public int CacheHits { get; private set; }
+
+        /// <summary>
+        /// Represents the number of cache lookup attempts that resulted in a cache miss.
+        /// </summary>
         public int CacheMisses { get; private set; }
+
+        /// <summary>
+        /// Tracks the number of times the policy cache has been cleared during
+        /// the evaluation lifecycle. This metric is useful for understanding
+        /// how frequently cached data is reset, which may impact cache efficiency
+        /// and overall performance of policy resolution.
+        /// </summary>
         public int CacheClears { get; private set; }
+
+        /// <summary>
+        /// Tracks the total number of policy resolutions performed.
+        /// This metric reflects how many times policy rules have been evaluated
+        /// and resolved, providing a measure of resolution activity.
+        /// </summary>
         public int Resolutions { get; private set; }
+
+        /// <summary>
+        /// Represents the cumulative time spent resolving policy rules.
+        /// This property aggregates the total duration of all resolution operations,
+        /// providing insight into the overall performance of policy evaluation.
+        /// </summary>
         public TimeSpan TotalResolutionTime
         {
             get { return _totalResolutionTime; }
         }
+        /// <summary>
+        /// Represents the average time taken to resolve policy rules.
+        /// Computed as the total resolution time divided by the number of resolutions.
+        /// If no resolutions have occurred, this value is zero.
+        /// </summary>
         public TimeSpan AverageResolutionTime
         {
             get
@@ -606,32 +738,61 @@ namespace SolarSharp.Interpreter.Security
                     : TimeSpan.Zero;
             }
         }
+        /// <summary>
+        /// Represents the ratio of cache hits to total resolutions performed.
+        /// Provides a measure of the effectiveness of caching mechanisms for policy rules,
+        /// where higher values indicate better cache utilization.
+        /// </summary>
         public double CacheHitRate
         {
             get { return Resolutions > 0 ? (double)CacheHits / Resolutions : 0.0; }
         }
 
+        /// <summary>
+        /// Increments the count of cache hits in the compiled policy statistics.
+        /// Tracks the number of times a cache hit occurs during the policy resolution process
+        /// to measure the efficiency of cache utilization.
+        /// </summary>
         internal void RecordCacheHit()
         {
             CacheHits++;
         }
 
+        /// <summary>
+        /// Records a cache miss event to update the statistics tracking system.
+        /// </summary>
         internal void RecordCacheMiss()
         {
             CacheMisses++;
         }
 
+        /// <summary>
+        /// Records an occurrence of a cache clear operation in the policy statistics.
+        /// Updates the internal count of cache clears to reflect this operation.
+        /// </summary>
         internal void RecordCacheClear()
         {
             CacheClears++;
         }
 
+        /// <summary>
+        /// Records the time duration of a policy resolution operation.
+        /// Updates internal metrics to track the number of resolutions
+        /// and the total time spent resolving policies.
+        /// </summary>
+        /// <param name="duration">The duration of the policy resolution to record.</param>
         internal void RecordResolution(TimeSpan duration)
         {
             Resolutions++;
             _totalResolutionTime += duration;
         }
 
+        /// <summary>
+        /// Returns a string that represents the current state of the performance statistics
+        /// for evaluating and resolving compiled policy rules, including resolutions,
+        /// cache hit rate, and average resolution time.
+        /// </summary>
+        /// <returns>A formatted string representation of the performance metrics.</returns>
         public override string ToString()
         {
             return $"Resolutions: {Resolutions}, Cache Hit Rate: {CacheHitRate:P2}, "

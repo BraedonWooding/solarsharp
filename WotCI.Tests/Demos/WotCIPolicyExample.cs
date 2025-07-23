@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using NUnit.Framework;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
@@ -11,6 +12,7 @@ using Org.BouncyCastle.X509;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
 using SolarSharp.Interpreter.Security.Manifests;
+using SolarSharp.Interpreter.Tests.TestHelpers;
 
 namespace WotCI.Tests.Examples
 {
@@ -313,18 +315,18 @@ namespace WotCI.Tests.Examples
             // Demonstrate basic policy structures
 
             // Verify system plugin manifest structure
-            Assert.AreEqual("CoreGameEngine", systemPluginManifest.Identity.Name);
-            Assert.IsTrue(systemPluginManifest.PolicyDefinitions.ContainsKey("engine-startup"));
-            Assert.IsTrue(systemPluginManifest.PolicyDefinitions.ContainsKey("engine-runtime"));
-            Assert.IsTrue(systemPluginManifest.FilePolicies.ContainsKey("init.lua"));
+            Assert.AreEqual("CoreGameEngine", systemPluginManifest.GetFirstPackageName());
+            Assert.IsTrue(systemPluginManifest.SignedContent[0].Policies.Any(p => p.Selector == "engine-startup"));
+            Assert.IsTrue(systemPluginManifest.SignedContent[0].Policies.Any(p => p.Selector == "engine-runtime"));
+            Assert.IsTrue(systemPluginManifest.SignedContent[0].Packages.Values.Any(p => p.Files.ContainsKey("init.lua")));
 
             // Verify partner plugin manifest structure
-            Assert.AreEqual("CombatSystem", partnerPluginManifest.Identity.Name);
-            Assert.IsTrue(partnerPluginManifest.PolicyDefinitions.ContainsKey("combat-handler"));
+            Assert.AreEqual("CombatSystem", partnerPluginManifest.GetFirstPackageName());
+            Assert.IsTrue(partnerPluginManifest.SignedContent[0].Policies.Any(p => p.Selector == "combat-handler"));
 
             // Verify community plugin manifest structure
-            Assert.AreEqual("ChatEmotes", communityPluginManifest.Identity.Name);
-            Assert.IsTrue(communityPluginManifest.PolicyDefinitions.ContainsKey("emote-processor"));
+            Assert.AreEqual("ChatEmotes", communityPluginManifest.GetFirstPackageName());
+            Assert.IsTrue(communityPluginManifest.SignedContent[0].Policies.Any(p => p.Selector == "emote-processor"));
 
             // Verify that policies exist for different trust tiers
             Assert.IsTrue(signaturePolicies.ContainsKey(systemToken));

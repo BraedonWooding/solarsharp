@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
 using NuGet.Versioning;
@@ -98,7 +99,6 @@ namespace WotCI.Tests.Demos
         }
 
         [Category("Demo.Example")]
-        [Category("Demo.Example")]
         [Test]
         public void Demo_PluginWithRestrictedEval_SimplifiedWithoutManifest()
         {
@@ -157,7 +157,6 @@ namespace WotCI.Tests.Demos
         }
 
         [Category("Demo.Example")]
-        [Category("Demo.Example")]
         [Test]
         public void Demo_PluginWithNoEval_SimplifiedWithoutManifest()
         {
@@ -211,7 +210,6 @@ namespace WotCI.Tests.Demos
             Assert.That(exception.Message, Does.Contain("Dynamic code execution is not allowed"));
         }
 
-        [Category("Demo.Example")]
         [Category("Demo.Example")]
         [Test]
         public void Demo_SystemScriptWithUnrestrictedEval()
@@ -387,28 +385,34 @@ namespace WotCI.Tests.Demos
             X509Certificate certificate
         )
         {
-            if (manifest.Identity is null)
+            // Extract package info from V2 manifest
+            var packages = manifest.GetAllPackages().ToList();
+            if (!packages.Any())
                 return Result.Failure<ScriptIdentity, string>(
-                    "Manifest must contain identity section"
+                    "Manifest must contain at least one package"
                 );
 
-            if (string.IsNullOrWhiteSpace(manifest.Identity.Name))
+            var (packageId, package, keyId) = packages.First();
+            var packageName = package?.Metadata?.Name;
+            var packageVersion = package?.Metadata?.Version;
+
+            if (string.IsNullOrWhiteSpace(packageName))
                 return Result.Failure<ScriptIdentity, string>("Script name is required");
 
-            if (string.IsNullOrWhiteSpace(manifest.Identity.Version))
+            if (string.IsNullOrWhiteSpace(packageVersion))
                 return Result.Failure<ScriptIdentity, string>("Script version is required");
 
             // Parse version
-            if (!NuGetVersion.TryParse(manifest.Identity.Version, out var version))
+            if (!NuGetVersion.TryParse(packageVersion, out var version))
                 return Result.Failure<ScriptIdentity, string>(
-                    $"Invalid version format: {manifest.Identity.Version}"
+                    $"Invalid version format: {packageVersion}"
                 );
 
             // Calculate public key token
             var publicKeyToken = CertificateManager.CalculatePublicKeyToken(certificate);
 
             return Result.Success<ScriptIdentity, string>(
-                new ScriptIdentity(manifest.Identity.Name, version, publicKeyToken)
+                new ScriptIdentity(packageName, version, publicKeyToken)
             );
         }
 

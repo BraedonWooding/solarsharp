@@ -61,7 +61,7 @@ namespace SolarSharp.Interpreter.Tests.Security
             Assert.Multiple(() =>
             {
                 Assert.That(results[0].IsSuccess, Is.True);
-                Assert.That(results[0].Manifest?.Identity?.Name, Is.EqualTo("TestApp"));
+                Assert.That(results[0].Manifest?.GetFirstPackageName(), Is.EqualTo("TestApp"));
             });
         }
 
@@ -101,8 +101,9 @@ namespace SolarSharp.Interpreter.Tests.Security
             Assert.That(results.All(r => r.IsSuccess), Is.True);
 
             var names = results
-                .Where(r => r.IsSuccess && r.Manifest?.Identity?.Name != null)
-                .Select(r => r.Manifest.Identity.Name)
+                .Where(r => r.IsSuccess && r.Manifest != null)
+                .Select(r => r.Manifest.GetFirstPackageName())
+                .Where(name => !string.IsNullOrEmpty(name))
                 .OrderBy(n => n)
                 .ToList();
             Assert.That(names, Is.EqualTo(new[] { "Module1", "Module2", "RootApp" }));
@@ -131,8 +132,9 @@ namespace SolarSharp.Interpreter.Tests.Security
             // Should find manifests at depth 1 and 2 only (level0 and level1)
             Assert.That(results, Has.Count.EqualTo(2));
             var names = results
-                .Where(r => r.IsSuccess && r.Manifest?.Identity?.Name != null)
-                .Select(r => r.Manifest.Identity.Name)
+                .Where(r => r.IsSuccess && r.Manifest != null)
+                .Select(r => r.Manifest.GetFirstPackageName())
+                .Where(name => !string.IsNullOrEmpty(name))
                 .OrderBy(n => n)
                 .ToList();
             Assert.That(names, Is.EqualTo(new[] { "Level0", "Level1" }));
@@ -176,8 +178,9 @@ namespace SolarSharp.Interpreter.Tests.Security
             // Should only find Plugin1, not InternalModule since we stop at manifest
             Assert.That(results, Has.Count.EqualTo(1));
             var names = results
-                .Where(r => r.IsSuccess && r.Manifest?.Identity?.Name != null)
-                .Select(r => r.Manifest.Identity.Name)
+                .Where(r => r.IsSuccess && r.Manifest != null)
+                .Select(r => r.Manifest.GetFirstPackageName())
+                .Where(name => !string.IsNullOrEmpty(name))
                 .OrderBy(n => n)
                 .ToList();
             Assert.That(names, Is.EqualTo(new[] { "Plugin1" }));
@@ -225,7 +228,7 @@ namespace SolarSharp.Interpreter.Tests.Security
 
             // Should only find the one in src
             Assert.That(results, Has.Count.EqualTo(1));
-            Assert.That(results[0].Manifest?.Identity?.Name, Is.EqualTo("SrcManifest"));
+            Assert.That(results[0].Manifest?.GetFirstPackageName(), Is.EqualTo("SrcManifest"));
         }
 
         [Category("Manifest.Integration")]
@@ -369,7 +372,7 @@ namespace SolarSharp.Interpreter.Tests.Security
             Assert.Multiple(() =>
             {
                 Assert.That(results[0].IsSuccess, Is.True);
-                Assert.That(results[0].Manifest.Identity.Name, Is.EqualTo("SyncTest"));
+                Assert.That(results[0].Manifest.GetFirstPackageName(), Is.EqualTo("SyncTest"));
             });
         }
 

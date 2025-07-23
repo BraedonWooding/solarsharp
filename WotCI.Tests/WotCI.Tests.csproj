@@ -6,9 +6,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
-    <PackageReference Include="NUnit" Version="3.13.3" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.4.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageReference Include="coverlet.collector" Version="3.2.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -22,5 +22,6 @@
   <ItemGroup>
     <ProjectReference Include="..\WotCI\WotCI.csproj" />
     <ProjectReference Include="..\SolarSharp.Interpreter\SolarSharp.Interpreter.csproj" />
+    <ProjectReference Include="..\SolarSharp.Interpreter.Tests\SolarSharp.Interpreter.Tests.csproj" />
   </ItemGroup>
 </Project>

@@ -71,7 +71,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
             // For now, create a minimal V2.0 manifest structure
             // TODO: This should be enhanced to properly use V2.0 signed content blocks
             // when the V2.0 manifest system is fully implemented
-            return ManifestBuilder.CreateV2Manifest(manifestId);
+            return V2ManifestBuilder.CreateUnsigned(manifestId, "traced-package");
         }
 
         /// <summary>
@@ -174,7 +174,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
         [Obsolete(
             "V1.0 manifest builder methods are not compatible with V2.0 signed content format"
         )]
-        private void AddFileAccessRules(ManifestBuilder builder)
+        private void AddFileAccessRules(object builder)
         {
             // File access rules are now handled through V2.0 signed content blocks
             // This method is kept for legacy compatibility but does nothing

@@ -4,6 +4,7 @@ using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
 using SolarSharp.Interpreter.Security.Manifests;
 using SolarSharp.Interpreter.Security.Manifests.Infrastructure;
+using SolarSharp.Interpreter.Tests.TestHelpers;
 
 namespace SolarSharp.Interpreter.Tests.Units
 {
@@ -116,22 +117,12 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             Assert.IsNotNull(manifest);
 
-            // V2.0 manifests should have a legacy policy conversion that works
-            var legacyPolicy = manifest.Policy;
-            if (legacyPolicy != null)
-            {
-                // The conversion should extract capabilities from the first policy
-                Assert.That(legacyPolicy.Capabilities, Is.EqualTo(ScriptCapabilities.FileWrite));
-            }
-            else
-            {
-                // Alternative approach: test the policies directly from signed content
-                Assert.IsTrue(manifest.SignedContent.Length > 0);
-                var firstBlock = manifest.SignedContent[0];
-                Assert.IsTrue(firstBlock.Policies.Length > 0);
-                var firstPolicy = firstBlock.Policies[0];
-                Assert.Contains("FileWrite", firstPolicy.Grant.Capabilities);
-            }
+            // V2.0 manifests: test the policies directly from signed content
+            Assert.IsTrue(manifest.SignedContent.Length > 0);
+            var firstBlock = manifest.SignedContent[0];
+            Assert.IsTrue(firstBlock.Policies.Length > 0);
+            var firstPolicy = firstBlock.Policies[0];
+            Assert.Contains("FileWrite", firstPolicy.Grant.Capabilities);
         }
 
         [Test]
@@ -176,23 +167,13 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             Assert.IsNotNull(manifest);
 
-            // V2.0 manifests should have a legacy policy conversion that works
-            var legacyPolicy = manifest.Policy;
-            if (legacyPolicy != null)
-            {
-                // The conversion should extract modules from the first policy
-                Assert.That(legacyPolicy.AllowedModules, Is.EqualTo(CoreModules.Basic));
-            }
-            else
-            {
-                // Alternative approach: test the policies directly from signed content
-                Assert.IsTrue(manifest.SignedContent.Length > 0);
-                var firstBlock = manifest.SignedContent[0];
-                Assert.IsTrue(firstBlock.Policies.Length > 0);
-                var firstPolicy = firstBlock.Policies[0];
-                // For V2.0, modules would be in the grant section - this is a placeholder test
-                Assert.IsNotNull(firstPolicy.Grant);
-            }
+            // V2.0 manifests: test the policies directly from signed content
+            Assert.IsTrue(manifest.SignedContent.Length > 0);
+            var firstBlock = manifest.SignedContent[0];
+            Assert.IsTrue(firstBlock.Policies.Length > 0);
+            var firstPolicy = firstBlock.Policies[0];
+            // For V2.0, modules are in the grant section
+            Assert.Contains("basic", firstPolicy.Grant.Modules);
         }
     }
 }
