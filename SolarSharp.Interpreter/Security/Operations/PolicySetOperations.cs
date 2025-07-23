@@ -179,7 +179,7 @@ namespace SolarSharp.Interpreter.Security.Operations
                 }
 
                 // Check if the file part matches
-                bool fileMatches = false;
+                var fileMatches = false;
                 if (filePattern == "*")
                 {
                     fileMatches = true;
@@ -214,7 +214,7 @@ namespace SolarSharp.Interpreter.Security.Operations
                 }
 
                 // Check if the context matches
-                bool contextMatches = false;
+                var contextMatches = false;
                 if (context == "*")
                 {
                     contextMatches = true;

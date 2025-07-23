@@ -372,14 +372,14 @@ namespace SolarSharp.Interpreter.Security.Cryptography
         public static void WarmupPools()
         {
             // Pre-allocate signer objects
-            for (int i = 0; i < 4; i++)
+            for (var i = 0; i < 4; i++)
             {
                 var wrapper = _signerPool.Rent();
                 _signerPool.Return(wrapper);
             }
 
             // Pre-allocate digest objects
-            for (int i = 0; i < 2; i++)
+            for (var i = 0; i < 2; i++)
             {
                 var wrapper = _digestPool.Rent();
                 _digestPool.Return(wrapper);
@@ -400,7 +400,7 @@ namespace SolarSharp.Interpreter.Security.Cryptography
             const string hexChars = "0123456789abcdef";
             var result = new char[bytes.Length * 2];
 
-            for (int i = 0; i < bytes.Length; i++)
+            for (var i = 0; i < bytes.Length; i++)
             {
                 var b = bytes[i];
                 result[i * 2] = hexChars[b >> 4];

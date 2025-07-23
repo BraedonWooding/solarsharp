@@ -42,7 +42,7 @@ namespace SolarSharp.Interpreter.Security.Operations
             // Start with the first policy and compose with the rest
             var result = validPolicies[0];
 
-            for (int i = 1; i < validPolicies.Length; i++)
+            for (var i = 1; i < validPolicies.Length; i++)
             {
                 result = ComposeTwoPolicies(result, validPolicies[i]);
             }

@@ -16,7 +16,7 @@ namespace SolarSharp.Interpreter
         /// <summary>
         /// Maximum memory in megabytes that the script can use
         /// </summary>
-        public int MaxMemoryMB { get; init; } = 50;
+        public int MaxMemoryMb { get; init; } = 50;
 
         /// <summary>
         /// Maximum execution time in milliseconds
@@ -65,8 +65,8 @@ namespace SolarSharp.Interpreter
         /// <exception cref="ArgumentException">Thrown when configuration is invalid</exception>
         public void Validate()
         {
-            if (MaxMemoryMB <= 0)
-                throw new ArgumentException("MaxMemoryMB must be positive", nameof(MaxMemoryMB));
+            if (MaxMemoryMb <= 0)
+                throw new ArgumentException("MaxMemoryMB must be positive", nameof(MaxMemoryMb));
 
             if (TimeoutMs <= 0)
                 throw new ArgumentException("TimeoutMs must be positive", nameof(TimeoutMs));
@@ -84,10 +84,10 @@ namespace SolarSharp.Interpreter
         /// <summary>
         /// Creates a new configuration with the specified maximum memory
         /// </summary>
-        public ScriptConfiguration WithMaxMemory(int maxMemoryMB) =>
+        public ScriptConfiguration WithMaxMemory(int maxMemoryMb) =>
             this with
             {
-                MaxMemoryMB = maxMemoryMB,
+                MaxMemoryMb = maxMemoryMb,
             };
 
         /// <summary>
@@ -175,7 +175,7 @@ namespace SolarSharp.Interpreter
 
             return new ScriptConfiguration
             {
-                MaxMemoryMB = policy.MaxMemoryMB,
+                MaxMemoryMb = policy.MaxMemoryMB,
                 TimeoutMs = policy.TimeoutMs,
                 MaxInstructions = (int)policy.MaxInstructions,
                 MaxCallDepth = policy.MaxCallDepth,

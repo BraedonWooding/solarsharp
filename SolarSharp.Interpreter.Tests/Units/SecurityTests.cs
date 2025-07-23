@@ -118,7 +118,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     - Configuration expression evaluation
         ///     - Any scenario where the script should have zero system access
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestIsolatedLevel_BlocksAllDangerousOperations()
         {
@@ -175,7 +174,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     Note: This test creates a custom configuration similar to DataProcessing
         ///     but without VFS to test the underlying security mechanisms.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestConfigurationLevel_AllowsLimitedFilePermission()
         {
@@ -304,7 +302,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     The test validates the configuration setup but acknowledges the limitation
         ///     rather than incorrectly claiming full security without VFS.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestDataProcessingLevel_AllowsFileReadWrite()
         {
@@ -409,7 +406,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     is triggered quickly and reliably. In production, timeouts would typically
         ///     be much longer (seconds or minutes).
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestExecutionTimeout()
         {
@@ -460,7 +456,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     instruction counting. It's particularly useful in multi-tenant environments
         ///     where fair resource allocation is important.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestInstructionLimit()
         {
@@ -513,7 +508,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     This protection is essential because actual stack overflow would crash
         ///     the entire process, not just the script.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestCallDepthLimit()
         {
@@ -564,7 +558,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     Note: The test sets a high call depth limit first to ensure
         ///     the memory limit is hit before the call depth limit.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestMemoryLimit()
         {
@@ -628,7 +621,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     longer than the configured limit, throwing SecurityException
         ///     before memory is actually allocated.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         [Ignore("MaxStringLength property removed in security refactoring")]
         public void TestStringLengthLimit()
@@ -686,7 +678,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     - Validation after resolving symlinks
         ///     - Checking against allowed directory list
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestPathTraversalBlocked()
         {
@@ -802,7 +793,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     When implemented, the check should occur before loading file content
         ///     to prevent memory allocation for oversized files.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestFileSizeLimit()
         {
@@ -906,7 +896,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     and ensures the emulation layer works before testing it through
         ///     the full Lua script execution pipeline.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestEnvironmentEmulatorDirectly()
         {
@@ -942,7 +931,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     Always use allow-lists (not deny-lists) for environment variables
         ///     to ensure new sensitive variables are blocked by default.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestEnvironmentVariableAccess()
         {
@@ -1009,7 +997,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     Note: Deny-lists should supplement, not replace, allow-lists for
         ///     defense in depth.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestEnvironmentVariableBlacklist()
         {
@@ -1068,7 +1055,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     This is a fundamental security control that prevents access to
         ///     dangerous functionality based on the security level.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestModuleRestrictions()
         {
@@ -1102,7 +1088,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     This API is useful for creating custom security profiles that don't
         ///     exactly match the predefined levels.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestFluentModuleConfiguration()
         {
@@ -1153,7 +1138,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     - Debugging security policy violations
         ///     - Intrusion detection
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestSecurityEventHandling()
         {
@@ -1256,7 +1240,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     This enables administrators to make informed decisions about
         ///     adjusting limits or investigating suspicious activity.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestResourceLimitEvents()
         {
@@ -1320,7 +1303,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     Despite limitations, the test ensures the capability framework is
         ///     properly structured for when full enforcement is available.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestCapabilityChecking()
         {
@@ -1505,7 +1487,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     This test demonstrates the recommended approach for configuring
         ///     security in production applications where full isolation is needed.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestFluentConfiguration()
         {

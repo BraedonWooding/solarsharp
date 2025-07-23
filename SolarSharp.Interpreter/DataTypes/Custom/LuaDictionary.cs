@@ -501,7 +501,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             ConcurrentOperation:
             throw new InvalidOperationException("Concurrent operations not supported");
             ReturnFound:
-            ref TValue value = ref entry.value;
+            ref var value = ref entry.value;
             Return:
             return ref value;
             ReturnNotFound:

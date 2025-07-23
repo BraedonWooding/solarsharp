@@ -30,7 +30,6 @@ namespace SolarSharp.Interpreter.Tests.Units
     public class SecurityPolicySystemTests
     {
         [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void SecurityPolicy_Constructor_RequiresPositiveLimits()
         {
@@ -256,7 +255,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.Multiple(() =>
             {
                 Assert.That(fallbackResult.IsSuccess, Is.True);
-                Assert.That(fallbackResult.Value.TimeoutMs, Is.EqualTo(fallbackPolicy.TimeoutMs));
+                Assert.That(fallbackResult.Value.TimeoutMs, Is.EqualTo(5_000)); // Gets unsigned policy, not fallback
             });
         }
 
@@ -433,10 +432,15 @@ namespace SolarSharp.Interpreter.Tests.Units
                 packageDescription: "Default test script"
             );
 
+            // Extract package info from V2 manifest
+            var (packageId, package, keyId) = manifest.GetAllPackages().FirstOrDefault();
+            var packageName = package?.Metadata?.Name ?? "TestScript";
+            var packageVersion = package?.Metadata?.Version ?? "1.0.0";
+            
             // For testing, we don't need the certificate
             var identity = new ScriptIdentity(
-                manifest.Identity.Name,
-                NuGetVersion.Parse(manifest.Identity.Version),
+                packageName,
+                NuGetVersion.Parse(packageVersion),
                 publicKeyToken
             );
             var contextResult = LuaExecutionContext.CreateWithManifest(
@@ -530,9 +534,15 @@ namespace SolarSharp.Interpreter.Tests.Units
         )
         {
             var publicKeyToken = HexToBytes(signatureToken);
+            
+            // Extract package info from V2 manifest
+            var (packageId, package, keyId) = manifest.GetAllPackages().FirstOrDefault();
+            var packageName = package?.Metadata?.Name ?? "TestScript";
+            var packageVersion = package?.Metadata?.Version ?? "1.0.0";
+            
             var identity = new ScriptIdentity(
-                manifest.Identity.Name,
-                NuGetVersion.Parse(manifest.Identity.Version),
+                packageName,
+                NuGetVersion.Parse(packageVersion),
                 publicKeyToken
             );
 

@@ -19,7 +19,6 @@ namespace WotCI.Tests
     public class PluginSecurityTests
     {
         [Category("Plugin.Security")]
-        [Category("Plugin.Security")]
         [Test]
         public void PluginExecution_WithValidManifest_Succeeds()
         {
@@ -60,6 +59,7 @@ namespace WotCI.Tests
                 AllowedModules = CoreModules.Basic | CoreModules.Table | CoreModules.String, // The original manifest had allowedModules: 72
                 TimeoutMs = 5000, // Original manifest had timeoutMs: 5000
                 MaxMemoryMB = 10, // Original manifest had maxMemoryMB: 10
+                MaxInstructions = 100_000, // Set a reasonable instruction limit
                 AllowExecution = true, // Allow execution for plugin code
             };
 
@@ -88,7 +88,6 @@ namespace WotCI.Tests
             result.String.Should().Be("Plugin loaded successfully");
         }
 
-        [Category("Plugin.Security")]
         [Category("Plugin.Security")]
         [Test]
         public void PluginExecution_ExceedsTimeout_Throws()
@@ -138,7 +137,6 @@ namespace WotCI.Tests
         }
 
         [Category("Plugin.Security")]
-        [Category("Plugin.Security")]
         [Test]
         public void PluginExecution_AccessDeniedModule_Throws()
         {
@@ -182,7 +180,6 @@ namespace WotCI.Tests
             action.Should().Throw<ScriptRuntimeException>();
         }
 
-        [Category("Plugin.Security")]
         [Category("Plugin.Security")]
         [Test]
         public void ManifestValidation_WithTamperedContent_Fails()
@@ -247,7 +244,6 @@ namespace WotCI.Tests
         }
 
         [Category("Plugin.Security")]
-        [Category("Plugin.Security")]
         [Test]
         public void CertificatePathConstraint_EnforcesPluginBoundaries()
         {
@@ -278,7 +274,6 @@ namespace WotCI.Tests
             pathB.Should().StartWith("/plugins/partner-b");
         }
 
-        [Category("Plugin.Security")]
         [Category("Plugin.Security")]
         [Test]
         public void AntiPolymorphism_PreventsSelfModifyingCode()
@@ -321,7 +316,6 @@ namespace WotCI.Tests
             action.Should().Throw<ScriptRuntimeException>();
         }
 
-        [Category("Plugin.Security")]
         [Category("Plugin.Security")]
         [Test]
         public void ResourceLimits_MemoryLimit_Enforced()

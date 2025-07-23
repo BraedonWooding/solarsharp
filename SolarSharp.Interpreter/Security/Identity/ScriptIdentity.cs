@@ -104,10 +104,16 @@ namespace SolarSharp.Interpreter.Security.Identity
 
         public override string ToString()
         {
-            var tokenHex =
-                PublicKeyToken == null || PublicKeyToken.All(b => b == 0)
-                    ? "0000000000000000"
-                    : BitConverter.ToString(PublicKeyToken).Replace("-", "").ToLowerInvariant();
+            var tokenHex = "0000000000000000";
+            if (PublicKeyToken != null && !PublicKeyToken.All(b => b == 0))
+            {
+                var sb = new System.Text.StringBuilder(PublicKeyToken.Length * 2);
+                foreach (var b in PublicKeyToken)
+                {
+                    sb.Append(b.ToString("x2"));
+                }
+                tokenHex = sb.ToString();
+            }
 
             var versionRange = "";
             if (MinVersion != null || MaxVersion != null)

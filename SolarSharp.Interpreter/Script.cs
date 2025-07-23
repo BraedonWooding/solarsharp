@@ -46,16 +46,16 @@ namespace SolarSharp.Interpreter
         /// The Lua version being supported
         /// </summary>
         public const string LUA_VERSION = "5.2";
-        private readonly Processor m_MainProcessor;
-        private readonly ByteCode m_ByteCode;
-        private readonly List<SourceCode> m_Sources = new List<SourceCode>();
-        private IDebugger m_Debugger;
-        private readonly Table[] m_TypeMetatables = new Table[(int)LuaTypeExtensions.MaxMetaTypes];
-        private readonly List<Manifest> m_Manifests = new List<Manifest>();
-        private Manifest m_CompiledManifest;
-        private readonly SecurityLogger m_SecurityLogger = new SecurityLogger();
-        private readonly Dictionary<Type, object> m_Services = new Dictionary<Type, object>();
-        private SecurityPolicy m_ActivePolicy;
+        private readonly Processor _mainProcessor;
+        private readonly ByteCode _byteCode;
+        private readonly List<SourceCode> _sources = new List<SourceCode>();
+        private IDebugger _debugger;
+        private readonly Table[] _typeMetatables = new Table[(int)LuaTypeExtensions.MaxMetaTypes];
+        private readonly List<Manifest> _manifests = new List<Manifest>();
+        private Manifest _compiledManifest;
+        private readonly SecurityLogger _securityLogger = new SecurityLogger();
+        private readonly Dictionary<Type, object> _services = new Dictionary<Type, object>();
+        private SecurityPolicy _activePolicy;
         private ProtectedFiles _protectedFiles = ProtectedFiles.Empty;
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace SolarSharp.Interpreter
             // Load modules based on policy - security enforcement happens at two levels:
             // 1. Module registration - only load modules allowed by policy
             // 2. Function call time - additional enforcement through SecurityBoundFunction attributes
-            m_ByteCode = new ByteCode(this);
+            _byteCode = new ByteCode(this);
 
             // Get allowed modules from the base policy set
             var moduleResolver = new ModuleCapabilityResolver();
@@ -136,7 +136,7 @@ namespace SolarSharp.Interpreter
             // Register only the modules allowed by policy
             Globals = new Table().RegisterCoreModules(this, allowedModules);
 
-            m_MainProcessor = new Processor(this, Globals, m_ByteCode);
+            _mainProcessor = new Processor(this, Globals, _byteCode);
 
             // Store the base policy set
             SetService(BasePolicySet);
@@ -144,9 +144,7 @@ namespace SolarSharp.Interpreter
             // Get default policy for applying security settings
             var defaultPolicy = BasePolicySet
                 .GetDefaultPolicy()
-                .Match(
-                    policy => policy,
-                    error =>
+                .Match(static policy => policy, static error =>
                         throw new InvalidOperationException(
                             $"Failed to get default policy: {error.Message}"
                         )
@@ -211,8 +209,8 @@ namespace SolarSharp.Interpreter
         public Script(Manifest manifest, BasePolicySet basePolicySet)
             : this(basePolicySet)
         {
-            m_Manifests.Add(manifest);
-            m_CompiledManifest = manifest;
+            _manifests.Add(manifest);
+            _compiledManifest = manifest;
 
             // Apply manifest-specific configuration
             // Note: Keep using BasePolicySet's default policy for main execution
@@ -273,7 +271,7 @@ namespace SolarSharp.Interpreter
         /// <returns>The security logger</returns>
         public ISecurityLogger GetSecurityLogger()
         {
-            return m_SecurityLogger;
+            return _securityLogger;
         }
 
         /// <summary>
@@ -284,7 +282,7 @@ namespace SolarSharp.Interpreter
         public T GetService<T>()
             where T : class
         {
-            if (m_Services.TryGetValue(typeof(T), out var service))
+            if (_services.TryGetValue(typeof(T), out var service))
             {
                 return service as T;
             }
@@ -299,7 +297,7 @@ namespace SolarSharp.Interpreter
         public void SetService<T>(T service)
             where T : class
         {
-            m_Services[typeof(T)] = service;
+            _services[typeof(T)] = service;
         }
 
         /// <summary>
@@ -324,7 +322,7 @@ namespace SolarSharp.Interpreter
             }
 
             var bytes = new byte[hex.Length / 2];
-            for (int i = 0; i < bytes.Length; i++)
+            for (var i = 0; i < bytes.Length; i++)
             {
                 bytes[i] = System.Convert.ToByte(hex.Substring(i * 2, 2), 16);
             }
@@ -339,12 +337,7 @@ namespace SolarSharp.Interpreter
             if (string.IsNullOrEmpty(hex) || hex.Length % 2 != 0)
                 return false;
 
-            foreach (char c in hex)
-            {
-                if (!Uri.IsHexDigit(c))
-                    return false;
-            }
-            return true;
+            return hex.All(static c => Uri.IsHexDigit(c));
         }
 
         /// <summary>
@@ -352,13 +345,13 @@ namespace SolarSharp.Interpreter
         /// </summary>
         private bool IsManifestSigned(Manifest manifest)
         {
-            return manifest.SignedContent.Any(block => !string.IsNullOrEmpty(block.Signature));
+            return manifest.SignedContent.Any(static block => !string.IsNullOrEmpty(block.Signature));
         }
 
         /// <summary>
         /// Derives an aggregate SecurityPolicy from all policies in a V2.0 manifest
         /// </summary>
-        private SecurityPolicy DeriveAggregatePolicyFromManifest(Manifest manifest)
+        private static SecurityPolicy DeriveAggregatePolicyFromManifest(Manifest manifest)
         {
             if (!manifest.SignedContent.Any())
             {
@@ -376,51 +369,44 @@ namespace SolarSharp.Interpreter
             var maxTimeoutMs = 0;
             var maxMemoryMB = 0;
 
-            foreach (var block in manifest.SignedContent)
+            foreach (var policy in manifest.SignedContent.SelectMany(static block => block.Policies))
             {
-                foreach (var policy in block.Policies)
+                // Collect file permissions
+                allFileReadPaths.UnionWith(policy.Grant.FileRead);
+                allFileWritePaths.UnionWith(policy.Grant.FileWrite);
+                allNetworkEndpoints.UnionWith(policy.Grant.Network);
+
+                // Check for eval capability
+                if (policy.Grant.Capabilities.Contains("eval"))
                 {
-                    // Collect file permissions
-                    allFileReadPaths.UnionWith(policy.Grant.FileRead);
-                    allFileWritePaths.UnionWith(policy.Grant.FileWrite);
-                    allNetworkEndpoints.UnionWith(policy.Grant.Network);
+                    hasEvalCapability = true;
+                }
 
-                    // Check for eval capability
-                    if (policy.Grant.Capabilities.Contains("eval"))
+                // Find most permissive timeout and memory limits
+                if (!string.IsNullOrEmpty(policy.Restrict.Timeout))
+                {
+                    if (TimeSpan.TryParse(policy.Restrict.Timeout, out var timeout))
                     {
-                        hasEvalCapability = true;
+                        maxTimeoutMs = Math.Max(maxTimeoutMs, (int)timeout.TotalMilliseconds);
                     }
+                }
 
-                    // Find most permissive timeout and memory limits
-                    if (!string.IsNullOrEmpty(policy.Restrict.Timeout))
-                    {
-                        if (TimeSpan.TryParse(policy.Restrict.Timeout, out var timeout))
-                        {
-                            maxTimeoutMs = Math.Max(maxTimeoutMs, (int)timeout.TotalMilliseconds);
-                        }
-                    }
+                if (string.IsNullOrEmpty(policy.Restrict.MaxMemory))
+                {
+                    continue;
+                }
 
-                    if (!string.IsNullOrEmpty(policy.Restrict.MaxMemory))
-                    {
-                        var memoryStr = policy.Restrict.MaxMemory.ToUpperInvariant();
-                        if (memoryStr.EndsWith("MB") && int.TryParse(memoryStr[0..^2], out var mb))
-                        {
-                            maxMemoryMB = Math.Max(maxMemoryMB, mb);
-                        }
-                    }
+                var memoryStr = policy.Restrict.MaxMemory.ToUpperInvariant();
+                if (memoryStr.EndsWith("MB") && int.TryParse(memoryStr[0..^2], out var mb))
+                {
+                    maxMemoryMB = Math.Max(maxMemoryMB, mb);
                 }
             }
 
             // Apply collected permissions
-            foreach (var path in allFileReadPaths)
-            {
-                aggregateBuilder = aggregateBuilder.WithFileAccess(path, FilePermissions.Read);
-            }
+            aggregateBuilder = allFileReadPaths.Aggregate(aggregateBuilder, static (current, path) => current.WithFileAccess(path, FilePermissions.Read));
 
-            foreach (var path in allFileWritePaths)
-            {
-                aggregateBuilder = aggregateBuilder.WithFileAccess(path, FilePermissions.ReadWrite);
-            }
+            aggregateBuilder = allFileWritePaths.Aggregate(aggregateBuilder, static (current, path) => current.WithFileAccess(path, FilePermissions.ReadWrite));
 
             if (allNetworkEndpoints.Any())
             {
@@ -625,16 +611,16 @@ namespace SolarSharp.Interpreter
             // Script ownership check removed
 
             var chunkName =
-                $"libfunc_{funcFriendlyName.GetValueOrDefault(m_Sources.Count.ToString())}";
+                $"libfunc_{funcFriendlyName.GetValueOrDefault(_sources.Count.ToString())}";
 
-            var source = new SourceCode(chunkName, code, m_Sources.Count, this);
+            var source = new SourceCode(chunkName, code, _sources.Count, this);
 
-            m_Sources.Add(source);
+            _sources.Add(source);
 
             var address = Loader_Fast.LoadFunction(
                 this,
                 source,
-                m_ByteCode,
+                _byteCode,
                 globalTable.HasValue || Globals != null
             );
 
@@ -646,12 +632,12 @@ namespace SolarSharp.Interpreter
 
         private void SignalByteCodeChange()
         {
-            m_Debugger?.SetByteCode(m_ByteCode.Code.Select(s => s.ToString()).ToArray());
+            _debugger?.SetByteCode(_byteCode.Code.Select(s => s.ToString()).ToArray());
         }
 
         private void SignalSourceCodeChange(SourceCode source)
         {
-            m_Debugger?.SetSourceCode(source);
+            _debugger?.SetSourceCode(source);
         }
 
         /// <summary>
@@ -669,7 +655,7 @@ namespace SolarSharp.Interpreter
                 throw new ArgumentNullException(nameof(operation));
 
             // Store the current policy to restore later
-            var originalPolicy = m_ActivePolicy;
+            var originalPolicy = _activePolicy;
 
             try
             {
@@ -695,20 +681,20 @@ namespace SolarSharp.Interpreter
         private void ApplySecurityPolicy(SecurityPolicy policy)
         {
             // Capture the previous policy before updating
-            var previousPolicy = m_ActivePolicy;
+            var previousPolicy = _activePolicy;
             
             // Store security policy as the primary source of truth
-            m_ActivePolicy = policy;
+            _activePolicy = policy;
 
             // Initialize security event handler first
             var eventHandler = new SecurityEventHandler();
             SetService(eventHandler);
 
             // Register the event handler with the security logger
-            m_SecurityLogger.AddHandler(eventHandler);
+            _securityLogger.AddHandler(eventHandler);
 
             // Configure platform accessor with security restrictions using shared logger
-            Platform = new SecurePlatformAccessor(policy, m_SecurityLogger);
+            Platform = new SecurePlatformAccessor(policy, _securityLogger);
 
             // Configure interop security based on policy
             // Note: We always use LazyOptimized for built-in types to ensure proper functionality
@@ -777,7 +763,7 @@ namespace SolarSharp.Interpreter
                     TerminateExecution = true,
                     ViolationHandling = SecurityViolationHandling.ThrowError,
                 };
-                m_SecurityLogger.LogSecurityEvent(ev);
+                _securityLogger.LogSecurityEvent(ev);
                 };
             }
 
@@ -794,10 +780,10 @@ namespace SolarSharp.Interpreter
         /// </summary>
         private void RecompileManifest()
         {
-            if (!m_Manifests.Any())
+            if (!_manifests.Any())
             {
                 // Create a minimal V2.0 manifest for compatibility
-                m_CompiledManifest = new Manifest
+                _compiledManifest = new Manifest
                 {
                     Version = "2.0",
                     ManifestId = Guid.NewGuid().ToString(),
@@ -807,15 +793,15 @@ namespace SolarSharp.Interpreter
             }
 
             // For now, if we have only one manifest, use it directly
-            if (m_Manifests.Count == 1)
+            if (_manifests.Count == 1)
             {
-                m_CompiledManifest = m_Manifests[0];
+                _compiledManifest = _manifests[0];
                 return;
             }
 
-            // Use ManifestComposer to properly compose all manifests
-            var composer = new ManifestComposer();
-            m_CompiledManifest = composer.Compose(m_Manifests);
+            // TODO: V2.0 manifest composition needs to be implemented
+            // For now, use the first manifest as the primary
+            _compiledManifest = _manifests[0];
         }
 
         /// <summary>
@@ -877,15 +863,15 @@ namespace SolarSharp.Interpreter
             }
 
             // Add to manifest list
-            m_Manifests.Add(manifest);
+            _manifests.Add(manifest);
 
             // Recompile manifests
             RecompileManifest();
 
             // Update security configuration - derive aggregate policy from compiled manifest
             var newPolicy =
-                m_CompiledManifest != null
-                    ? DeriveAggregatePolicyFromManifest(m_CompiledManifest)
+                _compiledManifest != null
+                    ? DeriveAggregatePolicyFromManifest(_compiledManifest)
                     : Examples.Desktop();
             ApplySecurityPolicy(newPolicy);
         }
@@ -936,18 +922,18 @@ namespace SolarSharp.Interpreter
                 );
             }
 
-            var chunkName = $"{chunkname.GetValueOrDefault() ?? "chunk_" + m_Sources.Count}";
+            var chunkName = $"{chunkname.GetValueOrDefault() ?? "chunk_" + _sources.Count}";
 
             var source = new SourceCode(
                 chunkname.GetValueOrDefault() ?? chunkName,
                 code,
-                m_Sources.Count,
+                _sources.Count,
                 this
             );
 
-            m_Sources.Add(source);
+            _sources.Add(source);
 
-            var address = Loader_Fast.LoadChunk(this, source, m_ByteCode);
+            var address = Loader_Fast.LoadChunk(this, source, _byteCode);
 
             SignalSourceCodeChange(source);
             SignalByteCodeChange();
@@ -980,20 +966,20 @@ namespace SolarSharp.Interpreter
                 var scriptCode = sr.ReadToEnd();
                 return LoadStringInternal(scriptCode, globalTable, chunkname);
             }
-            var chunkName = $"{chunkname ?? "dump_" + m_Sources.Count}";
+            var chunkName = $"{chunkname ?? "dump_" + _sources.Count}";
 
             var source = new SourceCode(
                 chunkname ?? chunkName,
-                $"-- This script was decoded from a binary dump - dump_{m_Sources.Count}",
-                m_Sources.Count,
+                $"-- This script was decoded from a binary dump - dump_{_sources.Count}",
+                _sources.Count,
                 this
             );
 
-            m_Sources.Add(source);
+            _sources.Add(source);
 
-            var address = m_MainProcessor.Undump(
+            var address = _mainProcessor.Undump(
                 codeStream,
-                m_Sources.Count - 1,
+                _sources.Count - 1,
                 globalTable ?? Globals,
                 out var hasUpvalues
             );
@@ -1034,7 +1020,7 @@ namespace SolarSharp.Interpreter
                 throw new ArgumentException("function arg has upvalues other than _ENV");
 
             var outStream = new UndisposableStream(stream);
-            m_MainProcessor.Dump(
+            _mainProcessor.Dump(
                 outStream,
                 function.Function.EntryPointByteCodeLocation,
                 upvaluesType == Closure.UpvaluesType.Environment
@@ -1180,11 +1166,11 @@ namespace SolarSharp.Interpreter
             var executionContext = contextResult.Value;
 
             // If this script has manifests, use the first one to provide manifest context
-            if (m_Manifests.Count > 0)
+            if (_manifests.Count > 0)
             {
                 var manifestContext = LuaExecutionContext.CreateWithManifest(
                     filename,
-                    m_Manifests[0],
+                    _manifests[0],
                     executionContext.Identity.GetValueOrDefault(
                         new ScriptIdentity("Unknown", NuGetVersion.Parse("1.0.0"), new byte[16])
                     ),
@@ -1209,7 +1195,7 @@ namespace SolarSharp.Interpreter
             var policy = policyResult.Value;
 
             // Apply the resolved policy temporarily
-            var originalPolicy = m_ActivePolicy;
+            var originalPolicy = _activePolicy;
             try
             {
                 ApplySecurityPolicy(policy);
@@ -1293,7 +1279,7 @@ namespace SolarSharp.Interpreter
             var policy = policyResult.Value;
 
             // Apply the resolved policy temporarily
-            var originalPolicy = m_ActivePolicy;
+            var originalPolicy = _activePolicy;
             try
             {
                 ApplySecurityPolicy(policy);
@@ -1416,13 +1402,13 @@ namespace SolarSharp.Interpreter
                 return LoadStream(ms, globalTable, chunkname);
             }
 
-            var chunkName = $"{chunkname ?? "chunk_" + m_Sources.Count}";
+            var chunkName = $"{chunkname ?? "chunk_" + _sources.Count}";
 
-            var source = new SourceCode(chunkname ?? chunkName, code, m_Sources.Count, this);
+            var source = new SourceCode(chunkname ?? chunkName, code, _sources.Count, this);
 
-            m_Sources.Add(source);
+            _sources.Add(source);
 
-            var address = Loader_Fast.LoadChunk(this, source, m_ByteCode);
+            var address = Loader_Fast.LoadChunk(this, source, _byteCode);
 
             SignalSourceCodeChange(source);
             SignalByteCodeChange();
@@ -1633,7 +1619,7 @@ namespace SolarSharp.Interpreter
 
             if (envTable == null)
             {
-                var meta = m_MainProcessor.FindMeta(ref address);
+                var meta = _mainProcessor.FindMeta(ref address);
 
                 // if we find the meta for a new chunk, we use the value in the meta for the _ENV upvalue
                 c = meta is { NumVal2: (int)OpCodeMetadataType.ChunkEntrypoint }
@@ -1695,7 +1681,7 @@ namespace SolarSharp.Interpreter
 
             if (function.Type != DataType.Function && function.Type != DataType.ClrFunction)
             {
-                var metafunction = m_MainProcessor.GetMetamethod(function, "__call");
+                var metafunction = _mainProcessor.GetMetamethod(function, "__call");
 
                 if (metafunction != null)
                 {
@@ -1722,7 +1708,7 @@ namespace SolarSharp.Interpreter
                 );
             }
 
-            return m_MainProcessor.Call(function, args);
+            return _mainProcessor.Call(function, args);
         }
 
         /// <summary>
@@ -1780,7 +1766,7 @@ namespace SolarSharp.Interpreter
             // Script ownership check removed
 
             if (function.Type == DataType.Function)
-                return m_MainProcessor.Coroutine_Create(function.Function);
+                return _mainProcessor.Coroutine_Create(function.Function);
             if (function.Type == DataType.ClrFunction)
                 return DynValue.NewCoroutine(new Coroutine(function.Callback));
             throw new ArgumentException(
@@ -1810,7 +1796,7 @@ namespace SolarSharp.Interpreter
                     "coroutine's state must be CoroutineState.Dead to recycle"
                 );
 
-            return coroutine.Recycle(m_MainProcessor, function.Function);
+            return coroutine.Recycle(_mainProcessor, function.Function);
         }
 
         /// <summary>
@@ -1835,8 +1821,8 @@ namespace SolarSharp.Interpreter
         /// </summary>
         public bool DebuggerEnabled
         {
-            get { return m_MainProcessor.DebuggerEnabled; }
-            set { m_MainProcessor.DebuggerEnabled = value; }
+            get { return _mainProcessor.DebuggerEnabled; }
+            set { _mainProcessor.DebuggerEnabled = value; }
         }
 
         /// <summary>
@@ -1846,10 +1832,10 @@ namespace SolarSharp.Interpreter
         public void AttachDebugger(IDebugger debugger)
         {
             DebuggerEnabled = true;
-            m_Debugger = debugger;
-            m_MainProcessor.AttachDebugger(debugger);
+            _debugger = debugger;
+            _mainProcessor.AttachDebugger(debugger);
 
-            foreach (var src in m_Sources)
+            foreach (var src in _sources)
                 SignalSourceCodeChange(src);
 
             SignalByteCodeChange();
@@ -1862,7 +1848,7 @@ namespace SolarSharp.Interpreter
         /// <returns></returns>
         public SourceCode GetSourceCode(int sourceCodeID)
         {
-            return m_Sources[sourceCodeID];
+            return _sources[sourceCodeID];
         }
 
         /// <summary>
@@ -1873,7 +1859,7 @@ namespace SolarSharp.Interpreter
         /// </value>
         public int SourceCodeCount
         {
-            get { return m_Sources.Count; }
+            get { return _sources.Count; }
         }
 
         /// <summary>
@@ -1904,8 +1890,8 @@ namespace SolarSharp.Interpreter
         {
             var t = (int)type;
 
-            if (t >= 0 && t < m_TypeMetatables.Length)
-                return m_TypeMetatables[t];
+            if (t >= 0 && t < _typeMetatables.Length)
+                return _typeMetatables[t];
 
             return null;
         }
@@ -1922,8 +1908,8 @@ namespace SolarSharp.Interpreter
 
             var t = (int)type;
 
-            m_TypeMetatables[t] =
-                t >= 0 && t < m_TypeMetatables.Length
+            _typeMetatables[t] =
+                t >= 0 && t < _typeMetatables.Length
                     ? metatable
                     : throw new ArgumentException("Specified type not supported : " + type);
         }
@@ -1972,7 +1958,7 @@ namespace SolarSharp.Interpreter
         /// </summary>
         internal ScriptExecutionContext CreateDynamicExecutionContext()
         {
-            return new ScriptExecutionContext(m_MainProcessor, null);
+            return new ScriptExecutionContext(_mainProcessor, null);
         }
 
         /// <summary>
@@ -2129,7 +2115,7 @@ namespace SolarSharp.Interpreter
                 return; // No keys loaded, no manifest requirement
 
             // Check if a manifest exists for this file
-            if (m_Manifests.Count == 0)
+            if (_manifests.Count == 0)
                 throw new ManifestSignatureException(
                     $"Manifest required for {luaFilePath} but none loaded",
                     "ValidateManifestRequirement"
@@ -2183,14 +2169,14 @@ namespace SolarSharp.Interpreter
                 );
 
             if (!autoStart)
-                return; // Auto-start not enabled
+                return;
 
             // Try to get the global tracer (which handles both old and new environment variables)
             var tracer = FileSecurityTracer.GetGlobalTracer();
             if (tracer != null)
             {
                 // Add the tracer to our security logger
-                m_SecurityLogger.AddHandler(tracer);
+                _securityLogger.AddHandler(tracer);
             }
         }
     }

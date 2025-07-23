@@ -181,7 +181,13 @@ namespace SolarSharp.Interpreter.Security
                 return "0000000000000000000000000000000000000000";
             }
 
-            return BitConverter.ToString(token).Replace("-", "").ToLowerInvariant();
+            // Using StringBuilder for efficient hex conversion in .NET Standard 2.1
+            var sb = new System.Text.StringBuilder(32);
+            foreach (var b in token)
+            {
+                sb.Append(b.ToString("x2"));
+            }
+            return sb.ToString();
         }
 
         /// <summary>
@@ -233,7 +239,13 @@ namespace SolarSharp.Interpreter.Security
             sha256.BlockUpdate(certBytes, 0, certBytes.Length);
             sha256.DoFinal(hash, 0);
 
-            return BitConverter.ToString(hash).Replace("-", "").ToUpperInvariant();
+            // Using StringBuilder for efficient hex conversion in .NET Standard 2.1
+            var sb = new System.Text.StringBuilder(hash.Length * 2);
+            foreach (var b in hash)
+            {
+                sb.Append(b.ToString("X2"));
+            }
+            return sb.ToString();
         }
 
         /// <summary>

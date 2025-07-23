@@ -39,46 +39,46 @@ namespace SolarSharp.Interpreter.Security
 
         public BasePolicySetValidator()
         {
-            RuleFor(ps => ps.PolicyDefinitions)
+            RuleFor(static ps => ps.PolicyDefinitions)
                 .NotNull()
                 .WithMessage("PolicyDefinitions cannot be null");
 
-            RuleFor(ps => ps.FilePolicies).NotNull().WithMessage("FilePolicies cannot be null");
+            RuleFor(static ps => ps.FilePolicies).NotNull().WithMessage("FilePolicies cannot be null");
 
-            RuleFor(ps => ps.FallbackPolicyName)
+            RuleFor(static ps => ps.FallbackPolicyName)
                 .NotEmpty()
                 .WithMessage("FallbackPolicyName cannot be null or empty")
                 .Must(BeValidPolicyName)
                 .WithMessage("FallbackPolicyName contains reserved characters");
 
             // Validate that fallback policy exists in definitions
-            RuleFor(ps => ps)
+            RuleFor(static ps => ps)
                 .Must(HaveFallbackPolicyInDefinitions)
                 .WithMessage("FallbackPolicyName must reference an existing policy definition");
 
             // Validate policy names in definitions
-            RuleForEach(ps => ps.PolicyDefinitions)
-                .Must(kvp => BeValidPolicyName(kvp.Key))
+            RuleForEach(static ps => ps.PolicyDefinitions)
+                .Must(static kvp => BeValidPolicyName(kvp.Key))
                 .WithMessage("Policy name '{PropertyValue}' contains reserved characters");
 
             // Validate that all file policies reference existing policy definitions
-            RuleFor(ps => ps)
+            RuleFor(static ps => ps)
                 .Must(HaveValidFilePolicyReferences)
                 .WithMessage("All file policies must reference existing policy definitions");
 
             // Validate no digest-based file policies
-            RuleForEach(ps => ps.FilePolicies)
-                .Must(kvp => !IsDigestBasedPattern(kvp.Key))
+            RuleForEach(static ps => ps.FilePolicies)
+                .Must(static kvp => !IsDigestBasedPattern(kvp.Key))
                 .WithMessage("Digest-based file policies are not allowed for security reasons");
 
             // Validate no overlapping directory patterns
-            RuleFor(ps => ps.FilePolicies.Keys)
-                .Must(patterns => !HasOverlappingDirectoryPatterns(patterns))
+            RuleFor(static ps => ps.FilePolicies.Keys)
+                .Must(static patterns => !HasOverlappingDirectoryPatterns(patterns))
                 .WithMessage("File patterns cannot have overlapping directory scopes");
 
             // Validate only one policy per scope
-            RuleFor(ps => ps.FilePolicies.Keys)
-                .Must(patterns => !HasDuplicateScopes(patterns))
+            RuleFor(static ps => ps.FilePolicies.Keys)
+                .Must(static patterns => !HasDuplicateScopes(patterns))
                 .WithMessage("Only one policy allowed per scope pattern");
         }
 
@@ -90,7 +90,7 @@ namespace SolarSharp.Interpreter.Security
             if (string.IsNullOrWhiteSpace(policyName))
                 return false;
 
-            return !policyName.Any(c => ReservedPolicyNameChars.Contains(c));
+            return !policyName.Any(static c => ReservedPolicyNameChars.Contains(c));
         }
 
         /// <summary>
@@ -128,11 +128,11 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         private static bool HasOverlappingDirectoryPatterns(IEnumerable<string> patterns)
         {
-            var directoryPatterns = patterns.Where(p => p.Contains("/")).ToList();
+            var directoryPatterns = patterns.Where(static p => p.Contains("/")).ToList();
 
-            for (int i = 0; i < directoryPatterns.Count; i++)
+            for (var i = 0; i < directoryPatterns.Count; i++)
             {
-                for (int j = i + 1; j < directoryPatterns.Count; j++)
+                for (var j = i + 1; j < directoryPatterns.Count; j++)
                 {
                     if (DirectoryPatternsOverlap(directoryPatterns[i], directoryPatterns[j]))
                     {

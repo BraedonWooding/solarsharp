@@ -66,7 +66,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var stopwatch = Stopwatch.StartNew();
 
             // Perform multiple signature verifications
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var result = BouncyCastleCryptography.VerifySignature(
                     _testData,
@@ -109,7 +109,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var stopwatch = Stopwatch.StartNew();
 
             // Perform multiple hash computations
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var result = BouncyCastleCryptography.ComputeHash(_testData);
                 Assert.That(result.IsSuccess, Is.True);
@@ -149,7 +149,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var stopwatch = Stopwatch.StartNew();
 
             // Perform multiple public key hash computations with the same key
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var result = BouncyCastleCryptography.ComputePublicKeyHash(_keyPair.Public);
                 Assert.That(result.IsSuccess, Is.True);
@@ -195,7 +195,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var stopwatch = Stopwatch.StartNew();
 
             // Perform multiple certificate parsing operations with the same certificate
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var result = BouncyCastleCryptography.ParseCertificate(testCertBytes);
                 // Note: This test certificate is truncated, so parsing may fail
@@ -234,7 +234,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var initialStats = BouncyCastleCryptography.GetPerformanceStats();
 
             // Perform operations that use pools
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 var hashResult = BouncyCastleCryptography.ComputeHash(_testData);
                 Assert.That(hashResult.IsSuccess, Is.True);

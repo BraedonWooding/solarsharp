@@ -108,7 +108,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     - Direct property access for V2.0 format
         ///     This ensures manifests cannot be tampered with after signing.
         /// </remarks>    [Category("Manifest.Unit")]
-        [Category("Manifest.Unit")]
         [Test]
         public void TestManifestSigning()
         {
@@ -168,7 +167,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     This test ensures the round-trip process works correctly
         ///     and that V2.0 signature information is properly preserved.
         /// </remarks>    [Category("Manifest.Unit")]
-        [Category("Manifest.Unit")]
         [Test]
         public void TestManifestVerification()
         {
@@ -230,7 +228,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     The discovered manifest is validated and signature-checked
         ///     if it contains security information.
         /// </remarks>    [Category("Manifest.Unit")]
-        [Category("Manifest.Unit")]
         [Test]
         public void TestManifestAutoDiscovery()
         {
@@ -297,7 +294,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     This test verifies that V2.0 manifest policies are correctly
         ///     applied and accessible through the compatibility layer.
         /// </remarks>    [Category("Manifest.Unit")]
-        [Category("Manifest.Unit")]
         [Test]
         public void TestManifestPolicyApplication()
         {
@@ -363,7 +359,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     This is the recommended way to run scripts with V2.0 manifest-based
         ///     security in production applications.
         /// </remarks>    [Category("Manifest.Unit")]
-        [Category("Manifest.Unit")]
         [Test]
         public void TestScriptWithManifest()
         {
@@ -506,7 +501,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     This test verifies that unsigned manifests are rejected when they
         ///     try to increase timeouts beyond the base policy limits.
         /// </remarks>    [Category("Manifest.Unit")]
-        [Category("Manifest.Unit")]
         [Test]
         public void TestManifestWithoutSignature()
         {
@@ -538,7 +532,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                                     ""modules"": [""basic""]
                                 },
                                 ""restrict"": {
-                                    ""max-memory"": ""1MB""
+                                    ""max-memory"": ""1MB"",
+                                    ""timeout"": ""5s""
                                 }
                             }
                         ]
@@ -555,10 +550,16 @@ namespace SolarSharp.Interpreter.Tests.Units
             // Use isolated base policy which has a 100ms timeout limit
             var script = new Script(Examples.IsolatedBasePolicySet); // No trusted keys loaded
 
-            // Test that unsigned V2.0 manifest is rejected when trying to use higher timeout
-            // The aggregate policy derived from the manifest will have a 5000ms timeout
-            // (from Examples.Isolated() base), which exceeds the base policy's 100ms limit
-            var ex = Assert.Throws<ManifestFormatException>(() => script.LoadFile(scriptPath));
+            // Test that unsigned manifests are allowed as long as they don't violate base policy
+            // Parse the manifest JSON and add it to the script
+            var manifest = JsonSerializer.Deserialize<Manifest>(
+                File.ReadAllText(manifestPath),
+                ManifestJsonOptions.Default
+            );
+            
+            // Since the manifest doesn't specify a timeout, it will use the default from Examples.Isolated()
+            // which is 5000ms, but the base policy has 1000ms (1 second), so this should fail
+            var ex = Assert.Throws<ManifestFormatException>(() => script.AddManifest(manifest));
             Assert.That(ex.Message, Does.Contain("Untrusted manifest cannot increase timeout"));
 
             // Now test with a properly restrictive unsigned manifest
@@ -750,7 +751,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     - Clear package boundaries
         ///     - No complex dependency chains
         /// </remarks>    [Category("Manifest.Unit")]
-        [Category("Manifest.Unit")]
         [Test]
         public void TestHierarchicalManifests()
         {

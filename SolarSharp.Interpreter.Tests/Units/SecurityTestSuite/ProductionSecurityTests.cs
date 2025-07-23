@@ -427,7 +427,7 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
 
             return new LuaManifest
             {
-                Version = "1.0",
+                Version = "2.0",
                 Description = $"Large manifest with {fileCount} files",
                 Files = files,
                 Security = new SecurityInfo

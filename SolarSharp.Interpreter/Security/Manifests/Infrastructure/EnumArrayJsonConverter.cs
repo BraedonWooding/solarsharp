@@ -60,7 +60,7 @@ namespace SolarSharp.Interpreter.Security.Manifests.Infrastructure
                     // Combine flags if this is a flags enum
                     if (typeof(TEnum).GetCustomAttributes(typeof(FlagsAttribute), false).Any())
                     {
-                        int combinedValue = 0;
+                        var combinedValue = 0;
                         foreach (var value in values)
                         {
                             combinedValue |= Convert.ToInt32(value);
@@ -143,7 +143,7 @@ namespace SolarSharp.Interpreter.Security.Manifests.Infrastructure
             )
             {
                 // Return all flags combined
-                int allFlags = 0;
+                var allFlags = 0;
                 foreach (var enumValue in Enum.GetValues(typeof(TEnum)))
                 {
                     allFlags |= Convert.ToInt32(enumValue);

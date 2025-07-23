@@ -132,7 +132,7 @@ namespace SolarSharp.Interpreter.Communication
 
             if (constraints.PublicKeyTokens.Count > 0)
             {
-                var tokens = constraints.PublicKeyTokens.Select(ParseHexToken).ToList();
+                var tokens = constraints.PublicKeyTokens.Select(CertificateManager.ParseHexToken).ToList();
 
                 predicates.Add(identity =>
                     tokens.Any(token => identity.PublicKeyToken.SequenceEqual(token))
@@ -166,22 +166,6 @@ namespace SolarSharp.Interpreter.Communication
             return identity => predicates.All(p => p(identity));
         }
 
-        private static byte[] ParseHexToken(string hex)
-        {
-            hex = hex.Replace("-", "").Replace(" ", "");
-            if (hex.Length != 32)
-                throw new ArgumentException(
-                    $"Public key token must be 16 bytes (32 hex chars), got {hex.Length}"
-                );
-
-            var bytes = new byte[16];
-            for (var i = 0; i < 16; i++)
-            {
-                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
-            }
-
-            return bytes;
-        }
 
         /// <summary>
         /// Compiled rules for efficient runtime checking

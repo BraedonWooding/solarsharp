@@ -187,6 +187,7 @@ namespace SolarSharp.Interpreter.Tests.Security
                     .WithEvalAllowed()
                     .WithTimeout(100)  // 100ms timeout
                     .WithMaxInstructions(-1)  // Unlimited instructions to test timeout
+                    .WithMemoryLimit(50)  // Increase memory limit to avoid hitting it first
                     .WithResourceLimitScope(ResourceLimitScope.PerExecution)
             );
 

@@ -84,10 +84,10 @@ namespace SolarSharp.Interpreter.Security
             string MatchedPattern
         ) ComputeEffectivePermissions(string normalizedPath, string signingKeyFingerprint)
         {
-            FilePermissions effectivePermissions = FilePermissions.None;
-            ImmutableHashSet<string> requiredKeys = ImmutableHashSet<string>.Empty;
-            string matchedPattern = "";
-            bool foundMatchingRule = false;
+            var effectivePermissions = FilePermissions.None;
+            var requiredKeys = ImmutableHashSet<string>.Empty;
+            var matchedPattern = "";
+            var foundMatchingRule = false;
 
             // Process rules in order - later rules can override earlier ones
             foreach (var rule in _rules)

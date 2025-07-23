@@ -299,7 +299,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         {
             // Arrange - create many rules
             var rules = new List<DirectoryAccessRule>();
-            for (int i = 0; i < 1000; i++)
+            for (var i = 0; i < 1000; i++)
             {
                 rules.Add(DirectoryAccessRule.Create($"/path{i}", FilePermissions.Read, $"key{i}"));
             }

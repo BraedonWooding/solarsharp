@@ -158,7 +158,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// <exception cref="AssertionException">
         ///     Thrown if the script's key state does not match the expected behaviour at each validation step.
         /// </exception>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestVMKeyLoading_BasicFunctionality()
         {
@@ -185,7 +184,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     - Manifests signed with any of the loaded keys are validated without throwing exceptions.
         /// </remarks>
         /// <seealso cref="Script" />    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestVMKeyLoading_MultipleKeys()
         {
@@ -226,7 +224,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// <exception cref="System.ArgumentException">
         ///     Thrown when the key provided to the `LoadKey` method is not in the expected format.
         /// </exception>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestVMKeyLoading_InvalidKeyFormat()
         {
@@ -255,7 +252,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// </remarks>
         /// <exception cref="NotSupportedException">Thrown when the virtual machine detects a weak or insecure key.</exception>
         /// <exception cref="ArgumentException">Thrown when provided with a key in an invalid format.</exception>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestVMKeyLoading_WeakKeyRejection()
         {
@@ -508,7 +504,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     This test ensures that host applications maintain control over script execution,
         ///     while preventing scripts themselves from performing dynamic code execution.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestStringExecution_Defaultbehaviour()
         {
@@ -530,7 +525,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// <exception cref="AssertionException">
         ///     Thrown if the returned value from script execution does not match the expected result.
         /// </exception>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestStringExecution_ExplicitlyEnabled()
         {
@@ -550,7 +544,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     The NoEvalBasePolicySet prevents scripts from calling load(), loadstring(), etc.,
         ///     but the host application retains full control over script execution.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestStringExecution_ExplicitlyDisabled()
         {
@@ -572,7 +565,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     The NoEvalBasePolicySet maps ":eval" pattern to a deny policy that prevents script-initiated
         ///     dynamic code execution while allowing host applications to maintain control.
         /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
         [Test]
         public void TestStringExecution_InternalVsExternal()
         {
@@ -725,7 +717,7 @@ namespace SolarSharp.Interpreter.Tests.Units
                 // Extract just the base64 content without PEM headers
                 var lines = pem.Split('\n');
                 var base64Builder = new StringBuilder();
-                bool inContent = false;
+                var inContent = false;
                 foreach (var line in lines)
                 {
                     if (line.Contains("BEGIN"))

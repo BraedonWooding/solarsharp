@@ -329,7 +329,7 @@ namespace WotCI.Tests
                 retrievedData.Should().Be("Partner 1 data");
 
                 // Test that Partner 2 cannot access Partner 1's data due to certificate constraint
-                Action crossAccess = () =>
+                var crossAccess = () =>
                 {
                     ExecutionContextManager.WithContext(
                         partner2Context,

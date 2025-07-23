@@ -26,7 +26,7 @@ namespace SolarSharp.Interpreter.Security
         public void ValidateFilePermissions(string path, FileOperation operation)
         {
             // Get sandbox root from security config
-            string sandboxRoot = _security.SandboxRoot;
+            var sandboxRoot = _security.SandboxRoot;
             string displayPath;
 
             // If no sandbox root, just normalize the path without canonicalization
@@ -106,7 +106,7 @@ namespace SolarSharp.Interpreter.Security
         )
         {
             // Get sandbox root from security config
-            string sandboxRoot = _security.SandboxRoot;
+            var sandboxRoot = _security.SandboxRoot;
             string displayPath;
 
             // If no sandbox root, just normalize the path without canonicalization
@@ -185,7 +185,7 @@ namespace SolarSharp.Interpreter.Security
         public void ValidateDirectoryAccess(string path, DirectoryOperation operation)
         {
             // Get sandbox root from security config
-            string sandboxRoot = _security.SandboxRoot;
+            var sandboxRoot = _security.SandboxRoot;
             string displayPath;
 
             // If no sandbox root, just normalize the path without canonicalization

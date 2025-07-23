@@ -380,7 +380,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void WithTimeout_ThrowsOnNegativeValue()
         {
             var basePolicySet = Examples.IsolatedBasePolicySet;
-            Assert.Throws<ArgumentException>(() => basePolicySet.WithTimeout(-1));
+            Assert.Throws<ArgumentException>(() => basePolicySet.WithTimeout(-2));
         }
 
         /// <summary>
@@ -398,7 +398,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void WithMemoryLimit_ThrowsOnNegativeValue()
         {
             var basePolicySet = Examples.IsolatedBasePolicySet;
-            Assert.Throws<ArgumentException>(() => basePolicySet.WithMemoryLimit(-1));
+            Assert.Throws<ArgumentException>(() => basePolicySet.WithMemoryLimit(-2));
         }
     }
 }

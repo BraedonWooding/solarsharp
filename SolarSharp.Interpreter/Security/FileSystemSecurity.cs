@@ -227,8 +227,8 @@ namespace SolarSharp.Interpreter.Security
             var normalizedPathForRules = PathNormalizer.NormalizePath(filePath);
 
             FilePermissions? keyBasedPermissions = null;
-            bool matchedRule = false;
-            bool requiresKey = false;
+            var matchedRule = false;
+            var requiresKey = false;
 
             // Find all matching rules and sort by specificity (longest pattern first)
             var matchingRules = new List<(DirectoryAccessRule rule, int specificity)>();
@@ -256,8 +256,8 @@ namespace SolarSharp.Interpreter.Security
             {
                 var groupRules = group.ToList();
                 FilePermissions? mostPermissiveInGroup = null;
-                bool groupHasMatchingKey = false;
-                bool groupRequiresKey = false;
+                var groupHasMatchingKey = false;
+                var groupRequiresKey = false;
 
                 // Within the same specificity level, find the most permissive rule that matches
                 foreach (var (rule, _) in groupRules)

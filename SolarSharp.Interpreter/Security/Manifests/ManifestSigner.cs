@@ -335,7 +335,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
         public static string ExportPublicKey(AsymmetricKeyParameter key, string algorithm = "RSA")
         {
             byte[] publicKeyBytes;
-            string pemType = "PUBLIC KEY";
+            var pemType = "PUBLIC KEY";
 
             if (key is RsaPrivateCrtKeyParameters rsaPrivate)
             {

@@ -37,7 +37,11 @@ namespace SolarSharp.Interpreter.Tests.Integration
                 {
                     Directory.Delete(_tempDir, true);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    // Ignore cleanup errors - test directory might be locked by another process
+                    Console.WriteLine($"Warning: Failed to clean up test directory: {ex.Message}");
+                }
             }
         }
 

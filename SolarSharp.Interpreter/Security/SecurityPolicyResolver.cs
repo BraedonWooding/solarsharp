@@ -151,7 +151,7 @@ namespace SolarSharp.Interpreter.Security
 
             var normalizedPath = Path.GetFullPath(sourceFile).Replace('\\', '/');
             SecurityPolicy bestMatch = null;
-            int bestSpecificity = -1;
+            var bestSpecificity = -1;
 
             foreach (var kvp in _pathDefaultPolicies)
             {
@@ -162,7 +162,7 @@ namespace SolarSharp.Interpreter.Security
                 {
                     // Use pattern length as a simple specificity measure
                     // Longer patterns are more specific
-                    int specificity = pattern.Length;
+                    var specificity = pattern.Length;
                     if (specificity > bestSpecificity)
                     {
                         bestMatch = kvp.Value.WithName($"Path[{pattern}]");

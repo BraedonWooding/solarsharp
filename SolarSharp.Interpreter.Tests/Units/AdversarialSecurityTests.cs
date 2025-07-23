@@ -1193,7 +1193,7 @@ namespace SolarSharp.Interpreter.Tests.Units
                     {
                         TimeoutMs = 1000, // 1 second timeout
                         MaxMemoryMB = 50, // Increase from default 32MB
-                        MaxInstructions = 0, // Unlimited instructions to test timeout specifically
+                        MaxInstructions = -1, // Unlimited instructions to test timeout specifically
                     }
                 )
                 .Match(

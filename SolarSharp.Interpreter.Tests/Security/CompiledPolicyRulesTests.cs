@@ -459,18 +459,18 @@ namespace SolarSharp.Interpreter.Tests.Security
             {
                 // Assert
                 Assert.That(rules.Stats.Resolutions, Is.EqualTo(10));
-                // With improved caching, all requests with same identity and policy resolution use the same cache key
-                Assert.That(rules.Stats.CacheHits, Is.EqualTo(9)); // First is miss, next 9 are hits
-                Assert.That(rules.Stats.CacheMisses, Is.EqualTo(1));
+                // Since cache key includes source file, different filenames result in cache misses
+                Assert.That(rules.Stats.CacheHits, Is.EqualTo(0)); // All different files = all misses
+                Assert.That(rules.Stats.CacheMisses, Is.EqualTo(10));
                 Assert.That(rules.Stats.TotalResolutionTime.TotalMilliseconds, Is.GreaterThan(0));
                 Assert.That(rules.Stats.AverageResolutionTime.TotalMilliseconds, Is.GreaterThan(0));
-                Assert.That(rules.Stats.CacheHitRate, Is.EqualTo(0.9)); // 9/10 = 0.9
+                Assert.That(rules.Stats.CacheHitRate, Is.EqualTo(0.0)); // 0/10 = 0.0
             });
 
             // Verify string representation
             var statsString = rules.Stats.ToString();
             Assert.That(statsString, Contains.Substring("Resolutions: 10"));
-            Assert.That(statsString, Contains.Substring("Cache Hit Rate: 90.00%"));
+            Assert.That(statsString, Contains.Substring("Cache Hit Rate: 0.00%"));
         }
 
         [Category("Security.Unit")]

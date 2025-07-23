@@ -428,7 +428,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var iterations = 1000;
 
             var start = DateTime.UtcNow;
-            for (int i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var result = _canonicalizer.Canonicalize(path);
                 Assert.That(result.IsSuccess, Is.True);
@@ -444,7 +444,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void ResourceExhaustion_ManyUniquePaths_HandledGracefully()
         {
             // Try to exhaust cache with many unique paths
-            for (int i = 0; i < 10000; i++)
+            for (var i = 0; i < 10000; i++)
             {
                 var path = $"/data/unique/path/{Guid.NewGuid()}.txt";
                 var result = _canonicalizer.Canonicalize(path);

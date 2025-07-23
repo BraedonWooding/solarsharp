@@ -158,50 +158,14 @@ namespace SolarSharp.Interpreter.Security.Manifests
                     );
 
                 // V2.0 Manifest: Process SignedContent blocks
-                if (manifest.HasSignedContent)
+                if (!manifest.HasSignedContent)
                 {
-                    return ProcessV2Manifest(manifest, directory);
+                    return Result.Failure<LoadedManifest, ManifestError>(
+                        new InvalidManifest("Manifest must have signed content blocks")
+                    );
                 }
 
-                // V2.0 - Process signed content blocks
-                X509Certificate primaryCert = null;
-                var publicKeyToken = new byte[0];
-                var canOverride = false;
-
-                if (manifest.HasSignedContent && manifest.SignedContent.Length > 0)
-                {
-                    var firstBlock = manifest.SignedContent[0];
-                    if (!string.IsNullOrEmpty(firstBlock.PublicKey))
-                    {
-                        // Extract certificate from public key PEM
-                        try
-                        {
-                            using var reader = new StringReader(firstBlock.PublicKey);
-                            var pemReader = new PemReader(reader);
-                            var pemObject = pemReader.ReadObject();
-
-                            // For V2.0, we work with raw public keys, not certificates
-                            // Create a dummy certificate for compatibility
-                            // TODO: Refactor LoadedManifest to not require X509Certificate
-                        }
-                        catch (Exception)
-                        {
-                            // Ignore certificate extraction errors for now
-                        }
-                    }
-                }
-
-                var legacyManifestPath = _fileSystem.Path.Combine(directory, "LuaManifest.json");
-                return Result.Success<LoadedManifest, ManifestError>(
-                    new LoadedManifest(
-                        manifest,
-                        legacyManifestPath,
-                        DateTime.UtcNow,
-                        Maybe<X509Certificate>.From(primaryCert),
-                        publicKeyToken,
-                        canOverride // Verified through legacy process
-                    )
-                );
+                return ProcessV2Manifest(manifest, directory);
             }
             catch (Exception ex)
             {
@@ -270,7 +234,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
                 // Create canonical form of manifest for verification
                 var canonicalManifest = CreateCanonicalManifest(manifest);
                 var manifestBytes = Encoding.UTF8.GetBytes(canonicalManifest);
-                // V2.0 - Extract signature from first signed content block
+                // Extract signature from first signed content block
                 var signatureBytes =
                     manifest.HasSignedContent
                     && manifest.SignedContent.Length > 0
@@ -309,11 +273,9 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// </summary>
         private string GetSignatureAlgorithm(Manifest manifest, AsymmetricKeyParameter publicKey)
         {
-            // V2.0 manifests don't have a central Security.SigningAlgorithm field
-            // Algorithm is determined per SignedContent block, but for compatibility we use key type
+            // Algorithm is determined per SignedContent block
+            // For now, we determine algorithm from key type directly
             string claimedAlgorithm = null;
-
-            // For V2.0 manifests, we determine algorithm from key type directly
             if (!string.IsNullOrEmpty(claimedAlgorithm))
             {
                 // Validate algorithm matches key type - critical security check
@@ -352,7 +314,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// </summary>
         private string CreateCanonicalManifest(Manifest manifest)
         {
-            // For V2.0 manifests, we create the canonical form by removing signatures from SignedContent blocks
+            // Create the canonical form by removing signatures from SignedContent blocks
             var signedContentWithoutSignatures = manifest
                 .SignedContent.Select(block => new SignedContentBlock
                 {
@@ -387,7 +349,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
                 throw new ArgumentException("Hex string must have even length");
 
             var bytes = new byte[length / 2];
-            for (int i = 0; i < length; i += 2)
+            for (var i = 0; i < length; i += 2)
             {
                 bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
             }

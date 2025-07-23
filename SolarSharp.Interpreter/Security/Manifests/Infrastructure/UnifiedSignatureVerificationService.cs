@@ -73,7 +73,7 @@ namespace SolarSharp.Interpreter.Security.Manifests.Infrastructure
                 }
 
                 // Verify each signed-content block
-                for (int i = 0; i < signedContentArray.GetArrayLength(); i++)
+                for (var i = 0; i < signedContentArray.GetArrayLength(); i++)
                 {
                     var blockElement = signedContentArray[i];
                     var correspondingBlock = manifest.SignedContent[i];

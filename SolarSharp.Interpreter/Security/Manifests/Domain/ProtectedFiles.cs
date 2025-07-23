@@ -223,7 +223,13 @@ namespace SolarSharp.Interpreter.Security.Manifests.Domain
 
             var hash = new byte[digest.GetDigestSize()];
             digest.DoFinal(hash, 0);
-            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+            // Using StringBuilder for efficient hex conversion in .NET Standard 2.1
+            var sb = new System.Text.StringBuilder(hash.Length * 2);
+            foreach (var b in hash)
+            {
+                sb.Append(b.ToString("x2"));
+            }
+            return sb.ToString();
         }
 
         private static string CalculateSHA1(Stream stream)
@@ -238,7 +244,13 @@ namespace SolarSharp.Interpreter.Security.Manifests.Domain
 
             var hash = new byte[digest.GetDigestSize()];
             digest.DoFinal(hash, 0);
-            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+            // Using StringBuilder for efficient hex conversion in .NET Standard 2.1
+            var sb = new System.Text.StringBuilder(hash.Length * 2);
+            foreach (var b in hash)
+            {
+                sb.Append(b.ToString("x2"));
+            }
+            return sb.ToString();
         }
 
         private static string CalculateMD5(Stream stream)
@@ -253,7 +265,13 @@ namespace SolarSharp.Interpreter.Security.Manifests.Domain
 
             var hash = new byte[digest.GetDigestSize()];
             digest.DoFinal(hash, 0);
-            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+            // Using StringBuilder for efficient hex conversion in .NET Standard 2.1
+            var sb = new System.Text.StringBuilder(hash.Length * 2);
+            foreach (var b in hash)
+            {
+                sb.Append(b.ToString("x2"));
+            }
+            return sb.ToString();
         }
     }
 

@@ -22,7 +22,7 @@ namespace SolarSharp.Interpreter.DataTypes
         static StringCache()
         {
             // Pre-populate small integer cache
-            for (int i = 0; i <= 1000; i++)
+            for (var i = 0; i <= 1000; i++)
             {
                 SmallIntegerCache[i] = i.ToString(CultureInfo.InvariantCulture);
             }

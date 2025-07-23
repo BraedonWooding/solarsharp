@@ -5,32 +5,50 @@ using SolarSharp.Interpreter.Errors;
 
 namespace Benchmark.Implementations
 {
+    /// <summary>
+    /// Represents the SolarSharp implementation of the abstract Lua script execution.
+    /// This class is designed specifically for benchmarking purposes and uses
+    /// an unlimited policy set for flexible resource usage during script execution.
+    /// </summary>
     public class SolarSharpImplementation : AImplementation
     {
-        public readonly Script script;
+        private readonly Script _script;
 
         public SolarSharpImplementation()
         {
             // Use BenchmarkUnlimitedBasePolicySet with no limits:
-            // - 0 = unlimited memory
-            // - 0 = unlimited instructions
-            // - 0 = unlimited timeout
-            // - 0 = unlimited call depth
-            // - 0 = unlimited tables
+            // - -1 = unlimited memory
+            // - -1 = unlimited instructions
+            // - -1 = unlimited timeout
+            // - -1 = unlimited call depth
+            // - -1 = unlimited tables
             // WARNING: Only for benchmarking, never use in production
             var benchmarkBasePolicySet = Examples.BenchmarkUnlimitedBasePolicySet;
             Script.WarmUp(benchmarkBasePolicySet);
-            script = new Script(benchmarkBasePolicySet);
+            _script = new Script(benchmarkBasePolicySet);
             
             // Inject global math functions for backward compatibility with benchmark files
             // Many benchmark files expect these to be global (Lua 5.1 style)
             InjectGlobalMathFunctions();
         }
 
+        /// <summary>
+        /// Injects commonly used mathematical functions and constants as global variables
+        /// into the Lua scripting environment for backward compatibility with older Lua 5.1-style code.
+        /// </summary>
+        /// <remarks>
+        /// This method retrieves the `math` module from the Lua environment and iterates over a predefined
+        /// list of expected mathematical functions and constants. If the functions or constants exist in
+        /// the `math` module, they are added to the global environment to simulate a global scope for these
+        /// mathematical utilities. This is primarily for compatibility with benchmark files created with
+        /// a global `math` context.
+        /// Note that exceptions or missing functions during the injection process are silently ignored.
+        /// Additionally, this approach should not be used in production as it alters the script's global scope.
+        /// </remarks>
         private void InjectGlobalMathFunctions()
         {
             // Get the math module
-            var mathTable = script.DoString("return math");
+            var mathTable = _script.DoString("return math");
             if (mathTable.Type != DataType.Table)
                 return;
 
@@ -46,12 +64,12 @@ namespace Benchmark.Implementations
             {
                 try
                 {
-                    var funcValue = script.DoString($"return math.{func}");
+                    var funcValue = _script.DoString($"return math.{func}");
                     if (funcValue.Type == DataType.Function || 
                         funcValue.Type == DataType.ClrFunction ||
                         funcValue.Type == DataType.Number) // for constants like pi, huge
                     {
-                        script.Globals[func] = funcValue;
+                        _script.Globals[func] = funcValue;
                     }
                 }
                 catch
@@ -61,9 +79,14 @@ namespace Benchmark.Implementations
             }
         }
 
+        /// <summary>
+        /// Executes a Lua script provided as a string using the SolarSharp interpreter and returns the result.
+        /// </summary>
+        /// <param name="file">The Lua script content to be executed.</param>
+        /// <returns>The result of the Lua script's execution.</returns>
         public override object Run(string file)
         {
-            return script.DoString(file);
+            return _script.DoString(file);
         }
 
     }

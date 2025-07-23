@@ -42,7 +42,7 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                     // Create and sign manifest
                     var manifest = new LuaManifest
                     {
-                        Version = "1.0",
+                        Version = "2.0",
                         Description = "Test package",
                         Files = new Dictionary<string, FilePolicy>
                         {
@@ -175,7 +175,7 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                     // Create manifest with original hash
                     var manifest = new LuaManifest
                     {
-                        Version = "1.0",
+                        Version = "2.0",
                         Files = new Dictionary<string, FilePolicy>
                         {
                             ["main.lua"] = new FilePolicy
@@ -348,7 +348,7 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                     // Create manifest covering all files
                     var manifest = new LuaManifest
                     {
-                        Version = "1.0",
+                        Version = "2.0",
                         Files = new Dictionary<string, FilePolicy>
                         {
                             ["main.lua"] = new FilePolicy { Hash = mainHash, Algorithm = "SHA256" },
@@ -479,7 +479,7 @@ namespace SolarSharp.Interpreter.Tests.Units.SecurityTestSuite
                     // Create manifest only covering signed script
                     var manifest = new LuaManifest
                     {
-                        Version = "1.0",
+                        Version = "2.0",
                         Files = new Dictionary<string, FilePolicy>
                         {
                             ["signed.lua"] = new FilePolicy

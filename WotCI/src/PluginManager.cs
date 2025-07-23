@@ -215,15 +215,15 @@ namespace WotCI
             {
                 PluginTrustLevel.User => Examples.Isolated() with
                 {
-                    TimeoutMs = SecurityConstants.Plugins.UserPluginTimeoutSeconds * 1000,
-                    MaxMemoryMB = SecurityConstants.Plugins.UserPluginMemoryLimitMB,
-                    MaxInstructions = SecurityConstants.Plugins.UserPluginInstructionLimit,
+                    TimeoutMs = WotCISecurityConstants.Plugins.UserPluginTimeoutSeconds * 1000,
+                    MaxMemoryMB = WotCISecurityConstants.Plugins.UserPluginMemoryLimitMB,
+                    MaxInstructions = WotCISecurityConstants.Plugins.UserPluginInstructionLimit,
                 },
 
                 PluginTrustLevel.Partner => Examples.Desktop() with
                 {
-                    TimeoutMs = SecurityConstants.Plugins.PartnerPluginTimeoutMinutes * 60 * 1000,
-                    MaxMemoryMB = SecurityConstants.Plugins.PartnerPluginMemoryLimitMB,
+                    TimeoutMs = WotCISecurityConstants.Plugins.PartnerPluginTimeoutMinutes * 60 * 1000,
+                    MaxMemoryMB = WotCISecurityConstants.Plugins.PartnerPluginMemoryLimitMB,
                 },
 
                 PluginTrustLevel.System => Examples.Automation(),
@@ -358,7 +358,7 @@ namespace WotCI
 
                     // Use async delay instead of Thread.Sleep
                     await Task.Delay(
-                        SecurityConstants.Plugins.PluginUpdateInterval,
+                        WotCISecurityConstants.Plugins.PluginUpdateInterval,
                         cancellationToken
                     );
                 }
