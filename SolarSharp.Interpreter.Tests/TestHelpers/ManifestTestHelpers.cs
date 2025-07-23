@@ -154,7 +154,7 @@ namespace SolarSharp.Interpreter.Tests.TestHelpers
                 Restrict = new PolicyRestrictions
                 {
                     MaxMemory = "50MB",
-                    Timeout = "10s"
+                    Timeout = "30s"
                 }
             };
         }
@@ -194,8 +194,8 @@ namespace SolarSharp.Interpreter.Tests.TestHelpers
                 },
                 Restrict = basePolicy.Restrict with
                 {
-                    MaxMemory = "10MB",
-                    Timeout = "5s"
+                    MaxMemory = "1MB",
+                    Timeout = "1s"
                 }
             };
         }

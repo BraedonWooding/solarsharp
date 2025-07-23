@@ -547,7 +547,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var scriptPath = Path.Combine(_tempDir, "test.lua");
             File.WriteAllText(scriptPath, "return 42");
 
-            // Use isolated base policy which has a 100ms timeout limit
+            // Use isolated base policy which has a 1000ms (1 second) timeout limit
             var script = new Script(Examples.IsolatedBasePolicySet); // No trusted keys loaded
 
             // Test that unsigned manifests are allowed as long as they don't violate base policy
@@ -557,8 +557,7 @@ namespace SolarSharp.Interpreter.Tests.Units
                 ManifestJsonOptions.Default
             );
             
-            // Since the manifest doesn't specify a timeout, it will use the default from Examples.Isolated()
-            // which is 5000ms, but the base policy has 1000ms (1 second), so this should fail
+            // Since the manifest specifies a timeout of "5s" (5000ms), and the base policy has 1000ms (1 second), this should fail
             var ex = Assert.Throws<ManifestFormatException>(() => script.AddManifest(manifest));
             Assert.That(ex.Message, Does.Contain("Untrusted manifest cannot increase timeout"));
 

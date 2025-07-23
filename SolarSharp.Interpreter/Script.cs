@@ -349,6 +349,75 @@ namespace SolarSharp.Interpreter
         }
 
         /// <summary>
+        /// Parses a timeout string from manifest format (e.g., "5s", "1000ms", "2m")
+        /// </summary>
+        private static int ParseTimeoutString(string timeout)
+        {
+            var normalized = timeout.ToLowerInvariant().Trim();
+            
+            // Handle TimeSpan format (00:00:00.00)
+            if (normalized.Contains(':'))
+            {
+                if (TimeSpan.TryParse(normalized, out var timespan))
+                {
+                    return (int)timespan.TotalMilliseconds;
+                }
+                throw new ManifestFormatException($"Invalid timeout format: '{timeout}'. Expected format: HH:MM:SS or value with suffix (ms, s, m)", "ParseTimeout");
+            }
+            
+            // Handle suffix formats
+            if (normalized.EndsWith("ms"))
+            {
+                if (int.TryParse(normalized.Replace("ms", ""), out var ms))
+                    return ms;
+                throw new ManifestFormatException($"Invalid timeout format: '{timeout}'. Could not parse milliseconds value", "ParseTimeout");
+            }
+            else if (normalized.EndsWith("s"))
+            {
+                if (int.TryParse(normalized.Replace("s", ""), out var seconds))
+                    return seconds * 1000;
+                throw new ManifestFormatException($"Invalid timeout format: '{timeout}'. Could not parse seconds value", "ParseTimeout");
+            }
+            else if (normalized.EndsWith("m"))
+            {
+                if (int.TryParse(normalized.Replace("m", ""), out var minutes))
+                    return minutes * 60 * 1000;
+                throw new ManifestFormatException($"Invalid timeout format: '{timeout}'. Could not parse minutes value", "ParseTimeout");
+            }
+            
+            throw new ManifestFormatException($"Invalid timeout format: '{timeout}'. Expected suffix: ms, s, or m", "ParseTimeout");
+        }
+
+        /// <summary>
+        /// Parses a memory string from manifest format (e.g., "1MB", "512KB", "2GB")
+        /// </summary>
+        private static int ParseMemoryString(string memory)
+        {
+            var normalized = memory.ToUpperInvariant().Trim();
+            
+            if (normalized.EndsWith("KB"))
+            {
+                if (int.TryParse(normalized.Replace("KB", ""), out var kb))
+                    return kb / 1024; // Convert to MB
+                throw new ManifestFormatException($"Invalid memory format: '{memory}'. Could not parse KB value", "ParseMemory");
+            }
+            else if (normalized.EndsWith("MB"))
+            {
+                if (int.TryParse(normalized.Replace("MB", ""), out var mb))
+                    return mb;
+                throw new ManifestFormatException($"Invalid memory format: '{memory}'. Could not parse MB value", "ParseMemory");
+            }
+            else if (normalized.EndsWith("GB"))
+            {
+                if (int.TryParse(normalized.Replace("GB", ""), out var gb))
+                    return gb * 1024;
+                throw new ManifestFormatException($"Invalid memory format: '{memory}'. Could not parse GB value", "ParseMemory");
+            }
+            
+            throw new ManifestFormatException($"Invalid memory format: '{memory}'. Expected suffix: KB, MB, or GB", "ParseMemory");
+        }
+
+        /// <summary>
         /// Derives an aggregate SecurityPolicy from all policies in a V2.0 manifest
         /// </summary>
         private static SecurityPolicy DeriveAggregatePolicyFromManifest(Manifest manifest)
@@ -385,21 +454,28 @@ namespace SolarSharp.Interpreter
                 // Find most permissive timeout and memory limits
                 if (!string.IsNullOrEmpty(policy.Restrict.Timeout))
                 {
-                    if (TimeSpan.TryParse(policy.Restrict.Timeout, out var timeout))
+                    try
                     {
-                        maxTimeoutMs = Math.Max(maxTimeoutMs, (int)timeout.TotalMilliseconds);
+                        var timeoutMs = ParseTimeoutString(policy.Restrict.Timeout);
+                        maxTimeoutMs = Math.Max(maxTimeoutMs, timeoutMs);
+                    }
+                    catch (ManifestFormatException)
+                    {
+                        // Invalid timeout format, skip this policy's timeout
                     }
                 }
 
-                if (string.IsNullOrEmpty(policy.Restrict.MaxMemory))
+                if (!string.IsNullOrEmpty(policy.Restrict.MaxMemory))
                 {
-                    continue;
-                }
-
-                var memoryStr = policy.Restrict.MaxMemory.ToUpperInvariant();
-                if (memoryStr.EndsWith("MB") && int.TryParse(memoryStr[0..^2], out var mb))
-                {
-                    maxMemoryMB = Math.Max(maxMemoryMB, mb);
+                    try
+                    {
+                        var memoryMB = ParseMemoryString(policy.Restrict.MaxMemory);
+                        maxMemoryMB = Math.Max(maxMemoryMB, memoryMB);
+                    }
+                    catch (ManifestFormatException)
+                    {
+                        // Invalid memory format, skip this policy's memory limit
+                    }
                 }
             }
 
@@ -745,6 +821,7 @@ namespace SolarSharp.Interpreter
                 // Create new ResourceController
                 var resourceController = new ResourceController(limits);
                 this.SetResourceController(resourceController);
+                
             }
 
             // Subscribe to resource limit events
@@ -753,17 +830,17 @@ namespace SolarSharp.Interpreter
             {
                 activeController.ResourceLimitExceeded += (sender, args) =>
                 {
-                var ev = new SecurityEvent
-                {
-                    Type = SecurityEventType.ResourceLimitExceeded,
-                    Operation = $"ResourceLimit_{args.ResourceType}",
-                    Arguments = new object[] { args.CurrentValue, args.Limit },
-                    Details =
-                        $"{args.ResourceType} limit exceeded: {args.CurrentValue} > {args.Limit}",
-                    TerminateExecution = true,
-                    ViolationHandling = SecurityViolationHandling.ThrowError,
-                };
-                _securityLogger.LogSecurityEvent(ev);
+                    var ev = new SecurityEvent
+                    {
+                        Type = SecurityEventType.ResourceLimitExceeded,
+                        Operation = $"ResourceLimit_{args.ResourceType}",
+                        Arguments = new object[] { args.CurrentValue, args.Limit },
+                        Details =
+                            $"{args.ResourceType} limit exceeded: {args.CurrentValue} > {args.Limit}",
+                        TerminateExecution = true,
+                        ViolationHandling = SecurityViolationHandling.ThrowError,
+                    };
+                    _securityLogger.LogSecurityEvent(ev);
                 };
             }
 
@@ -831,6 +908,7 @@ namespace SolarSharp.Interpreter
                 // Check if untrusted manifest is trying to increase timeout
                 // For V2.0 manifests, derive aggregate policy from all signed content blocks
                 var aggregatePolicy = DeriveAggregatePolicyFromManifest(manifest);
+                
                 if (
                     !IsManifestSigned(manifest)
                     && aggregatePolicy.TimeoutMs > defaultPolicy.TimeoutMs

@@ -60,6 +60,7 @@ namespace WotCI.Tests
                 TimeoutMs = 5000, // Original manifest had timeoutMs: 5000
                 MaxMemoryMB = 10, // Original manifest had maxMemoryMB: 10
                 MaxInstructions = 100_000, // Set a reasonable instruction limit
+                MaxCallDepth = 100, // Set a reasonable call depth limit
                 AllowExecution = true, // Allow execution for plugin code
             };
 

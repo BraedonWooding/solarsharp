@@ -246,8 +246,8 @@ namespace SolarSharp.Interpreter.Tests.Security
             {
                 // Default policy has Timeout="30s" (30000ms), fallback has 20000ms, so min is 20000ms
                 Assert.That(policy.TimeoutMs, Is.EqualTo(20000)); // min(30000, 20000)
-                // Default policy has MaxMemory="64MB" (64MB), fallback has 64MB, so min is 64MB
-                Assert.That(policy.MaxMemoryMB, Is.EqualTo(64)); // min(64, 64)
+                // Default policy has MaxMemory="50MB" (50MB), fallback has 64MB, so min is 50MB
+                Assert.That(policy.MaxMemoryMB, Is.EqualTo(50)); // min(50, 64)
             });
         }
 
