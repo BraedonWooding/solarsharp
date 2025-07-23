@@ -86,12 +86,30 @@ namespace SolarSharp.Interpreter.Tests.Integration
                 {
                     Packages = ImmutableArray.Create("test-app"),
                     Selector = ":file",
-                    Grant = new PolicyGrant
+                    MaxMemory = "128MB",
+                    Timeout = "30s",
+                    Modules = new ManifestModuleRestriction
                     {
-                        FileRead = ImmutableArray.Create(Path.Combine(pluginsDir, "data/*")),
-                        Capabilities = ImmutableArray.Create("file-read"),
+                        DenyAll = false,
+                        Modules = ImmutableArray<string>.Empty // No module restrictions
                     },
-                    Restrict = new PolicyRestrictions { MaxMemory = "128MB", Timeout = "30s" },
+                    Capabilities = new ManifestCapabilityRestriction
+                    {
+                        DenyAll = true,
+                        Capabilities = ImmutableArray.Create("FileRead") // Allow only FileRead
+                    },
+                    Paths = new ManifestPathRestriction
+                    {
+                        DenyAll = true,
+                        Patterns = ImmutableArray.Create(Path.Combine(pluginsDir, "data/*")) // Allow only this path
+                    },
+                    Hosts = new ManifestHostRestriction
+                    {
+                        DenyAll = false,
+                        Patterns = ImmutableArray<string>.Empty // No host restrictions
+                    },
+                    DenyAll = false,
+                    InheritFromFile = true
                 }
             );
 

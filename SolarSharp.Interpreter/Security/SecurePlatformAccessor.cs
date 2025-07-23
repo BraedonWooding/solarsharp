@@ -50,6 +50,7 @@ namespace SolarSharp.Interpreter.Security
                 AllowHiddenFiles = config.AllowHiddenFiles,
                 MaxFileSize = config.MaxFileSize,
                 DirectoryAccessRules = config.DirectoryAccessRules,
+                PathRestrictions = config.PathRestrictions,
             };
 
             _fileValidator = new FileSystemValidator(fileSystemSecurity);
@@ -102,6 +103,7 @@ namespace SolarSharp.Interpreter.Security
                 AllowHiddenFiles = config.AllowHiddenFiles,
                 MaxFileSize = config.MaxFileSize,
                 DirectoryAccessRules = config.DirectoryAccessRules,
+                PathRestrictions = config.PathRestrictions,
             };
             _fileValidator = new FileSystemValidator(fileSystemSecurity);
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));

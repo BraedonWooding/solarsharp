@@ -97,11 +97,12 @@ namespace SolarSharp.Interpreter.Security.Manifests
                     "Only V2.0 manifests with signed content are supported"
                 );
 
+            // TODO: Update for V2.0 manifest structure
+            // This code uses the old Grant/Restrict structure which no longer exists
             var policy = new ManifestPolicy
             {
                 Packages = targetPackages?.ToImmutableArray() ?? ImmutableArray<string>.Empty,
-                Grant = grantPermissions as PolicyGrant ?? new PolicyGrant(),
-                Restrict = restrictPermissions as PolicyRestrictions ?? new PolicyRestrictions(),
+                // Grant and Restrict no longer exist
             };
 
             var updatedBlocks = manifest

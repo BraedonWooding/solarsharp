@@ -71,17 +71,17 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
             {
                 var idx = index.String;
 
-                if (idx == "Current" || idx == "current")
+                if (idx is "Current" or "current")
                 {
                     return DynValue.FromObject(script, m_Enumerator.Current);
                 }
-                if (idx == "MoveNext" || idx == "moveNext" || idx == "move_next")
+                if (idx is "MoveNext" or "moveNext" or "move_next")
                 {
                     return DynValue.NewCallback(
                         (ctx, args) => DynValue.NewBoolean(m_Enumerator.MoveNext())
                     );
                 }
-                if (idx == "Reset" || idx == "reset")
+                if (idx is "Reset" or "reset")
                 {
                     return DynValue.NewCallback(
                         (ctx, args) =>

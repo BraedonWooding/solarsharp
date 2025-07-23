@@ -138,9 +138,7 @@ namespace SolarSharp.Interpreter.Debugging
         public override string ToString()
         {
             if (
-                Action == ActionType.ToggleBreakpoint
-                || Action == ActionType.SetBreakpoint
-                || Action == ActionType.ClearBreakpoint
+                Action is ActionType.ToggleBreakpoint or ActionType.SetBreakpoint or ActionType.ClearBreakpoint
             )
             {
                 return $"{Action} {SourceID}:({SourceLine},{SourceCol})";

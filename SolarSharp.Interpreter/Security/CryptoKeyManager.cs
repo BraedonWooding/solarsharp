@@ -204,7 +204,7 @@ namespace SolarSharp.Interpreter.Security
         {
             // PIV compliance allows only P-256 (secp256r1) and P-384 (secp384r1)
             // Key size 256 = P-256, Key size 384 = P-384
-            return ecdsa.KeySize == 256 || ecdsa.KeySize == 384;
+            return ecdsa.KeySize is 256 or 384;
         }
 
         /// <summary>

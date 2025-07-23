@@ -166,7 +166,7 @@ namespace SolarSharp.Interpreter.Execution
 
                 func = v;
 
-                if (func.Type == DataType.Function || func.Type == DataType.ClrFunction)
+                if (func.Type is DataType.Function or DataType.ClrFunction)
                 {
                     return Call(func, args);
                 }

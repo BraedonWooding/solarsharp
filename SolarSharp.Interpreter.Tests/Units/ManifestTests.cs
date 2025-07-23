@@ -8,6 +8,7 @@ using Org.BouncyCastle.Crypto.Parameters;
 using SolarSharp.Interpreter.Security;
 using SolarSharp.Interpreter.Security.Manifests;
 using SolarSharp.Interpreter.Security.Manifests.Infrastructure;
+using SolarSharp.Interpreter.Tests.TestHelpers;
 
 namespace SolarSharp.Interpreter.Tests.Units
 {
@@ -111,16 +112,13 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestManifestSigning()
         {
-            var manifestJson =
-                @"{
-                ""version"": ""1.0"",
-                ""description"": ""Test manifest"",
-                ""policy"": {
-                    ""securityLevel"": ""Isolated"",
-                    ""capabilities"": [""Basic"", ""String""]
-                }
-            }";
+            var manifest = ManifestTestHelpers.CreateTestManifest(
+                description: "Test manifest",
+                securityLevel: "Isolated",
+                capabilities: new[] { "Basic", "String" }
+            );
 
+            var manifestJson = JsonSerializer.Serialize(manifest, ManifestJsonOptions.Default);
             var signedJson = ManifestSigner.SignManifestJson(manifestJson, _testKey);
 
             // Verify V2.0 structure with signed-content blocks
@@ -170,31 +168,28 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestManifestVerification()
         {
-            var manifestJson =
-                @"{
-                ""version"": ""1.0"",
-                ""description"": ""Test manifest"",
-                ""policy"": {
-                    ""securityLevel"": ""Isolated""
-                }
-            }";
+            var manifest = ManifestTestHelpers.CreateTestManifest(
+                description: "Test manifest",
+                securityLevel: "Isolated"
+            );
 
+            var manifestJson = JsonSerializer.Serialize(manifest, ManifestJsonOptions.Default);
             var signedJson = ManifestSigner.SignManifestJson(manifestJson, _testKey);
 
             // Parse as Manifest and verify V2.0 structure
-            var manifest = JsonSerializer.Deserialize<Manifest>(
+            var deserializedManifest = JsonSerializer.Deserialize<Manifest>(
                 signedJson,
                 ManifestJsonOptions.Default
             );
 
             // Verify V2.0 manifest structure with signed content
-            Assert.That(manifest.HasSignedContent, Is.True);
-            Assert.That(manifest.Version, Is.EqualTo("2.0"));
+            Assert.That(deserializedManifest.HasSignedContent, Is.True);
+            Assert.That(deserializedManifest.Version, Is.EqualTo("2.0"));
 
             Assert.Multiple(() =>
             {
-                Assert.That(manifest.SignedContent.Length, Is.GreaterThan(0));
-                var signedBlock = manifest.SignedContent[0];
+                Assert.That(deserializedManifest.SignedContent.Length, Is.GreaterThan(0));
+                var signedBlock = deserializedManifest.SignedContent[0];
                 Assert.That(signedBlock.Signature, Is.Not.Null);
                 Assert.That(signedBlock.Signature, Is.Not.Empty);
                 Assert.That(signedBlock.KeyId, Is.Not.Null);
@@ -204,12 +199,12 @@ namespace SolarSharp.Interpreter.Tests.Units
             });
 
             // Verify V2.0 manifest structure
-            var firstPackage = manifest.GetAllPackages().FirstOrDefault();
+            var firstPackage = deserializedManifest.GetAllPackages().FirstOrDefault();
             Assert.That(firstPackage.Package, Is.Not.Null);
             Assert.That(firstPackage.Package.Metadata.Description, Is.EqualTo("Test manifest"));
 
             // Verify the signature exists and is valid Base64
-            var signature = manifest.SignedContent[0].Signature;
+            var signature = deserializedManifest.SignedContent[0].Signature;
             Assert.That(signature, Is.Not.Empty);
             Assert.DoesNotThrow(() => Convert.FromBase64String(signature));
         }
@@ -235,16 +230,13 @@ namespace SolarSharp.Interpreter.Tests.Units
             var scriptDir = Path.Combine(_tempDir, "scripts");
             Directory.CreateDirectory(scriptDir);
 
-            var manifestJson =
-                @"{
-                ""version"": ""1.0"",
-                ""description"": ""Test manifest"",
-                ""policy"": {
-                    ""securityLevel"": ""Configuration"",
-                    ""capabilities"": [""Basic"", ""String"", ""FileRead""]
-                }
-            }";
+            var manifest = ManifestTestHelpers.CreateTestManifest(
+                description: "Test manifest",
+                securityLevel: "Configuration",
+                capabilities: new[] { "Basic", "String", "FileRead" }
+            );
 
+            var manifestJson = JsonSerializer.Serialize(manifest, ManifestJsonOptions.Default);
             var signedJson = ManifestSigner.SignManifestJson(manifestJson, _testKey);
             // Place manifest in same directory as script (current implementation requirement)
             var manifestPath = Path.Combine(scriptDir, "LuaManifest.json");
@@ -297,18 +289,15 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestManifestPolicyApplication()
         {
-            var manifestJson =
-                @"{
-                ""version"": ""1.0"",
-                ""description"": ""Policy test manifest"",
-                ""policy"": {
-                    ""securityLevel"": ""Configuration"",
-                    ""allowedModules"": ""Basic, String"",
-                    ""maxMemoryMB"": 25,
-                    ""timeoutMs"": 15000
-                }
-            }";
+            var manifest = ManifestTestHelpers.CreateTestManifest(
+                description: "Policy test manifest",
+                securityLevel: "Configuration",
+                capabilities: new[] { "Basic", "String" },
+                maxMemoryMB: 25,
+                timeoutMs: 15000
+            );
 
+            var manifestJson = JsonSerializer.Serialize(manifest, ManifestJsonOptions.Default);
             var signedJson = ManifestSigner.SignManifestJson(manifestJson, _testKey);
             var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
             File.WriteAllText(manifestPath, signedJson);
@@ -362,16 +351,13 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestScriptWithManifest()
         {
-            var manifestJson =
-                @"{
-                ""version"": ""1.0"",
-                ""description"": ""Test execution manifest"",
-                ""policy"": {
-                    ""securityLevel"": ""Configuration"",
-                    ""capabilities"": [""Basic"", ""String""]
-                }
-            }";
+            var manifest = ManifestTestHelpers.CreateTestManifest(
+                description: "Test execution manifest",
+                securityLevel: "Configuration",
+                capabilities: new[] { "Basic", "String" }
+            );
 
+            var manifestJson = JsonSerializer.Serialize(manifest, ManifestJsonOptions.Default);
             var signedJson = ManifestSigner.SignManifestJson(manifestJson, _testKey);
             var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
             File.WriteAllText(manifestPath, signedJson);
@@ -413,16 +399,13 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestLoadFileSecurely()
         {
-            var manifestJson =
-                @"{
-                ""version"": ""1.0"",
-                ""description"": ""Function library manifest"",
-                ""policy"": {
-                    ""securityLevel"": ""Configuration"",
-                    ""capabilities"": [""Basic"", ""String""]
-                }
-            }";
+            var manifest = ManifestTestHelpers.CreateTestManifest(
+                description: "Function library manifest",
+                securityLevel: "Configuration",
+                capabilities: new[] { "Basic", "String" }
+            );
 
+            var manifestJson = JsonSerializer.Serialize(manifest, ManifestJsonOptions.Default);
             var signedJson = ManifestSigner.SignManifestJson(manifestJson, _testKey);
             var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
             File.WriteAllText(manifestPath, signedJson);
@@ -466,16 +449,13 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestCreateForDirectory()
         {
-            var manifestJson =
-                @"{
-                ""version"": ""1.0"",
-                ""description"": ""Directory context manifest"",
-                ""policy"": {
-                    ""securityLevel"": ""DataProcessing"",
-                    ""capabilities"": [""Basic"", ""String"", ""FileRead"", ""FileWrite""]
-                }
-            }";
+            var manifest = ManifestTestHelpers.CreateTestManifest(
+                description: "Directory context manifest",
+                securityLevel: "DataProcessing",
+                capabilities: new[] { "Basic", "String", "FileRead", "FileWrite" }
+            );
 
+            var manifestJson = JsonSerializer.Serialize(manifest, ManifestJsonOptions.Default);
             var signedJson = ManifestSigner.SignManifestJson(manifestJson, _testKey);
             var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
             File.WriteAllText(manifestPath, signedJson);
@@ -710,15 +690,12 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestAntiPolymorphismPolicies()
         {
-            var manifestJson =
-                @"{
-                ""version"": ""1.0"",
-                ""description"": ""Anti-polymorphism test manifest"",
-                ""policy"": {
-                    ""securityLevel"": ""Configuration""
-                }
-            }";
+            var manifest = ManifestTestHelpers.CreateTestManifest(
+                description: "Anti-polymorphism test manifest",
+                securityLevel: "Configuration"
+            );
 
+            var manifestJson = JsonSerializer.Serialize(manifest, ManifestJsonOptions.Default);
             var signedJson = ManifestSigner.SignManifestJson(manifestJson, _testKey);
             var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
             File.WriteAllText(manifestPath, signedJson);
@@ -754,16 +731,13 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestHierarchicalManifests()
         {
             // Test that V2.0 manifests are self-contained and work without includes
-            var manifestJson =
-                @"{
-                ""version"": ""1.0"",
-                ""description"": ""Self-contained V2.0 manifest"",
-                ""policy"": {
-                    ""capabilities"": [""Basic"", ""String"", ""Math""]
-                }
-            }";
+            var manifest = ManifestTestHelpers.CreateTestManifest(
+                description: "Self-contained V2.0 manifest",
+                capabilities: new[] { "Basic", "String", "Math" }
+            );
 
             // Sign the V2.0 manifest
+            var manifestJson = JsonSerializer.Serialize(manifest, ManifestJsonOptions.Default);
             var signedManifest = ManifestSigner.SignManifestJson(manifestJson, _testKey);
 
             // Verify it creates a V2.0 manifest

@@ -139,8 +139,8 @@ namespace WotCI
         public Stream OpenFile(string path, FileMode mode, FileAccess access)
         {
             // Check capabilities
-            var requiredRead = access == FileAccess.Read || access == FileAccess.ReadWrite;
-            var requiredWrite = access == FileAccess.Write || access == FileAccess.ReadWrite;
+            var requiredRead = access is FileAccess.Read or FileAccess.ReadWrite;
+            var requiredWrite = access is FileAccess.Write or FileAccess.ReadWrite;
 
             if (requiredRead && !_securityConfig.Capabilities.HasFlag(ScriptCapabilities.FileRead))
                 throw new UnauthorizedAccessException("File read access denied by security policy");

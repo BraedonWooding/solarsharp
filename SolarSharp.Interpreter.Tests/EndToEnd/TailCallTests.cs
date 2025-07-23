@@ -40,7 +40,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TcoTest_Big()
         {
-            // calc the sum of the first N numbers in the most stupid way ever to waste stack and trigger TCO..
+            // calc the sum of the first N numbers in an inefficient way to waste stack and trigger TCO..
             // (this could be a simple X*(X+1) / 2... )
             var script =
                 @"

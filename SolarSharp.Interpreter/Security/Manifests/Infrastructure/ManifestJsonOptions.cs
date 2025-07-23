@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using SolarSharp.Interpreter.Modules;
@@ -24,6 +25,9 @@ namespace SolarSharp.Interpreter.Security.Manifests.Infrastructure
                 ReadCommentHandling = JsonCommentHandling.Skip,
                 WriteIndented = true,
             };
+
+            // Add converter for ImmutableArray<string>
+            options.Converters.Add(new ImmutableArrayJsonConverter<string>());
 
             // Add converters for enums that support both single values and arrays
             options.Converters.Add(new EnumArrayJsonConverter<ScriptCapabilities>());

@@ -295,20 +295,60 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Packages = ImmutableArray.Create("api-package"),
                 Selector = ":file",
-                Grant = new PolicyGrant
+                MaxMemory = "128MB",
+                Timeout = "30s",
+                Modules = new ManifestModuleRestriction
                 {
-                    FileRead = ImmutableArray.Create("/api/data/*"),
-                    Capabilities = ImmutableArray.Create("file-read"),
+                    DenyAll = false,
+                    Modules = ImmutableArray<string>.Empty // No module restrictions
                 },
-                Restrict = new PolicyRestrictions { MaxMemory = "128MB", Timeout = "30s" },
+                Capabilities = new ManifestCapabilityRestriction
+                {
+                    DenyAll = true,
+                    Capabilities = ImmutableArray.Create("FileRead") // Allow only FileRead
+                },
+                Paths = new ManifestPathRestriction
+                {
+                    DenyAll = true,
+                    Patterns = ImmutableArray.Create("/api/data/*") // Allow only this path
+                },
+                Hosts = new ManifestHostRestriction
+                {
+                    DenyAll = false,
+                    Patterns = ImmutableArray<string>.Empty // No host restrictions
+                },
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var evalPolicy = new ManifestPolicy
             {
                 Packages = ImmutableArray.Create("api-package"),
                 Selector = ":eval",
-                Grant = new PolicyGrant { Capabilities = ImmutableArray.Create("safe-compute") },
-                Restrict = new PolicyRestrictions { MaxMemory = "16MB", Timeout = "5s" },
+                MaxMemory = "16MB",
+                Timeout = "5s",
+                Modules = new ManifestModuleRestriction
+                {
+                    DenyAll = false,
+                    Modules = ImmutableArray<string>.Empty // No module restrictions
+                },
+                Capabilities = new ManifestCapabilityRestriction
+                {
+                    DenyAll = true,
+                    Capabilities = ImmutableArray.Create("SafeCompute") // Allow only SafeCompute
+                },
+                Paths = new ManifestPathRestriction
+                {
+                    DenyAll = true,
+                    Patterns = ImmutableArray<string>.Empty // No file access in eval
+                },
+                Hosts = new ManifestHostRestriction
+                {
+                    DenyAll = false,
+                    Patterns = ImmutableArray<string>.Empty // No host restrictions
+                },
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var manifest = ManifestTestHelpers.CreateV2Manifest(

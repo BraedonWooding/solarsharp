@@ -65,9 +65,7 @@ namespace Benchmark.Implementations
                 try
                 {
                     var funcValue = _script.DoString($"return math.{func}");
-                    if (funcValue.Type == DataType.Function || 
-                        funcValue.Type == DataType.ClrFunction ||
-                        funcValue.Type == DataType.Number) // for constants like pi, huge
+                    if (funcValue.Type is DataType.Function or DataType.ClrFunction or DataType.Number) // for constants like pi, huge
                     {
                         _script.Globals[func] = funcValue;
                     }

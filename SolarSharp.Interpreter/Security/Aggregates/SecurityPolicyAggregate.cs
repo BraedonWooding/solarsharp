@@ -203,7 +203,7 @@ namespace SolarSharp.Interpreter.Security.Aggregates
         /// </summary>
         private static bool IsPathMatch(string filePath, string pattern)
         {
-            if (pattern == "*" || pattern == "**/*")
+            if (pattern is "*" or "**/*")
                 return true;
 
             if (pattern.EndsWith("*"))

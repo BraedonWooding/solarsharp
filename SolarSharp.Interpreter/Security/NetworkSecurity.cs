@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using SolarSharp.Interpreter.Security.ValueTypes;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -22,6 +24,11 @@ namespace SolarSharp.Interpreter.Security
         /// Allowed hosts/domains (supports wildcards)
         /// </summary>
         public List<string> AllowedHosts { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Host restrictions from manifest policies
+        /// </summary>
+        public HostRestriction HostRestrictions { get; set; } = HostRestriction.None;
 
         /// <summary>
         /// Allowed ports (empty = all ports allowed for allowed hosts)
@@ -77,6 +84,54 @@ namespace SolarSharp.Interpreter.Security
                 AllowedHosts = new List<string>(allowedHosts),
                 AllowedPorts = new List<int> { 80, 443 },
             };
+
+        /// <summary>
+        /// Checks if a host is allowed considering both AllowedHosts and HostRestrictions
+        /// </summary>
+        /// <param name="host">The host to check</param>
+        /// <returns>True if the host is allowed, false otherwise</returns>
+        public bool IsHostAllowed(string host)
+        {
+            if (!AllowAccess)
+                return false;
+
+            // Check if host is denied by HostRestrictions first
+            if (HostRestrictions != null && HostRestrictions.IsRestricted(host))
+                return false;
+
+            // If no allowed hosts specified, allow all (unless denied by restrictions)
+            if (!AllowedHosts.Any())
+                return true;
+
+            // Check if host matches any allowed pattern
+            return AllowedHosts.Any(pattern => MatchesHostPattern(host, pattern));
+        }
+
+        /// <summary>
+        /// Checks if a host matches a pattern (supports wildcards)
+        /// </summary>
+        private static bool MatchesHostPattern(string host, string pattern)
+        {
+            if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(pattern))
+                return false;
+
+            // Exact match
+            if (host.Equals(pattern, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Wildcard matching
+            if (pattern.StartsWith("*."))
+            {
+                var domain = pattern.Substring(2);
+                return host.EndsWith(domain, StringComparison.OrdinalIgnoreCase) ||
+                       host.Equals(domain, StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (pattern == "*")
+                return true;
+
+            return false;
+        }
     }
 
     /// <summary>

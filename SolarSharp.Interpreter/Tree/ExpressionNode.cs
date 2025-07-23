@@ -7,6 +7,9 @@ using SolarSharp.Interpreter.Tree.Lexer;
 
 namespace SolarSharp.Interpreter.Tree
 {
+    /// <summary>
+    /// Base class for all expression AST nodes.
+    /// </summary>
     internal abstract class Expression : NodeBase
     {
         public Expression(ScriptLoadingContext lcontext)
@@ -72,7 +75,7 @@ namespace SolarSharp.Interpreter.Tree
                 lcontext.Lexer.Next();
                 e = SubExpr(lcontext, false);
 
-                // check for power operator -- it be damned forever and ever for being higher priority than unary ops
+                // check for power operator -- note that it has higher priority than unary ops
                 var unaryOp = T;
                 T = lcontext.Lexer.Current;
 

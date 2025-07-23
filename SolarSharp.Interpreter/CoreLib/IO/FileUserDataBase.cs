@@ -182,7 +182,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
             if (c == '.')
                 return !Framework.Do.StringContainsChar(numAsFar, '.');
 
-            if (c == 'E' || c == 'e')
+            if (c is 'E' or 'e')
                 return !(
                     Framework.Do.StringContainsChar(numAsFar, 'E')
                     || Framework.Do.StringContainsChar(numAsFar, 'e')

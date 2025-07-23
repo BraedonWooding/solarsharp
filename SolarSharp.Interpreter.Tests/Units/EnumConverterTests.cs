@@ -101,7 +101,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                             {
                                 ""packages"": [""test-package""],
                                 ""selector"": "":file"",
-                                ""grant"": {
+                                ""capabilities"": {
+                                    ""deny-all"": true,
                                     ""capabilities"": [""FileWrite""]
                                 }
                             }
@@ -122,7 +123,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var firstBlock = manifest.SignedContent[0];
             Assert.IsTrue(firstBlock.Policies.Length > 0);
             var firstPolicy = firstBlock.Policies[0];
-            Assert.Contains("FileWrite", firstPolicy.Grant.Capabilities);
+            Assert.Contains("FileWrite", firstPolicy.Capabilities.Capabilities);
         }
 
         [Test]
@@ -151,7 +152,8 @@ namespace SolarSharp.Interpreter.Tests.Units
                             {
                                 ""packages"": [""test-package""],
                                 ""selector"": "":file"",
-                                ""grant"": {
+                                ""modules"": {
+                                    ""deny-all"": true,
                                     ""modules"": [""basic""]
                                 }
                             }
@@ -172,8 +174,8 @@ namespace SolarSharp.Interpreter.Tests.Units
             var firstBlock = manifest.SignedContent[0];
             Assert.IsTrue(firstBlock.Policies.Length > 0);
             var firstPolicy = firstBlock.Policies[0];
-            // For V2.0, modules are in the grant section
-            Assert.Contains("basic", firstPolicy.Grant.Modules);
+            // For V2.0, modules are in the modules restriction section
+            Assert.Contains("basic", firstPolicy.Modules.Modules);
         }
     }
 }

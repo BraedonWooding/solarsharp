@@ -59,12 +59,14 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Packages = ImmutableArray.Create("test-package"),
                 Selector = ":file",
-                Grant = new PolicyGrant
+                Paths = new ManifestPathRestriction
                 {
-                    FileRead = ImmutableArray.Create("script.lua", "config.json"),
-                    FileWrite = ImmutableArray.Create("config.json"),
-                    Capabilities = ImmutableArray<string>.Empty,
+                    DenyAll = true,
+                    Patterns = ImmutableArray.Create("script.lua", "config.json")
                 },
+                Capabilities = ManifestCapabilityRestriction.None,
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var manifest = ManifestTestHelpers.CreateV2Manifest(
@@ -94,11 +96,14 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Packages = ImmutableArray.Create("test-package"),
                 Selector = ":file",
-                Grant = new PolicyGrant
+                Paths = new ManifestPathRestriction
                 {
-                    FileRead = ImmutableArray.Create("../secret.txt"),
-                    Capabilities = ImmutableArray<string>.Empty,
+                    DenyAll = true,
+                    Patterns = ImmutableArray.Create("../secret.txt")
                 },
+                Capabilities = ManifestCapabilityRestriction.None,
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var manifest = ManifestTestHelpers.CreateV2Manifest(
@@ -136,11 +141,14 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Packages = ImmutableArray.Create("test-package"),
                 Selector = ":file",
-                Grant = new PolicyGrant
+                Paths = new ManifestPathRestriction
                 {
-                    FileRead = ImmutableArray.Create("/etc/passwd"),
-                    Capabilities = ImmutableArray<string>.Empty,
+                    DenyAll = true,
+                    Patterns = ImmutableArray.Create("/etc/passwd")
                 },
+                Capabilities = ManifestCapabilityRestriction.None,
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var manifest = ManifestTestHelpers.CreateV2Manifest(
@@ -175,12 +183,18 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Packages = ImmutableArray.Create("test-package"),
                 Selector = ":file",
-                Grant = new PolicyGrant
+                Paths = new ManifestPathRestriction
                 {
-                    FileRead = ImmutableArray.Create("data/*", "cache/*"),
-                    FileWrite = ImmutableArray.Create("cache/*"),
-                    Capabilities = ImmutableArray.Create("directory-operations"),
+                    DenyAll = true,
+                    Patterns = ImmutableArray.Create("data/*", "cache/*")
                 },
+                Capabilities = new ManifestCapabilityRestriction
+                {
+                    DenyAll = true,
+                    Capabilities = ImmutableArray.Create("directory-operations")
+                },
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var manifest = ManifestTestHelpers.CreateV2Manifest(
@@ -210,12 +224,18 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Packages = ImmutableArray.Create("test-package"),
                 Selector = ":file",
-                Grant = new PolicyGrant
+                Paths = new ManifestPathRestriction
                 {
-                    FileRead = ImmutableArray.Create("../../system/*"),
-                    FileWrite = ImmutableArray.Create("../../system/*"),
-                    Capabilities = ImmutableArray.Create("directory-operations"),
+                    DenyAll = true,
+                    Patterns = ImmutableArray.Create("../../system/*")
                 },
+                Capabilities = new ManifestCapabilityRestriction
+                {
+                    DenyAll = true,
+                    Capabilities = ImmutableArray.Create("directory-operations")
+                },
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var manifest = ManifestTestHelpers.CreateV2Manifest(
@@ -250,12 +270,14 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Packages = ImmutableArray.Create("test-package"),
                 Selector = ":file",
-                Grant = new PolicyGrant
+                Paths = new ManifestPathRestriction
                 {
-                    FileRead = ImmutableArray.Create("*.lua", "data/*.json"),
-                    FileWrite = ImmutableArray.Create("data/*.json"),
-                    Capabilities = ImmutableArray<string>.Empty,
+                    DenyAll = true,
+                    Patterns = ImmutableArray.Create("*.lua", "data/*.json")
                 },
+                Capabilities = ManifestCapabilityRestriction.None,
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var manifest = ManifestTestHelpers.CreateV2Manifest(
@@ -285,11 +307,14 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Packages = ImmutableArray.Create("test-package"),
                 Selector = ":file",
-                Grant = new PolicyGrant
+                Paths = new ManifestPathRestriction
                 {
-                    FileRead = ImmutableArray.Create("../*.conf"),
-                    Capabilities = ImmutableArray<string>.Empty,
+                    DenyAll = true,
+                    Patterns = ImmutableArray.Create("../*.conf")
                 },
+                Capabilities = ManifestCapabilityRestriction.None,
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var manifest = ManifestTestHelpers.CreateV2Manifest(
@@ -364,11 +389,14 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Packages = ImmutableArray.Create("test-package"),
                 Selector = ":file",
-                Grant = new PolicyGrant
+                Paths = new ManifestPathRestriction
                 {
-                    FileRead = ImmutableArray.Create(".", "./data"),
-                    Capabilities = ImmutableArray<string>.Empty,
+                    DenyAll = true,
+                    Patterns = ImmutableArray.Create(".", "./data")
                 },
+                Capabilities = ManifestCapabilityRestriction.None,
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var manifest = ManifestTestHelpers.CreateV2Manifest(
@@ -396,15 +424,18 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Packages = ImmutableArray.Create("test-package"),
                 Selector = ":file",
-                Grant = new PolicyGrant
+                Paths = new ManifestPathRestriction
                 {
-                    FileRead = ImmutableArray.Create(
+                    DenyAll = true,
+                    Patterns = ImmutableArray.Create(
                         "valid.lua",
                         "../invalid.lua",
                         "alsoValid.lua"
-                    ),
-                    Capabilities = ImmutableArray<string>.Empty,
+                    )
                 },
+                Capabilities = ManifestCapabilityRestriction.None,
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var manifest = ManifestTestHelpers.CreateV2Manifest(
@@ -432,11 +463,14 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Packages = ImmutableArray.Create("test-package"),
                 Selector = ":file",
-                Grant = new PolicyGrant
+                Paths = new ManifestPathRestriction
                 {
-                    FileRead = ImmutableArray.Create(@"scripts\main.lua", @"..\system\config.ini"),
-                    Capabilities = ImmutableArray<string>.Empty,
+                    DenyAll = true,
+                    Patterns = ImmutableArray.Create(@"scripts\main.lua", @"..\system\config.ini")
                 },
+                Capabilities = ManifestCapabilityRestriction.None,
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var manifest = ManifestTestHelpers.CreateV2Manifest(

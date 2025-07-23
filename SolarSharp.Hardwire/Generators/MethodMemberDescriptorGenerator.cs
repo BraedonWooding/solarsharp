@@ -41,7 +41,7 @@ namespace SolarSharp.Hardwire.Generators
             // Ignore arrays weird special members
             if (isArray)
             {
-                if (memberName == "Get" || memberName == "Set" || memberName == "Address")
+                if (memberName is "Get" or "Set" or "Address")
                     return null;
             }
 

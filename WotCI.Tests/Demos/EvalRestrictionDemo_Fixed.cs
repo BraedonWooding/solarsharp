@@ -145,7 +145,7 @@ namespace WotCI.Tests.Demos
         [Test]
         public void Demo_CommunityPluginWithNoEval_V2Manifest()
         {
-            // Create a V2.0 manifest - isolated policy already forbids eval
+            // Create a V2.0 manifest - V2.0 format only restricts, never grants
             var manifestJson = """
                 {
                     "version": "2.0",
@@ -171,18 +171,11 @@ namespace WotCI.Tests.Demos
                                 {
                                     "packages": ["community-plugin"],
                                     "selector": ":file",
-                                    "grant": {
-                                        "modules": ["basic", "table", "string", "math"],
-                                        "capabilities": [],
-                                        "file-read": [],
-                                        "file-write": [],
-                                        "network": [],
-                                        "roles": []
-                                    },
-                                    "restrict": {
-                                        "timeout": "10s",
-                                        "max-memory": "32MB",
-                                        "deny": ["eval", "load", "loadstring"]
+                                    "timeout": "10s",
+                                    "max-memory": "32MB",
+                                    "capabilities": {
+                                        "deny-all": false,
+                                        "capabilities": ["eval", "load", "loadstring"]
                                     }
                                 }
                             ]
@@ -305,18 +298,11 @@ namespace WotCI.Tests.Demos
                                 {
                                     "packages": ["bad-plugin"],
                                     "selector": ":file",
-                                    "grant": {
-                                        "modules": ["basic", "table", "string"],
-                                        "capabilities": [],
-                                        "file-read": [],
-                                        "file-write": [],
-                                        "network": [],
-                                        "roles": []
-                                    },
-                                    "restrict": {
-                                        "timeout": "5s",
-                                        "max-memory": "16MB",
-                                        "deny": ["eval", "load", "loadstring"]
+                                    "timeout": "5s",
+                                    "max-memory": "16MB",
+                                    "capabilities": {
+                                        "deny-all": false,
+                                        "capabilities": ["eval", "load", "loadstring"]
                                     }
                                 }
                             ]

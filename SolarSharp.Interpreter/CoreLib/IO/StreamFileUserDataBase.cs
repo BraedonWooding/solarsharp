@@ -125,7 +125,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
         {
             CheckFileIsNotClosed();
             if (m_Writer != null)
-                m_Writer.AutoFlush = mode == "no" || mode == "line";
+                m_Writer.AutoFlush = mode is "no" or "line";
             return true;
         }
 

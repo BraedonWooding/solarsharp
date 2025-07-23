@@ -439,8 +439,30 @@ namespace WotCI.Tests.Demos
             {
                 Packages = ["testpkg"],
                 Selector = ":file",
-                Grant = new PolicyGrant { FileRead = ["data/*"], Capabilities = ["eval"] },
-                Restrict = new PolicyRestrictions { MaxMemory = "256MB", Timeout = "60s" },
+                MaxMemory = "256MB",
+                Timeout = "60s",
+                Modules = new ManifestModuleRestriction
+                {
+                    DenyAll = false,
+                    Modules = ImmutableArray<string>.Empty // No module restrictions
+                },
+                Capabilities = new ManifestCapabilityRestriction
+                {
+                    DenyAll = true,
+                    Capabilities = ImmutableArray.Create("Eval") // Allow only Eval
+                },
+                Paths = new ManifestPathRestriction
+                {
+                    DenyAll = true,
+                    Patterns = ImmutableArray.Create("data/*") // Allow only data/*
+                },
+                Hosts = new ManifestHostRestriction
+                {
+                    DenyAll = false,
+                    Patterns = ImmutableArray<string>.Empty // No host restrictions
+                },
+                DenyAll = false,
+                InheritFromFile = true
             };
 
             var testPackage = new ManifestPackage

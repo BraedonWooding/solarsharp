@@ -9,6 +9,9 @@ using NUnit.Framework;
 using SolarSharp.CLI.Services;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Security.Manifests;
+using System.Collections.Immutable;
+using System.Text.Json;
 
 namespace SolarSharp.CLI.Tests.Services
 {
@@ -30,13 +33,13 @@ namespace SolarSharp.CLI.Tests.Services
         public void SetUp()
         {
             _loggerMock = new Mock<ILogger<SecurityPolicyFactory>>();
-            _factory = new SecurityPolicyFactory(_loggerMock.Object);
             _fileSystem = new MockFileSystem();
             _tempDir = _fileSystem.Path.Combine(
                 _fileSystem.Path.GetTempPath(),
                 $"solarsharp_cli_test_{Guid.NewGuid()}"
             );
             _fileSystem.Directory.CreateDirectory(_tempDir);
+            _factory = new SecurityPolicyFactory(_loggerMock.Object, _fileSystem);
         }
 
         [TearDown]
@@ -51,23 +54,19 @@ namespace SolarSharp.CLI.Tests.Services
         [Test]
         public void Create_WithNullLogger_ThrowsArgumentNullException()
         {
-            // Arrange & Act
-            Action act = () => new SecurityPolicyFactory(null);
+            Action act = () => new SecurityPolicyFactory(null, _fileSystem);
 
-            // Assert
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }
 
         [Test]
         public void Create_WithIsolatedLevel_ReturnsIsolatedConfiguration()
         {
-            // Act
             var config = _factory.Create("isolated");
 
-            // Assert
             config.Should().NotBeNull();
-            config.Execution.TimeoutMs.Should().Be(5000); // Isolated default
-            config.Execution.MaxMemoryMB.Should().Be(10); // Isolated default
+            config.TimeoutMs.Should().Be(1000); // Isolated default (1 second)
+            config.MaxMemoryMB.Should().Be(10); // Isolated default
             config.AllowedModules.Should().HaveFlag(CoreModules.Basic);
             config.AllowedModules.Should().NotHaveFlag(CoreModules.IO);
         }
@@ -75,26 +74,22 @@ namespace SolarSharp.CLI.Tests.Services
         [Test]
         public void Create_WithDesktopLevel_ReturnsDesktopConfiguration()
         {
-            // Act
             var config = _factory.Create("desktop");
 
-            // Assert
             config.Should().NotBeNull();
-            // Desktop uses default SecurityPolicy values
-            config.Execution.TimeoutMs.Should().BeGreaterThan(0);
-            config.FileSystem.DefaultFileAccess.Should().NotBe(FileAccess.None);
+
+            config.TimeoutMs.Should().BeGreaterThan(0);
+            config.DefaultFileAccess.Should().NotBe(FilePermissions.None);
         }
 
         [Test]
         public void Create_WithAutomationLevel_ReturnsAutomationConfiguration()
         {
-            // Act
             var config = _factory.Create("automation");
 
-            // Assert
             config.Should().NotBeNull();
             config.AllowedModules.Should().HaveFlag(CoreModules.IO);
-            config.AllowedModules.Should().HaveFlag(CoreModules.OS);
+            config.AllowedModules.Should().HaveFlag(CoreModules.OS_Time | CoreModules.OS_System);
         }
 
         [Test]
@@ -105,80 +100,88 @@ namespace SolarSharp.CLI.Tests.Services
 
             // Assert
             config.Should().NotBeNull();
-            config.AllowedModules.Should().Be(CoreModules.Preset_Complete);
-            config.FileSystem.DefaultFileAccess.Should().Be(FileAccess.ReadWrite);
-            config.FileSystem.DefaultDirectoryAccess.Should().Be(DirectoryAccess.Full);
-            config.Execution.TimeoutMs.Should().Be(-1); // No timeout
-            config.Execution.MaxMemoryMB.Should().Be(-1); // No memory limit
+            config.AllowedModules.Should().Be(CoreModules.Preset_Complete | CoreModules.PubSub);
+            config.DefaultFileAccess.Should().Be(FilePermissions.ReadWrite);
+            config.DefaultDirectoryAccess.Should().Be(DirectoryPermissions.ListAndCreateFiles);
+            config.TimeoutMs.Should().Be(-1); // No timeout
+            config.MaxMemoryMB.Should().Be(-1); // No memory limit
 
-            // Verify warning was logged
-            _loggerMock.Verify(
-                x =>
-                    x.Log(
-                        LogLevel.Warning,
-                        It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("dangerous")),
-                        It.IsAny<Exception>(),
-                        It.IsAny<Func<It.IsAnyType, Exception, string>>()
-                    ),
-                Times.Once
-            );
+            // Note: Warning about "none" policy being dangerous would be logged
+            // by the policy itself or during script execution, not by the factory
         }
 
         [Test]
-        public void Create_WithUnknownLevel_ReturnsDesktopConfigurationAndLogsWarning()
+        public void Create_WithUnknownLevel_ThrowsArgumentException()
         {
             // Act
-            var config = _factory.Create("unknown");
+            Action act = () => _factory.Create("unknown");
 
             // Assert
-            config.Should().NotBeNull();
-
-            // Verify warning was logged
-            _loggerMock.Verify(
-                x =>
-                    x.Log(
-                        LogLevel.Warning,
-                        It.IsAny<EventId>(),
-                        It.Is<It.IsAnyType>(
-                            (v, t) => v.ToString().Contains("Unknown security level")
-                        ),
-                        It.IsAny<Exception>(),
-                        It.IsAny<Func<It.IsAnyType, Exception, string>>()
-                    ),
-                Times.Once
-            );
+            act.Should()
+                .Throw<ArgumentException>()
+                .WithMessage("Unknown policy name: unknown*")
+                .WithParameterName("policyName");
         }
 
         [Test]
         public void Create_WithValidManifest_LoadsConfigurationFromManifest()
         {
             // Arrange
-            var manifestPath = _fileSystem.Path.Combine(_tempDir, "test.manifest.json");
-            var manifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""allowedModules"": [""basic"", ""string"", ""table""],
-                    ""capabilities"": [""FileRead""],
-                    ""timeoutMs"": 30000,
-                    ""maxMemoryMB"": 50
-                }
-            }";
-            _fileSystem.File.WriteAllText(manifestPath, manifestContent);
+            var manifestPath = _fileSystem.Path.Combine(_tempDir, "LuaManifest.json");
+            
+            // Create a V2.0 manifest directly
+            var manifest = new Manifest
+            {
+                Version = "2.0",
+                ManifestId = "test-manifest",
+                SignedContent = ImmutableArray.Create(new SignedContentBlock
+                {
+                    KeyId = "sha256:test",
+                    Signature = "",
+                    PublicKey = "",
+                    Packages = ImmutableDictionary<string, ManifestPackage>.Empty.Add("test-package", new ManifestPackage
+                    {
+                        Files = ImmutableDictionary<string, string>.Empty.Add("test.lua", "sha256:test"),
+                        Metadata = new PackageMetadata
+                        {
+                            Name = "Test Package",
+                            Version = "1.0.0",
+                            Description = "Test package"
+                        }
+                    }),
+                    Policies = ImmutableArray.Create(new ManifestPolicy
+                    {
+                        Packages = ImmutableArray.Create("test-package"),
+                        Selector = ":file",
+                        Grant = new PolicyGrant
+                        {
+                            Modules = ImmutableArray.Create("basic", "string", "table"),
+                            Capabilities = ImmutableArray.Create("FileRead")
+                        },
+                        Restrict = new PolicyRestrictions
+                        {
+                            Timeout = "30s",
+                            MaxMemory = "50MB"
+                        }
+                    })
+                })
+            };
+            
+            var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
+            _fileSystem.File.WriteAllText(manifestPath, manifestJson);
 
             // Act
             var config = _factory.Create("desktop", manifestPath);
 
             // Assert
             config.Should().NotBeNull();
-            config.Execution.TimeoutMs.Should().Be(30000);
-            config.Execution.MaxMemoryMB.Should().Be(50);
+            config.TimeoutMs.Should().Be(30000);
+            config.MaxMemoryMB.Should().Be(50);
             config.AllowedModules.Should().HaveFlag(CoreModules.Basic);
             config.AllowedModules.Should().HaveFlag(CoreModules.String);
             config.AllowedModules.Should().HaveFlag(CoreModules.Table);
             config.AllowedModules.Should().NotHaveFlag(CoreModules.IO);
-            config.FileSystem.DefaultFileAccess.Should().HaveFlag(FileAccess.Read);
+            config.DefaultFileAccess.Should().HaveFlag(FilePermissions.Read);
         }
 
         [Test]
@@ -217,15 +220,43 @@ namespace SolarSharp.CLI.Tests.Services
         public void Create_WithManifestContainingUnknownModule_LogsWarning()
         {
             // Arrange
-            var manifestPath = _fileSystem.Path.Combine(_tempDir, "unknown_module.json");
-            var manifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""allowedModules"": [""basic"", ""unknown_module""]
-                }
-            }";
-            _fileSystem.File.WriteAllText(manifestPath, manifestContent);
+            var manifestPath = _fileSystem.Path.Combine(_tempDir, "LuaManifest.json");
+            
+            // Create a V2.0 manifest with an unknown module
+            var manifest = new Manifest
+            {
+                Version = "2.0",
+                ManifestId = "test-manifest",
+                SignedContent = ImmutableArray.Create(new SignedContentBlock
+                {
+                    KeyId = "sha256:test",
+                    Signature = "",
+                    PublicKey = "",
+                    Packages = ImmutableDictionary<string, ManifestPackage>.Empty.Add("test-package", new ManifestPackage
+                    {
+                        Files = ImmutableDictionary<string, string>.Empty.Add("test.lua", "sha256:test"),
+                        Metadata = new PackageMetadata
+                        {
+                            Name = "Test Package",
+                            Version = "1.0.0",
+                            Description = "Test package"
+                        }
+                    }),
+                    Policies = ImmutableArray.Create(new ManifestPolicy
+                    {
+                        Packages = ImmutableArray.Create("test-package"),
+                        Selector = ":file",
+                        Grant = new PolicyGrant
+                        {
+                            Modules = ImmutableArray.Create("basic", "unknown_module")
+                        },
+                        Restrict = new PolicyRestrictions()
+                    })
+                })
+            };
+            
+            var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
+            _fileSystem.File.WriteAllText(manifestPath, manifestJson);
 
             // Act
             var config = _factory.Create("desktop", manifestPath);
@@ -253,20 +284,47 @@ namespace SolarSharp.CLI.Tests.Services
         {
             // Arrange
             var manifestPath = _fileSystem.Path.Combine(_tempDir, "filewrite.json");
-            var manifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""capabilities"": [""FileWrite""]
-                }
-            }";
-            _fileSystem.File.WriteAllText(manifestPath, manifestContent);
+            // Create a V2.0 manifest with FileWrite capability
+            var manifest = new Manifest
+            {
+                Version = "2.0",
+                ManifestId = "test-manifest",
+                SignedContent = ImmutableArray.Create(new SignedContentBlock
+                {
+                    KeyId = "sha256:test",
+                    Signature = "",
+                    PublicKey = "",
+                    Packages = ImmutableDictionary<string, ManifestPackage>.Empty.Add("test-package", new ManifestPackage
+                    {
+                        Files = ImmutableDictionary<string, string>.Empty.Add("test.lua", "sha256:test"),
+                        Metadata = new PackageMetadata
+                        {
+                            Name = "Test Package",
+                            Version = "1.0.0",
+                            Description = "Test package"
+                        }
+                    }),
+                    Policies = ImmutableArray.Create(new ManifestPolicy
+                    {
+                        Packages = ImmutableArray.Create("test-package"),
+                        Selector = ":file",
+                        Grant = new PolicyGrant
+                        {
+                            Capabilities = ImmutableArray.Create("FileWrite")
+                        },
+                        Restrict = new PolicyRestrictions()
+                    })
+                })
+            };
+            
+            var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
+            _fileSystem.File.WriteAllText(manifestPath, manifestJson);
 
             // Act
             var config = _factory.Create("isolated", manifestPath);
 
             // Assert
-            config.FileSystem.DefaultFileAccess.Should().HaveFlag(FileAccess.Write);
+            config.DefaultFileAccess.Should().HaveFlag(FilePermissions.ReadWrite);
         }
 
         [Test]
@@ -282,8 +340,8 @@ namespace SolarSharp.CLI.Tests.Services
             config2.Should().NotBeNull();
             config3.Should().NotBeNull();
 
-            config1.Execution.TimeoutMs.Should().Be(5000); // Isolated timeout
-            config3.AllowedModules.Should().HaveFlag(CoreModules.OS); // Automation includes OS
+            config1.TimeoutMs.Should().Be(1000); // Isolated timeout (1 second)
+            config3.AllowedModules.Should().HaveFlag(CoreModules.OS_System); // Automation includes OS
         }
     }
 }

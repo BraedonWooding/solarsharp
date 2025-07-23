@@ -132,8 +132,18 @@ namespace SolarSharp.Interpreter.Security.Manifests.Infrastructure
             }
         }
 
-        public bool IsTrustedKey(string publicKeyFingerprint) =>
-            TrustedKeyFingerprints.Contains(publicKeyFingerprint);
+        public bool IsTrustedKey(string publicKeyFingerprint)
+        {
+            if (string.IsNullOrEmpty(publicKeyFingerprint))
+                return false;
+                
+            // Normalize fingerprint by removing sha256: prefix if present
+            var normalizedFingerprint = publicKeyFingerprint.StartsWith("sha256:")
+                ? publicKeyFingerprint.Substring(7)
+                : publicKeyFingerprint;
+                
+            return TrustedKeyFingerprints.Contains(normalizedFingerprint);
+        }
 
         public bool IsTrustedCertificate(string certificateFingerprint) =>
             TrustedCertificateFingerprints.Contains(certificateFingerprint);
@@ -236,7 +246,15 @@ namespace SolarSharp.Interpreter.Security.Manifests.Infrastructure
         /// <returns>Public key or null if not found</returns>
         public AsymmetricKeyParameter? GetPublicKeyByFingerprint(string fingerprint)
         {
-            if (_trustedKeys.TryGetValue(fingerprint, out var publicKeyPem))
+            if (string.IsNullOrEmpty(fingerprint))
+                return null;
+                
+            // Normalize fingerprint by removing sha256: prefix if present
+            var normalizedFingerprint = fingerprint.StartsWith("sha256:")
+                ? fingerprint.Substring(7)
+                : fingerprint;
+                
+            if (_trustedKeys.TryGetValue(normalizedFingerprint, out var publicKeyPem))
             {
                 return ParsePublicKey(publicKeyPem);
             }

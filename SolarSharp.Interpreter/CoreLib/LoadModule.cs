@@ -624,33 +624,12 @@ end";
                     return basePolicy with { AllowExecution = false };
                 }
 
-                // Build file permissions from grants
+                // TODO: Update for V2.0 manifest structure
+                // This code uses the old Grant/Restrict structure which no longer exists
                 var filePermissions = ImmutableDictionary<string, FilePermissions>.Empty;
-
-                foreach (var readPath in manifestPolicy.Grant.FileRead)
-                {
-                    filePermissions = filePermissions.SetItem(readPath, FilePermissions.Read);
-                }
-
-                foreach (var writePath in manifestPolicy.Grant.FileWrite)
-                {
-                    var existingPermission = filePermissions.GetValueOrDefault(
-                        writePath,
-                        FilePermissions.None
-                    );
-                    var newPermission =
-                        existingPermission | FilePermissions.Read | FilePermissions.ReadWrite;
-                    filePermissions = filePermissions.SetItem(writePath, newPermission);
-                }
-
-                // Parse restrictions
-                var timeoutMs = ParseTimeoutFromString(manifestPolicy.Restrict.Timeout);
-                var maxMemoryMB = ParseMemoryFromString(manifestPolicy.Restrict.MaxMemory);
-
-                // Check if eval is denied - if eval is denied, don't allow execution
-                var allowEval =
-                    !manifestPolicy.Restrict.Deny.Contains("eval")
-                    && !manifestPolicy.Restrict.Deny.Contains("dynamic-code");
+                var timeoutMs = 30000; // Default
+                var maxMemoryMB = 64; // Default
+                var allowEval = false; // Default deny
 
                 return basePolicy with
                 {

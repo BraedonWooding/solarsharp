@@ -197,17 +197,17 @@ namespace SolarSharp.Interpreter.Tests.Security
                 Assert.That(filePolicy, Is.Not.Null, "File policy should exist");
 
                 // Check that eval policy has more restrictive timeout
-                Assert.That(evalPolicy.Restrict.Timeout, Is.Not.Null);
-                Assert.That(filePolicy.Restrict.Timeout, Is.Not.Null);
+                Assert.That(evalPolicy.Timeout, Is.Not.Null);
+                Assert.That(filePolicy.Timeout, Is.Not.Null);
 
                 // Parse timeout values and compare (eval should be more restrictive)
-                var evalTimeoutMs = ParseTimeoutToMs(evalPolicy.Restrict.Timeout);
-                var fileTimeoutMs = ParseTimeoutToMs(filePolicy.Restrict.Timeout);
+                var evalTimeoutMs = ParseTimeoutToMs(evalPolicy.Timeout);
+                var fileTimeoutMs = ParseTimeoutToMs(filePolicy.Timeout);
                 Assert.That(evalTimeoutMs, Is.LessThan(fileTimeoutMs));
 
                 // Check memory restrictions
-                var evalMemoryMB = ParseMemoryToMB(evalPolicy.Restrict.MaxMemory);
-                var fileMemoryMB = ParseMemoryToMB(filePolicy.Restrict.MaxMemory);
+                var evalMemoryMB = ParseMemoryToMB(evalPolicy.MaxMemory);
+                var fileMemoryMB = ParseMemoryToMB(filePolicy.MaxMemory);
                 Assert.That(evalMemoryMB, Is.LessThan(fileMemoryMB));
             });
         }

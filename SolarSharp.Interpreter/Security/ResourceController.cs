@@ -448,7 +448,7 @@ namespace SolarSharp.Interpreter.Security
                 return;
 
             // Skip check if unlimited (-1) or not set
-            if (!_limits.MaxMemoryMB.HasValue || _limits.MaxMemoryMB.Value < 0)
+            if (_limits.MaxMemoryMB is null or < 0)
                 return;
 
             // Force GC in test mode if requested

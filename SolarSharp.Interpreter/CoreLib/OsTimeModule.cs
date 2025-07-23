@@ -164,7 +164,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 catch (TimeZoneNotFoundException)
                 {
                     // this catches a weird mono bug: https://bugzilla.xamarin.com/show_bug.cgi?id=11817
-                    // however the behaviour is definitely not correct. damn.
+                    // however the behaviour is definitely not correct.
                 }
 #endif
             }
@@ -249,7 +249,7 @@ namespace SolarSharp.Interpreter.CoreLib
                     continue;
                 }
 
-                if (c == 'O' || c == 'E')
+                if (c is 'O' or 'E')
                     continue; // no modifiers
 
                 isEscapeSequence = false;

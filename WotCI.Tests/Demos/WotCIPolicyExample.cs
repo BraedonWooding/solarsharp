@@ -223,15 +223,27 @@ namespace WotCI.Tests.Examples
                             {
                                 Packages = ["CoreGameEngine"],
                                 Selector = "engine-startup",
-                                Grant = new PolicyGrant(),
-                                Restrict = new PolicyRestrictions(),
+                                MaxMemory = "1024MB",
+                                Timeout = "300s",
+                                Modules = ManifestModuleRestriction.None,
+                                Capabilities = ManifestCapabilityRestriction.None,
+                                Paths = ManifestPathRestriction.None,
+                                Hosts = ManifestHostRestriction.None,
+                                DenyAll = false,
+                                InheritFromFile = true,
                             },
                             new ManifestPolicy
                             {
                                 Packages = ["CoreGameEngine"],
                                 Selector = "engine-runtime",
-                                Grant = new PolicyGrant(),
-                                Restrict = new PolicyRestrictions(),
+                                MaxMemory = "1024MB",
+                                Timeout = "300s",
+                                Modules = ManifestModuleRestriction.None,
+                                Capabilities = ManifestCapabilityRestriction.None,
+                                Paths = ManifestPathRestriction.None,
+                                Hosts = ManifestHostRestriction.None,
+                                DenyAll = false,
+                                InheritFromFile = true,
                             },
                         ],
                     },
@@ -267,8 +279,26 @@ namespace WotCI.Tests.Examples
                             {
                                 Packages = ["CombatSystem"],
                                 Selector = "combat-handler",
-                                Grant = new PolicyGrant(),
-                                Restrict = new PolicyRestrictions(),
+                                MaxMemory = "256MB",
+                                Timeout = "60s",
+                                Modules = new ManifestModuleRestriction
+                                {
+                                    DenyAll = true,
+                                    Modules = ImmutableArray.Create("basic", "string", "math", "table", "io", "os")
+                                },
+                                Capabilities = new ManifestCapabilityRestriction
+                                {
+                                    DenyAll = true,
+                                    Capabilities = ImmutableArray.Create("FileRead", "FileWrite", "NetworkAccess")
+                                },
+                                Paths = new ManifestPathRestriction
+                                {
+                                    DenyAll = true,
+                                    Patterns = ImmutableArray.Create("/game/data/*", "/game/config/*", "/game/logs/*")
+                                },
+                                Hosts = ManifestHostRestriction.None,
+                                DenyAll = false,
+                                InheritFromFile = true,
                             },
                         ],
                     },
@@ -304,8 +334,30 @@ namespace WotCI.Tests.Examples
                             {
                                 Packages = ["ChatEmotes"],
                                 Selector = "emote-processor",
-                                Grant = new PolicyGrant(),
-                                Restrict = new PolicyRestrictions(),
+                                MaxMemory = "128MB",
+                                Timeout = "30s",
+                                Modules = new ManifestModuleRestriction
+                                {
+                                    DenyAll = true,
+                                    Modules = ImmutableArray.Create("basic", "string", "math", "table")
+                                },
+                                Capabilities = new ManifestCapabilityRestriction
+                                {
+                                    DenyAll = true,
+                                    Capabilities = ImmutableArray.Create("FileRead")
+                                },
+                                Paths = new ManifestPathRestriction
+                                {
+                                    DenyAll = true,
+                                    Patterns = ImmutableArray.Create("/game/data/community/*", "/game/data/user/*")
+                                },
+                                Hosts = new ManifestHostRestriction
+                                {
+                                    DenyAll = true,
+                                    Patterns = ImmutableArray<string>.Empty
+                                },
+                                DenyAll = false,
+                                InheritFromFile = true,
                             },
                         ],
                     },

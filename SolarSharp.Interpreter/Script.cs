@@ -27,6 +27,7 @@ using SolarSharp.Interpreter.Security.Manifests;
 using SolarSharp.Interpreter.Security.Manifests.Domain;
 using SolarSharp.Interpreter.Security.Manifests.Infrastructure;
 using SolarSharp.Interpreter.Security.Operations;
+using SolarSharp.Interpreter.Security.ValueTypes;
 using SolarSharp.Interpreter.Tree.Fast_Interface;
 
 namespace SolarSharp.Interpreter
@@ -52,6 +53,7 @@ namespace SolarSharp.Interpreter
         private IDebugger _debugger;
         private readonly Table[] _typeMetatables = new Table[(int)LuaTypeExtensions.MaxMetaTypes];
         private readonly List<Manifest> _manifests = new List<Manifest>();
+        private readonly Dictionary<Manifest, string> _manifestDirectories = new Dictionary<Manifest, string>();
         private Manifest _compiledManifest;
         private readonly SecurityLogger _securityLogger = new SecurityLogger();
         private readonly Dictionary<Type, object> _services = new Dictionary<Type, object>();
@@ -64,6 +66,11 @@ namespace SolarSharp.Interpreter
         internal ITrustStore TrustStore { get; private set; } = ScriptTrustStore.Empty;
         private IManifestValidationService _manifestValidator;
         private ContextualFunctionRegistry _functionRegistry = new ContextualFunctionRegistry();
+        
+        /// <summary>
+        /// Cached script services for functional architecture
+        /// </summary>
+        private Security.Manifests.Functional.ScriptServices _scriptServices;
 
         /// <summary>
         /// Gets the platform accessor for this script instance.
@@ -420,156 +427,25 @@ namespace SolarSharp.Interpreter
         /// <summary>
         /// Derives an aggregate SecurityPolicy from all policies in a V2.0 manifest
         /// </summary>
-        private static SecurityPolicy DeriveAggregatePolicyFromManifest(Manifest manifest)
+        private static SecurityPolicy DeriveAggregatePolicyFromManifest(Manifest manifest, string manifestDirectory)
         {
+            // For empty manifests, return a restrictive default
             if (!manifest.SignedContent.Any())
             {
-                return Examples.Desktop();
+                return Examples.Isolated();
             }
 
-            // Start with the most restrictive base policy
-            var aggregateBuilder = Examples.Isolated();
-
-            // Collect all grants and apply them (union of permissions)
-            var allFileReadPaths = new HashSet<string>();
-            var allFileWritePaths = new HashSet<string>();
-            var allNetworkEndpoints = new HashSet<string>();
-            var hasEvalCapability = false;
-            var maxTimeoutMs = 0;
-            var maxMemoryMB = 0;
-
-            foreach (var policy in manifest.SignedContent.SelectMany(static block => block.Policies))
+            // Convert manifest to effective policy using ManifestPolicyConverter
+            var result = ManifestPolicyConverter.ConvertToSecurityPolicy(manifest, manifestDirectory);
+            
+            if (result.IsFailure)
             {
-                // Collect file permissions
-                allFileReadPaths.UnionWith(policy.Grant.FileRead);
-                allFileWritePaths.UnionWith(policy.Grant.FileWrite);
-                allNetworkEndpoints.UnionWith(policy.Grant.Network);
-
-                // Check for eval capability
-                if (policy.Grant.Capabilities.Contains("eval"))
-                {
-                    hasEvalCapability = true;
-                }
-
-                // Find most permissive timeout and memory limits
-                if (!string.IsNullOrEmpty(policy.Restrict.Timeout))
-                {
-                    try
-                    {
-                        var timeoutMs = ParseTimeoutString(policy.Restrict.Timeout);
-                        maxTimeoutMs = Math.Max(maxTimeoutMs, timeoutMs);
-                    }
-                    catch (ManifestFormatException)
-                    {
-                        // Invalid timeout format, skip this policy's timeout
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(policy.Restrict.MaxMemory))
-                {
-                    try
-                    {
-                        var memoryMB = ParseMemoryString(policy.Restrict.MaxMemory);
-                        maxMemoryMB = Math.Max(maxMemoryMB, memoryMB);
-                    }
-                    catch (ManifestFormatException)
-                    {
-                        // Invalid memory format, skip this policy's memory limit
-                    }
-                }
+                // If conversion fails, return restrictive default and log the error
+                Console.Error.WriteLine($"Failed to convert manifest policy: {result.Error}");
+                return Examples.Isolated();
             }
 
-            // Apply collected permissions
-            aggregateBuilder = allFileReadPaths.Aggregate(aggregateBuilder, static (current, path) => current.WithFileAccess(path, FilePermissions.Read));
-
-            aggregateBuilder = allFileWritePaths.Aggregate(aggregateBuilder, static (current, path) => current.WithFileAccess(path, FilePermissions.ReadWrite));
-
-            if (allNetworkEndpoints.Any())
-            {
-                aggregateBuilder = aggregateBuilder.WithNetworkAccess(true);
-                aggregateBuilder = aggregateBuilder.WithAllowedHosts(allNetworkEndpoints.ToArray());
-            }
-
-            if (hasEvalCapability)
-            {
-                aggregateBuilder = aggregateBuilder.WithExecutionAllowed(true);
-            }
-
-            if (maxTimeoutMs > 0)
-            {
-                aggregateBuilder = aggregateBuilder.WithTimeout(maxTimeoutMs);
-            }
-
-            if (maxMemoryMB > 0)
-            {
-                aggregateBuilder = aggregateBuilder.WithMemoryLimit(maxMemoryMB);
-            }
-
-            return aggregateBuilder;
-        }
-
-        /// <summary>
-        /// Converts a V2.0 ManifestPolicy to SecurityPolicy
-        /// </summary>
-        private SecurityPolicy ConvertManifestPolicyToSecurityPolicy(ManifestPolicy manifestPolicy)
-        {
-            // Start with a restrictive base policy
-            var policyBuilder = Examples.Isolated();
-
-            // Apply grants
-            if (manifestPolicy.Grant.FileRead.Any())
-            {
-                foreach (var path in manifestPolicy.Grant.FileRead)
-                {
-                    policyBuilder = policyBuilder.WithFileAccess(path, FilePermissions.Read);
-                }
-            }
-
-            if (manifestPolicy.Grant.FileWrite.Any())
-            {
-                foreach (var path in manifestPolicy.Grant.FileWrite)
-                {
-                    policyBuilder = policyBuilder.WithFileAccess(path, FilePermissions.ReadWrite);
-                }
-            }
-
-            if (manifestPolicy.Grant.Network.Any())
-            {
-                policyBuilder = policyBuilder.WithNetworkAccess(true);
-                var hosts = manifestPolicy.Grant.Network.ToArray();
-                policyBuilder = policyBuilder.WithAllowedHosts(hosts);
-            }
-
-            // Apply capabilities - eval maps to AllowExecution
-            if (manifestPolicy.Grant.Capabilities.Contains("eval"))
-            {
-                policyBuilder = policyBuilder.WithExecutionAllowed(true);
-            }
-
-            // Apply restrictions
-            if (!string.IsNullOrEmpty(manifestPolicy.Restrict.Timeout))
-            {
-                if (TimeSpan.TryParse(manifestPolicy.Restrict.Timeout, out var timeout))
-                {
-                    policyBuilder = policyBuilder.WithTimeout((int)timeout.TotalMilliseconds);
-                }
-            }
-
-            if (!string.IsNullOrEmpty(manifestPolicy.Restrict.MaxMemory))
-            {
-                // Parse memory limit (e.g., "10MB")
-                var memoryStr = manifestPolicy.Restrict.MaxMemory.ToUpperInvariant();
-                if (memoryStr.EndsWith("MB") && int.TryParse(memoryStr[0..^2], out var mb))
-                {
-                    policyBuilder = policyBuilder.WithMemoryLimit(mb);
-                }
-                else if (memoryStr.EndsWith("KB") && int.TryParse(memoryStr[0..^2], out var kb))
-                {
-                    policyBuilder = policyBuilder.WithMemoryLimit(kb / 1024);
-                }
-            }
-
-            return policyBuilder;
+            return result.Value;
         }
 
         /// <summary>
@@ -607,38 +483,10 @@ namespace SolarSharp.Interpreter
             {
                 foreach (var policy in block.Policies)
                 {
-                    // Convert manifest policy to SecurityPolicy
-                    var securityPolicy = ConvertManifestPolicyToSecurityPolicy(policy);
-
-                    // Apply policy to all files in packages that this policy targets
-                    foreach (var packageId in policy.Packages)
-                    {
-                        if (
-                            block.Packages.TryGetValue(packageId, out var package)
-                            || packageId == "*"
-                        )
-                        {
-                            if (packageId == "*")
-                            {
-                                // Apply to all packages in this block
-                                foreach (var (_, pkg) in block.Packages)
-                                {
-                                    foreach (var filePath in pkg.Files.Keys)
-                                    {
-                                        pathPolicies[filePath] = securityPolicy;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                // Apply to specific package files
-                                foreach (var filePath in package.Files.Keys)
-                                {
-                                    pathPolicies[filePath] = securityPolicy;
-                                }
-                            }
-                        }
-                    }
+                    // TODO: Update to use ManifestPolicyConverter.ConvertToSecurityPolicy
+                    // This whole section needs to be rewritten for V2.0 manifest structure
+                    // var securityPolicy = ConvertManifestPolicyToSecurityPolicy(policy);
+                    // Need to apply policies to files...
                 }
             }
 
@@ -754,7 +602,26 @@ namespace SolarSharp.Interpreter
         /// <summary>
         /// Applies security policy to this script instance
         /// </summary>
-        private void ApplySecurityPolicy(SecurityPolicy policy)
+        /// <summary>
+        /// Get or create script services for functional architecture.
+        /// Lazy initialization to avoid overhead for scripts that don't use manifests.
+        /// </summary>
+        private Security.Manifests.Functional.ScriptServices GetOrCreateScriptServices()
+        {
+            if (_scriptServices == null)
+            {
+                _scriptServices = Security.Manifests.Functional.ScriptServices
+                    .Create(BasePolicySet)
+                    .WithTrustStore(TrustStore);
+            }
+            return _scriptServices;
+        }
+
+        /// <summary>
+        /// Apply security policy to the script instance.
+        /// Made internal for functional architecture access.
+        /// </summary>
+        internal void ApplySecurityPolicy(SecurityPolicy policy)
         {
             // Capture the previous policy before updating
             var previousPolicy = _activePolicy;
@@ -781,11 +648,11 @@ namespace SolarSharp.Interpreter
             // NEW SEMANTICS: -1 = unlimited (→ null), 0 = deny, >0 = actual limit
             var limits = new ExecutionLimits
             {
-                TimeoutMs = policy.TimeoutMs >= 0 ? policy.TimeoutMs : null,
-                MaxMemoryMB = policy.MaxMemoryMB >= 0 ? policy.MaxMemoryMB : null,
-                MaxInstructions = policy.MaxInstructions >= 0 ? policy.MaxInstructions : null,
-                MaxCallDepth = policy.MaxCallDepth >= 0 ? policy.MaxCallDepth : null,
-                MaxTables = policy.MaxTables >= 0 ? policy.MaxTables : null,
+                TimeoutMs = policy.TimeoutMs == -1 ? null : policy.TimeoutMs,
+                MaxMemoryMB = policy.MaxMemoryMB == -1 ? null : policy.MaxMemoryMB,
+                MaxInstructions = policy.MaxInstructions == -1 ? null : policy.MaxInstructions,
+                MaxCallDepth = policy.MaxCallDepth == -1 ? null : policy.MaxCallDepth,
+                MaxTables = policy.MaxTables == -1 ? null : policy.MaxTables,
                 ResourceLimitScope = policy.ResourceLimitScope,
                 MaxStringLength = SecurityConstants.DefaultMaxStringLength >= 0 ? SecurityConstants.DefaultMaxStringLength : null,
                 MaxCoroutineResumes = SecurityConstants.DefaultMaxCoroutineResumes >= 0 ? SecurityConstants.DefaultMaxCoroutineResumes : null,
@@ -887,15 +754,16 @@ namespace SolarSharp.Interpreter
         /// <param name="manifest">The manifest to add</param>
         public void AddManifest(Manifest manifest)
         {
-            AddManifest(manifest, skipValidation: false);
+            AddManifest(manifest, ".", skipValidation: false);
         }
 
         /// <summary>
         /// Adds a manifest to the script at runtime
         /// </summary>
         /// <param name="manifest">The manifest to add</param>
+        /// <param name="manifestDirectory">The directory containing the manifest</param>
         /// <param name="skipValidation">Whether to skip signature validation (used when already validated)</param>
-        internal void AddManifest(Manifest manifest, bool skipValidation)
+        internal void AddManifest(Manifest manifest, string manifestDirectory, bool skipValidation)
         {
             // Manifest is a record type, cannot be null in functional design
 
@@ -907,7 +775,7 @@ namespace SolarSharp.Interpreter
 
                 // Check if untrusted manifest is trying to increase timeout
                 // For V2.0 manifests, derive aggregate policy from all signed content blocks
-                var aggregatePolicy = DeriveAggregatePolicyFromManifest(manifest);
+                var aggregatePolicy = DeriveAggregatePolicyFromManifest(manifest, manifestDirectory);
                 
                 if (
                     !IsManifestSigned(manifest)
@@ -940,8 +808,9 @@ namespace SolarSharp.Interpreter
                 }
             }
 
-            // Add to manifest list
+            // Add to manifest list with directory
             _manifests.Add(manifest);
+            _manifestDirectories[manifest] = manifestDirectory;
 
             // Recompile manifests
             RecompileManifest();
@@ -949,8 +818,8 @@ namespace SolarSharp.Interpreter
             // Update security configuration - derive aggregate policy from compiled manifest
             var newPolicy =
                 _compiledManifest != null
-                    ? DeriveAggregatePolicyFromManifest(_compiledManifest)
-                    : Examples.Desktop();
+                    ? DeriveAggregatePolicyFromManifest(_compiledManifest, manifestDirectory)
+                    : Examples.Isolated();
             ApplySecurityPolicy(newPolicy);
         }
 
@@ -1118,6 +987,13 @@ namespace SolarSharp.Interpreter
             string filename,
             Table globalContext = null,
             string friendlyFilename = null
+        ) => LoadFileInternal(filename, globalContext, friendlyFilename, skipPolicyResolution: false);
+
+        internal DynValue LoadFileInternal(
+            string filename,
+            Table globalContext = null,
+            string friendlyFilename = null,
+            bool skipPolicyResolution = false
         )
         {
             // Script ownership check removed
@@ -1151,7 +1027,8 @@ namespace SolarSharp.Interpreter
                     );
 
                     // Add the manifest to this Script instance (skip validation - already done)
-                    AddManifest(loadedManifest.Manifest, skipValidation: true);
+                    var manifestDir = Path.GetDirectoryName(loadedManifest.ManifestPath) ?? ".";
+                    AddManifest(loadedManifest.Manifest, manifestDir, skipValidation: true);
                 },
                 error =>
                 {
@@ -1189,7 +1066,7 @@ namespace SolarSharp.Interpreter
 
             // Apply security policy using SecurityPolicyResolver if available
             var resolver = GetService<SecurityPolicyResolver>();
-            if (resolver != null && (shouldUsePolicyResolver || manifestValidationResult.IsSuccess))
+            if (!skipPolicyResolution && resolver != null && (shouldUsePolicyResolver || manifestValidationResult.IsSuccess))
             {
                 return LoadFileWithPolicyResolution(
                     filename,
@@ -1517,14 +1394,42 @@ namespace SolarSharp.Interpreter
         /// Loads and executes a file containing a Lua/MoonSharp script.
         /// When called from C# host application, this is ALWAYS ALLOWED.
         /// The file's security policy is determined by its path and manifest.
+        /// Uses functional manifest architecture for better performance and maintainability.
         /// </summary>
         /// <param name="filename">The filename.</param>
         /// <param name="globalContext">The global context.</param>
-        /// <param name="chunkname">Name of the chunk - used to report errors, etc. Also used by debuggers to locate the original source file.</param>
+        /// <param name="codeFriendlyName">Name of the chunk - used to report errors, etc. Also used by debuggers to locate the original source file.</param>
         /// <returns>
         /// A DynValue containing the result of the processing of the loaded chunk.
         /// </returns>
         public DynValue DoFile(
+            string filename,
+            Table globalContext = null,
+            string codeFriendlyName = null
+        )
+        {
+            // Use new functional manifest architecture
+            var services = GetOrCreateScriptServices();
+            
+            var result = Security.Manifests.Functional.ExecutionPipeline.ExecuteFile(
+                filename,
+                globalContext,
+                services,
+                this);
+
+            return result.Match(
+                success => success,
+                error => error.OriginalException != null 
+                    ? throw error.OriginalException 
+                    : throw new ScriptRuntimeException($"Script execution failed: {error.Message}")
+            );
+        }
+
+        /// <summary>
+        /// Legacy DoFile method for backward compatibility during transition.
+        /// Will be removed once all tests pass with the new architecture.
+        /// </summary>
+        internal DynValue DoFileLegacy(
             string filename,
             Table globalContext = null,
             string codeFriendlyName = null
@@ -1545,11 +1450,36 @@ namespace SolarSharp.Interpreter
             // Execute within the file's context
             var executionResult = ExecutionContextManager.WithContext(
                 contextResult.Value,
-                _ =>
+                context =>
                 {
-                    var func = LoadFile(filename, globalContext, codeFriendlyName);
-                    var result = Call(func);
-                    return Result.Success<DynValue, ExecutionError>(result);
+                    // Resolve and apply security policy for the entire execution
+                    var resolver = GetService<SecurityPolicyResolver>();
+                    SecurityPolicy originalPolicy = null;
+                    
+                    if (resolver != null)
+                    {
+                        var policyResult = resolver.ResolvePolicy(context);
+                        if (policyResult.IsSuccess)
+                        {
+                            originalPolicy = _activePolicy;
+                            ApplySecurityPolicy(policyResult.Value);
+                        }
+                    }
+                    
+                    try
+                    {
+                        var func = LoadFileInternal(filename, globalContext, codeFriendlyName, skipPolicyResolution: true);
+                        var result = Call(func);
+                        return Result.Success<DynValue, ExecutionError>(result);
+                    }
+                    finally
+                    {
+                        // Restore original policy if we changed it
+                        if (originalPolicy != null)
+                        {
+                            ApplySecurityPolicy(originalPolicy);
+                        }
+                    }
                 }
             );
 

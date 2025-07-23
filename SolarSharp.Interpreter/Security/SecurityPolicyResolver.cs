@@ -8,6 +8,7 @@ using Microsoft.Extensions.FileSystemGlobbing;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security.Manifests;
+using SolarSharp.Interpreter.Security.ValueTypes;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -281,10 +282,13 @@ namespace SolarSharp.Interpreter.Security
                                     // Check selector matches context
                                     if (SelectorMatches(manifestPolicy.Selector, isEvalContext))
                                     {
-                                        var securityPolicy = ConvertManifestPolicyToSecurityPolicy(
-                                            manifestPolicy
-                                        );
-                                        applicablePolicies.Add(securityPolicy);
+                                        // Convert manifest policy to SecurityPolicy
+                                        var domainResult = ManifestPolicyMapper.ToDomain(manifestPolicy);
+                                        if (domainResult.IsSuccess)
+                                        {
+                                            var securityPolicy = ConvertManifestPolicyToSecurityPolicy(domainResult.Value);
+                                            applicablePolicies.Add(securityPolicy);
+                                        }
                                     }
                                 }
                             }
@@ -330,9 +334,18 @@ namespace SolarSharp.Interpreter.Security
                 return evalMatcher.Match(".", pathWithoutEval).HasMatches;
             }
 
+            // For simple patterns without directory separators, match against just the filename
+            if (!pattern.Contains("/") && !pattern.Contains("\\"))
+            {
+                var filename = Path.GetFileName(normalizedPath);
+                var result = matcher.Match(".", filename);
+                if (result.HasMatches)
+                    return true;
+            }
+
             // For regular patterns, match against the full relative path
-            var result = matcher.Match(".", normalizedPath);
-            return result.HasMatches;
+            var fullResult = matcher.Match(".", normalizedPath);
+            return fullResult.HasMatches;
         }
 
         /// <summary>
@@ -406,55 +419,80 @@ namespace SolarSharp.Interpreter.Security
         }
 
         /// <summary>
-        /// Converts V2.0 ManifestPolicy to SecurityPolicy
+        /// Converts a manifest policy domain object to a SecurityPolicy
         /// </summary>
-        private static SecurityPolicy ConvertManifestPolicyToSecurityPolicy(
-            ManifestPolicy manifestPolicy
-        )
+        private static SecurityPolicy ConvertManifestPolicyToSecurityPolicy(ManifestPolicyDomain manifestPolicy)
         {
-            // Handle null restrict/grant sections
-            var restrict = manifestPolicy.Restrict ?? new PolicyRestrictions();
-            var grant = manifestPolicy.Grant ?? new PolicyGrant();
-
-            return new SecurityPolicy
-            {
-                Name = CSharpFunctionalExtensions.Maybe<string>.From(
-                    $"manifest_policy_{manifestPolicy.Selector}"
-                ),
-                TimeoutMs = ParseTimeout(restrict.Timeout),
-                MaxMemoryMB = ParseMemory(restrict.MaxMemory),
-                MaxInstructions = 1000000, // Default
-                MaxCallDepth = 100, // Default
-                AllowExecution = !manifestPolicy.DenyAll,
-                AllowedModules = ConvertCapabilitiesToModules(grant.Capabilities),
-                Capabilities = ConvertStringCapabilitiesToFlags(grant.Capabilities),
-                FilePermissions = ConvertFilePermissions(grant),
-                PubSubPermissions = new PubSubPermissions(),
+            // Start with a policy that allows execution but has no other permissions
+            // The manifest will only restrict, never grant
+            var policy = new SecurityPolicy() 
+            { 
+                AllowExecution = true,
+                // Use -1 (unlimited) as defaults so manifest restrictions can be applied
+                TimeoutMs = -1,
+                MaxMemoryMB = -1,
+                MaxInstructions = -1,
+                MaxCallDepth = -1,
+                MaxTables = -1
             };
-        }
 
-        /// <summary>
-        /// Converts grant permissions to file permissions dictionary
-        /// </summary>
-        private static ImmutableDictionary<string, FilePermissions> ConvertFilePermissions(
-            PolicyGrant grant
-        )
-        {
-            var permissions = ImmutableDictionary.CreateBuilder<string, FilePermissions>();
-
-            foreach (var readPath in grant.FileRead)
+            // Apply deny-all first
+            if (manifestPolicy.DenyAll)
             {
-                permissions[readPath] = FilePermissions.Read;
+                policy = policy with 
+                { 
+                    AllowedModules = CoreModules.None,
+                    Capabilities = ScriptCapabilities.None,
+                    DefaultFileAccess = FilePermissions.None,
+                    AllowNetworkAccess = false
+                };
             }
 
-            foreach (var writePath in grant.FileWrite)
+            // Apply module restrictions
+            if (!manifestPolicy.ModuleRestrictions.DeniesNone)
             {
-                permissions[writePath] = permissions.TryGetValue(writePath, out var existing)
-                    ? existing | FilePermissions.ReadWrite
-                    : FilePermissions.ReadWrite;
+                var effectiveModules = manifestPolicy.ModuleRestrictions
+                    .GetEffectiveAllowedModules(policy.AllowedModules);
+                policy = policy with { AllowedModules = effectiveModules };
             }
 
-            return permissions.ToImmutable();
+            // Apply capability restrictions
+            if (!manifestPolicy.CapabilityRestrictions.DeniesNone)
+            {
+                var effectiveCapabilities = manifestPolicy.CapabilityRestrictions
+                    .GetEffectiveAllowedCapabilities(policy.Capabilities);
+                policy = policy with { Capabilities = effectiveCapabilities };
+            }
+
+            // Apply memory restriction
+            manifestPolicy.MaxMemory.Execute(memSize =>
+            {
+                policy = policy with { MaxMemoryMB = memSize.Megabytes };
+            });
+
+            // Apply timeout restriction
+            manifestPolicy.Timeout.Execute(timeout =>
+            {
+                policy = policy with { TimeoutMs = timeout.Milliseconds };
+            });
+
+            // Apply path restrictions
+            if (!manifestPolicy.PathRestrictions.DeniesNone)
+            {
+                // TODO: Apply path restrictions when SecurityPolicy supports them
+            }
+
+            // Apply host restrictions  
+            if (!manifestPolicy.HostRestrictions.DeniesNone)
+            {
+                var allowedHosts = manifestPolicy.HostRestrictions.ToAllowedHosts();
+                allowedHosts.Execute(hosts =>
+                {
+                    policy = policy with { AllowedHosts = hosts };
+                });
+            }
+
+            return policy;
         }
 
         /// <summary>

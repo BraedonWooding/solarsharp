@@ -1,13 +1,18 @@
 using System;
+using System.Collections.Immutable;
 using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Text.Json;
+using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
 using SolarSharp.Interpreter.Security.Manifests;
+
+using SolarSharp.Interpreter.Security.Manifests.Infrastructure;
+using SolarSharp.Interpreter.Security.ValueTypes;
 
 namespace SolarSharp.CLI.Services
 {
@@ -57,7 +62,8 @@ namespace SolarSharp.CLI.Services
                 if (!Examples.TryGetPolicy(policyName, out policy))
                 {
                     throw new ArgumentException(
-                        $"Unknown policy name: {policyName}. Available policies: {string.Join(", ", Examples.GetAvailablePolicyNames())}"
+                        $"Unknown policy name: {policyName}. Available policies: {string.Join(", ", Examples.GetAvailablePolicyNames())}",
+                        nameof(policyName)
                     );
                 }
             }
@@ -103,16 +109,23 @@ namespace SolarSharp.CLI.Services
                     );
                 }
 
-                // TODO: Properly convert V2.0 policies to SecurityPolicy
-                // For now, create a basic restrictive policy
-                var policy = new SecurityPolicy();
+                // Convert V2.0 manifest policies to SecurityPolicy using ManifestPolicyConverter
+                var manifestDir = Path.GetDirectoryName(manifestPath) ?? ".";
+                var result = ManifestPolicyConverter.ConvertToSecurityPolicy(manifest, manifestDir);
+                
+                if (result.IsFailure)
+                {
+                    _logger.LogError("Failed to convert manifest policies: {Error}", result.Error);
+                    throw new InvalidOperationException($"Failed to convert manifest policies: {result.Error}");
+                }
 
                 _logger.LogInformation(
-                    "Loaded V2.0 manifest with {PolicyCount} policies",
-                    policies.Count
+                    "Loaded V2.0 manifest with {PolicyCount} policies from {ManifestPath}",
+                    policies.Count,
+                    manifestPath
                 );
 
-                return policy;
+                return result.Value;
             }
             catch (Exception ex)
             {
@@ -121,49 +134,6 @@ namespace SolarSharp.CLI.Services
             }
         }
 
-        /// <summary>
-        /// Parses module names into CoreModules flags.
-        /// </summary>
-        /// <param name="moduleNames">Array of module names.</param>
-        /// <returns>CoreModules flags for the specified modules.</returns>
-        private CoreModules ParseModules(string[] moduleNames)
-        {
-            var modules = CoreModules.None;
-
-            foreach (var moduleName in moduleNames)
-            {
-                modules |= moduleName.ToLowerInvariant() switch
-                {
-                    "basic" => CoreModules.Basic,
-                    "string" => CoreModules.String,
-                    "table" => CoreModules.Table,
-                    "math" => CoreModules.Math,
-                    "bit32" => CoreModules.Bit32,
-                    "io" => CoreModules.IO,
-                    "os" => CoreModules.OS_Time | CoreModules.OS_System,
-                    "os_time" => CoreModules.OS_Time,
-                    "os_system" => CoreModules.OS_System,
-                    "debug" => CoreModules.Debug,
-                    "coroutine" => CoreModules.Coroutine,
-                    "json" => CoreModules.Json,
-                    "dynamic" => CoreModules.Dynamic,
-                    _ => LogUnknownModule(moduleName),
-                };
-            }
-
-            return modules;
-        }
-
-        /// <summary>
-        /// Logs an unknown module name and returns None.
-        /// </summary>
-        /// <param name="moduleName">The unknown module name.</param>
-        /// <returns>CoreModules.None.</returns>
-        private CoreModules LogUnknownModule(string moduleName)
-        {
-            _logger.LogWarning("Unknown module name: {ModuleName}", moduleName);
-            return CoreModules.None;
-        }
     }
 
     /// <summary>

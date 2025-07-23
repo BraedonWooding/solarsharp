@@ -298,8 +298,7 @@ namespace SolarSharp.Interpreter.Security
 
                     // In learning mode, log the original violation but mark it as permitted for learning
                     var wasViolation =
-                        evt.Type == SecurityEventType.AccessDenied
-                        || evt.Type == SecurityEventType.PolicyViolation;
+                        evt.Type is SecurityEventType.AccessDenied or SecurityEventType.PolicyViolation;
                     var permitInLearningMode = LearningMode && wasViolation;
 
                     var logEntry = new
@@ -378,10 +377,7 @@ namespace SolarSharp.Interpreter.Security
         public bool ShouldPermitInLearningMode(SecurityEventType eventType)
         {
             return LearningMode
-                && (
-                    eventType == SecurityEventType.AccessDenied
-                    || eventType == SecurityEventType.PolicyViolation
-                );
+                && eventType is SecurityEventType.AccessDenied or SecurityEventType.PolicyViolation;
         }
 
         /// <summary>
@@ -463,7 +459,7 @@ namespace SolarSharp.Interpreter.Security
                     var operation = root.GetProperty("Operation").GetString();
 
                     // Track denied operations to suggest permissions
-                    if (type == "AccessDenied" || type == "PolicyViolation")
+                    if (type is "AccessDenied" or "PolicyViolation")
                     {
                         suggestion.DeniedOperations.Add(
                             $"{operation}: {GetArgumentsSummary(root)}"

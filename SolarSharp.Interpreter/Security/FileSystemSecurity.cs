@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using SolarSharp.Interpreter.Security.ValueTypes;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -101,6 +102,11 @@ namespace SolarSharp.Interpreter.Security
         }
 
         /// <summary>
+        /// Path restrictions from manifest policies
+        /// </summary>
+        public ValueTypes.PathRestriction PathRestrictions { get; set; } = ValueTypes.PathRestriction.None;
+
+        /// <summary>
         /// Gets the effective file access for a specific file path
         /// </summary>
         /// <param name="filePath">Path to the file</param>
@@ -111,6 +117,12 @@ namespace SolarSharp.Interpreter.Security
                 return DefaultFilePermissions;
 
             var normalizedPath = Path.GetFullPath(filePath);
+
+            // Check if path is denied by PathRestrictions first
+            if (PathRestrictions != null && PathRestrictions.IsRestricted(filePath))
+            {
+                return Security.FilePermissions.None;
+            }
 
             // Check explicit file permissions first (exact match)
             if (FilePermissions.TryGetValue(normalizedPath, out var fileAccess))
@@ -180,6 +192,12 @@ namespace SolarSharp.Interpreter.Security
         {
             // Use PathNormalizer for consistent cross-platform path handling
             var normalizedPath = PathNormalizer.ToAbsolutePath(filePath);
+
+            // Check if path is denied by PathRestrictions first
+            if (PathRestrictions != null && PathRestrictions.IsRestricted(filePath))
+            {
+                return Security.FilePermissions.None;
+            }
 
             // First check standard file permissions
             var basePermissions = GetFilePermissions(filePath);
@@ -475,6 +493,7 @@ namespace SolarSharp.Interpreter.Security
             {
                 DefaultFilePermissions = Security.FilePermissions.None,
                 DefaultDirectoryPermissions = Security.DirectoryPermissions.None,
+                PathRestrictions = PathRestriction.None,
             };
 
         /// <summary>
@@ -485,6 +504,7 @@ namespace SolarSharp.Interpreter.Security
             {
                 DefaultFilePermissions = Security.FilePermissions.Read,
                 DefaultDirectoryPermissions = Security.DirectoryPermissions.List,
+                PathRestrictions = PathRestriction.None,
             };
 
         /// <summary>
@@ -495,6 +515,7 @@ namespace SolarSharp.Interpreter.Security
             {
                 DefaultFilePermissions = Security.FilePermissions.SandboxedReadWrite,
                 DefaultDirectoryPermissions = Security.DirectoryPermissions.ListAndCreateFiles,
+                PathRestrictions = PathRestriction.None,
             };
 
         /// <summary>
@@ -508,6 +529,7 @@ namespace SolarSharp.Interpreter.Security
                 AllowHiddenFiles = true,
                 AllowSymbolicLinks = true,
                 MaxFileSize = long.MaxValue,
+                PathRestrictions = PathRestriction.None,
             };
 
         /// <summary>

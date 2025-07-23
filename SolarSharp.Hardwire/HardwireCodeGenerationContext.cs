@@ -278,7 +278,7 @@ namespace SolarSharp.Hardwire
             if (dv.String == "public")
                 return true;
 
-            if (dv.String == "internal" || dv.String == "protected-internal")
+            if (dv.String is "internal" or "protected-internal")
                 return AllowInternals;
 
             return false;

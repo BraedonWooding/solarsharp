@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json.Serialization;
 using CSharpFunctionalExtensions;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Security.ValueTypes;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -97,6 +98,12 @@ namespace SolarSharp.Interpreter.Security
         public FilePermissions DefaultFileAccess { get; init; } = Security.FilePermissions.None;
 
         /// <summary>
+        /// Path restrictions from manifests (runtime checked)
+        /// </summary>
+        [JsonIgnore]
+        public PathRestriction PathRestrictions { get; init; } = PathRestriction.None;
+
+        /// <summary>
         /// Default directory access level
         /// </summary>
         [JsonPropertyName("defaultDirectoryAccess")]
@@ -145,6 +152,12 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         [JsonPropertyName("allowedHosts")]
         public ImmutableArray<string> AllowedHosts { get; init; } = ImmutableArray<string>.Empty;
+
+        /// <summary>
+        /// Host restrictions from manifests (runtime checked)
+        /// </summary>
+        [JsonIgnore]
+        public HostRestriction HostRestrictions { get; init; } = HostRestriction.None;
 
         // Environment access
 
@@ -298,10 +311,12 @@ namespace SolarSharp.Interpreter.Security
                 AllowHiddenFiles = AllowHiddenFiles && other.AllowHiddenFiles,
                 MaxFileSize = IntersectNumericLimit(MaxFileSize, other.MaxFileSize),
                 EnableChroot = EnableChroot || other.EnableChroot,
+                PathRestrictions = PathRestrictions.CombineWith(other.PathRestrictions),
 
                 // Network - intersection
                 AllowNetworkAccess = AllowNetworkAccess && other.AllowNetworkAccess,
                 AllowedHosts = AllowedHosts.Intersect(other.AllowedHosts).ToImmutableArray(),
+                HostRestrictions = HostRestrictions.CombineWith(other.HostRestrictions),
 
                 // Environment - intersection
                 AllowEnvironmentAccess = AllowEnvironmentAccess && other.AllowEnvironmentAccess,
@@ -343,8 +358,8 @@ namespace SolarSharp.Interpreter.Security
                 return SecurityConstants.DenyLimit;
             
             // If either is unlimited (-1), use the other
-            if (a == SecurityConstants.UnlimitedTables) return b;
-            if (b == SecurityConstants.UnlimitedTables) return a;
+            if (a == -1) return b;
+            if (b == -1) return a;
             
             // Both are positive limits, use the smaller (more restrictive)
             return Math.Min(a, b);

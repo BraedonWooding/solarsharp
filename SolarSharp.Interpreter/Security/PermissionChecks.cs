@@ -16,12 +16,9 @@ namespace SolarSharp.Interpreter.Security
             return required switch
             {
                 FilePermissions.None => true, // No access required, always allowed
-                FilePermissions.Read => actual == FilePermissions.Read
-                    || actual == FilePermissions.ReadWrite
-                    || actual == FilePermissions.SandboxedReadWrite,
+                FilePermissions.Read => actual is FilePermissions.Read or FilePermissions.ReadWrite or FilePermissions.SandboxedReadWrite,
                 FilePermissions.ReadWrite => actual == FilePermissions.ReadWrite,
-                FilePermissions.SandboxedReadWrite => actual == FilePermissions.SandboxedReadWrite
-                    || actual == FilePermissions.ReadWrite,
+                FilePermissions.SandboxedReadWrite => actual is FilePermissions.SandboxedReadWrite or FilePermissions.ReadWrite,
                 _ => false,
             };
         }
@@ -40,8 +37,7 @@ namespace SolarSharp.Interpreter.Security
             return required switch
             {
                 DirectoryPermissions.None => true, // No access required, always allowed
-                DirectoryPermissions.List => actual == DirectoryPermissions.List
-                    || actual == DirectoryPermissions.ListAndCreateFiles,
+                DirectoryPermissions.List => actual is DirectoryPermissions.List or DirectoryPermissions.ListAndCreateFiles,
                 DirectoryPermissions.ListAndCreateFiles => actual
                     == DirectoryPermissions.ListAndCreateFiles,
                 _ => false,

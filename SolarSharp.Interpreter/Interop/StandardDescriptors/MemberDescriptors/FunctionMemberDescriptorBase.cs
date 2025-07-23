@@ -211,7 +211,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
                             break;
                     }
 
-                    // here we have to worry we already have an array.. damn. We only support this for userdata.
+                    // here we have to worry we already have an array. We only support this for userdata.
                     // remains to be analyzed what's the correct behaviour here. For example, let's take a params object[]..
                     // given a single table parameter, should it use it as an array or as an object itself ?
                     if (extraArgs.Count == 1)

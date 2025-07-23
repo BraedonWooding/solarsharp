@@ -251,7 +251,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         protected static lua_Integer LuaIsString(LuaState l, lua_Integer p)
         {
             var v = l.At(p);
-            return (v.Type == DataType.String || v.Type == DataType.Number) ? 1 : 0;
+            return v.Type is DataType.String or DataType.Number ? 1 : 0;
         }
 
         protected static void LuaPop(LuaState l, lua_Integer p)

@@ -11,6 +11,8 @@ using SolarSharp.Interpreter.Security;
 using SolarSharp.Interpreter.Security.Manifests;
 using SolarSharp.Interpreter.Security.Operations;
 
+using Examples = SolarSharp.Interpreter.Security.Examples;
+
 namespace WotCI.Tests
 {
     [TestFixture]
@@ -33,35 +35,15 @@ namespace WotCI.Tests
             // Extract public key from partner certificate using BouncyCastle
             var partnerPublicKeyPem = ManifestSigner.ExportPublicKey(partnerKey.Public);
 
-            var manifestJson = """
-                {
-                                "version": "1.0",
-                                "name": "Test Plugin",
-                                "policy": {
-                                    "allowedModules": 72,
-                                    "timeoutMs": 5000,
-                                    "maxMemoryMB": 10
-                                }
-                            }
-                """;
-
-            // Sign manifest using BouncyCastle private key directly
-            var signedManifest = ManifestSigner.SignManifestJson(manifestJson, partnerKey.Private);
-
-            // The signed manifest is now in V2.0 format, parse it to extract the policy
-            using var doc = JsonDocument.Parse(signedManifest);
-            var manifestElement = doc.RootElement;
-
-            // Create a SecurityPolicy from the V2.0 manifest
-            // The policy is now in signed-content[0].policies[0]
-            var policy = new SecurityPolicy
+            // Use example policy as base and modify for plugin requirements
+            var policy = SolarSharp.Interpreter.Security.Examples.Isolated() with
             {
-                AllowedModules = CoreModules.Basic | CoreModules.Table | CoreModules.String, // The original manifest had allowedModules: 72
-                TimeoutMs = 5000, // Original manifest had timeoutMs: 5000
-                MaxMemoryMB = 10, // Original manifest had maxMemoryMB: 10
-                MaxInstructions = 100_000, // Set a reasonable instruction limit
-                MaxCallDepth = 100, // Set a reasonable call depth limit
-                AllowExecution = true, // Allow execution for plugin code
+                AllowedModules = CoreModules.Basic | CoreModules.Table | CoreModules.String,
+                TimeoutMs = 5000,
+                MaxMemoryMB = 10,
+                MaxInstructions = 100_000,
+                MaxCallDepth = 100,
+                AllowExecution = true,
             };
 
             // Convert SecurityPolicy to BasePolicySet using PolicySetBuilder

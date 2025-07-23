@@ -69,7 +69,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
         protected static bool isspace(char c)
         {
-            return (c == ' ') || c is >= (char)0x09 and <= (char)0x0D;
+            return c is ' ' or >= (char)0x09 and <= (char)0x0D;
         }
 
         protected static bool isupper(char c)

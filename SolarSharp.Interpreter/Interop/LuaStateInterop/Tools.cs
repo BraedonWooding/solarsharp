@@ -63,17 +63,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         /// </returns>
         public static bool IsNumericType(object o)
         {
-            return o is byte
-                || o is sbyte
-                || o is short
-                || o is ushort
-                || o is int
-                || o is uint
-                || o is long
-                || o is ulong
-                || o is float
-                || o is double
-                || o is decimal;
+            return o is byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal;
         }
 
         /// <summary>

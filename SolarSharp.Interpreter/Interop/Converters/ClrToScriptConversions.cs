@@ -29,7 +29,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (obj is bool)
                 return DynValue.NewBoolean((bool)obj);
 
-            if (obj is string || obj is StringBuilder || obj is char)
+            if (obj is string or StringBuilder or char)
                 return DynValue.NewString(obj.ToString());
 
             if (NumericConversions.NumericTypes.Contains(t))
@@ -68,7 +68,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (obj is bool)
                 return DynValue.NewBoolean((bool)obj);
 
-            if (obj is string || obj is StringBuilder || obj is char)
+            if (obj is string or StringBuilder or char)
                 return DynValue.NewString(obj.ToString());
 
             if (obj is Closure)

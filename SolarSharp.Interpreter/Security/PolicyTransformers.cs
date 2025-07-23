@@ -473,28 +473,15 @@ namespace SolarSharp.Interpreter.Security
             );
         }
 
+        // TODO: Remove or update ConvertManifestPolicyToSecurityPolicy for V2.0
         private static SecurityPolicy ConvertManifestPolicyToSecurityPolicy(
             ManifestPolicy manifestPolicy
         )
         {
-            var restrict = manifestPolicy.Restrict ?? new PolicyRestrictions();
-            var grant = manifestPolicy.Grant ?? new PolicyGrant();
+            // Old code using Grant/Restrict properties which no longer exist
+            throw new NotImplementedException("ConvertManifestPolicyToSecurityPolicy needs to be updated for V2.0");
 
-            return new SecurityPolicy
-            {
-                Name = CSharpFunctionalExtensions.Maybe<string>.From(
-                    $"policy_{manifestPolicy.Selector}"
-                ),
-                TimeoutMs = ParseTimeout(restrict.Timeout),
-                MaxMemoryMB = ParseMemory(restrict.MaxMemory),
-                MaxInstructions = 1000000, // Default
-                MaxCallDepth = 100, // Default
-                AllowExecution = !manifestPolicy.DenyAll,
-                AllowedModules = ConvertModules(grant.Modules),
-                Capabilities = ConvertCapabilities(grant.Capabilities),
-                FilePermissions = ConvertFilePermissions(grant),
-                PubSubPermissions = new PubSubPermissions(),
-            };
+            // return new SecurityPolicy();
         }
 
         private static int ParseTimeout(string timeoutStr)
@@ -566,26 +553,6 @@ namespace SolarSharp.Interpreter.Security
             return result;
         }
 
-        private static ImmutableDictionary<string, FilePermissions> ConvertFilePermissions(
-            PolicyGrant grant
-        )
-        {
-            var permissions = ImmutableDictionary.CreateBuilder<string, FilePermissions>();
-
-            foreach (var readPath in grant.FileRead)
-            {
-                permissions[readPath] = FilePermissions.Read;
-            }
-
-            foreach (var writePath in grant.FileWrite)
-            {
-                permissions[writePath] = permissions.TryGetValue(writePath, out var existing)
-                    ? existing | FilePermissions.ReadWrite
-                    : FilePermissions.ReadWrite;
-            }
-
-            return permissions.ToImmutable();
-        }
 
         private static ScriptCapabilities ConvertCapabilities(ImmutableArray<string> capabilities)
         {
@@ -630,28 +597,8 @@ namespace SolarSharp.Interpreter.Security
             SecurityPolicy securityPolicy
         )
         {
-            return new ManifestPolicy
-            {
-                Packages = ImmutableArray.Create("*"), // Apply to all packages
-                Selector = ":file", // Default selector
-                Grant = new PolicyGrant
-                {
-                    FileRead = ConvertFilePermissionsToFileRead(securityPolicy.FilePermissions),
-                    FileWrite = ConvertFilePermissionsToFileWrite(securityPolicy.FilePermissions),
-                    Network = ConvertHostPermissions(securityPolicy.AllowedHosts),
-                    Roles = ImmutableArray<string>.Empty,
-                    Capabilities = ConvertCapabilitiesToStrings(securityPolicy.Capabilities),
-                },
-                Restrict = new PolicyRestrictions
-                {
-                    MaxMemory = $"{securityPolicy.MaxMemoryMB}MB",
-                    Timeout = $"{securityPolicy.TimeoutMs}ms",
-                    Deny = ImmutableArray<string>.Empty,
-                    InheritFromFile = true,
-                },
-                DenyIfSignedBy = ImmutableArray<string>.Empty,
-                DenyAll = !securityPolicy.AllowExecution,
-            };
+            // TODO: Update for V2.0 manifest structure
+            throw new NotImplementedException("ConvertSecurityPolicyToManifestPolicy needs to be updated for V2.0");
         }
 
         /// <summary>

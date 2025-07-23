@@ -117,14 +117,15 @@ namespace SolarSharp.Interpreter.Tests.Units
         ///     Tests that ManifestPolicy can specify both file and directory access levels.
         /// </summary>
         /// <remarks>
-        ///     ManifestPolicy allows specifying different permissions through grants:
-        ///     - File read/write permissions
-        ///     - Network access permissions
-        ///     - Capability grants
+        ///     ManifestPolicy allows specifying different permissions through restrictions:
+        ///     - Path access patterns with DenyAll flag
+        ///     - Module restrictions
+        ///     - Capability restrictions
+        ///     - Host restrictions
         ///     This granular control allows scenarios like:
-        ///     - Read files but not write them
-        ///     - Create files in specific directories
-        ///     - Full access to certain file types
+        ///     - Whitelist specific file patterns
+        ///     - Control module access
+        ///     - Limit capabilities and network hosts
         /// </remarks>    [Category("Manifest.Unit")]
         [Category("Manifest.Unit")]
         [Test]
@@ -134,19 +135,37 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 Packages = new[] { "test-package" }.ToImmutableArray(),
                 Selector = ":file",
-                Grant = new PolicyGrant
+                MaxMemory = "64MB",
+                Timeout = "30s",
+                Paths = new ManifestPathRestriction
                 {
-                    FileRead = new[] { "scripts/*.lua" }.ToImmutableArray(),
-                    FileWrite = new[] { "output/*.txt" }.ToImmutableArray(),
+                    DenyAll = true,
+                    Patterns = new[] { "scripts/*.lua", "output/*.txt" }.ToImmutableArray()
                 },
-                Restrict = new PolicyRestrictions { MaxMemory = "64MB", Timeout = "30s" },
+                Modules = new ManifestModuleRestriction
+                {
+                    DenyAll = false,
+                    Modules = ImmutableArray<string>.Empty
+                },
+                Capabilities = new ManifestCapabilityRestriction
+                {
+                    DenyAll = false,
+                    Capabilities = ImmutableArray<string>.Empty
+                },
+                Hosts = new ManifestHostRestriction
+                {
+                    DenyAll = false,
+                    Patterns = ImmutableArray<string>.Empty
+                },
+                DenyAll = false,
+                InheritFromFile = true,
             };
 
             Assert.Multiple(() =>
             {
-                Assert.That(policy.Grant.FileRead, Contains.Item("scripts/*.lua"));
-                Assert.That(policy.Grant.FileWrite, Contains.Item("output/*.txt"));
-                Assert.That(policy.Restrict.MaxMemory, Is.EqualTo("64MB"));
+                Assert.That(policy.Paths.Patterns, Contains.Item("scripts/*.lua"));
+                Assert.That(policy.Paths.Patterns, Contains.Item("output/*.txt"));
+                Assert.That(policy.MaxMemory, Is.EqualTo("64MB"));
             });
         }
 
@@ -199,16 +218,30 @@ namespace SolarSharp.Interpreter.Tests.Units
                             {
                                 Packages = new[] { "package1" }.ToImmutableArray(),
                                 Selector = ":file",
-                                Grant = new PolicyGrant
+                                MaxMemory = "64MB",
+                                Timeout = "30s",
+                                Paths = new ManifestPathRestriction
                                 {
-                                    FileRead = new[] { "*.lua" }.ToImmutableArray(),
-                                    FileWrite = new[] { "output/*.txt" }.ToImmutableArray(),
+                                    DenyAll = true,
+                                    Patterns = new[] { "*.lua", "output/*.txt" }.ToImmutableArray()
                                 },
-                                Restrict = new PolicyRestrictions
+                                Modules = new ManifestModuleRestriction
                                 {
-                                    MaxMemory = "64MB",
-                                    Timeout = "30s",
+                                    DenyAll = false,
+                                    Modules = ImmutableArray<string>.Empty
                                 },
+                                Capabilities = new ManifestCapabilityRestriction
+                                {
+                                    DenyAll = false,
+                                    Capabilities = ImmutableArray<string>.Empty
+                                },
+                                Hosts = new ManifestHostRestriction
+                                {
+                                    DenyAll = false,
+                                    Patterns = ImmutableArray<string>.Empty
+                                },
+                                DenyAll = false,
+                                InheritFromFile = true,
                             },
                         }.ToImmutableArray(),
                     },
@@ -232,9 +265,9 @@ namespace SolarSharp.Interpreter.Tests.Units
                 Assert.That(block.Policies.Length, Is.EqualTo(1));
 
                 var policy = block.Policies[0];
-                Assert.That(policy.Grant.FileRead, Contains.Item("*.lua"));
-                Assert.That(policy.Grant.FileWrite, Contains.Item("output/*.txt"));
-                Assert.That(policy.Restrict.MaxMemory, Is.EqualTo("64MB"));
+                Assert.That(policy.Paths.Patterns, Contains.Item("*.lua"));
+                Assert.That(policy.Paths.Patterns, Contains.Item("output/*.txt"));
+                Assert.That(policy.MaxMemory, Is.EqualTo("64MB"));
             });
         }
 
@@ -492,11 +525,28 @@ namespace SolarSharp.Interpreter.Tests.Units
                             {
                                 Packages = new[] { "main-package" }.ToImmutableArray(),
                                 Selector = ":file",
-                                Grant = new PolicyGrant
+                                Paths = new ManifestPathRestriction
                                 {
-                                    FileRead = new[] { "config.txt" }.ToImmutableArray(),
-                                    FileWrite = new[] { "data.db" }.ToImmutableArray(),
+                                    DenyAll = true,
+                                    Patterns = new[] { "config.txt", "data.db" }.ToImmutableArray()
                                 },
+                                Modules = new ManifestModuleRestriction
+                                {
+                                    DenyAll = false,
+                                    Modules = ImmutableArray<string>.Empty
+                                },
+                                Capabilities = new ManifestCapabilityRestriction
+                                {
+                                    DenyAll = false,
+                                    Capabilities = ImmutableArray<string>.Empty
+                                },
+                                Hosts = new ManifestHostRestriction
+                                {
+                                    DenyAll = false,
+                                    Patterns = ImmutableArray<string>.Empty
+                                },
+                                DenyAll = false,
+                                InheritFromFile = true,
                             },
                         }.ToImmutableArray(),
                     },
@@ -530,8 +580,8 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             // Verify policies are defined correctly
             var policy = block.Policies[0];
-            Assert.That(policy.Grant.FileRead, Contains.Item("config.txt"));
-            Assert.That(policy.Grant.FileWrite, Contains.Item("data.db"));
+            Assert.That(policy.Paths.Patterns, Contains.Item("config.txt"));
+            Assert.That(policy.Paths.Patterns, Contains.Item("data.db"));
         }
 
         /// <summary>
@@ -539,8 +589,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// </summary>
         /// <remarks>
         ///     ManifestPolicy stores:
-        ///     - Grant.FileRead: Wildcard patterns for read access
-        ///     - Grant.FileWrite: Wildcard patterns for write access
+        ///     - Paths.Patterns: Wildcard patterns for file access
+        ///     - Paths.DenyAll: Whether to deny all except listed patterns
         ///     - Packages: Which packages this policy applies to
         ///     This test ensures patterns are preserved exactly as specified,
         ///     including complex wildcards, for accurate matching.
@@ -575,15 +625,33 @@ namespace SolarSharp.Interpreter.Tests.Units
                             {
                                 Packages = new[] { "script-package" }.ToImmutableArray(),
                                 Selector = ":file",
-                                Grant = new PolicyGrant
+                                Paths = new ManifestPathRestriction
                                 {
-                                    FileRead = new[]
+                                    DenyAll = true,
+                                    Patterns = new[]
                                     {
                                         "scripts/*.lua",
                                         "config/**",
-                                    }.ToImmutableArray(),
-                                    FileWrite = new[] { "output/*.txt" }.ToImmutableArray(),
+                                        "output/*.txt"
+                                    }.ToImmutableArray()
                                 },
+                                Modules = new ManifestModuleRestriction
+                                {
+                                    DenyAll = false,
+                                    Modules = ImmutableArray<string>.Empty
+                                },
+                                Capabilities = new ManifestCapabilityRestriction
+                                {
+                                    DenyAll = false,
+                                    Capabilities = ImmutableArray<string>.Empty
+                                },
+                                Hosts = new ManifestHostRestriction
+                                {
+                                    DenyAll = false,
+                                    Patterns = ImmutableArray<string>.Empty
+                                },
+                                DenyAll = false,
+                                InheritFromFile = true,
                             },
                         }.ToImmutableArray(),
                     },
@@ -595,9 +663,9 @@ namespace SolarSharp.Interpreter.Tests.Units
                 var policy = manifest.SignedContent[0].Policies[0];
 
                 // Test that patterns are preserved
-                Assert.That(policy.Grant.FileRead, Contains.Item("scripts/*.lua"));
-                Assert.That(policy.Grant.FileRead, Contains.Item("config/**"));
-                Assert.That(policy.Grant.FileWrite, Contains.Item("output/*.txt"));
+                Assert.That(policy.Paths.Patterns, Contains.Item("scripts/*.lua"));
+                Assert.That(policy.Paths.Patterns, Contains.Item("config/**"));
+                Assert.That(policy.Paths.Patterns, Contains.Item("output/*.txt"));
 
                 // Test package associations
                 Assert.That(policy.Packages, Contains.Item("script-package"));
@@ -726,30 +794,82 @@ namespace SolarSharp.Interpreter.Tests.Units
                             {
                                 Packages = new[] { "scripts-package" }.ToImmutableArray(),
                                 Selector = ":file",
-                                Grant = new PolicyGrant
+                                Paths = new ManifestPathRestriction
                                 {
-                                    FileRead = new[] { "scripts/*.lua" }.ToImmutableArray(),
-                                    FileWrite = new[] { "scripts/*.lua" }.ToImmutableArray(),
+                                    DenyAll = true,
+                                    Patterns = new[] { "scripts/*.lua" }.ToImmutableArray()
                                 },
+                                Modules = new ManifestModuleRestriction
+                                {
+                                    DenyAll = false,
+                                    Modules = ImmutableArray<string>.Empty
+                                },
+                                Capabilities = new ManifestCapabilityRestriction
+                                {
+                                    DenyAll = false,
+                                    Capabilities = ImmutableArray<string>.Empty
+                                },
+                                Hosts = new ManifestHostRestriction
+                                {
+                                    DenyAll = false,
+                                    Patterns = ImmutableArray<string>.Empty
+                                },
+                                DenyAll = false,
+                                InheritFromFile = true,
                             },
                             new ManifestPolicy
                             {
                                 Packages = new[] { "config-package" }.ToImmutableArray(),
                                 Selector = ":file",
-                                Grant = new PolicyGrant
+                                Paths = new ManifestPathRestriction
                                 {
-                                    FileRead = new[] { "config/*.json" }.ToImmutableArray(),
+                                    DenyAll = true,
+                                    Patterns = new[] { "config/*.json" }.ToImmutableArray()
                                 },
+                                Modules = new ManifestModuleRestriction
+                                {
+                                    DenyAll = false,
+                                    Modules = ImmutableArray<string>.Empty
+                                },
+                                Capabilities = new ManifestCapabilityRestriction
+                                {
+                                    DenyAll = false,
+                                    Capabilities = ImmutableArray<string>.Empty
+                                },
+                                Hosts = new ManifestHostRestriction
+                                {
+                                    DenyAll = false,
+                                    Patterns = ImmutableArray<string>.Empty
+                                },
+                                DenyAll = false,
+                                InheritFromFile = true,
                             },
                             new ManifestPolicy
                             {
                                 Packages = new[] { "data-package" }.ToImmutableArray(),
                                 Selector = ":file",
-                                Grant = new PolicyGrant
+                                Paths = new ManifestPathRestriction
                                 {
-                                    FileRead = new[] { "data/*.db" }.ToImmutableArray(),
-                                    FileWrite = new[] { "data/*.db" }.ToImmutableArray(),
+                                    DenyAll = true,
+                                    Patterns = new[] { "data/*.db" }.ToImmutableArray()
                                 },
+                                Modules = new ManifestModuleRestriction
+                                {
+                                    DenyAll = false,
+                                    Modules = ImmutableArray<string>.Empty
+                                },
+                                Capabilities = new ManifestCapabilityRestriction
+                                {
+                                    DenyAll = false,
+                                    Capabilities = ImmutableArray<string>.Empty
+                                },
+                                Hosts = new ManifestHostRestriction
+                                {
+                                    DenyAll = false,
+                                    Patterns = ImmutableArray<string>.Empty
+                                },
+                                DenyAll = false,
+                                InheritFromFile = true,
                             },
                         }.ToImmutableArray(),
                     },
@@ -765,18 +885,18 @@ namespace SolarSharp.Interpreter.Tests.Units
 
                 // Test scripts policy
                 var scriptsPolicy = block.Policies[0];
-                Assert.That(scriptsPolicy.Grant.FileRead, Contains.Item("scripts/*.lua"));
-                Assert.That(scriptsPolicy.Grant.FileWrite, Contains.Item("scripts/*.lua"));
+                Assert.That(scriptsPolicy.Paths.Patterns, Contains.Item("scripts/*.lua"));
+                Assert.That(scriptsPolicy.Paths.DenyAll, Is.True);
 
                 // Test config policy (read-only)
                 var configPolicy = block.Policies[1];
-                Assert.That(configPolicy.Grant.FileRead, Contains.Item("config/*.json"));
-                Assert.That(configPolicy.Grant.FileWrite.Length, Is.EqualTo(0));
+                Assert.That(configPolicy.Paths.Patterns, Contains.Item("config/*.json"));
+                Assert.That(configPolicy.Paths.DenyAll, Is.True);
 
                 // Test data policy
                 var dataPolicy = block.Policies[2];
-                Assert.That(dataPolicy.Grant.FileRead, Contains.Item("data/*.db"));
-                Assert.That(dataPolicy.Grant.FileWrite, Contains.Item("data/*.db"));
+                Assert.That(dataPolicy.Paths.Patterns, Contains.Item("data/*.db"));
+                Assert.That(dataPolicy.Paths.DenyAll, Is.True);
             });
         }
 

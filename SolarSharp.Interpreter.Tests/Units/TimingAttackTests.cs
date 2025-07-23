@@ -184,8 +184,8 @@ namespace SolarSharp.Interpreter.Tests.Units
             if (exceptions.Count > 0)
             {
                 var exceptionTypes = exceptions
-                    .GroupBy(ex => ex.GetType().Name)
-                    .Select(g => $"{g.Key}: {g.Count()}")
+                    .GroupBy(static ex => ex.GetType().Name)
+                    .Select(static g => $"{g.Key}: {g.Count()}")
                     .ToArray();
                 // Debug: Log exception information
             }
@@ -194,13 +194,13 @@ namespace SolarSharp.Interpreter.Tests.Units
             {
                 // All successful executions should return 42
                 if (results.Count > 0)
-                    Assert.That(results.All(r => r == 42), Is.True);
+                    Assert.That(results.All(static r => r == 42), Is.True);
 
                 // Any exceptions should be SecurityExceptions (valid failures)
                 if (exceptions.Count > 0)
                     Assert.That(
-                        exceptions.All(ex =>
-                            ex is SecurityException || ex is ManifestSignatureException
+                        exceptions.All(static ex =>
+                            ex is SecurityException or ManifestSignatureException
                         ),
                         Is.True
                     );

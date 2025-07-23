@@ -103,7 +103,7 @@ namespace SolarSharp.Interpreter.Serialization
 
         public static string SerializeValue(this DynValue dynValue, int tabs = 0)
         {
-            if (dynValue.Type == DataType.Nil || dynValue.Type == DataType.Void)
+            if (dynValue.Type is DataType.Nil or DataType.Void)
                 return "nil";
             if (dynValue.Type == DataType.Tuple)
                 return dynValue.Tuple.Any() ? dynValue.Tuple[0].SerializeValue(tabs) : "nil";

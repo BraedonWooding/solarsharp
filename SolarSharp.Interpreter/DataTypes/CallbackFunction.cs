@@ -85,9 +85,7 @@ namespace SolarSharp.Interpreter.DataTypes
             set
             {
                 if (
-                    value == InteropAccessMode.Default
-                    || value == InteropAccessMode.HideMembers
-                    || value == InteropAccessMode.BackgroundOptimized
+                    value is InteropAccessMode.Default or InteropAccessMode.HideMembers or InteropAccessMode.BackgroundOptimized
                 )
                     throw new ArgumentException("DefaultAccessMode");
 

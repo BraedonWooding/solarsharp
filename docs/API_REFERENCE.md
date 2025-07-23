@@ -13,7 +13,6 @@ the Script class, SecurityPolicy system, Manifest APIs, Message Bus, and all rel
 6. [Enumerations](#enumerations)
 7. [Exceptions](#exceptions)
 8. [Extension Methods and Utilities](#extension-methods-and-utilities)
-9. [WotCI Game-Specific APIs](#wotci-game-specific-apis)
 
 ## Script Class and Builder Pattern
 
@@ -597,8 +596,14 @@ public sealed record ManifestPolicy
 {
     public ImmutableArray<string> Packages { get; init; }
     public string Selector { get; init; }
-    public ImmutableDictionary<string, object> Grant { get; init; }
-    public ImmutableDictionary<string, object> Restrict { get; init; }
+    public string MaxMemory { get; init; }
+    public string Timeout { get; init; }
+    public ImmutableArray<string> DisabledModules { get; init; }
+    public ImmutableArray<string> DisabledCapabilities { get; init; }
+    public ImmutableArray<string> DeniedPaths { get; init; }
+    public ImmutableArray<string> DeniedHosts { get; init; }
+    public bool DenyAll { get; init; }
+    public bool InheritFromFile { get; init; }
 }
 ```
 
@@ -674,21 +679,19 @@ var manifest = V2ManifestBuilder.CreateUnsigned("com.example.app-v1.0", "main")
         ["version"] = "1.0.0",
         ["author"] = "Developer Name"
     })
-    .WithPolicy(
-        new[] { "main" },
-        ":file",
-        new Dictionary<string, object>
-        {
-            ["file-read"] = new[] { "*.config", "data/*.json" },
-            ["modules"] = new[] { "basic", "string" }
-        },
-        new Dictionary<string, object>
-        {
-            ["max-memory"] = "50MB",
-            ["timeout"] = "30s",
-            ["max-call-depth"] = "50"
-        }
-    )
+    .WithPolicy(new ManifestPolicy
+    {
+        Packages = ImmutableArray.Create("main"),
+        Selector = ":file",
+        MaxMemory = "50MB",
+        Timeout = "30s",
+        DisabledModules = ImmutableArray.Create("io", "os"),
+        DisabledCapabilities = ImmutableArray.Create("FileWrite", "NetworkAccess"),
+        DeniedPaths = ImmutableArray.Create("/etc/*", "/home/*"),
+        DeniedHosts = ImmutableArray.Create("*.internal.com"),
+        DenyAll = false,
+        InheritFromFile = true
+    })
     .Build();
 ```
 
@@ -1547,175 +1550,6 @@ GlobMatcher.IsMatch("test_1.log", "test_?.log")       // true
 GlobMatcher.IsMatch("app.config", "app.{config,json}") // true
 ```
 
-## WotCI Game-Specific APIs
-
-WotCI (Wrath of the Continuous Integration) provides additional game-specific APIs through the Enhanced Game API Facade.
-
-### Enhanced Game API Setup
-
-```csharp
-// Create and configure the game API
-var game = new GameSimulator();
-var gateway = new ScriptAPIGateway();
-var messageBus = new ScriptMessageBus();
-var auditor = new SecurityAuditor();
-var rateLimiter = new RateLimiter(RateLimitConfig.Default);
-
-var apiFacade = new EnhancedGameAPIFacade(
-    game, gateway, messageBus, auditor, rateLimiter);
-
-// Setup capabilities based on trust level
-apiFacade.SetupCapabilities(PluginTrustLevel.Partner);
-
-// Create Lua API for script
-var api = apiFacade.CreateEnhancedApi(script, "my-plugin", PluginTrustLevel.Partner);
-script.Globals["api"] = api;
-```
-
-### Health API
-
-Available to all trust levels (read), Partner+ for modifications.
-
-```lua
--- Read health (all trust levels)
-local health = api.health.get()
-print("Current health:", health)
-
--- Heal (Partner+ only)
-local result = api.health.heal(20)
-if result.success then
-    print("Healed for 20 points")
-end
-
--- Set health (Partner+ only)
-api.health.set(100)
-```
-
-### Gold/Economy API
-
-```lua
--- Read gold (all trust levels)
-local gold = api.gold.get()
-print("Current gold:", gold)
-
--- Add gold (Partner+ only)
-local result = api.gold.add(50)
-if result.success then
-    print("Added 50 gold")
-end
-```
-
-### Game State API
-
-```lua
--- Get filtered state (all trust levels)
-local state = api.game.getState("player")
-print("Player state:", state.player.name)
-
--- Get full snapshot (all trust levels)
-local snapshot = api.game.getSnapshot()
-print("Game time:", snapshot.gameTime)
-
--- Get combat stats (all trust levels)
-local stats = api.game.getStats()
-print("Attack power:", stats.attackPower)
-```
-
-### Message Bus API (WotCI Extended)
-
-WotCI adds subscription support on top of the core pubsub module.
-
-```lua
--- Send message to all scripts
-api.messages.send("game.event", { 
-    type = "player_action", 
-    data = { x = 10, y = 20 } 
-})
-
--- Send to specific script
-api.messages.sendTo("other_plugin", "direct.message", { 
-    greeting = "Hello!" 
-})
-
--- Subscribe to messages (WotCI-specific)
-api.messages.subscribe("game.event", function(message)
-    print("Received:", message.type)
-    print("From:", message.from)
-    print("Data:", message.data)
-    
-    -- Can return response for request/reply patterns
-    if message.type == "query" then
-        return { answer = 42 }
-    end
-end)
-```
-
-### Utility API
-
-```lua
--- Rate-limited logging
-local success = api.util.log("Important message", "info")
-if not success then
-    print("Rate limit exceeded")
-end
-
--- Safe wait (max 5 seconds)
-api.util.wait(2.5) -- Wait 2.5 seconds
-
--- Get current trust level
-local trustLevel = api.util.getTrustLevel()
-print("Running as:", trustLevel)
-
--- Safe random number generation
-local rand1 = api.util.random()        -- 0.0 to 1.0
-local rand2 = api.util.random(100)     -- 0 to 99
-local rand3 = api.util.random(10, 20)  -- 10 to 19
-```
-
-### Trust Levels
-
-```csharp
-public enum PluginTrustLevel
-{
-    User = 0,      // Read-only access
-    Partner = 1,   // Can modify game state
-    System = 2     // Full access
-}
-```
-
-### Capability Registration
-
-```csharp
-// Register a custom capability
-public class CustomCapability : ScriptCapabilityBase
-{
-    public CustomCapability(ISecurityAuditor auditor) 
-        : base("custom", auditor) { }
-    
-    public override IReadOnlyCollection<string> SupportedOperations => 
-        new[] { "read", "write" };
-    
-    protected override bool IsOperationAllowed(string operation, object[] parameters)
-    {
-        return operation == "read" || 
-               (operation == "write" && HasWritePermission());
-    }
-    
-    protected override object ExecuteOperation(string operation, object[] parameters)
-    {
-        return operation switch
-        {
-            "read" => ReadData(),
-            "write" => WriteData(parameters[0]),
-            _ => throw new InvalidOperationException()
-        };
-    }
-}
-
-// Register with gateway
-gateway.RegisterCapability(new CustomCapability(auditor));
-```
-
 ## Complete Example: Secure Plugin System
 
 ```csharp
@@ -1755,13 +1589,7 @@ script.LoadKey(trustedPublicKey);
 var messageBus = new MessageBus();
 script.SetService<IMessageBus>(messageBus);
 
-// 6. Setup WotCI game API (if using game features)
-var apiFacade = new EnhancedGameAPIFacade(game, gateway, messageBus, auditor);
-apiFacade.SetupCapabilities(PluginTrustLevel.Partner);
-var api = apiFacade.CreateEnhancedApi(script, "my-plugin", PluginTrustLevel.Partner);
-script.Globals["api"] = api;
-
-// 7. Execute plugin (manifest required due to loaded key)
+// 6. Execute plugin (manifest required due to loaded key)
 try
 {
     var result = script.DoFile("plugins/secure/plugin.lua");
@@ -1780,6 +1608,3 @@ catch (SecurityException ex)
     Console.WriteLine($"Security violation: {ex.Message}");
 }
 ```
-
-This completes the comprehensive SolarSharp API Reference, combining all public APIs, the manifest system, message bus,
-and WotCI game-specific extensions into a single reference document.

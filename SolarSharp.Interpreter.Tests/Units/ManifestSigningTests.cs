@@ -9,6 +9,8 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Pkcs;
 using SolarSharp.Interpreter.Security;
 using SolarSharp.Interpreter.Security.Manifests;
+using SolarSharp.Interpreter.Security.Manifests.Infrastructure;
+using SolarSharp.Interpreter.Tests.TestHelpers;
 
 namespace SolarSharp.Interpreter.Tests.Units
 {
@@ -169,15 +171,15 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestECDSASignatureGeneration()
         {
-            var manifest =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""securityLevel"": ""Isolated""
-                }
-            }";
-
-            var signed = ManifestSigner.SignManifestJson(manifest, _ecdsaKey, "ECDSA");
+            // Create V2.0 manifest
+            var v2Manifest = ManifestTestHelpers.CreateV2Manifest(
+                packageName: "TestPackage",
+                packageVersion: "1.0.0",
+                packageDescription: "Test ECDSA signing"
+            );
+            
+            var manifestJson = JsonSerializer.Serialize(v2Manifest, ManifestJsonOptions.Default);
+            var signed = ManifestSigner.SignManifestJson(manifestJson, _ecdsaKey, "ECDSA");
 
             // Verify V2.0 signed-content structure
             var doc = JsonDocument.Parse(signed);

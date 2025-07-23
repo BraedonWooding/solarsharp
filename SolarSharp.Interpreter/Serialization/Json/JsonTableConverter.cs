@@ -195,7 +195,7 @@ namespace SolarSharp.Interpreter.Serialization.Json
             {
                 return DynValue.NewString(L.Current.Text);
             }
-            if (L.Current.Type == TokenType.Number || L.Current.Type == TokenType.Op_MinusOrSub)
+            if (L.Current.Type is TokenType.Number or TokenType.Op_MinusOrSub)
             {
                 return ParseJsonNumberValue(L, script);
             }

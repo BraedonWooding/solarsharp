@@ -76,7 +76,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
                 return ScopeType.Special;
 
             // Global scope
-            if (pattern == "*" || pattern == "**")
+            if (pattern is "*" or "**")
                 return ScopeType.Global;
 
             // Exact path (no wildcards)

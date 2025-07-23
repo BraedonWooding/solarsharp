@@ -210,7 +210,8 @@ namespace SolarSharp.Interpreter.Security.Manifests
     }
 
     /// <summary>
-    /// A security policy that applies to one or more packages
+    /// A security policy that applies to one or more packages.
+    /// V2.0: Policies only restrict, never grant.
     /// </summary>
     public sealed record ManifestPolicy
     {
@@ -227,94 +228,46 @@ namespace SolarSharp.Interpreter.Security.Manifests
         public string Selector { get; init; } = ":file";
 
         /// <summary>
-        /// Permissions granted by this policy
+        /// Maximum memory allowed (if specified, restricts from base policy)
         /// </summary>
-        [JsonPropertyName("grant")]
-        public PolicyGrant Grant { get; init; } = new();
+        [JsonPropertyName("max-memory")]
+        public string MaxMemory { get; init; } = "";
 
         /// <summary>
-        /// Restrictions imposed by this policy
+        /// Maximum timeout allowed (if specified, restricts from base policy)
         /// </summary>
-        [JsonPropertyName("restrict")]
-        public PolicyRestrictions Restrict { get; init; } = new();
+        [JsonPropertyName("timeout")]
+        public string Timeout { get; init; } = "";
 
         /// <summary>
-        /// Public key tokens to exclude from this policy
+        /// Module restrictions (can be "deny specific" or "deny all except")
         /// </summary>
-        [JsonPropertyName("deny-if-signed-by")]
-        public ImmutableArray<string> DenyIfSignedBy { get; init; } = ImmutableArray<string>.Empty;
+        [JsonPropertyName("modules")]
+        public ManifestModuleRestriction Modules { get; init; } = ManifestModuleRestriction.None;
+
+        /// <summary>
+        /// Capability restrictions (can be "deny specific" or "deny all except")
+        /// </summary>
+        [JsonPropertyName("capabilities")]
+        public ManifestCapabilityRestriction Capabilities { get; init; } = ManifestCapabilityRestriction.None;
+
+        /// <summary>
+        /// Path restrictions (can be "deny specific" or "deny all except")
+        /// </summary>
+        [JsonPropertyName("paths")]
+        public ManifestPathRestriction Paths { get; init; } = ManifestPathRestriction.None;
+
+        /// <summary>
+        /// Host restrictions (can be "deny specific" or "deny all except")
+        /// </summary>
+        [JsonPropertyName("hosts")]
+        public ManifestHostRestriction Hosts { get; init; } = ManifestHostRestriction.None;
 
         /// <summary>
         /// Whether this policy denies all access
         /// </summary>
         [JsonPropertyName("deny-all")]
         public bool DenyAll { get; init; } = false;
-    }
-
-    /// <summary>
-    /// Permissions granted by a policy
-    /// </summary>
-    public sealed record PolicyGrant
-    {
-        /// <summary>
-        /// File paths allowed for reading
-        /// </summary>
-        [JsonPropertyName("file-read")]
-        public ImmutableArray<string> FileRead { get; init; } = ImmutableArray<string>.Empty;
-
-        /// <summary>
-        /// File paths allowed for writing
-        /// </summary>
-        [JsonPropertyName("file-write")]
-        public ImmutableArray<string> FileWrite { get; init; } = ImmutableArray<string>.Empty;
-
-        /// <summary>
-        /// Network hosts allowed for access
-        /// </summary>
-        [JsonPropertyName("network")]
-        public ImmutableArray<string> Network { get; init; } = ImmutableArray<string>.Empty;
-
-        /// <summary>
-        /// Roles granted to the package
-        /// </summary>
-        [JsonPropertyName("roles")]
-        public ImmutableArray<string> Roles { get; init; } = ImmutableArray<string>.Empty;
-
-        /// <summary>
-        /// Capabilities granted to the package
-        /// </summary>
-        [JsonPropertyName("capabilities")]
-        public ImmutableArray<string> Capabilities { get; init; } = ImmutableArray<string>.Empty;
-
-        /// <summary>
-        /// Lua modules allowed for the package
-        /// </summary>
-        [JsonPropertyName("modules")]
-        public ImmutableArray<string> Modules { get; init; } = ImmutableArray<string>.Empty;
-    }
-
-    /// <summary>
-    /// Restrictions imposed by a policy
-    /// </summary>
-    public sealed record PolicyRestrictions
-    {
-        /// <summary>
-        /// Maximum memory limit (e.g., "10MB")
-        /// </summary>
-        [JsonPropertyName("max-memory")]
-        public string MaxMemory { get; init; } = "";
-
-        /// <summary>
-        /// Execution timeout (e.g., "5s")
-        /// </summary>
-        [JsonPropertyName("timeout")]
-        public string Timeout { get; init; } = "";
-
-        /// <summary>
-        /// Operations to deny
-        /// </summary>
-        [JsonPropertyName("deny")]
-        public ImmutableArray<string> Deny { get; init; } = ImmutableArray<string>.Empty;
 
         /// <summary>
         /// Whether to inherit restrictions from file context
@@ -362,5 +315,101 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// ECDSA P-521 with SHA-256 signature (not PIV compliant)
         /// </summary>
         ECDSA_P521_SHA256,
+    }
+
+    /// <summary>
+    /// JSON-serializable module restriction for manifests
+    /// </summary>
+    public sealed record ManifestModuleRestriction
+    {
+        /// <summary>
+        /// If true, denies all modules except those in the list
+        /// If false, denies only the modules in the list
+        /// </summary>
+        [JsonPropertyName("deny-all")]
+        public bool DenyAll { get; init; } = false;
+
+        /// <summary>
+        /// Module names to deny (if DenyAll=false) or allow (if DenyAll=true)
+        /// </summary>
+        [JsonPropertyName("modules")]
+        public ImmutableArray<string> Modules { get; init; } = ImmutableArray<string>.Empty;
+
+        /// <summary>
+        /// Empty restriction that denies nothing
+        /// </summary>
+        public static ManifestModuleRestriction None { get; } = new();
+    }
+
+    /// <summary>
+    /// JSON-serializable capability restriction for manifests
+    /// </summary>
+    public sealed record ManifestCapabilityRestriction
+    {
+        /// <summary>
+        /// If true, denies all capabilities except those in the list
+        /// If false, denies only the capabilities in the list
+        /// </summary>
+        [JsonPropertyName("deny-all")]
+        public bool DenyAll { get; init; } = false;
+
+        /// <summary>
+        /// Capability names to deny (if DenyAll=false) or allow (if DenyAll=true)
+        /// </summary>
+        [JsonPropertyName("capabilities")]
+        public ImmutableArray<string> Capabilities { get; init; } = ImmutableArray<string>.Empty;
+
+        /// <summary>
+        /// Empty restriction that denies nothing
+        /// </summary>
+        public static ManifestCapabilityRestriction None { get; } = new();
+    }
+
+    /// <summary>
+    /// JSON-serializable path restriction for manifests
+    /// </summary>
+    public sealed record ManifestPathRestriction
+    {
+        /// <summary>
+        /// If true, denies all paths except those in the list
+        /// If false, denies only the paths in the list
+        /// </summary>
+        [JsonPropertyName("deny-all")]
+        public bool DenyAll { get; init; } = false;
+
+        /// <summary>
+        /// Path patterns to deny (if DenyAll=false) or allow (if DenyAll=true)
+        /// </summary>
+        [JsonPropertyName("patterns")]
+        public ImmutableArray<string> Patterns { get; init; } = ImmutableArray<string>.Empty;
+
+        /// <summary>
+        /// Empty restriction that denies nothing
+        /// </summary>
+        public static ManifestPathRestriction None { get; } = new();
+    }
+
+    /// <summary>
+    /// JSON-serializable host restriction for manifests
+    /// </summary>
+    public sealed record ManifestHostRestriction
+    {
+        /// <summary>
+        /// If true, denies all hosts except those in the list
+        /// If false, denies only the hosts in the list
+        /// </summary>
+        [JsonPropertyName("deny-all")]
+        public bool DenyAll { get; init; } = false;
+
+        /// <summary>
+        /// Host patterns to deny (if DenyAll=false) or allow (if DenyAll=true)
+        /// </summary>
+        [JsonPropertyName("patterns")]
+        public ImmutableArray<string> Patterns { get; init; } = ImmutableArray<string>.Empty;
+
+        /// <summary>
+        /// Empty restriction that denies nothing
+        /// </summary>
+        public static ManifestHostRestriction None { get; } = new();
     }
 }

@@ -200,7 +200,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
 
             FileUserDataBase inp;
-            if (args[0].Type == DataType.String || args[0].Type == DataType.Number)
+            if (args[0].Type is DataType.String or DataType.Number)
             {
                 var fileName = args[0].CastToString();
                 inp = Open(

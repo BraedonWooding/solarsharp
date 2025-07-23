@@ -234,7 +234,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 case '[':
                 {
                     var next = CursorCharNext();
-                    if (next == '=' || next == '[')
+                    if (next is '=' or '[')
                     {
                         var str = ReadLongString(fromLine, fromCol, null, "string");
                         return CreateToken(TokenType.String_Long, fromLine, fromCol, str);
@@ -406,7 +406,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 text.Append(CursorChar());
                 var secondChar = CursorCharNext();
 
-                if (secondChar == 'x' || secondChar == 'X')
+                if (secondChar is 'x' or 'X')
                 {
                     isHex = true;
                     text.Append(CursorChar());
@@ -416,7 +416,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
             for (var c = CursorChar(); CursorNotEof(); c = CursorCharNext())
             {
-                if (exponentSignAllowed && (c == '+' || c == '-'))
+                if (exponentSignAllowed && c is '+' or '-')
                 {
                     exponentSignAllowed = false;
                     text.Append(c);
@@ -434,7 +434,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 {
                     text.Append(c);
                 }
-                else if (c == 'e' || c == 'E' || isHex && (c == 'p' || c == 'P'))
+                else if (c == 'e' || c == 'E' || isHex && c is 'p' or 'P')
                 {
                     text.Append(c);
                     exponentPart = true;
@@ -552,7 +552,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                         goto redo_Loop;
                     }
                 }
-                else if (c == '\n' || c == '\r')
+                else if (c is '\n' or '\r')
                 {
                     throw new SyntaxErrorException(
                         CreateToken(TokenType.Invalid, fromLine, fromCol),

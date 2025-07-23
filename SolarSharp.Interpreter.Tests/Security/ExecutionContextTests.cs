@@ -304,23 +304,30 @@ return {
             {
                 Packages = ImmutableArray.Create("test-package"),
                 Selector = ":eval",
-                Grant = new PolicyGrant
+                MaxMemory = "32MB",
+                Timeout = "5s",
+                Modules = new ManifestModuleRestriction
                 {
-                    FileRead = ImmutableArray<string>.Empty,
-                    FileWrite = ImmutableArray<string>.Empty,
-                    Network = ImmutableArray<string>.Empty,
-                    Roles = ImmutableArray<string>.Empty,
-                    Capabilities = ImmutableArray.Create("basic"),
+                    DenyAll = true,
+                    Modules = ImmutableArray.Create("basic") // Allow only basic module
                 },
-                Restrict = new PolicyRestrictions
+                Capabilities = new ManifestCapabilityRestriction
                 {
-                    MaxMemory = "32MB",
-                    Timeout = "5s",
-                    Deny = ImmutableArray<string>.Empty,
-                    InheritFromFile = true,
+                    DenyAll = true,
+                    Capabilities = ImmutableArray<string>.Empty // No capabilities allowed in eval
                 },
-                DenyIfSignedBy = ImmutableArray<string>.Empty,
+                Paths = new ManifestPathRestriction
+                {
+                    DenyAll = true,
+                    Patterns = ImmutableArray<string>.Empty // No file access in eval
+                },
+                Hosts = new ManifestHostRestriction
+                {
+                    DenyAll = true,
+                    Patterns = ImmutableArray<string>.Empty // No network access in eval
+                },
                 DenyAll = false,
+                InheritFromFile = true
             };
 
             var manifest = ManifestTestHelpers.CreateV2Manifest(

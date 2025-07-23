@@ -184,12 +184,12 @@ namespace SolarSharp.Interpreter.Security.Manifests.Infrastructure
                         )
                     );
 
-                // Check manifest version - only V2.0 is supported
-                if (manifest.Version != "2.0")
+                // Check manifest version - support both V1.0 and V2.0
+                if (manifest.Version != "1.0" && manifest.Version != "2.0")
                 {
                     return Result.Failure<Manifest, ManifestValidationError>(
                         ManifestValidationError.InvalidFormat(
-                            $"Unsupported manifest version: {manifest.Version}. Only version 2.0 is supported.",
+                            $"Unsupported manifest version: {manifest.Version}. Only versions 1.0 and 2.0 are supported.",
                             manifestPath
                         )
                     );
@@ -300,33 +300,20 @@ namespace SolarSharp.Interpreter.Security.Manifests.Infrastructure
             {
                 foreach (var policy in block.Policies)
                 {
-                    // Validate file read permissions
-                    foreach (var pattern in policy.Grant.FileRead)
+                    // Validate path restrictions are scoped to manifest directory
+                    if (policy.Paths != null && policy.Paths.Patterns.Length > 0)
                     {
-                        if (!IsPatternScopedToDirectory(pattern, normalizedBaseDir))
+                        foreach (var pattern in policy.Paths.Patterns)
                         {
-                            return Result.Failure<Manifest, ManifestValidationError>(
-                                ManifestValidationError.PermissionScopeViolation(
-                                    $"Manifest cannot define file read permissions for '{pattern}' outside its directory '{normalizedBaseDir}'",
-                                    manifestPath,
-                                    "ValidateManifestPermissions"
-                                )
-                            );
-                        }
-                    }
-
-                    // Validate file write permissions
-                    foreach (var pattern in policy.Grant.FileWrite)
-                    {
-                        if (!IsPatternScopedToDirectory(pattern, normalizedBaseDir))
-                        {
-                            return Result.Failure<Manifest, ManifestValidationError>(
-                                ManifestValidationError.PermissionScopeViolation(
-                                    $"Manifest cannot define file write permissions for '{pattern}' outside its directory '{normalizedBaseDir}'",
-                                    manifestPath,
-                                    "ValidateManifestPermissions"
-                                )
-                            );
+                            if (!IsPatternScopedToDirectory(pattern, normalizedBaseDir))
+                            {
+                                return Result.Failure<Manifest, ManifestValidationError>(
+                                    ManifestValidationError.PermissionScopeViolation(
+                                        $"Path pattern '{pattern}' references location outside manifest directory",
+                                        manifestPath
+                                    )
+                                );
+                            }
                         }
                     }
                 }
@@ -347,14 +334,10 @@ namespace SolarSharp.Interpreter.Security.Manifests.Infrastructure
                 return false;
             }
 
-            // Absolute paths must start with the base directory
-            if (normalizedPattern.StartsWith("/"))
+            // Absolute paths are not allowed - manifests can only reference relative paths
+            if (IsAbsolutePath(pattern))
             {
-                return normalizedPattern.StartsWith(
-                        baseDirectory + "/",
-                        StringComparison.OrdinalIgnoreCase
-                    )
-                    || normalizedPattern.Equals(baseDirectory, StringComparison.OrdinalIgnoreCase);
+                return false;
             }
 
             // Relative paths without .. are automatically scoped (will be resolved relative to manifest directory)
@@ -384,6 +367,22 @@ namespace SolarSharp.Interpreter.Security.Manifests.Infrastructure
                 path = path.TrimEnd('/');
 
             return path;
+        }
+
+        private bool IsAbsolutePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            // Unix-style absolute paths
+            if (path.StartsWith("/"))
+                return true;
+
+            // Windows-style absolute paths (C:\, D:/, etc.)
+            if (path.Length >= 3 && char.IsLetter(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
+                return true;
+
+            return false;
         }
 
         private Result<

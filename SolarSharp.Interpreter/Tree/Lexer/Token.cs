@@ -132,9 +132,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         public bool IsUnaryOperator()
         {
-            return Type == TokenType.Op_MinusOrSub
-                || Type == TokenType.Not
-                || Type == TokenType.Op_Len;
+            return Type is TokenType.Op_MinusOrSub or TokenType.Not or TokenType.Op_Len;
         }
 
         public bool IsBinaryOperator()

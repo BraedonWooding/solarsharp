@@ -9,6 +9,7 @@ using Microsoft.Extensions.FileSystemGlobbing;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security.Manifests;
+using SolarSharp.Interpreter.Security.Manifests.Domain;
 
 namespace SolarSharp.Interpreter.Security
 {
@@ -503,46 +504,98 @@ namespace SolarSharp.Interpreter.Security
                 return SecurityPolicyBuilder.CreateDenyAll();
             }
             
-            // Extract capabilities
-            var capabilities = ScriptCapabilities.None;
-            foreach (var cap in policy.Grant.Capabilities)
+            // Convert V2.0 manifest policy to SecurityPolicy using ManifestPolicyMapper
+            var domainResult = ManifestPolicyMapper.ToDomain(policy);
+            if (domainResult.IsFailure)
             {
-                if (Enum.TryParse<ScriptCapabilities>(cap, true, out var parsedCap))
-                    capabilities |= parsedCap;
+                // Fallback to unlimited policy if conversion fails (V1.0 manifests don't convert to V2.0 domain)
+                // This allows the base policy to control the limits instead of denying everything
+                return new SecurityPolicy 
+                { 
+                    AllowExecution = true,
+                    TimeoutMs = -1,
+                    MaxMemoryMB = -1,
+                    MaxInstructions = -1,
+                    MaxCallDepth = -1,
+                    MaxTables = -1
+                };
             }
+
+            var manifestPolicy = domainResult.Value;
             
-            // Extract modules  
-            var modules = CoreModules.None;
-            foreach (var mod in policy.Grant.Modules)
-            {
-                if (Enum.TryParse<CoreModules>(mod, true, out var parsedMod))
-                    modules |= parsedMod;
-            }
-            
-            // Parse timeout from string format
-            var timeoutMs = -1; // Default unlimited if not specified
-            if (!string.IsNullOrEmpty(policy.Restrict.Timeout))
-            {
-                timeoutMs = ParseTimeoutString(policy.Restrict.Timeout);
-            }
-            
-            // Parse memory from string format
-            var memoryMb = -1; // Default unlimited if not specified
-            if (!string.IsNullOrEmpty(policy.Restrict.MaxMemory))
-            {
-                memoryMb = ParseMemoryString(policy.Restrict.MaxMemory);
-            }
-            
-            return new SecurityPolicy
-            {
-                AllowExecution = !policy.DenyAll,
-                Capabilities = capabilities,
-                AllowedModules = modules,
-                TimeoutMs = timeoutMs,
-                MaxMemoryMB = memoryMb,
-                // File access permissions are set via FilePermissions dictionary
-                // TODO: Convert Grant.FileRead/FileWrite arrays to FilePermissions entries
+            // Start with a policy that allows execution but has no other permissions
+            // The manifest will only restrict, never grant
+            var securityPolicy = new SecurityPolicy() 
+            { 
+                AllowExecution = true,
+                // Use -1 (unlimited) as defaults so manifest restrictions can be applied
+                TimeoutMs = -1,
+                MaxMemoryMB = -1,
+                MaxInstructions = -1,
+                MaxCallDepth = -1,
+                MaxTables = -1,
+                // Start with all modules/capabilities allowed so manifest can restrict them
+                AllowedModules = CoreModules.Preset_Complete,
+                Capabilities = ScriptCapabilities.All
             };
+
+            // Apply deny-all first
+            if (manifestPolicy.DenyAll)
+            {
+                securityPolicy = securityPolicy with 
+                { 
+                    AllowedModules = CoreModules.None,
+                    Capabilities = ScriptCapabilities.None,
+                    DefaultFileAccess = FilePermissions.None,
+                    AllowNetworkAccess = false
+                };
+            }
+
+            // Apply module restrictions
+            if (!manifestPolicy.ModuleRestrictions.DeniesNone)
+            {
+                var effectiveModules = manifestPolicy.ModuleRestrictions
+                    .GetEffectiveAllowedModules(securityPolicy.AllowedModules);
+                securityPolicy = securityPolicy with { AllowedModules = effectiveModules };
+            }
+
+            // Apply capability restrictions
+            if (!manifestPolicy.CapabilityRestrictions.DeniesNone)
+            {
+                var effectiveCapabilities = manifestPolicy.CapabilityRestrictions
+                    .GetEffectiveAllowedCapabilities(securityPolicy.Capabilities);
+                securityPolicy = securityPolicy with { Capabilities = effectiveCapabilities };
+            }
+
+            // Apply memory restriction
+            manifestPolicy.MaxMemory.Execute(memSize =>
+            {
+                securityPolicy = securityPolicy with { MaxMemoryMB = memSize.Megabytes };
+            });
+
+            // Apply timeout restriction
+            manifestPolicy.Timeout.Execute(timeout =>
+            {
+                securityPolicy = securityPolicy with { TimeoutMs = timeout.Milliseconds };
+            });
+
+            // Apply path restrictions
+            if (!manifestPolicy.PathRestrictions.DeniesNone)
+            {
+                // TODO: Apply path restrictions when SecurityPolicy supports them
+            }
+
+            // Apply host restrictions  
+            if (!manifestPolicy.HostRestrictions.DeniesNone)
+            {
+                var allowedHosts = manifestPolicy.HostRestrictions.ToAllowedHosts();
+                allowedHosts.Execute(hosts =>
+                {
+                    securityPolicy = securityPolicy with { AllowedHosts = hosts };
+                });
+            }
+
+            return securityPolicy;
         }
         
         private int ParseTimeoutString(string timeout)

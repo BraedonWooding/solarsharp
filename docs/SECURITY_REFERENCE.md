@@ -593,20 +593,75 @@ The manifest system follows strict, simple rules to prevent complexity:
         {
           "packages": ["main"],
           "selector": ":file",
-          "grant": {
-            "file-read": ["*.config"],
-            "modules": ["basic", "string"]
-          },
-          "restrict": {
-            "max-memory": "100MB",
-            "timeout": "30s"
-          }
+          "max-memory": "100MB",
+          "timeout": "30s",
+          "disabled-modules": ["io", "os"],
+          "disabled-capabilities": ["FileWrite", "NetworkAccess"],
+          "denied-paths": ["/etc/*", "/home/*"],
+          "denied-hosts": ["*.internal.com"],
+          "deny-all": false,
+          "inherit-from-file": true
         }
       ]
     }
   ]
 }
 ```
+
+### Manifest Policy System (V2.0)
+
+Manifest policies are **self-contained security restrictions** that apply to packages within the manifest. Key principles:
+
+1. **Restrictions Only**: Manifest policies can ONLY restrict, never grant permissions
+2. **No External References**: Policies don't reference external policy names
+3. **Directory-Scoped**: All policies are automatically scoped to the manifest's directory
+4. **Applied as Intersection**: Manifest policies intersect with base policies (most restrictive wins)
+
+#### Policy Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `packages` | string[] | Package IDs this policy applies to ("*" for all) |
+| `selector` | string | When policy applies (":file", ":eval") |
+| `max-memory` | string | Memory limit (e.g., "50MB", "1GB") |
+| `timeout` | string | Execution timeout (e.g., "30s", "5m") |
+| `disabled-modules` | string[] | Modules to disable (e.g., ["io", "os"]) |
+| `disabled-capabilities` | string[] | Capabilities to disable (e.g., ["FileWrite"]) |
+| `denied-paths` | string[] | Paths to deny access to |
+| `denied-hosts` | string[] | Network hosts to deny |
+| `deny-all` | boolean | Deny all operations (lockdown mode) |
+| `inherit-from-file` | boolean | Whether to inherit file context restrictions |
+
+#### How Manifest Policies Work
+
+1. **Directory Scoping**: All paths in manifest policies are relative to the manifest directory
+   ```json
+   // In /app/plugins/LuaManifest.json
+   "denied-paths": ["config/*"]  // Actually denies /app/plugins/config/*
+   ```
+
+2. **Restriction Application**: Policies only remove capabilities, never add them
+   ```csharp
+   // Base policy allows io, os, string modules
+   // Manifest disables io, os
+   // Result: only string module allowed
+   ```
+
+3. **Signing Key Integration**: Policies can be scoped to files signed by specific keys
+   ```json
+   {
+     "key-id": "sha256:partner123...",
+     "policies": [{
+       "packages": ["partner-scripts"],
+       "denied-paths": ["/system/*"]  // Partner can't access system files
+     }]
+   }
+   ```
+
+4. **Lazy File Validation**: File integrity is checked on first read
+   - Hash validation ensures files haven't been tampered with
+   - Signed files are automatically marked read-only
+   - Any validation failure immediately terminates script execution
 
 ### File Protection and Integrity
 
@@ -620,7 +675,7 @@ When any file is accessed:
 ### Manifest Signing
 
 ```csharp
-// V1.0 manifests are automatically converted to V2.0 when signed
+// Sign a V2.0 manifest
 var signer = new ManifestSigner(cryptoService);
 var signedJson = await signer.SignManifestJson(manifestJson, privateKeyPem);
 ```

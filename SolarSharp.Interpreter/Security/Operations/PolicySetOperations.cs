@@ -138,7 +138,7 @@ namespace SolarSharp.Interpreter.Security.Operations
             // - *.ext:eval matches eval contexts for files with that extension
 
             // Handle universal patterns first
-            if (pattern == "*" || pattern == "*:*")
+            if (pattern is "*" or "*:*")
                 return true;
 
             // Handle eval-specific patterns

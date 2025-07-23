@@ -129,7 +129,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                             {
                                 var v = m_ValueStack.Pop().ToScalar();
 
-                                if (v.Type == DataType.Nil || v.Type == DataType.Void)
+                                if (v.Type is DataType.Nil or DataType.Void)
                                     instructionPtr = i.NumVal;
                             }
                             break;
@@ -1290,8 +1290,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
 
                 if (
-                    newIndexMethod.Type == DataType.Function
-                    || newIndexMethod.Type == DataType.ClrFunction
+                    newIndexMethod.Type is DataType.Function or DataType.ClrFunction
                 )
                 {
                     // Pop the extra value from the stack (required for metamethod call setup)
@@ -1352,8 +1351,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                     throw ScriptRuntimeException.IndexType(obj);
                 }
                 if (
-                    newIndexMethod.Type == DataType.Function
-                    || newIndexMethod.Type == DataType.ClrFunction
+                    newIndexMethod.Type is DataType.Function or DataType.ClrFunction
                 )
                 {
                     throw new ScriptRuntimeException(
@@ -1431,8 +1429,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
 
                 if (
-                    indexMethod.Type == DataType.Function
-                    || indexMethod.Type == DataType.ClrFunction
+                    indexMethod.Type is DataType.Function or DataType.ClrFunction
                 )
                 {
                     m_ValueStack.Push(indexMethod);
@@ -1486,8 +1483,7 @@ namespace SolarSharp.Interpreter.Execution.VM
                 }
 
                 if (
-                    indexMethod.Type == DataType.Function
-                    || indexMethod.Type == DataType.ClrFunction
+                    indexMethod.Type is DataType.Function or DataType.ClrFunction
                 )
                 {
                     throw new ScriptRuntimeException(

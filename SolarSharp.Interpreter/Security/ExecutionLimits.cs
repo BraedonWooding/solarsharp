@@ -67,7 +67,7 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public TimeSpan? Timeout
         {
-            get { return (TimeoutMs == null || TimeoutMs < 0) ? null : TimeSpan.FromMilliseconds(TimeoutMs.Value); }
+            get { return TimeoutMs is null or < 0 ? null : TimeSpan.FromMilliseconds(TimeoutMs.Value); }
             set { TimeoutMs = value.HasValue ? (int)value.Value.TotalMilliseconds : -1; }
         }
 
@@ -76,7 +76,7 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public int TimeoutSeconds
         {
-            get { return (TimeoutMs == null || TimeoutMs < 0) ? -1 : TimeoutMs.Value / 1000; }
+            get { return TimeoutMs is null or < 0 ? -1 : TimeoutMs.Value / 1000; }
             set { TimeoutMs = value < 0 ? -1 : value * 1000; }
         }
 

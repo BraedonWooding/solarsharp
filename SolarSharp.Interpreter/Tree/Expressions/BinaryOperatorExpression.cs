@@ -259,9 +259,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
         private static bool ShouldInvertBoolean(Operator op)
         {
-            return op == Operator.NotEqual
-                || op == Operator.GreaterOrEqual
-                || op == Operator.Greater;
+            return op is Operator.NotEqual or Operator.GreaterOrEqual or Operator.Greater;
         }
 
         private static OpCode OperatorToOpCode(Operator op)

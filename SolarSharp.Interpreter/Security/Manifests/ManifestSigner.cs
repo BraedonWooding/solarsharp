@@ -46,7 +46,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
             string algorithm = "RSA"
         )
         {
-            // Parse the input manifest (could be V1.0 or partial V2.0)
+            // Parse the input manifest - must be V2.0
             JsonDocument doc;
             JsonElement root;
             try
@@ -58,6 +58,21 @@ namespace SolarSharp.Interpreter.Security.Manifests
             {
                 throw new ManifestFormatException(
                     $"Invalid JSON format in manifest: {ex.Message}",
+                    "SignManifestJson"
+                );
+            }
+
+            // Check manifest version and handle V1.0 compatibility
+            string manifestVersion = "1.0"; // Default for legacy manifests
+            if (root.TryGetProperty("version", out var versionProp))
+            {
+                manifestVersion = versionProp.GetString() ?? "1.0";
+            }
+
+            if (manifestVersion != "1.0" && manifestVersion != "2.0")
+            {
+                throw new ManifestFormatException(
+                    $"Unsupported manifest version '{manifestVersion}'. Only versions 1.0 and 2.0 are supported.",
                     "SignManifestJson"
                 );
             }
@@ -78,165 +93,151 @@ namespace SolarSharp.Interpreter.Security.Manifests
             );
             var keyId = $"sha256:{keyFingerprint}";
 
+            // Handle signing based on manifest version
+            using (doc)
+            {
+                if (manifestVersion == "1.0")
+                {
+                    return SignV1Manifest(json, root, privateKey, algorithm, publicKeyPem, keyFingerprint);
+                }
+                else // V2.0
+                {
+                    return SignV2Manifest(json, root, privateKey, algorithm, publicKeyPem, keyId);
+                }
+            }
+        }
+
+        private static string SignV1Manifest(
+            string json, 
+            JsonElement root, 
+            AsymmetricKeyParameter privateKey, 
+            string algorithm,
+            string publicKeyPem,
+            string keyFingerprint)
+        {
+            // For V1.0 manifests, add signature and public key to root level
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+            {
+                writer.WriteStartObject();
+
+                // Copy existing properties except signature and public-key
+                foreach (var property in root.EnumerateObject())
+                {
+                    if (property.Name != "signature" && property.Name != "public-key" && property.Name != "key-fingerprint")
+                    {
+                        writer.WritePropertyName(property.Name);
+                        property.Value.WriteTo(writer);
+                    }
+                }
+
+                // Add signature fields
+                writer.WriteString("key-fingerprint", $"sha256:{keyFingerprint}");
+                writer.WriteString("public-key", publicKeyPem);
+                writer.WriteString("signature", "PLACEHOLDER");
+
+                writer.WriteEndObject();
+                writer.Flush();
+            }
+
+            // Get unsigned JSON for canonicalization
+            var unsignedJson = Encoding.UTF8.GetString(stream.ToArray());
+            
+            // For V1.0, sign the entire manifest content except signature
+            var contentToSign = json; // Original content without signature
+            var dataToSign = Encoding.UTF8.GetBytes(contentToSign);
+
+            // Generate signature
+            var signatureResult = UnifiedSignatureGenerationService.GenerateSignature(
+                dataToSign,
+                privateKey
+            );
+
+            if (signatureResult.IsFailure)
+            {
+                throw new ManifestFormatException(
+                    $"Failed to generate signature: {signatureResult.Error}",
+                    "SignManifestJson"
+                );
+            }
+
+            // Replace placeholder with actual signature
+            return unsignedJson.Replace("\"signature\": \"PLACEHOLDER\"", 
+                $"\"signature\": \"{signatureResult.Value}\"");
+        }
+
+        private static string SignV2Manifest(
+            string json,
+            JsonElement root,
+            AsymmetricKeyParameter privateKey,
+            string algorithm,
+            string publicKeyPem,
+            string keyId)
+        {
             // Create V2.0 manifest structure
             using var stream = new MemoryStream();
-            using (doc)
-            using (
-                var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true })
-            )
+            using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
             {
                 writer.WriteStartObject();
 
                 // V2.0 manifest header
                 writer.WriteString("version", "2.0");
 
-                // Extract manifest ID or generate one
+                // Copy manifest ID
                 var manifestId = root.TryGetProperty("manifest-id", out var idProp)
                     ? idProp.GetString()
                     : $"manifest-{Guid.NewGuid():N}";
                 writer.WriteString("manifest-id", manifestId);
 
-                // Create signed-content block
+                // Process existing signed-content blocks if any
                 writer.WritePropertyName("signed-content");
                 writer.WriteStartArray();
-                writer.WriteStartObject();
-
-                // Key ID for this block
-                writer.WriteString("key-id", keyId);
-
-                // Convert V1.0 structure to V2.0 packages and policies
-                writer.WritePropertyName("packages");
-                writer.WriteStartObject();
-
-                // Create a default package from V1.0 structure
-                var packageId = "default-package";
-                writer.WritePropertyName(packageId);
-                writer.WriteStartObject();
-
-                // Package metadata
-                writer.WritePropertyName("metadata");
-                writer.WriteStartObject();
-                writer.WriteString(
-                    "name",
-                    root.TryGetProperty("name", out var nameProp)
-                        ? nameProp.GetString()
-                        : "Converted Package"
-                );
-                writer.WriteString(
-                    "version",
-                    root.TryGetProperty("version", out var verProp) ? verProp.GetString() : "1.0.0"
-                );
-                writer.WriteString(
-                    "description",
-                    root.TryGetProperty("description", out var descProp) ? descProp.GetString() : ""
-                );
-                writer.WriteEndObject();
-
-                // Package files (placeholder - real files would be added separately)
-                writer.WritePropertyName("files");
-                writer.WriteStartObject();
-                writer.WriteString("script.lua", "sha256:placeholder"); // Will be updated when files are added
-                writer.WriteEndObject();
-
-                writer.WriteEndObject(); // package
-                writer.WriteEndObject(); // packages
-
-                // Convert V1.0 policy to V2.0 policies
-                writer.WritePropertyName("policies");
-                writer.WriteStartArray();
-                writer.WriteStartObject();
-
-                // Policy applies to the default package
-                writer.WritePropertyName("packages");
-                writer.WriteStartArray();
-                writer.WriteStringValue(packageId);
-                writer.WriteEndArray();
-
-                writer.WriteString("selector", ":file");
-
-                // Convert V1.0 policy grants
-                writer.WritePropertyName("grant");
-                writer.WriteStartObject();
-
-                if (root.TryGetProperty("policy", out var policyProp))
+                
+                // Check if manifest already has signed-content
+                if (root.TryGetProperty("signed-content", out var signedContentProp) && 
+                    signedContentProp.ValueKind == JsonValueKind.Array)
                 {
-                    // Convert capabilities
-                    if (policyProp.TryGetProperty("capabilities", out var capsProp))
+                    // Process each existing signed content block
+                    foreach (var existingBlock in signedContentProp.EnumerateArray())
                     {
-                        writer.WritePropertyName("capabilities");
-                        writer.WriteStartArray();
-
-                        if (capsProp.ValueKind == JsonValueKind.Array)
+                        writer.WriteStartObject();
+                        
+                        // Update key ID and signature for this signer
+                        writer.WriteString("key-id", keyId);
+                        
+                        // Copy packages
+                        if (existingBlock.TryGetProperty("packages", out var packagesProp))
                         {
-                            foreach (var cap in capsProp.EnumerateArray())
-                            {
-                                writer.WriteStringValue(cap.GetString());
-                            }
+                            writer.WritePropertyName("packages");
+                            packagesProp.WriteTo(writer);
                         }
-                        else if (capsProp.ValueKind == JsonValueKind.String)
+                        
+                        // Copy policies
+                        if (existingBlock.TryGetProperty("policies", out var policiesProp))
                         {
-                            writer.WriteStringValue(capsProp.GetString());
+                            writer.WritePropertyName("policies");
+                            policiesProp.WriteTo(writer);
                         }
-
-                        writer.WriteEndArray();
-                    }
-
-                    // Convert allowed modules
-                    if (policyProp.TryGetProperty("allowedModules", out var modulesProp))
-                    {
-                        writer.WritePropertyName("modules");
-                        writer.WriteStartArray();
-
-                        if (modulesProp.ValueKind == JsonValueKind.Array)
-                        {
-                            foreach (var module in modulesProp.EnumerateArray())
-                            {
-                                writer.WriteStringValue(module.GetString());
-                            }
-                        }
-                        else if (modulesProp.ValueKind == JsonValueKind.String)
-                        {
-                            writer.WriteStringValue(modulesProp.GetString());
-                        }
-
-                        writer.WriteEndArray();
+                        
+                        // Add public key
+                        writer.WriteString("public-key", publicKeyPem);
+                        
+                        // Placeholder for signature - will be added after canonicalization
+                        writer.WriteString("signature", "PLACEHOLDER");
+                        
+                        writer.WriteEndObject();
                     }
                 }
-
-                writer.WriteEndObject(); // grant
-
-                // Add restrictions
-                writer.WritePropertyName("restrict");
-                writer.WriteStartObject();
-
-                if (root.TryGetProperty("policy", out var restrictPolicyProp))
+                else
                 {
-                    if (restrictPolicyProp.TryGetProperty("timeoutMs", out var timeoutProp))
-                    {
-                        var timeoutMs = timeoutProp.GetInt32();
-                        writer.WriteString("timeout", $"{timeoutMs}ms");
-                    }
-
-                    if (restrictPolicyProp.TryGetProperty("maxMemoryMB", out var memoryProp))
-                    {
-                        var memoryMB = memoryProp.GetInt32();
-                        writer.WriteString("max-memory", $"{memoryMB}MB");
-                    }
+                    // This shouldn't happen for V2.0 but handle gracefully
+                    throw new ManifestFormatException(
+                        "V2.0 manifest must have signed-content blocks",
+                        "SignManifestJson"
+                    );
                 }
-
-                writer.WriteEndObject(); // restrict
-
-                writer.WriteEndObject(); // policy
-                writer.WriteEndArray(); // policies
-
-                // Add public key to the signed content block
-                writer.WriteString("public-key", publicKeyPem);
-
-                // Placeholder for signature - will be added after canonicalization
-                writer.WriteString("signature", "PLACEHOLDER");
-
-                writer.WriteEndObject(); // signed-content block
-                writer.WriteEndArray(); // signed-content array
+                
+                writer.WriteEndArray(); // signed-content
 
                 writer.WriteEndObject(); // root
                 writer.Flush();

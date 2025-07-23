@@ -90,7 +90,7 @@ namespace SolarSharp.Interpreter.Security
             }
 
             // Validate file size for read/write operations
-            if (operation == FileOperation.Read || operation == FileOperation.Write)
+            if (operation is FileOperation.Read or FileOperation.Write)
             {
                 ValidateFileSize(displayPath);
             }
@@ -173,7 +173,7 @@ namespace SolarSharp.Interpreter.Security
             }
 
             // Validate file size for read/write operations
-            if (operation == FileOperation.Read || operation == FileOperation.Write)
+            if (operation is FileOperation.Read or FileOperation.Write)
             {
                 ValidateFileSize(displayPath);
             }

@@ -175,7 +175,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             if (opcode == OpCode.LessEq)
                 AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.CNot });
 
-            if (opcode == OpCode.Eq || opcode == OpCode.Less)
+            if (opcode is OpCode.Eq or OpCode.Less)
                 AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.ToBool });
 
             return i;

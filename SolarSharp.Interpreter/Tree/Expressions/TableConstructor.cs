@@ -43,7 +43,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
                 var curr = lcontext.Lexer.Current;
 
-                if (curr.Type == TokenType.Comma || curr.Type == TokenType.SemiColon)
+                if (curr.Type is TokenType.Comma or TokenType.SemiColon)
                 {
                     lcontext.Lexer.Next();
                 }

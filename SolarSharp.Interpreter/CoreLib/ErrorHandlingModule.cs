@@ -141,7 +141,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
 
             DynValue handler = null;
-            if (args[1].Type == DataType.Function || args[1].Type == DataType.ClrFunction)
+            if (args[1].Type is DataType.Function or DataType.ClrFunction)
             {
                 handler = args[1];
             }

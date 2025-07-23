@@ -99,10 +99,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
                     var name = mi.Name;
                     if (
                         mi.IsSpecialName
-                        && (
-                            mi.Name == SPECIALNAME_CAST_EXPLICIT
-                            || mi.Name == SPECIALNAME_CAST_IMPLICIT
-                        )
+                        && mi.Name is SPECIALNAME_CAST_EXPLICIT or SPECIALNAME_CAST_IMPLICIT
                     )
                     {
                         name = mi.ReturnType.GetConversionMethodName();

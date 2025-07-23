@@ -764,11 +764,7 @@ namespace SolarSharp.Interpreter.CoreLib.StringLib
             var b = new LuaLBuffer(L);
             LuaLArgCheck(
                 L,
-                tr == LUA_TNUMBER
-                    || tr == LUA_TSTRING
-                    || tr == LUA_TFUNCTION
-                    || tr == LUA_TTABLE
-                    || tr == LUA_TUSERDATA,
+                tr is LUA_TNUMBER or LUA_TSTRING or LUA_TFUNCTION or LUA_TTABLE or LUA_TUSERDATA,
                 3,
                 "string/function/table expected"
             );

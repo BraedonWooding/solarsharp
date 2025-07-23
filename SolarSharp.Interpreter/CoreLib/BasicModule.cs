@@ -59,7 +59,7 @@ namespace SolarSharp.Interpreter.CoreLib
 
             var mode = opt.CastToString();
 
-            if (mode == null || mode == "collect" || mode == "restart")
+            if (mode is null or "collect" or "restart")
             {
 #if PCL || ENABLE_DOTNET
                 GC.Collect();
@@ -258,7 +258,7 @@ namespace SolarSharp.Interpreter.CoreLib
             var bb = (int)b.Number;
 
             uint uiv = 0;
-            if (bb == 2 || bb == 8 || bb == 10 || bb == 16)
+            if (bb is 2 or 8 or 10 or 16)
             {
                 uiv = Convert.ToUInt32(ee.String.Trim(), bb);
             }

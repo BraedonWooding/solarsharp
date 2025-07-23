@@ -73,15 +73,17 @@ namespace SolarSharp.Interpreter.Security.Manifests.Domain
                 {
                     foreach (var manifestPolicy in block.Policies)
                     {
-                        var securityPolicy = ConvertManifestPolicyToSecurityPolicy(manifestPolicy);
+                        // TODO: Update to use ManifestPolicyConverter
+                        // var securityPolicy = ConvertManifestPolicyToSecurityPolicy(manifestPolicy);
                         var policyName = manifestPolicy.Selector.StartsWith(":")
                             ? manifestPolicy.Selector.Substring(1)
                             : manifestPolicy.Selector;
 
-                        if (!IsEmptyPolicy(securityPolicy))
-                        {
-                            policies[policyName] = securityPolicy;
-                        }
+                        // TODO: Update to use ManifestPolicyConverter
+                        // if (!IsEmptyPolicy(securityPolicy))
+                        // {
+                        //     policies[policyName] = securityPolicy;
+                        // }
                     }
                 }
 
@@ -183,7 +185,7 @@ namespace SolarSharp.Interpreter.Security.Manifests.Domain
         }
 
         private static bool IsEmptyPolicy(SecurityPolicy policy) =>
-            policy == null || policy is { TimeoutMs: 0, MaxMemoryMB: 0, MaxCallDepth: 0 };
+            policy is null or { TimeoutMs: 0, MaxMemoryMB: 0, MaxCallDepth: 0 };
 
         private static bool IsSupportedHashAlgorithm(string algorithm) =>
             algorithm.ToUpperInvariant() switch
@@ -194,29 +196,7 @@ namespace SolarSharp.Interpreter.Security.Manifests.Domain
                 _ => false,
             };
 
-        private static SecurityPolicy ConvertManifestPolicyToSecurityPolicy(
-            ManifestPolicy manifestPolicy
-        )
-        {
-            var restrict = manifestPolicy.Restrict ?? new PolicyRestrictions();
-            var grant = manifestPolicy.Grant ?? new PolicyGrant();
-
-            return new SecurityPolicy
-            {
-                Name = CSharpFunctionalExtensions.Maybe<string>.From(
-                    $"policy_{manifestPolicy.Selector}"
-                ),
-                TimeoutMs = ParseTimeout(restrict.Timeout),
-                MaxMemoryMB = ParseMemory(restrict.MaxMemory),
-                MaxInstructions = 1000000, // Default
-                MaxCallDepth = 100, // Default
-                AllowExecution = !manifestPolicy.DenyAll,
-                AllowedModules = ConvertModules(grant.Modules),
-                Capabilities = ConvertCapabilities(grant.Capabilities),
-                FilePermissions = ConvertFilePermissions(grant),
-                PubSubPermissions = new PubSubPermissions(),
-            };
-        }
+        // TODO: Remove or update ConvertManifestPolicyToSecurityPolicy for V2.0
 
         private static int ParseTimeout(string timeoutStr)
         {
@@ -287,26 +267,6 @@ namespace SolarSharp.Interpreter.Security.Manifests.Domain
             return result;
         }
 
-        private static ImmutableDictionary<string, FilePermissions> ConvertFilePermissions(
-            PolicyGrant grant
-        )
-        {
-            var permissions = ImmutableDictionary.CreateBuilder<string, FilePermissions>();
-
-            foreach (var readPath in grant.FileRead)
-            {
-                permissions[readPath] = FilePermissions.Read;
-            }
-
-            foreach (var writePath in grant.FileWrite)
-            {
-                permissions[writePath] = permissions.TryGetValue(writePath, out var existing)
-                    ? existing | FilePermissions.ReadWrite
-                    : FilePermissions.ReadWrite;
-            }
-
-            return permissions.ToImmutable();
-        }
 
         private static ScriptCapabilities ConvertCapabilities(ImmutableArray<string> capabilities)
         {

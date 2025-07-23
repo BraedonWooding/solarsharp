@@ -716,7 +716,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public bool IsNil()
         {
-            return Type == DataType.Nil || Type == DataType.Void;
+            return Type is DataType.Nil or DataType.Void;
         }
 
         /// <summary>

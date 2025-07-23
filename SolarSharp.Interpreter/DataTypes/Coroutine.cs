@@ -88,7 +88,7 @@ namespace SolarSharp.Interpreter.DataTypes
                     "Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead"
                 );
 
-            while (State == CoroutineState.NotStarted || State == CoroutineState.Suspended)
+            while (State is CoroutineState.NotStarted or CoroutineState.Suspended)
                 yield return Resume();
         }
 
