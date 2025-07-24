@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using NUnit.Framework;
+using SolarSharp.Interpreter.Security.Manifests;
 using SolarSharp.Interpreter.Tests.TestHelpers;
 
 namespace SolarSharp.Interpreter.Tests.Security
@@ -24,19 +25,26 @@ namespace SolarSharp.Interpreter.Tests.Security
         public void FileScopedPolicy_BasicPatternMatching()
         {
             // Create normal and restricted policies
-            var normalPolicy = ManifestTestHelpers.CreatePermissivePolicy("test-package");
-            var restrictedPolicy = ManifestTestHelpers.CreateRestrictivePolicy("test-package");
+            var normalPolicy = ManifestPolicyBuilder.Create()
+                .ForPackages("test-package")
+                .WithMaxMemoryMB(256)
+                .WithTimeoutSeconds(30)
+                .Build();
+                
+            var restrictedPolicy = ManifestPolicyBuilder.Create()
+                .ForPackages("test-package")
+                .DenySystemModules()
+                .DenyDangerousCapabilities()
+                .WithMaxMemoryMB(10)
+                .WithTimeoutSeconds(5)
+                .Build();
 
-            var manifest = ManifestTestHelpers.CreateV2Manifest(
-                manifestId: "file-scoped-test",
-                packageName: "FileScopedTest",
-                packageVersion: "1.0.0",
-                packageDescription: "Test manifest for file-scoped policies",
-                files: ImmutableDictionary<string, string>
-                    .Empty.Add("script.lua", "sha256:abc123")
-                    .Add("module.lua", "sha256:def456"),
-                policies: ImmutableArray.Create(normalPolicy, restrictedPolicy)
-            );
+            var manifest = V2ManifestBuilder.CreateUnsigned("file-scoped-test", "FileScopedTest")
+                .WithPackageMetadata("FileScopedTest", "1.0.0", "Test manifest for file-scoped policies")
+                .WithFile("FileScopedTest", "script.lua", "sha256:abc123")
+                .WithFile("FileScopedTest", "module.lua", "sha256:def456")
+                .WithPolicy(normalPolicy)
+                .WithPolicy(restrictedPolicy);
 
             Assert.Multiple(() =>
             {

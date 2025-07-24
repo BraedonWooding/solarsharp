@@ -125,7 +125,7 @@ namespace SolarSharp.Interpreter.Tests.Units
                     result.Error.Type,
                     Is.EqualTo(ManifestValidationErrorType.PermissionScopeViolation)
                 );
-                Assert.That(result.Error.Message, Does.Contain("outside its directory"));
+                Assert.That(result.Error.Message, Does.Contain("outside manifest directory"));
             });
         }
 

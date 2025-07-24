@@ -30,7 +30,7 @@ namespace WotCI
         public virtual void Initialize()
         {
             _console.WriteLine("Initializing game world...");
-            _console.WriteLine("🎮 Wrath of the Continuous Integration - Game Engine Initialized");
+            _console.WriteLine("Wrath of the Continuous Integration - Game Engine Initialized");
             _console.WriteLine("Starting with 100 health and 50 gold");
 
             // Create game directories
@@ -163,7 +163,7 @@ namespace WotCI
             while ((int)_gameState["player_health"] > 0 && (int)_gameState["day"] <= 5)
             {
                 var day = (int)_gameState["day"];
-                _console.WriteLine($"\n🌅 Day {day} begins");
+                _console.WriteLine($"\nDay {day} begins");
 
                 // Simulate daily events
                 SimulateCombat();
@@ -171,7 +171,7 @@ namespace WotCI
                 // Check if player died after combat
                 if ((int)_gameState["player_health"] <= 0)
                 {
-                    _console.WriteLine("💀 You died!");
+                    _console.WriteLine("You died!");
                     break;
                 }
 
@@ -180,7 +180,7 @@ namespace WotCI
                 switch (eventType)
                 {
                     case 0:
-                        _console.WriteLine("💰 Shop event!");
+                        _console.WriteLine("Shop event!");
                         _console.WriteLine("  You found a merchant selling healing potions.");
                         break;
                     case 1:
@@ -197,7 +197,7 @@ namespace WotCI
             }
 
             // Game over
-            _console.WriteLine("\n🎮 Game Over!");
+            _console.WriteLine("\nGame Over!");
             _console.WriteLine($"Final player health: {_gameState["player_health"]}");
             _console.WriteLine($"Enemies defeated: {_gameState["enemies_defeated"]}");
             _console.WriteLine($"Plugins loaded: {_plugins.Count}");
@@ -218,7 +218,7 @@ namespace WotCI
 
         private void SimulateCombat()
         {
-            _console.WriteLine("⚔️ Combat encounter!");
+            _console.WriteLine("Combat encounter!");
 
             var playerHealth = (int)_gameState["player_health"];
             var damage = _random.Next(5, 15); // Reduced damage for longer games
@@ -273,7 +273,7 @@ namespace WotCI
 
         private void SimulateGraphicsUpdate()
         {
-            _console.WriteLine("🎨 Rendering frame...");
+            _console.WriteLine("Rendering frame...");
 
             // Call graphics plugins
             foreach (var (name, script) in _plugins)
@@ -309,7 +309,7 @@ namespace WotCI
             var sounds = new[] { "sword_clash", "spell_cast", "footsteps", "ambient_wind" };
             var sound = sounds[_random.Next(sounds.Length)];
 
-            _console.WriteLine($"🔊 Playing sound: {sound}");
+            _console.WriteLine($"Playing sound: {sound}");
 
             // Call audio plugins
             foreach (var (name, script) in _plugins)

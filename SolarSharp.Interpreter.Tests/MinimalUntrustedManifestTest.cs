@@ -1,19 +1,48 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using NUnit.Framework;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.OpenSsl;
+using SolarSharp.Interpreter.Security;
 using Org.BouncyCastle.Security;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.Security.Manifests;
 
 namespace SolarSharp.Interpreter.Tests
 {
+    /// <summary>
+    /// JSON naming policy that converts property names to kebab-case
+    /// </summary>
+    public class KebabCaseNamingPolicy : JsonNamingPolicy
+    {
+        public override string ConvertName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return name;
+
+            var result = new System.Text.StringBuilder();
+            for (int i = 0; i < name.Length; i++)
+            {
+                char c = name[i];
+                if (char.IsUpper(c))
+                {
+                    if (i > 0)
+                        result.Append('-');
+                    result.Append(char.ToLower(c));
+                }
+                else
+                {
+                    result.Append(c);
+                }
+            }
+            return result.ToString();
+        }
+    }
+
     [TestFixture]
     public class MinimalUntrustedManifestTest
     {
@@ -39,22 +68,22 @@ namespace SolarSharp.Interpreter.Tests
         public void Minimal_UntrustedSignedManifest_ShouldThrowManifestSignatureException()
         {
             // Step 1: Generate two different RSA key pairs
-            var (trustedPrivate, trustedPublic) = GenerateRsaKeyPair();
-            var (untrustedPrivate, untrustedPublic) = GenerateRsaKeyPair();
+            var (trustedPrivate, trustedPublic) = KeyGenerator.GenerateRsaKeyPair();
+            var (untrustedPrivate, untrustedPublic) = KeyGenerator.GenerateRsaKeyPair();
             
             // Step 2: Create simple Lua script
             var scriptPath = Path.Combine(_testDir, "test.lua");
             File.WriteAllText(scriptPath, "return 42");
             
             // Step 3: Create V2.0 manifest signed with UNTRUSTED key
-            var untrustedFingerprint = ComputeSha256Fingerprint(untrustedPublic);
+            var untrustedFingerprint = KeyGenerator.ComputeSha256Fingerprint(untrustedPublic);
             var signedManifest = CreateV2SignedManifest(untrustedPrivate, untrustedFingerprint, "test.lua");
             var manifestPath = Path.Combine(_testDir, "LuaManifest.json");
             File.WriteAllText(manifestPath, signedManifest);
             
             // Step 4: Create Script with TRUSTED key in trust store
             var script = new Script(Examples.DesktopBasePolicySet);
-            var trustedPem = PublicKeyToPem(trustedPublic);
+            var trustedPem = KeyGenerator.PublicKeyToPem(trustedPublic);
             script.LoadKey(trustedPem);
             
             // Step 5: Try to execute script - should throw ManifestSignatureException
@@ -68,21 +97,21 @@ namespace SolarSharp.Interpreter.Tests
         public void Minimal_TrustedSignedManifest_ShouldLoadSuccessfully()
         {
             // Step 1: Generate key pair
-            var (privateKey, publicKey) = GenerateRsaKeyPair();
+            var (privateKey, publicKey) = KeyGenerator.GenerateRsaKeyPair();
             
             // Step 2: Create simple Lua script
             var scriptPath = Path.Combine(_testDir, "test.lua");
             File.WriteAllText(scriptPath, "return 42");
             
             // Step 3: Create V2.0 manifest signed with the key
-            var fingerprint = ComputeSha256Fingerprint(publicKey);
+            var fingerprint = KeyGenerator.ComputeSha256Fingerprint(publicKey);
             var signedManifest = CreateV2SignedManifest(privateKey, fingerprint, "test.lua");
             var manifestPath = Path.Combine(_testDir, "LuaManifest.json");
             File.WriteAllText(manifestPath, signedManifest);
             
             // Step 4: Create Script with SAME key in trust store
             var script = new Script(Examples.DesktopBasePolicySet);
-            var pem = PublicKeyToPem(publicKey);
+            var pem = KeyGenerator.PublicKeyToPem(publicKey);
             script.LoadKey(pem);
             
             // Step 5: Load and execute script - should succeed
@@ -93,40 +122,58 @@ namespace SolarSharp.Interpreter.Tests
             Assert.AreEqual(42, result.Number);
         }
         
-        private (RsaKeyParameters privateKey, RsaKeyParameters publicKey) GenerateRsaKeyPair()
-        {
-            var keyGen = new RsaKeyPairGenerator();
-            keyGen.Init(new KeyGenerationParameters(new SecureRandom(), 2048));
-            var keyPair = keyGen.GenerateKeyPair();
-            return ((RsaKeyParameters)keyPair.Private, (RsaKeyParameters)keyPair.Public);
-        }
-        
-        private string ComputeSha256Fingerprint(AsymmetricKeyParameter publicKey)
-        {
-            var publicKeyInfo = Org.BouncyCastle.X509.SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(publicKey);
-            var publicKeyDer = publicKeyInfo.GetDerEncoded();
-            
-            using (var sha256 = SHA256.Create())
-            {
-                var hash = sha256.ComputeHash(publicKeyDer);
-                return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-            }
-        }
-        
-        private string PublicKeyToPem(AsymmetricKeyParameter publicKey)
-        {
-            using (var sw = new StringWriter())
-            {
-                var pemWriter = new PemWriter(sw);
-                pemWriter.WriteObject(publicKey);
-                pemWriter.Writer.Flush();
-                return sw.ToString();
-            }
-        }
         
         private string CreateV2SignedManifest(RsaKeyParameters privateKey, string keyFingerprint, string fileName)
         {
-            // Create minimal V2.0 manifest structure
+            // Get the public key from the private key
+            var rsaParams = privateKey as RsaPrivateCrtKeyParameters;
+            var publicKey = new RsaKeyParameters(false, rsaParams.Modulus, rsaParams.PublicExponent);
+            
+            // Get public key PEM
+            var publicKeyPem = KeyGenerator.PublicKeyToPem(publicKey);
+            
+            // Calculate public key token
+            var publicKeyToken = KeyGenerator.ComputePublicKeyToken(publicKeyPem);
+            
+            // Create the signed content part (this is what gets signed)
+            var signedContentData = new
+            {
+                packages = new Dictionary<string, object>
+                {
+                    ["test-pkg"] = new
+                    {
+                        files = new Dictionary<string, string>
+                        {
+                            [fileName] = "sha256:" + ComputeFileHash(Path.Combine(_testDir, fileName))
+                        },
+                        metadata = new
+                        {
+                            name = "Test Package",
+                            version = "1.0.0",
+                            description = "Test package for manifest testing"
+                        }
+                    }
+                },
+                policies = new object[] { }
+            };
+            
+            // Serialize signed content to canonical JSON for signing
+            var jsonOptions = new JsonSerializerOptions 
+            { 
+                WriteIndented = false,
+                PropertyNamingPolicy = new KebabCaseNamingPolicy(),
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+            var signedContentJson = JsonSerializer.Serialize(signedContentData, jsonOptions);
+            
+            // Sign the signed content JSON with RSA-SHA256
+            var signer = SignerUtilities.GetSigner("SHA256withRSA");
+            signer.Init(true, privateKey);
+            var jsonBytes = Encoding.UTF8.GetBytes(signedContentJson);
+            signer.BlockUpdate(jsonBytes, 0, jsonBytes.Length);
+            var signature = Convert.ToBase64String(signer.GenerateSignature());
+            
+            // Create complete manifest with signature
             var manifestData = new
             {
                 version = "2.0",
@@ -135,67 +182,23 @@ namespace SolarSharp.Interpreter.Tests
                 {
                     new
                     {
-                        keyId = keyFingerprint,
-                        signature = "", // Will be replaced after signing
-                        packages = new[]
-                        {
-                            new
-                            {
-                                id = "test-pkg",
-                                name = "Test Package",
-                                version = "1.0.0",
-                                files = new[]
-                                {
-                                    new 
-                                    { 
-                                        path = fileName,
-                                        hash = ComputeFileHash(Path.Combine(_testDir, fileName))
-                                    }
-                                }
-                            }
-                        },
-                        policies = new object[] { }
-                    }
-                }
-            };
-            
-            // Serialize to canonical JSON for signing
-            var jsonOptions = new JsonSerializerOptions 
-            { 
-                WriteIndented = false,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-            var canonicalJson = JsonSerializer.Serialize(manifestData, jsonOptions);
-            
-            // Sign the canonical JSON with RSA-SHA256
-            var signer = SignerUtilities.GetSigner("SHA256withRSA");
-            signer.Init(true, privateKey);
-            var jsonBytes = Encoding.UTF8.GetBytes(canonicalJson);
-            signer.BlockUpdate(jsonBytes, 0, jsonBytes.Length);
-            var signature = Convert.ToBase64String(signer.GenerateSignature());
-            
-            // Update manifest with actual signature
-            var signedManifestData = new
-            {
-                version = "2.0",
-                manifestId = manifestData.manifestId,
-                signedContent = new[]
-                {
-                    new
-                    {
-                        keyId = keyFingerprint,
+                        keyId = "sha256:" + keyFingerprint,
                         signature = signature,
-                        packages = manifestData.signedContent[0].packages,
-                        policies = manifestData.signedContent[0].policies
+                        publicKey = publicKeyPem,
+                        publicKeyToken = publicKeyToken,
+                        intermediateCAs = new string[] { },
+                        packages = signedContentData.packages,
+                        policies = signedContentData.policies
                     }
                 }
             };
             
             // Return pretty-printed JSON
-            return JsonSerializer.Serialize(signedManifestData, new JsonSerializerOptions 
+            return JsonSerializer.Serialize(manifestData, new JsonSerializerOptions 
             { 
                 WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                PropertyNamingPolicy = new KebabCaseNamingPolicy(),
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             });
         }
         

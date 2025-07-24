@@ -7,6 +7,7 @@ using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Security;
 using SolarSharp.Interpreter.Security.Identity;
+using SolarSharp.Interpreter.Security.Manifests;
 using SolarSharp.Interpreter.Tests.TestHelpers;
 
 namespace SolarSharp.Interpreter.Tests.Security
@@ -76,11 +77,8 @@ namespace SolarSharp.Interpreter.Tests.Security
             );
 
             // Create a minimal manifest for testing
-            var testManifest = ManifestTestHelpers.CreateV2Manifest(
-                manifestId: "TestManifest",
-                packageName: "TestManifest",
-                packageDescription: "Test manifest for policy rules"
-            );
+            var testManifest = V2ManifestBuilder.CreateUnsigned("TestManifest", "TestManifest")
+                .WithPackageMetadata("TestManifest", "1.0.0", "Test manifest for policy rules");
 
             // Create a self-signed certificate for testing
             var contextResult = LuaExecutionContext.CreateWithManifest(
@@ -183,13 +181,18 @@ namespace SolarSharp.Interpreter.Tests.Security
         public void ResolvePolicy_WithManifestPolicy_AppliesManifestRestrictions()
         {
             // Arrange
-            var restrictivePolicy = ManifestTestHelpers.CreateRestrictivePolicy("test-package");
-            var manifest = ManifestTestHelpers.CreateV2Manifest(
-                manifestId: "restrictive-manifest",
-                packageId: "test-package",
-                packageName: "Restrictive Test",
-                policies: ImmutableArray.Create(restrictivePolicy)
-            );
+            var restrictivePolicy = ManifestPolicyBuilder.Create()
+                .ForPackages("test-package")
+                .DenyAllModulesExcept(CoreModules.Basic)
+                .DenyDangerousCapabilities()
+                .WithMaxMemoryMB(10)
+                .WithTimeoutSeconds(5)
+                .Build();
+            
+            var manifest = V2ManifestBuilder.CreateUnsigned("restrictive-manifest", "test-package")
+                .WithPackageMetadata("test-package", "1.0.0", "Restrictive Test")
+                .WithFile("test-package", "test.lua", "sha256:placeholder")
+                .WithPolicy(restrictivePolicy);
 
             var rules = new CompiledPolicyRules(fallbackPolicy: _testPolicy2, manifest: manifest);
 
@@ -207,10 +210,10 @@ namespace SolarSharp.Interpreter.Tests.Security
             Assert.Multiple(() =>
             {
                 // Should get intersection of fallback and manifest policies
-                // Restrictive policy has Timeout="1s" (1000ms), fallback has 20000ms, so min is 1000ms
-                Assert.That(policy.TimeoutMs, Is.EqualTo(1000)); // min(20000, 1000)
-                // Restrictive policy has MaxMemory="1MB" (1MB), fallback has 64MB, so min is 1MB
-                Assert.That(policy.MaxMemoryMB, Is.EqualTo(1)); // min(64, 1)
+                // Restrictive policy has Timeout="5s" (5000ms), fallback has 20000ms, so min is 5000ms
+                Assert.That(policy.TimeoutMs, Is.EqualTo(5000)); // min(20000, 5000)
+                // Restrictive policy has MaxMemory="10MB" (10MB), fallback has 64MB, so min is 10MB
+                Assert.That(policy.MaxMemoryMB, Is.EqualTo(10)); // min(64, 10)
                 // Check that only Basic module is allowed (intersection of Basic|Math and Basic)
                 Assert.That(policy.AllowedModules.HasFlag(CoreModules.Basic));
                 Assert.That(!policy.AllowedModules.HasFlag(CoreModules.Math));
@@ -226,13 +229,17 @@ namespace SolarSharp.Interpreter.Tests.Security
             var evalContext = _testContext
                 .Map(ctx => ctx.With(sourceFile: "test.lua:eval"))
                 .GetValueOrDefault();
-            var evalPolicy = ManifestTestHelpers.CreateDefaultPolicy("test-package", ":eval");
-            var manifest = ManifestTestHelpers.CreateV2Manifest(
-                manifestId: "eval-manifest",
-                packageId: "test-package",
-                packageName: "Eval Test",
-                policies: ImmutableArray.Create(evalPolicy)
-            );
+            var evalPolicy = ManifestPolicyBuilder.Create()
+                .ForPackages("test-package")
+                .WithSelector(":eval")
+                .WithMaxMemoryMB(50)
+                .WithTimeoutSeconds(10)
+                .Build();
+            
+            var manifest = V2ManifestBuilder.CreateUnsigned("eval-manifest", "test-package")
+                .WithPackageMetadata("test-package", "1.0.0", "Eval Test")
+                .WithFile("test-package", "test.lua", "sha256:placeholder")
+                .WithPolicy(evalPolicy);
 
             var rules = new CompiledPolicyRules(fallbackPolicy: _testPolicy2, manifest: manifest);
 
@@ -244,9 +251,9 @@ namespace SolarSharp.Interpreter.Tests.Security
             var policy = result.Value;
             Assert.Multiple(() =>
             {
-                // Default policy has Timeout="30s" (30000ms), fallback has 20000ms, so min is 20000ms
-                Assert.That(policy.TimeoutMs, Is.EqualTo(20000)); // min(30000, 20000)
-                // Default policy has MaxMemory="50MB" (50MB), fallback has 64MB, so min is 50MB
+                // Eval policy has Timeout="10s" (10000ms), fallback has 20000ms, so min is 10000ms
+                Assert.That(policy.TimeoutMs, Is.EqualTo(10000)); // min(10000, 20000)
+                // Eval policy has MaxMemory="50MB" (50MB), fallback has 64MB, so min is 50MB
                 Assert.That(policy.MaxMemoryMB, Is.EqualTo(50)); // min(50, 64)
             });
         }

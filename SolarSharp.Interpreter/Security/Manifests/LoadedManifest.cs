@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using CSharpFunctionalExtensions;
 using Org.BouncyCastle.X509;
 
@@ -89,16 +90,50 @@ namespace SolarSharp.Interpreter.Security.Manifests
             bool isVerified
         )
         {
+            // Extract public key token from the first signed content block that matches the fingerprint
+            byte[] publicKeyToken = Array.Empty<byte>();
+            
+            if (manifest.HasSignedContent && !string.IsNullOrEmpty(publicKeyFingerprint))
+            {
+                var matchingBlock = manifest.SignedContent
+                    .FirstOrDefault(block => block.GetKeyFingerprint() == publicKeyFingerprint);
+                    
+                if (matchingBlock != null && !string.IsNullOrEmpty(matchingBlock.PublicKeyToken))
+                {
+                    // Convert hex string token to bytes
+                    publicKeyToken = HexStringToBytes(matchingBlock.PublicKeyToken);
+                }
+            }
+            
             return new LoadedManifest(
                 manifest,
                 manifestPath,
                 loadedAt,
                 Maybe<X509Certificate>.None,
-                Array.Empty<byte>(),
+                publicKeyToken,
                 false,
                 publicKeyFingerprint,
                 isVerified
             );
+        }
+        
+        /// <summary>
+        /// Converts a hex string to byte array
+        /// </summary>
+        private static byte[] HexStringToBytes(string hex)
+        {
+            if (string.IsNullOrEmpty(hex))
+                return Array.Empty<byte>();
+                
+            if (hex.Length % 2 != 0)
+                throw new ArgumentException("Hex string must have an even number of characters");
+                
+            var bytes = new byte[hex.Length / 2];
+            for (int i = 0; i < hex.Length; i += 2)
+            {
+                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            }
+            return bytes;
         }
     }
 }

@@ -154,7 +154,7 @@ namespace WotCI
                         SaveConfiguration();
                     }
 
-                    AnsiConsole.MarkupLine($"[green]✓ Enabled plugin: {pluginName}[/]");
+                    AnsiConsole.MarkupLine($"[green]Enabled plugin: {pluginName}[/]");
 
                     // Start the plugin
                     _ = Task.Run(() => RunPluginAsync(instance));
@@ -163,7 +163,7 @@ namespace WotCI
             catch (Exception ex)
             {
                 AnsiConsole.MarkupLine(
-                    $"[red]✗ Failed to enable plugin {pluginName}: {ex.Message}[/]"
+                    $"[red]Failed to enable plugin {pluginName}: {ex.Message}[/]"
                 );
                 throw;
             }
@@ -181,7 +181,7 @@ namespace WotCI
                     SaveConfiguration();
                 }
 
-                AnsiConsole.MarkupLine($"[yellow]✓ Disabled plugin: {pluginName}[/]");
+                AnsiConsole.MarkupLine($"[yellow]Disabled plugin: {pluginName}[/]");
             }
         }
 
@@ -295,7 +295,7 @@ namespace WotCI
             try
             {
                 AnsiConsole.MarkupLine(
-                    $"[blue]▶ Starting plugin: {instance.Info?.Name ?? "Unknown"}[/]"
+                    $"[blue]Starting plugin: {instance.Info?.Name ?? "Unknown"}[/]"
                 );
 
                 // Load and execute the plugin file
@@ -319,13 +319,13 @@ namespace WotCI
             catch (OperationCanceledException)
             {
                 AnsiConsole.MarkupLine(
-                    $"[yellow]⏹ Plugin stopped: {instance.Info?.Name ?? "Unknown"}[/]"
+                    $"[yellow]Plugin stopped: {instance.Info?.Name ?? "Unknown"}[/]"
                 );
             }
             catch (Exception ex)
             {
                 AnsiConsole.MarkupLine(
-                    $"[red]✗ Plugin failed: {instance.Info?.Name ?? "Unknown"} - {ex.Message}[/]"
+                    $"[red]Plugin failed: {instance.Info?.Name ?? "Unknown"} - {ex.Message}[/]"
                 );
                 OnSecurityViolation($"Plugin failure: {instance.Info?.Name ?? "Unknown"}", ex);
             }
@@ -386,7 +386,7 @@ namespace WotCI
 
             SecurityViolation?.Invoke(this, args);
 
-            AnsiConsole.MarkupLine($"[red]🚨 SECURITY VIOLATION: {description}[/]");
+            AnsiConsole.MarkupLine($"[red]SECURITY VIOLATION: {description}[/]");
             if (exception != null)
             {
                 AnsiConsole.MarkupLine($"[red]   {exception.Message}[/]");
@@ -469,7 +469,7 @@ namespace WotCI
             {
                 // Log error and use default configuration
                 AnsiConsole.MarkupLine(
-                    $"[yellow]⚠ Failed to load plugin configuration: {ex.Message}[/]"
+                    $"[yellow]Failed to load plugin configuration: {ex.Message}[/]"
                 );
                 AnsiConsole.MarkupLine("[yellow]  Using default configuration[/]");
                 _config = new PluginConfiguration();

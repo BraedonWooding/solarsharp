@@ -120,8 +120,8 @@ script.DoString(@"
 - Basic Lua modules (string, table, math, io)
 - No write permissions
 - No network access
-- 📊 100MB memory limit
-- ⏱️ 10 second timeout
+- 100MB memory limit
+- 10 second timeout
 
 ### 3. DesktopBasePolicySet
 

@@ -15,10 +15,13 @@ namespace SolarSharp.Interpreter.Tests
         [Test]
         public void DebugManifestPolicyConversion()
         {
-            var manifest = ManifestTestHelpers.CreateTestManifest(
-                description: "Debug test",
-                capabilities: new[] { "Basic", "String", "Math" }
-            );
+            var manifest = V2ManifestBuilder.CreateUnsigned("test-manifest", "test-package")
+                .WithPackageMetadata("test-package", "1.0.0", "Debug test")
+                .WithPolicy(builder => builder
+                    .ForPackages("test-package")
+                    .WithMaxMemoryMB(50)
+                    .WithTimeoutSeconds(30)
+                    .DenyAllModulesExcept("Basic", "String", "Math"));
 
             var manifestJson = JsonSerializer.Serialize(manifest, ManifestJsonOptions.Default);
             Console.WriteLine("Manifest JSON:");

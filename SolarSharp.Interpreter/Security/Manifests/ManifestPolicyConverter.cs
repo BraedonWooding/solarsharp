@@ -29,7 +29,20 @@ namespace SolarSharp.Interpreter.Security.Manifests
 
                 if (!policies.Any())
                 {
-                    return Result.Failure<SecurityPolicy, string>("Manifest contains no policies");
+                    // Manifest with no policies means no restrictions - return unrestricted policy
+                    return Result.Success<SecurityPolicy, string>(new SecurityPolicy
+                    {
+                        AllowExecution = true,
+                        AllowedModules = CoreModules.Preset_Complete,
+                        Capabilities = ScriptCapabilities.All,
+                        DefaultFileAccess = FilePermissions.ReadWrite,
+                        AllowNetworkAccess = true,
+                        TimeoutMs = -1,      // Unlimited
+                        MaxMemoryMB = -1,    // Unlimited  
+                        MaxInstructions = -1, // Unlimited
+                        MaxCallDepth = -1,   // Unlimited
+                        MaxTables = -1       // Unlimited
+                    });
                 }
 
                 // Convert all policies to domain types first
@@ -149,23 +162,22 @@ namespace SolarSharp.Interpreter.Security.Manifests
                         // Scope all path restrictions to the manifest directory
                         var scopedPaths = manifestPolicy.PathRestrictions.ScopeToDirectory(manifestDirectory);
                         
-                        // TODO: Implement path restriction application
-                        // This needs to be added to SecurityPolicy structure
+                        // Apply path restrictions to the policy
+                        policy = policy with { PathRestrictions = scopedPaths };
                     }
 
                     // Apply host restrictions
                     if (!manifestPolicy.HostRestrictions.DeniesNone)
                     {
-                        // Convert to allowed hosts if possible
+                        // Apply host restrictions to the policy (for runtime checking)
+                        policy = policy with { HostRestrictions = manifestPolicy.HostRestrictions };
+                        
+                        // Also convert to allowed hosts if possible for legacy compatibility
                         var allowedHosts = manifestPolicy.HostRestrictions.ToAllowedHosts();
                         allowedHosts.Execute(hosts =>
                         {
                             policy = policy with { AllowedHosts = hosts };
                         });
-                        
-                        // If we can't convert to allowed (deny specific case),
-                        // we need to store the restriction for runtime checking
-                        // TODO: Add DeniedHostPatterns to SecurityPolicy
                     }
                 }
 
@@ -194,7 +206,15 @@ namespace SolarSharp.Interpreter.Security.Manifests
 
                 if (!policies.Any())
                 {
-                    return Result.Failure<ManifestPolicyContribution, string>("Manifest contains no policies");
+                    // Manifest with no policies means no restrictions - return empty contribution
+                    return Result.Success<ManifestPolicyContribution, string>(
+                        new ManifestPolicyContribution 
+                        { 
+                            ManifestId = manifest.ManifestId,
+                            Directory = manifestDirectory,
+                            Policies = ImmutableArray<ManifestPolicyDomain>.Empty,
+                            SigningKeys = manifest.GetAllSigningKeys().ToImmutableArray()
+                        });
                 }
 
                 // Convert all policies to domain types

@@ -478,5 +478,62 @@ namespace SolarSharp.Interpreter.Security.Operations
                     error => throw new InvalidOperationException($"Failed to create deny eval policy: {error.Message}")
                 );
         }
+
+        /// <summary>
+        /// Creates a new BasePolicySet with a signature-based policy for scripts signed with a specific public key.
+        /// </summary>
+        /// <param name="basePolicySet">The base policy set to extend</param>
+        /// <param name="publicKeyToken">The public key token (SHA256 hash) to map</param>
+        /// <param name="policy">The security policy to apply</param>
+        /// <returns>A new BasePolicySet with the signature policy added</returns>
+        public static BasePolicySet WithSignaturePolicy(
+            this BasePolicySet basePolicySet,
+            string publicKeyToken,
+            SecurityPolicy policy)
+        {
+            if (basePolicySet == null)
+                throw new ArgumentNullException(nameof(basePolicySet));
+            if (publicKeyToken == null)
+                throw new ArgumentNullException(nameof(publicKeyToken));
+            if (policy == null)
+                throw new ArgumentNullException(nameof(policy));
+                
+            // Ensure the policy has a name
+            var policyName = policy.Name.GetValueOrDefault($"sig-{publicKeyToken.Substring(0, Math.Min(8, publicKeyToken.Length))}");
+            policy = policy.WithName(policyName);
+            
+            var policySet = basePolicySet.PolicySet;
+            var builder = new PolicySetBuilder(policySet);
+            
+            builder
+                .DefinePolicy(policyName, policy)
+                .MapSignaturePolicy(publicKeyToken, policyName);
+                
+            var newPolicySet = builder.Build();
+            return BasePolicySetFactory.Create(newPolicySet)
+                .Match(
+                    success => success,
+                    error => throw new InvalidOperationException($"Failed to create signature policy: {error.Message}")
+                );
+        }
+
+        /// <summary>
+        /// Creates a new BasePolicySet with a policy for unsigned scripts.
+        /// </summary>
+        /// <param name="basePolicySet">The base policy set to extend</param>
+        /// <param name="policy">The security policy to apply to unsigned scripts</param>
+        /// <returns>A new BasePolicySet with the unsigned policy added</returns>
+        public static BasePolicySet WithUnsignedPolicy(
+            this BasePolicySet basePolicySet,
+            SecurityPolicy policy)
+        {
+            if (basePolicySet == null)
+                throw new ArgumentNullException(nameof(basePolicySet));
+            if (policy == null)
+                throw new ArgumentNullException(nameof(policy));
+                
+            // Use empty string as the key for unsigned scripts
+            return basePolicySet.WithSignaturePolicy("", policy);
+        }
     }
 }

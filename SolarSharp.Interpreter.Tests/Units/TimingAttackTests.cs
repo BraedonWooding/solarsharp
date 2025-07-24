@@ -401,14 +401,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// </remarks>
         private string CreateSignedManifest(string description, int timeoutMs)
         {
-            var content =
-                $@"{{
-                ""version"": ""1.0"",
-                ""description"": ""{description}"",
-                ""policy"": {{
-                    ""timeoutMs"": {timeoutMs}
-                }}
-            }}";
+            var content = ManifestFactory.CreateV2ManifestWithPolicies();
             var signed = ManifestSigner.SignManifestJson(content, _validKey);
 
             // Debug: Log the signed manifest to understand the format
@@ -430,14 +423,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         private string CreateInvalidSignature(string description, int timeoutMs)
         {
             // Create a valid manifest first, then corrupt the signature
-            var validContent =
-                $@"{{
-                ""version"": ""1.0"",
-                ""description"": ""{description}"",
-                ""policy"": {{
-                    ""timeoutMs"": {timeoutMs}
-                }}
-            }}";
+            var validContent = ManifestFactory.CreateV2ManifestWithPolicies();
 
             // Sign it properly, then corrupt the signature
             var signedContent = ManifestSigner.SignManifestJson(validContent, _validKey);

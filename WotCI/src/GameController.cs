@@ -89,7 +89,7 @@ namespace WotCI
                 foreach (var plugin in enabledPlugins)
                 {
                     var hostileWarning = plugin.IsHostile ? " [red](HOSTILE)[/]" : "";
-                    AnsiConsole.MarkupLine($"  [blue]▶[/] {plugin.Name}{hostileWarning}");
+                    AnsiConsole.MarkupLine($"  [blue]>[/] {plugin.Name}{hostileWarning}");
                 }
                 AnsiConsole.WriteLine();
             }
@@ -198,7 +198,7 @@ namespace WotCI
             {
                 AnsiConsole.Clear();
 
-                var headerPanel = new Panel(new Markup("[bold yellow]🎮 Plugin Management 🎮[/]"))
+                var headerPanel = new Panel(new Markup("[bold yellow]Plugin Management[/]"))
                     .Border(BoxBorder.Double)
                     .BorderColor(Color.Yellow);
                 AnsiConsole.Write(headerPanel);
@@ -227,9 +227,9 @@ namespace WotCI
                     };
 
                     var statusIcon = plugin.IsEnabled
-                        ? "[green]✓ Enabled[/]"
-                        : "[red]✗ Disabled[/]";
-                    var typeIcon = plugin.IsHostile ? "[red]⚠️ HOSTILE[/]" : "[green]✅ Safe[/]";
+                        ? "[green]Enabled[/]"
+                        : "[red]Disabled[/]";
+                    var typeIcon = plugin.IsHostile ? "[red]HOSTILE[/]" : "[green]Safe[/]";
 
                     table.AddRow(
                         $"[{trustColor}]{plugin.Name}[/]",
@@ -248,7 +248,7 @@ namespace WotCI
                 if (hostileCount > 0)
                 {
                     var warningPanel = new Panel(
-                        $"[red]⚠️  WARNING: {hostileCount} hostile plugins detected! These are for security testing only.[/]"
+                        $"[red]WARNING: {hostileCount} hostile plugins detected! These are for security testing only.[/]"
                     )
                         .Border(BoxBorder.Heavy)
                         .BorderColor(Color.Red);
@@ -308,7 +308,7 @@ namespace WotCI
                             try
                             {
                                 await _pluginManager.EnablePluginAsync(pluginName);
-                                AnsiConsole.MarkupLine($"[green]✓ Plugin enabled: {pluginName}[/]");
+                                AnsiConsole.MarkupLine($"[green]Plugin enabled: {pluginName}[/]");
                             }
                             catch (Exception ex)
                             {
@@ -320,7 +320,7 @@ namespace WotCI
                         else if (selection.Contains("Disable"))
                         {
                             _pluginManager.DisablePlugin(pluginName);
-                            AnsiConsole.MarkupLine($"[yellow]✓ Plugin disabled: {pluginName}[/]");
+                            AnsiConsole.MarkupLine($"[yellow]Plugin disabled: {pluginName}[/]");
                         }
 
                         AnsiConsole.WriteLine("Press any key to continue...");
@@ -422,7 +422,7 @@ namespace WotCI
             var enemies = new[] { "Goblin", "Orc", "Skeleton", "Wolf", "Bandit" };
             var enemy = enemies[random.Next(enemies.Length)];
 
-            AddToActivityLog($"⚔️ Encountered {enemy}!");
+            AddToActivityLog($"Encountered {enemy}!");
 
             var damage = random.Next(5, 20);
             var currentHealth = _game.GetPlayerHealth();
@@ -450,7 +450,7 @@ namespace WotCI
             var gold = random.Next(10, 30);
             _game.GiveGold(gold);
 
-            AddToActivityLog($"💰 Found {treasure} with {gold} gold!");
+            AddToActivityLog($"Found {treasure} with {gold} gold!");
             await Task.Delay(100);
         }
 
@@ -459,12 +459,12 @@ namespace WotCI
             var random = new Random();
             var events = new[]
             {
-                "🌟 Found a magic spring (+10 health)",
-                "🍄 Ate strange mushroom (-5 health)",
-                "🦋 Peaceful moment in nature (+5 health)",
-                "🕳️ Fell into a pit (-10 health)",
-                "🎯 Practiced combat skills",
-                "📚 Studied ancient runes",
+                "Found a magic spring (+10 health)",
+                "Ate strange mushroom (-5 health)",
+                "Peaceful moment in nature (+5 health)",
+                "Fell into a pit (-10 health)",
+                "Practiced combat skills",
+                "Studied ancient runes",
             };
 
             var selectedEvent = events[random.Next(events.Length)];
@@ -493,7 +493,7 @@ namespace WotCI
 
         private async Task SimulateRest()
         {
-            AddToActivityLog("😴 Resting...");
+            AddToActivityLog("Resting...");
 
             var healing = new Random().Next(3, 8);
             var currentHealth = _game.GetPlayerHealth();

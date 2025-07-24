@@ -19,9 +19,9 @@
 
 ## Benchmarks Status
 
-- ✅ Most benchmarks work correctly
-- ❌ `mandel.lua` - Exceeds table limit (creates >65,000 tables)
-- ✅ Other math-heavy benchmarks work with global function injection
+- Most benchmarks work correctly
+- `mandel.lua` - Exceeds table limit (creates >65,000 tables)
+- Other math-heavy benchmarks work with global function injection
 
 ## Future Improvements
 

@@ -104,21 +104,63 @@ namespace SolarSharp.Interpreter.Tests
             }
             Console.WriteLine();
             
+            // First let's see what fingerprint is in the manifest before loading
+            Console.WriteLine("   Debug: Checking manifest fingerprints before LoadFile...");
+            try
+            {
+                var preLoadContent = File.ReadAllText(manifestPath);
+                var preLoadManifest = JsonSerializer.Deserialize<Manifest>(preLoadContent, ManifestJsonOptions.Default);
+                if (preLoadManifest != null && preLoadManifest.SignedContent.Length > 0)
+                {
+                    var block = preLoadManifest.SignedContent[0];
+                    Console.WriteLine($"   Manifest keyId: {block.KeyId}");
+                    Console.WriteLine($"   Manifest key fingerprint: {block.GetKeyFingerprint()}");
+                    Console.WriteLine($"   Expected untrusted fingerprint: {untrustedFingerprint}");
+                    Console.WriteLine($"   Trust store has trusted fingerprint: {trustedFingerprint}");
+                    Console.WriteLine($"   Fingerprints match expected? {block.GetKeyFingerprint() == untrustedFingerprint}");
+                    
+                    // Also check if we can verify the signature locally
+                    Console.WriteLine("\n   Testing signature verification locally...");
+                    try 
+                    {
+                        var testResult = UnifiedSignatureVerificationService.VerifyManifestSignature(preLoadContent, preLoadManifest);
+                        Console.WriteLine($"   Local signature verification: {(testResult.IsSuccess ? "SUCCESS" : "FAILED")}");
+                        if (testResult.IsFailure)
+                        {
+                            Console.WriteLine($"   Failure reason: {testResult.Error}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"   Exception during local verification: {ex.Message}");
+                    }
+                    Console.WriteLine();
+                }
+                else
+                {
+                    Console.WriteLine("   WARNING: No signed content in manifest!");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"   ERROR parsing manifest: {ex.Message}");
+                Console.WriteLine($"   Stack trace: {ex.StackTrace}");
+            }
+            
             try
             {
                 var result = script.LoadFile(scriptPath);
-                Console.WriteLine("   ❌ ERROR: LoadFile succeeded when it should have failed!");
+                Console.WriteLine("   ERROR: LoadFile succeeded when it should have failed!");
                 Console.WriteLine("   The manifest was signed with an untrusted key but was accepted.\n");
                 
                 // Let's check what the script thinks about manifests
                 Console.WriteLine("5. Checking script's manifest state...");
-                // We shouldn't get here
                 
                 Assert.Fail("Expected ManifestSignatureException but LoadFile succeeded");
             }
             catch (ManifestSignatureException ex)
             {
-                Console.WriteLine($"   ✅ SUCCESS: Got expected ManifestSignatureException!");
+                Console.WriteLine($"   SUCCESS: Got expected ManifestSignatureException!");
                 Console.WriteLine($"   Message: {ex.Message}");
                 // ManifestSignatureException doesn't have Context property
                 
@@ -127,7 +169,7 @@ namespace SolarSharp.Interpreter.Tests
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"   ⚠️  Unexpected exception type: {ex.GetType().Name}");
+                Console.WriteLine($"   Unexpected exception type: {ex.GetType().Name}");
                 Console.WriteLine($"   Message: {ex.Message}");
                 Console.WriteLine($"   Stack trace:\n{ex.StackTrace}");
                 throw;
@@ -189,12 +231,12 @@ namespace SolarSharp.Interpreter.Tests
                 
                 if (result.IsSuccess)
                 {
-                    Console.WriteLine($"   ❌ Validation succeeded when it should have failed!");
+                    Console.WriteLine($"   Validation succeeded when it should have failed!");
                     Assert.Fail("Direct validation should have failed for untrusted key");
                 }
                 else
                 {
-                    Console.WriteLine($"   ✅ Validation failed as expected: {result.Error.Message}");
+                    Console.WriteLine($"   Validation failed as expected: {result.Error.Message}");
                     Assert.That(result.Error.Type, Is.EqualTo(ManifestValidationErrorType.UntrustedKey));
                 }
                 
@@ -266,14 +308,38 @@ namespace SolarSharp.Interpreter.Tests
         
         private string ComputeFingerprint(AsymmetricKeyParameter publicKey)
         {
-            // Export public key to DER format
-            var publicKeyInfo = Org.BouncyCastle.X509.SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(publicKey);
-            var publicKeyDer = publicKeyInfo.GetDerEncoded();
+            // Convert to PEM format and use the same fingerprint algorithm as ScriptTrustStore
+            var publicKeyPem = ConvertToPem(publicKey);
             
-            // Compute SHA256 hash
+            // Extract base64 content from PEM (same as ScriptTrustStore.GenerateKeyFingerprint)
+            var lines = publicKeyPem.Split('\n');
+            var sb = new StringBuilder();
+            var inKey = false;
+
+            foreach (var line in lines)
+            {
+                var trimmedLine = line.Trim();
+                if (trimmedLine.StartsWith("-----BEGIN"))
+                {
+                    inKey = true;
+                }
+                else if (trimmedLine.StartsWith("-----END"))
+                {
+                    break;
+                }
+                else if (inKey && !string.IsNullOrWhiteSpace(trimmedLine))
+                {
+                    sb.Append(trimmedLine);
+                }
+            }
+
+            var base64Key = sb.ToString();
+            var keyBytes = Convert.FromBase64String(base64Key);
+
+            // Generate SHA256 hash
             using (var sha256 = SHA256.Create())
             {
-                var hash = sha256.ComputeHash(publicKeyDer);
+                var hash = sha256.ComputeHash(keyBytes);
                 return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
             }
         }
@@ -289,73 +355,37 @@ namespace SolarSharp.Interpreter.Tests
         
         private string CreateSignedManifest(RsaKeyParameters privateKey, string keyFingerprint)
         {
-            Console.WriteLine($"   Creating manifest with keyId: {keyFingerprint}");
+            Console.WriteLine($"   Creating manifest with keyId: sha256:{keyFingerprint}");
             
-            // Create a V2.0 manifest structure
-            var manifestObj = new
-            {
-                version = "2.0",
-                manifestId = Guid.NewGuid().ToString(),
-                signedContent = new[]
-                {
-                    new
-                    {
-                        keyId = keyFingerprint,
-                        signature = "", // Will be filled after signing
-                        packages = new[]
-                        {
-                            new
-                            {
-                                id = "test-package",
-                                name = "Test Package",
-                                version = "1.0.0",
-                                files = new[]
-                                {
-                                    new { path = "test.lua", hash = "abc123" }
-                                }
-                            }
-                        },
-                        policies = new object[] { }
-                    }
-                }
-            };
+            // First create an unsigned V2.0 manifest
+            var unsignedManifest = @"{
+  ""version"": ""2.0"",
+  ""manifest-id"": """ + Guid.NewGuid().ToString() + @""",
+  ""signed-content"": [
+    {
+      ""packages"": {
+        ""test-package"": {
+          ""files"": {
+            ""test.lua"": ""sha256:abc123""
+          },
+          ""metadata"": {
+            ""name"": ""Test Package"",
+            ""version"": ""1.0.0"",
+            ""description"": ""Test package for untrusted manifest test""
+          }
+        }
+      },
+      ""policies"": []
+    }
+  ]
+}";
             
-            // Serialize to JSON (canonical form for signing)
-            var canonicalJson = JsonSerializer.Serialize(manifestObj, new JsonSerializerOptions 
-            { 
-                WriteIndented = false,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            // Use ManifestSigner to sign it properly
+            var signedManifest = ManifestSigner.SignManifestJson(unsignedManifest, privateKey);
             
-            // Sign the canonical JSON
-            var signer = SignerUtilities.GetSigner("SHA256withRSA");
-            signer.Init(true, privateKey);
-            var bytes = Encoding.UTF8.GetBytes(canonicalJson);
-            signer.BlockUpdate(bytes, 0, bytes.Length);
-            var signature = Convert.ToBase64String(signer.GenerateSignature());
+            Console.WriteLine($"   Signed manifest created");
             
-            // Create final manifest with signature
-            var signedManifestObj = new
-            {
-                version = "2.0",
-                manifestId = manifestObj.manifestId,
-                signedContent = new[]
-                {
-                    new
-                    {
-                        keyId = keyFingerprint,
-                        signature = signature,
-                        packages = manifestObj.signedContent[0].packages,
-                        policies = manifestObj.signedContent[0].policies
-                    }
-                }
-            };
-            
-            return JsonSerializer.Serialize(signedManifestObj, new JsonSerializerOptions 
-            { 
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            return signedManifest;
         }
     }
     

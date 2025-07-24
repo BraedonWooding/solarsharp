@@ -485,11 +485,11 @@ namespace WotCI.Tests
                                     local enemies = game.getEnemiesDefeated()
                                     
                                     if gold >= 200 then
-                                        print('🏆 Achievement Unlocked: Wealthy Warrior!')
+                                        print('Achievement Unlocked: Wealthy Warrior!')
                                     end
                                     
                                     if enemies >= 10 then
-                                        print('🏆 Achievement Unlocked: Monster Slayer!')
+                                        print('Achievement Unlocked: Monster Slayer!')
                                     end
                                 end
                                 

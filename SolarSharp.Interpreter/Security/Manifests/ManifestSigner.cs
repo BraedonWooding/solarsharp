@@ -62,17 +62,17 @@ namespace SolarSharp.Interpreter.Security.Manifests
                 );
             }
 
-            // Check manifest version and handle V1.0 compatibility
-            string manifestVersion = "1.0"; // Default for legacy manifests
+            // Check manifest version - V2.0 only
+            string manifestVersion = "2.0"; // Default to V2.0
             if (root.TryGetProperty("version", out var versionProp))
             {
-                manifestVersion = versionProp.GetString() ?? "1.0";
+                manifestVersion = versionProp.GetString() ?? "2.0";
             }
 
-            if (manifestVersion != "1.0" && manifestVersion != "2.0")
+            if (manifestVersion != "2.0")
             {
                 throw new ManifestFormatException(
-                    $"Unsupported manifest version '{manifestVersion}'. Only versions 1.0 and 2.0 are supported.",
+                    $"Unsupported manifest version '{manifestVersion}'. Only version 2.0 is supported.",
                     "SignManifestJson"
                 );
             }
@@ -93,78 +93,13 @@ namespace SolarSharp.Interpreter.Security.Manifests
             );
             var keyId = $"sha256:{keyFingerprint}";
 
-            // Handle signing based on manifest version
+            // Only V2.0 manifests are supported
             using (doc)
             {
-                if (manifestVersion == "1.0")
-                {
-                    return SignV1Manifest(json, root, privateKey, algorithm, publicKeyPem, keyFingerprint);
-                }
-                else // V2.0
-                {
-                    return SignV2Manifest(json, root, privateKey, algorithm, publicKeyPem, keyId);
-                }
+                return SignV2Manifest(json, root, privateKey, algorithm, publicKeyPem, keyId);
             }
         }
 
-        private static string SignV1Manifest(
-            string json, 
-            JsonElement root, 
-            AsymmetricKeyParameter privateKey, 
-            string algorithm,
-            string publicKeyPem,
-            string keyFingerprint)
-        {
-            // For V1.0 manifests, add signature and public key to root level
-            using var stream = new MemoryStream();
-            using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
-            {
-                writer.WriteStartObject();
-
-                // Copy existing properties except signature and public-key
-                foreach (var property in root.EnumerateObject())
-                {
-                    if (property.Name != "signature" && property.Name != "public-key" && property.Name != "key-fingerprint")
-                    {
-                        writer.WritePropertyName(property.Name);
-                        property.Value.WriteTo(writer);
-                    }
-                }
-
-                // Add signature fields
-                writer.WriteString("key-fingerprint", $"sha256:{keyFingerprint}");
-                writer.WriteString("public-key", publicKeyPem);
-                writer.WriteString("signature", "PLACEHOLDER");
-
-                writer.WriteEndObject();
-                writer.Flush();
-            }
-
-            // Get unsigned JSON for canonicalization
-            var unsignedJson = Encoding.UTF8.GetString(stream.ToArray());
-            
-            // For V1.0, sign the entire manifest content except signature
-            var contentToSign = json; // Original content without signature
-            var dataToSign = Encoding.UTF8.GetBytes(contentToSign);
-
-            // Generate signature
-            var signatureResult = UnifiedSignatureGenerationService.GenerateSignature(
-                dataToSign,
-                privateKey
-            );
-
-            if (signatureResult.IsFailure)
-            {
-                throw new ManifestFormatException(
-                    $"Failed to generate signature: {signatureResult.Error}",
-                    "SignManifestJson"
-                );
-            }
-
-            // Replace placeholder with actual signature
-            return unsignedJson.Replace("\"signature\": \"PLACEHOLDER\"", 
-                $"\"signature\": \"{signatureResult.Value}\"");
-        }
 
         private static string SignV2Manifest(
             string json,
@@ -221,6 +156,15 @@ namespace SolarSharp.Interpreter.Security.Manifests
                         
                         // Add public key
                         writer.WriteString("public-key", publicKeyPem);
+                        
+                        // Calculate and add public key token
+                        var publicKeyToken = CalculatePublicKeyToken(publicKeyPem);
+                        writer.WriteString("public-key-token", publicKeyToken);
+                        
+                        // Add empty intermediate CAs array for now (will be populated in CA implementation)
+                        writer.WritePropertyName("intermediate-cas");
+                        writer.WriteStartArray();
+                        writer.WriteEndArray();
                         
                         // Placeholder for signature - will be added after canonicalization
                         writer.WriteString("signature", "PLACEHOLDER");
@@ -327,6 +271,68 @@ namespace SolarSharp.Interpreter.Security.Manifests
 
                 default:
                     throw new NotSupportedException($"Algorithm not supported: {algorithm}");
+            }
+        }
+
+        /// <summary>
+        /// Calculates a public key token from a PEM-encoded public key
+        /// Uses first 16 bytes (128 bits) of SHA256 hash as hex string
+        /// </summary>
+        public static string CalculatePublicKeyToken(string publicKeyPem)
+        {
+            string base64Key;
+
+            // Handle both PEM and BASE64 formats
+            if (publicKeyPem.Contains("-----BEGIN"))
+            {
+                // PEM format - extract base64 content
+                var lines = publicKeyPem.Split('\n');
+                var sb = new StringBuilder();
+                var inKey = false;
+
+                foreach (var line in lines)
+                {
+                    var trimmedLine = line.Trim();
+                    if (trimmedLine.StartsWith("-----BEGIN"))
+                    {
+                        inKey = true;
+                        continue;
+                    }
+                    if (trimmedLine.StartsWith("-----END"))
+                    {
+                        break;
+                    }
+                    if (inKey && !string.IsNullOrWhiteSpace(trimmedLine))
+                    {
+                        sb.Append(trimmedLine);
+                    }
+                }
+                base64Key = sb.ToString();
+            }
+            else
+            {
+                // Assume it's already base64
+                base64Key = publicKeyPem;
+            }
+
+            var keyBytes = Convert.FromBase64String(base64Key);
+
+            // Generate SHA256 hash
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                var fullHash = sha256.ComputeHash(keyBytes);
+                
+                // Take first 16 bytes (128 bits) for token
+                var tokenBytes = new byte[16];
+                Array.Copy(fullHash, tokenBytes, 16);
+                
+                // Convert to hex string
+                var hexString = new StringBuilder(tokenBytes.Length * 2);
+                foreach (var b in tokenBytes)
+                {
+                    hexString.AppendFormat("{0:x2}", b);
+                }
+                return hexString.ToString();
             }
         }
 

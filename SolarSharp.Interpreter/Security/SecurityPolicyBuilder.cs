@@ -597,6 +597,95 @@ namespace SolarSharp.Interpreter.Security
             };
 
         /// <summary>
+        /// Creates a permissive policy suitable for trusted code.
+        /// This policy allows most operations with generous limits:
+        /// - Timeout: 30 seconds
+        /// - Memory: 256MB
+        /// - Instructions: 10 million
+        /// - Call depth: 200
+        /// - Tables: 100,000
+        /// - File/Network access enabled
+        /// Use this for trusted code in development environments.
+        /// </summary>
+        public static SecurityPolicy CreatePermissive() =>
+            new SecurityPolicy
+            {
+                Name = Maybe<string>.From("Permissive"),
+                AllowExecution = true,
+                TimeoutMs = 30_000,         // 30 seconds
+                MaxMemoryMB = 256,          // 256MB
+                MaxInstructions = 10_000_000,  // 10 million
+                MaxCallDepth = 200,         // Deep recursion allowed
+                MaxTables = 100_000,        // Many tables allowed
+                ResourceLimitScope = ResourceLimitScope.PerExecution,
+                DefaultFileAccess = FilePermissions.ReadWrite,
+                DefaultDirectoryAccess = DirectoryPermissions.ListAndCreateFiles,
+                FilePermissions = ImmutableDictionary<string, FilePermissions>.Empty,
+                DirectoryPermissions = ImmutableDictionary<string, DirectoryPermissions>.Empty,
+                AllowHiddenFiles = true,
+                MaxFileSize = 100 * 1024 * 1024,  // 100MB max file size
+                EnableChroot = false,
+                AllowNetworkAccess = true,
+                AllowedHosts = ImmutableArray<string>.Empty,  // All hosts allowed
+                AllowEnvironmentAccess = true,
+                AllowedEnvironmentVariables = ImmutableArray<string>.Empty,  // All env vars allowed
+                AllowedModules = CoreModules.Preset_Complete,  // All modules
+                Capabilities = ScriptCapabilities.FileRead | ScriptCapabilities.FileWrite | 
+                              ScriptCapabilities.NetworkAccess | ScriptCapabilities.EnvironmentAccess,
+                PubSubPermissions = new PubSubPermissions
+                {
+                    Publish = ImmutableArray.Create("*"),
+                    Subscribe = ImmutableArray.Create("*"),
+                },
+                AllowReadByToken = ImmutableHashSet<string>.Empty,
+                AllowWriteByToken = ImmutableHashSet<string>.Empty,
+                PreventSignedModification = false,
+                DirectoryAccessRules = ImmutableArray<DirectoryAccessRule>.Empty,
+            };
+
+        /// <summary>
+        /// Creates a default policy with balanced security settings.
+        /// This policy provides reasonable limits for general use:
+        /// - Timeout: 10 seconds
+        /// - Memory: 50MB
+        /// - Instructions: 1 million
+        /// - Call depth: 100
+        /// - Tables: 10,000
+        /// - Limited file access, no network access
+        /// Use this as a starting point for custom policies.
+        /// </summary>
+        public static SecurityPolicy CreateDefault() =>
+            new SecurityPolicy
+            {
+                Name = Maybe<string>.From("Default"),
+                AllowExecution = true,
+                TimeoutMs = 10_000,         // 10 seconds
+                MaxMemoryMB = 50,           // 50MB
+                MaxInstructions = 1_000_000,   // 1 million
+                MaxCallDepth = 100,         // Reasonable recursion depth
+                MaxTables = 10_000,         // Moderate table count
+                ResourceLimitScope = ResourceLimitScope.PerExecution,
+                DefaultFileAccess = FilePermissions.None,
+                DefaultDirectoryAccess = DirectoryPermissions.None,
+                FilePermissions = ImmutableDictionary<string, FilePermissions>.Empty,
+                DirectoryPermissions = ImmutableDictionary<string, DirectoryPermissions>.Empty,
+                AllowHiddenFiles = false,
+                MaxFileSize = 10 * 1024 * 1024,  // 10MB max file size
+                EnableChroot = true,
+                AllowNetworkAccess = false,
+                AllowedHosts = ImmutableArray<string>.Empty,
+                AllowEnvironmentAccess = false,
+                AllowedEnvironmentVariables = ImmutableArray<string>.Empty,
+                AllowedModules = CoreModules.Basic | CoreModules.String | CoreModules.Table | CoreModules.Math,
+                Capabilities = ScriptCapabilities.None,
+                PubSubPermissions = new PubSubPermissions(),
+                AllowReadByToken = ImmutableHashSet<string>.Empty,
+                AllowWriteByToken = ImmutableHashSet<string>.Empty,
+                PreventSignedModification = true,
+                DirectoryAccessRules = ImmutableArray<DirectoryAccessRule>.Empty,
+            };
+
+        /// <summary>
         /// Builds the final policy (for consistency with builder pattern)
         /// </summary>
         public static SecurityPolicy Build(this SecurityPolicy policy) => policy;

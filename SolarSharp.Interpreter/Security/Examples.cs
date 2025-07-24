@@ -51,6 +51,9 @@ namespace SolarSharp.Interpreter.Security
         private static readonly Lazy<BasePolicySet> _benchmarkUnlimitedBasePolicySet = new(() =>
             CreateValidatedBasePolicySet(CreateBenchmarkUnlimitedPolicySet())
         );
+        private static readonly Lazy<BasePolicySet> _restrictiveWithEvalBasePolicySet = new(() =>
+            CreateValidatedBasePolicySet(CreateRestrictiveWithEvalPolicySet())
+        );
 
         /// <summary>
         /// Helper method to create validated BasePolicySet instances for Examples
@@ -166,6 +169,11 @@ namespace SolarSharp.Interpreter.Security
             /// Gets a validated BasePolicySet with unlimited resources for benchmarking
             /// </summary>
             public static BasePolicySet BenchmarkUnlimited => BenchmarkUnlimitedBasePolicySet;
+
+            /// <summary>
+            /// Gets a validated BasePolicySet with restrictive policies but allows eval
+            /// </summary>
+            public static BasePolicySet RestrictiveWithEval => _restrictiveWithEvalBasePolicySet.Value;
         }
 
         // Backward compatibility methods - delegate to static properties
@@ -737,7 +745,31 @@ namespace SolarSharp.Interpreter.Security
         private static PolicySet CreateProductionPolicySet()
         {
             return new PolicySetBuilder()
-                .ForProduction() // Uses standard production setup from PolicySetBuilder
+                .DefinePolicy("production", SecurityPolicyBuilder.CreateRestrictive() with
+                {
+                    Name = Maybe<string>.From("production"),
+                    AllowExecution = true,
+                    TimeoutMs = 10000,
+                    MaxMemoryMB = 128,
+                    MaxInstructions = 5_000_000,
+                    MaxCallDepth = 100,
+                    MaxTables = 10_000,
+                    AllowedModules = CoreModules.Basic | CoreModules.String | CoreModules.Math | CoreModules.Table,
+                    DefaultFileAccess = FilePermissions.None,
+                    DefaultDirectoryAccess = DirectoryPermissions.None,
+                    FilePermissions = ImmutableDictionary.CreateRange(
+                        new[]
+                        {
+                            new KeyValuePair<string, FilePermissions>("data/*.json", FilePermissions.Read),
+                            new KeyValuePair<string, FilePermissions>("config/*.json", FilePermissions.Read)
+                        }
+                    )
+                })
+                .DefinePolicy("deny", SecurityPolicyBuilder.CreateDenyAll())
+                .MapFilePattern("*.lua", "production")
+                .MapFilePattern(":eval", "deny")  // No eval in production
+                .MapFilePattern("*:eval", "deny")
+                .WithDefaultPolicy("production")
                 .Build();
         }
 
@@ -805,6 +837,43 @@ namespace SolarSharp.Interpreter.Security
                 .MapFilePattern(":eval", "benchmarkunlimited") // DoString uses :eval
                 .MapFilePattern("*:eval", "benchmarkunlimited") // Any eval context
                 .WithDefaultPolicy("benchmarkunlimited")
+                .Build();
+        }
+
+        /// <summary>
+        /// Creates a restrictive PolicySet that allows eval execution
+        /// </summary>
+        private static PolicySet CreateRestrictiveWithEvalPolicySet()
+        {
+            var restrictivePolicy = SecurityPolicyBuilder.CreateRestrictive() with
+            {
+                Name = Maybe<string>.From("restrictive"),
+                AllowExecution = true,
+                TimeoutMs = 5000,
+                MaxMemoryMB = 32,
+                MaxInstructions = 500_000,
+                MaxCallDepth = 50,
+                MaxTables = 1_000,
+                AllowedModules = CoreModules.Basic | CoreModules.String
+            };
+
+            var evalPolicy = restrictivePolicy with
+            {
+                Name = Maybe<string>.From("restrictive-eval"),
+                TimeoutMs = 2000,
+                MaxMemoryMB = 16,
+                MaxInstructions = 100_000,
+                MaxCallDepth = 30,
+                MaxTables = 500
+            };
+
+            return new PolicySetBuilder()
+                .DefinePolicy("restrictive", restrictivePolicy)
+                .DefinePolicy("restrictive-eval", evalPolicy)
+                .MapFilePattern("*.lua", "restrictive")
+                .MapFilePattern(":eval", "restrictive-eval")
+                .MapFilePattern("*:eval", "restrictive-eval")
+                .WithDefaultPolicy("restrictive")
                 .Build();
         }
 
@@ -976,6 +1045,336 @@ namespace SolarSharp.Interpreter.Security
                 MaxTables = SecurityConstants.UnlimitedTables, // No table limit
                 AllowExecution = true,
             };
+        }
+
+        /// <summary>
+        /// Creates a restrictive security policy suitable for untrusted code
+        /// Similar to Isolated but with even more restrictions
+        /// </summary>
+        public static SecurityPolicy Restrictive()
+        {
+            return SecurityPolicyBuilder.CreateRestrictive();
+        }
+
+        /// <summary>
+        /// Creates a permissive security policy suitable for trusted code
+        /// Similar to Desktop but focuses on being permissive
+        /// </summary>
+        public static SecurityPolicy Permissive()
+        {
+            return SecurityPolicyBuilder.CreatePermissive();
+        }
+
+        /// <summary>
+        /// Creates a default security policy with balanced restrictions
+        /// Suitable as a starting point for custom policies
+        /// </summary>
+        public static SecurityPolicy Default()
+        {
+            return SecurityPolicyBuilder.CreateDefault();
+        }
+
+        /// <summary>
+        /// V2.0 Manifest examples for common use cases.
+        /// These demonstrate the V2.0 signed content block structure and restriction patterns.
+        /// </summary>
+        public static class ManifestExamples
+        {
+            /// <summary>
+            /// Basic unsigned V2.0 manifest for simple scripts
+            /// Shows minimal structure without signatures
+            /// </summary>
+            public static string BasicUnsignedManifest => @"{
+  ""version"": ""2.0"",
+  ""manifest-id"": ""basic-example"",
+  ""signed-content"": [{
+    ""policies"": [{
+      ""packages"": [""*""],
+      ""selector"": "":file"",
+      ""modules"": {
+        ""deny-all"": false,
+        ""modules"": [""IO"", ""OS_System""]
+      },
+      ""capabilities"": {
+        ""deny-all"": true,
+        ""capabilities"": [""FileRead""]
+      },
+      ""max-memory"": ""32MB"",
+      ""timeout"": ""30s"",
+      ""deny-all"": false
+    }]
+  }]
+}";
+
+            /// <summary>
+            /// Restrictive V2.0 manifest for untrusted code
+            /// Demonstrates deny-all pattern with minimal exceptions
+            /// </summary>
+            public static string RestrictiveManifest => @"{
+  ""version"": ""2.0"",
+  ""manifest-id"": ""restrictive-sandbox"",
+  ""signed-content"": [{
+    ""policies"": [{
+      ""packages"": [""*""],
+      ""selector"": "":file"",
+      ""modules"": {
+        ""deny-all"": true,
+        ""modules"": [""String"", ""Math""]
+      },
+      ""capabilities"": {
+        ""deny-all"": true,
+        ""capabilities"": []
+      },
+      ""paths"": {
+        ""deny-all"": true,
+        ""patterns"": []
+      },
+      ""hosts"": {
+        ""deny-all"": true,
+        ""patterns"": []
+      },
+      ""max-memory"": ""16MB"",
+      ""timeout"": ""10s"",
+      ""deny-all"": false
+    }]
+  }]
+}";
+
+            /// <summary>
+            /// Data processing V2.0 manifest with file access
+            /// Shows pattern for ETL and data transformation scripts
+            /// </summary>
+            public static string DataProcessingManifest => @"{
+  ""version"": ""2.0"",
+  ""manifest-id"": ""data-processor"",
+  ""signed-content"": [{
+    ""policies"": [{
+      ""packages"": [""data-processing""],
+      ""selector"": "":file"",
+      ""modules"": {
+        ""deny-all"": false,
+        ""modules"": [""OS_System"", ""Network""]
+      },
+      ""capabilities"": {
+        ""deny-all"": false,
+        ""capabilities"": [""FileRead"", ""FileWrite""]
+      },
+      ""paths"": {
+        ""deny-all"": false,
+        ""patterns"": [""../config/*"", ""/etc/*"", ""/usr/*""]
+      },
+      ""hosts"": {
+        ""deny-all"": true,
+        ""patterns"": []
+      },
+      ""max-memory"": ""512MB"",
+      ""timeout"": ""300s"",
+      ""deny-all"": false
+    }]
+  }]
+}";
+
+            /// <summary>
+            /// Signed V2.0 manifest with intermediate CAs
+            /// Demonstrates trust chain validation for partner scripts
+            /// </summary>
+            public static string SignedManifestWithCA => @"{
+  ""version"": ""2.0"",
+  ""manifest-id"": ""partner-trusted"",
+  ""signed-content"": [{
+    ""signature"": ""MEUCIQDXx9...[base64-signature]...=="",
+    ""public-key"": ""-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----"",
+    ""intermediate-cas"": [
+      ""-----BEGIN CERTIFICATE-----\nMIIDXTCCAkWgAwIBAgIJAKL...[intermediate-ca]...==\n-----END CERTIFICATE-----""
+    ],
+    ""policies"": [{
+      ""packages"": [""partner-app""],
+      ""selector"": "":file"",
+      ""modules"": {
+        ""deny-all"": false,
+        ""modules"": [""OS_System""]
+      },
+      ""capabilities"": {
+        ""deny-all"": false,
+        ""capabilities"": [""FileRead"", ""FileWrite"", ""NetworkAccess""]
+      },
+      ""paths"": {
+        ""deny-all"": false,
+        ""patterns"": [""../../../*"", ""/etc/*""]
+      },
+      ""hosts"": {
+        ""deny-all"": true,
+        ""patterns"": [""*.partner-domain.com"", ""api.partner.com""]
+      },
+      ""max-memory"": ""256MB"",
+      ""timeout"": ""120s"",
+      ""deny-all"": false
+    }]
+  }]
+}";
+
+            /// <summary>
+            /// Multi-policy V2.0 manifest with different trust levels
+            /// Shows how to define multiple policies for different components
+            /// </summary>
+            public static string MultiPolicyManifest => @"{
+  ""version"": ""2.0"",
+  ""manifest-id"": ""multi-component-app"",
+  ""signed-content"": [{
+    ""policies"": [
+      {
+        ""packages"": [""core""],
+        ""selector"": "":file"",
+        ""modules"": {
+          ""deny-all"": false,
+          ""modules"": [""OS_System"", ""Network""]
+        },
+        ""capabilities"": {
+          ""deny-all"": false,
+          ""capabilities"": [""FileRead"", ""FileWrite"", ""NetworkAccess""]
+        },
+        ""max-memory"": ""128MB"",
+        ""timeout"": ""60s"",
+        ""deny-all"": false
+      },
+      {
+        ""packages"": [""plugins""],
+        ""selector"": "":file"",
+        ""modules"": {
+          ""deny-all"": true,
+          ""modules"": [""String"", ""Table"", ""Math""]
+        },
+        ""capabilities"": {
+          ""deny-all"": true,
+          ""capabilities"": [""FileRead""]
+        },
+        ""paths"": {
+          ""deny-all"": true,
+          ""patterns"": [""data/*.json"", ""config/*.yaml""]
+        },
+        ""max-memory"": ""64MB"",
+        ""timeout"": ""30s"",
+        ""deny-all"": false
+      }
+    ]
+  }]
+}";
+
+            /// <summary>
+            /// Configuration reader V2.0 manifest
+            /// Minimal permissions for reading configuration files only
+            /// </summary>
+            public static string ConfigurationReaderManifest => @"{
+  ""version"": ""2.0"",
+  ""manifest-id"": ""config-reader"",
+  ""signed-content"": [{
+    ""policies"": [{
+      ""packages"": [""*""],
+      ""selector"": "":file"",
+      ""modules"": {
+        ""deny-all"": true,
+        ""modules"": [""String"", ""Table"", ""Math"", ""IO""]
+      },
+      ""capabilities"": {
+        ""deny-all"": true,
+        ""capabilities"": [""FileRead""]
+      },
+      ""paths"": {
+        ""deny-all"": true,
+        ""patterns"": [""*.json"", ""*.yaml"", ""*.yml"", ""*.toml"", ""*.ini"", ""config/*""]
+      },
+      ""hosts"": {
+        ""deny-all"": true,
+        ""patterns"": []
+      },
+      ""max-memory"": ""32MB"",
+      ""timeout"": ""15s"",
+      ""deny-all"": false
+    }]
+  }]
+}";
+
+            /// <summary>
+            /// Deny-all V2.0 manifest for maximum security
+            /// Prevents all operations except basic computation
+            /// </summary>
+            public static string DenyAllManifest => @"{
+  ""version"": ""2.0"",
+  ""manifest-id"": ""maximum-security"",
+  ""signed-content"": [{
+    ""policies"": [{
+      ""packages"": [""*""],
+      ""selector"": "":file"",
+      ""modules"": {
+        ""deny-all"": true,
+        ""modules"": [""String""]
+      },
+      ""capabilities"": {
+        ""deny-all"": true,
+        ""capabilities"": []
+      },
+      ""paths"": {
+        ""deny-all"": true,
+        ""patterns"": []
+      },
+      ""hosts"": {
+        ""deny-all"": true,
+        ""patterns"": []
+      },
+      ""max-memory"": ""8MB"",
+      ""timeout"": ""5s"",
+      ""deny-all"": true
+    }]
+  }]
+}";
+
+            /// <summary>
+            /// Gets all available V2.0 manifest example names
+            /// </summary>
+            public static string[] GetAvailableManifestExampleNames() => new[]
+            {
+                "basic-unsigned",
+                "restrictive",
+                "data-processing", 
+                "signed-with-ca",
+                "multi-policy",
+                "configuration-reader",
+                "deny-all"
+            };
+
+            /// <summary>
+            /// Gets a V2.0 manifest example by name
+            /// </summary>
+            public static string GetManifestExample(string name) => name.ToLowerInvariant() switch
+            {
+                "basic-unsigned" => BasicUnsignedManifest,
+                "restrictive" => RestrictiveManifest,
+                "data-processing" => DataProcessingManifest,
+                "signed-with-ca" => SignedManifestWithCA,
+                "multi-policy" => MultiPolicyManifest,
+                "configuration-reader" => ConfigurationReaderManifest,
+                "deny-all" => DenyAllManifest,
+                _ => throw new ArgumentException($"Unknown manifest example: {name}", nameof(name))
+            };
+
+            /// <summary>
+            /// Tries to get a V2.0 manifest example by name
+            /// </summary>
+            public static bool TryGetManifestExample(string name, out string manifest)
+            {
+                manifest = "";
+                if (string.IsNullOrEmpty(name)) return false;
+                
+                try
+                {
+                    manifest = GetManifestExample(name);
+                    return true;
+                }
+                catch (ArgumentException)
+                {
+                    return false;
+                }
+            }
         }
     }
 }

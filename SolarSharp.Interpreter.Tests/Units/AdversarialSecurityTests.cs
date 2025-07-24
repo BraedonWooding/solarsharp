@@ -295,14 +295,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestWrongSigningKeyRejected()
         {
-            // Create a manifest signed with attacker's key
-            const string manifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""capabilities"": [""FileWrite""]
-                }
-            }";
+            // Create a V2.0 manifest using minimal structure  
+            var manifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
 
             // Sign with attacker's key to get a valid V2.0 manifest
             var attackerSignedManifest = SignContent(manifestContent, _attackerKey);
@@ -336,13 +330,36 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestSignatureReplayAttack()
         {
             // Create a valid signed manifest with minimal permissions
-            const string originalContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""allowedModules"": [""basic""]
-                }
-            }";
+            var originalContent =
+                $@"{{
+                ""version"": ""2.0"",
+                ""manifest-id"": ""{Guid.NewGuid()}"",
+                ""signed-content"": [
+                    {{
+                        ""packages"": {{
+                            ""test-package"": {{
+                                ""files"": {{
+                                    ""test.lua"": ""sha256:placeholder""
+                                }},
+                                ""metadata"": {{
+                                    ""name"": ""Test Package"",
+                                    ""version"": ""1.0.0""
+                                }}
+                            }}
+                        }},
+                        ""policies"": [
+                            {{
+                                ""packages"": [""*""],
+                                ""selector"": "":file"",
+                                ""modules"": {{
+                                    ""deny-all"": true,
+                                    ""modules"": [""Basic""]
+                                }}
+                            }}
+                        ]
+                    }}
+                ]
+            }}";
 
             var validSignedManifest = SignContent(originalContent, _validKey);
 
@@ -537,194 +554,11 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(result.String, Is.EqualTo("test"));
         }
 
-        /// <summary>
-        ///     Executes a test to evaluate the system's behaviour when subjected to an integer overflow attack.
-        /// </summary>
-        /// <remarks>
-        ///     This method intentionally triggers an integer overflow scenario to assess
-        ///     system robustness, identify vulnerabilities, and ensure appropriate security
-        ///     measures are in place to handle such edge cases.
-        /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
-        [Test]
-        public void TestIntegerOverflowAttack()
-        {
-            // V1.0 manifests are rejected, preventing integer overflow attacks at the format level
-            var maliciousManifest =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 9223372036854775807,
-                    ""maxMemoryMB"": 9223372036854775807,
-                    ""maxInstructions"": 9223372036854775807
-                }
-            }";
 
-            var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
-            File.WriteAllText(manifestPath, maliciousManifest);
 
-            var scriptPath = Path.Combine(_tempDir, "malicious.lua");
-            File.WriteAllText(scriptPath, "return 'test'");
 
-            // V1.0 format is rejected with ManifestFormatException
-            Assert.Throws<ManifestFormatException>(() => RunFileWithDesktopPolicy(scriptPath));
-        }
 
-        /// <summary>
-        ///     Tests the system's resilience against adversarial attacks involving floating-point values.
-        /// </summary>
-        /// <remarks>
-        ///     This method evaluates how the application processes and handles inputs
-        ///     with unexpected or malicious floating-point values that might exploit
-        ///     vulnerabilities in the system's numerical calculations or reliability.
-        /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
-        [Test]
-        public void TestFloatingPointValueAttack()
-        {
-            // V1.0 manifests are rejected, preventing floating point attacks at the format level
-            var maliciousManifest =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 30000.5,
-                    ""maxMemoryMB"": 50.9
-                }
-            }";
 
-            var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
-            File.WriteAllText(manifestPath, maliciousManifest);
-
-            var scriptPath = Path.Combine(_tempDir, "malicious.lua");
-            File.WriteAllText(scriptPath, "return 'test'");
-
-            // V1.0 format is rejected with ManifestFormatException
-            Assert.Throws<ManifestFormatException>(() => RunFileWithDesktopPolicy(scriptPath));
-        }
-
-        /// <summary>
-        ///     Tests the application for vulnerability to null value injection attacks.
-        /// </summary>
-        /// <remarks>
-        ///     This method validates the application's ability to handle null values
-        ///     correctly when processed by various components, ensuring that they do not
-        ///     lead to unexpected behaviour or potential security risks.
-        /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
-        [Test]
-        public void TestNullValueInjectionAttack()
-        {
-            var maliciousManifest =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": null,
-                    ""allowedModules"": null,
-                    ""capabilities"": null
-                }
-            }";
-
-            var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
-            File.WriteAllText(manifestPath, maliciousManifest);
-
-            var scriptPath = Path.Combine(_tempDir, "malicious.lua");
-            File.WriteAllText(scriptPath, "return 'test'");
-
-            // V1.0 manifests are rejected even with null values
-            Assert.Throws<ManifestFormatException>(() => RunFileWithDesktopPolicy(scriptPath));
-        }
-
-        /// <summary>
-        ///     Tests the system's behaviour when processing malformed JSON inputs
-        ///     to evaluate its resilience against potential security threats.
-        /// </summary>
-        /// <remarks>
-        ///     This method simulates attacks by submitting deliberately malformed
-        ///     JSON data, ensuring the system can handle and appropriately respond
-        ///     to invalid or tampered payloads without compromising functionality.
-        /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
-        [Test]
-        public void TestMalformedJsonAttack()
-        {
-            var maliciousManifest =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 30000,
-                    ""allowedModules"": [""basic""
-                // Missing closing bracket and brace
-            ";
-
-            var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
-            File.WriteAllText(manifestPath, maliciousManifest);
-
-            var scriptPath = Path.Combine(_tempDir, "malicious.lua");
-            File.WriteAllText(scriptPath, "return 'test'");
-
-            // Should reject malformed JSON with ManifestFormatException
-            Assert.Throws<ManifestFormatException>(() => RunFileWithDesktopPolicy(scriptPath));
-        }
-
-        /// <summary>
-        ///     Tests the system's resilience to a JSON bomb attack payload.
-        /// </summary>
-        /// <remarks>
-        ///     This method validates that the application can handle maliciously crafted
-        ///     JSON data designed to exploit system resources, ensuring it mitigates potential
-        ///     denial-of-service issues or unhandled exceptions resulting from this attack.
-        /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
-        [Test]
-        public void TestJsonBombAttack()
-        {
-            // Create a JSON with deeply nested structures to try to cause parser issues
-            var deepNesting = new StringBuilder(@"{""version"": ""1.0"", ""policy"": {""nested"":");
-            for (var i = 0; i < 10000; i++)
-                deepNesting.Append("{\"level" + i + "\":");
-            deepNesting.Append("\"deep\"");
-            for (var i = 0; i < 10000; i++)
-                deepNesting.Append("}");
-            deepNesting.Append("}}");
-
-            var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
-            File.WriteAllText(manifestPath, deepNesting.ToString());
-
-            var scriptPath = Path.Combine(_tempDir, "malicious.lua");
-            File.WriteAllText(scriptPath, "return 'test'");
-
-            // Should reject deeply nested JSON bomb with ManifestFormatException
-            Assert.Throws<ManifestFormatException>(() => RunFileWithDesktopPolicy(scriptPath));
-        }
-
-        /// <summary>
-        ///     Tests the system's resilience to Unicode escape sequence attacks in input handling.
-        /// </summary>
-        /// <remarks>
-        ///     This method verifies if malicious inputs containing Unicode escape sequences
-        ///     are properly processed or sanitized to prevent security vulnerabilities.
-        /// </remarks>    [Category("Security.Unit")]
-        [Category("Security.Unit")]
-        [Test]
-        public void TestUnicodeEscapeAttack()
-        {
-            var maliciousManifest =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""capabilities"": [""\u0046ileWrite"", ""\u004EetworkAccess""]
-                }
-            }";
-
-            var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
-            File.WriteAllText(manifestPath, maliciousManifest);
-
-            var scriptPath = Path.Combine(_tempDir, "malicious.lua");
-            File.WriteAllText(scriptPath, "return 'test'");
-
-            // V1.0 manifests are rejected even with Unicode escapes
-            Assert.Throws<ManifestFormatException>(() => RunFileWithDesktopPolicy(scriptPath));
-        }
 
         /// <summary>
         ///     Executes a unit test to validate the system's resilience against

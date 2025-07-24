@@ -103,7 +103,7 @@ namespace WotCI.UI
         private IRenderable CreateHeader()
         {
             var headerPanel = new Panel(
-                new Markup("[bold blue]🛡️  SolarSharp Security Dashboard[/]").Centered()
+                new Markup("[bold blue]SolarSharp Security Dashboard[/]").Centered()
             )
                 .Border(BoxBorder.Double)
                 .BorderColor(Color.Blue);
@@ -318,9 +318,9 @@ namespace WotCI.UI
         {
             return rate switch
             {
-                > 10 => "[red]▶▶▶[/]",
-                > 5 => "[yellow]▶▶[/]",
-                > 1 => "[green]▶[/]",
+                > 10 => "[red]>>>[/]",
+                > 5 => "[yellow]>>[/]",
+                > 1 => "[green]>[/]",
                 > 0 => "[dim]•[/]",
                 _ => "[dim]-[/]",
             };
@@ -358,12 +358,12 @@ namespace WotCI.UI
 
                     var severityIcon = evt.Severity switch
                     {
-                        SecuritySeverity.Critical => "🚨",
-                        SecuritySeverity.High => "⚠️",
-                        SecuritySeverity.Medium => "⚡",
-                        SecuritySeverity.Low => "ℹ️",
-                        SecuritySeverity.Info => "📝",
-                        _ => "❓",
+                        SecuritySeverity.Critical => "CRITICAL",
+                        SecuritySeverity.High => "HIGH",
+                        SecuritySeverity.Medium => "MEDIUM",
+                        SecuritySeverity.Low => "LOW",
+                        SecuritySeverity.Info => "INFO",
+                        _ => "UNKNOWN",
                     };
 
                     table.AddRow(
@@ -380,7 +380,7 @@ namespace WotCI.UI
                         "[dim]--:--:--[/]",
                         "[dim]No events[/]",
                         "[dim]System running normally[/]",
-                        "[green]✅ OK[/]"
+                        "[green]OK[/]"
                     );
                 }
             }
@@ -414,8 +414,8 @@ namespace WotCI.UI
                     };
 
                     var statusIcon = plugin.IsEnabled
-                        ? (plugin.IsHostile ? "[red]🔥 HOSTILE[/]" : "[green]✅ Active[/]")
-                        : "[grey]⏸️ Disabled[/]";
+                        ? (plugin.IsHostile ? "[red]HOSTILE[/]" : "[green]Active[/]")
+                        : "[grey]Disabled[/]";
 
                     var pluginName =
                         (plugin.Name?.Length ?? 0) > 15
@@ -519,13 +519,13 @@ namespace WotCI.UI
         {
             if (higherIsBetter)
             {
-                return value >= badThreshold ? "[green]✅[/]"
-                    : value >= goodThreshold ? "[yellow]⚠️[/]"
-                    : "[red]❌[/]";
+                return value >= badThreshold ? "[green]OK[/]"
+                    : value >= goodThreshold ? "[yellow]WARN[/]"
+                    : "[red]FAIL[/]";
             }
-            return value <= goodThreshold ? "[green]✅[/]"
-                : value <= badThreshold ? "[yellow]⚠️[/]"
-                : "[red]❌[/]";
+            return value <= goodThreshold ? "[green]OK[/]"
+                : value <= badThreshold ? "[yellow]WARN[/]"
+                : "[red]FAIL[/]";
         }
 
         private string TruncateText(string text, int maxLength)
@@ -653,11 +653,11 @@ namespace WotCI.UI
             AnsiConsole.MarkupLine("  [green]H[/] - Show this help");
             AnsiConsole.MarkupLine("");
             AnsiConsole.MarkupLine("[yellow]Security Severity Levels:[/]");
-            AnsiConsole.MarkupLine("  🚨 [red]Critical[/] - Immediate security threat");
-            AnsiConsole.MarkupLine("  ⚠️ [orange1]High[/] - Significant security concern");
-            AnsiConsole.MarkupLine("  ⚡ [yellow]Medium[/] - Moderate security issue");
-            AnsiConsole.MarkupLine("  ℹ️ [blue]Low[/] - Minor security note");
-            AnsiConsole.MarkupLine("  📝 [green]Info[/] - Informational event");
+            AnsiConsole.MarkupLine("  [red]Critical[/] - Immediate security threat");
+            AnsiConsole.MarkupLine("  HIGH [orange1]High[/] - Significant security concern");
+            AnsiConsole.MarkupLine("  MEDIUM [yellow]Medium[/] - Moderate security issue");
+            AnsiConsole.MarkupLine("  [blue]Low[/] - Minor security note");
+            AnsiConsole.MarkupLine("  INFO [green]Info[/] - Informational event");
             AnsiConsole.MarkupLine("");
             AnsiConsole.MarkupLine("Press any key to return to dashboard...");
             Console.ReadKey(true);

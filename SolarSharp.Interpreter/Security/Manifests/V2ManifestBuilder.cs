@@ -87,9 +87,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// </summary>
         public static Manifest WithPolicy(
             this Manifest manifest,
-            string[] targetPackages,
-            object grantPermissions = null,
-            object restrictPermissions = null
+            ManifestPolicy policy
         )
         {
             if (manifest.Version != "2.0" || !manifest.HasSignedContent)
@@ -97,13 +95,8 @@ namespace SolarSharp.Interpreter.Security.Manifests
                     "Only V2.0 manifests with signed content are supported"
                 );
 
-            // TODO: Update for V2.0 manifest structure
-            // This code uses the old Grant/Restrict structure which no longer exists
-            var policy = new ManifestPolicy
-            {
-                Packages = targetPackages?.ToImmutableArray() ?? ImmutableArray<string>.Empty,
-                // Grant and Restrict no longer exist
-            };
+            if (policy == null)
+                throw new ArgumentNullException(nameof(policy));
 
             var updatedBlocks = manifest
                 .SignedContent.Select(block =>
@@ -117,6 +110,22 @@ namespace SolarSharp.Interpreter.Security.Manifests
             {
                 SignedContent = updatedBlocks,
             };
+        }
+
+        /// <summary>
+        /// Adds a policy to the manifest using builder pattern
+        /// </summary>
+        public static Manifest WithPolicy(
+            this Manifest manifest,
+            Action<ManifestPolicyBuilder> configurePolicy
+        )
+        {
+            if (configurePolicy == null)
+                throw new ArgumentNullException(nameof(configurePolicy));
+
+            var builder = ManifestPolicyBuilder.Create();
+            configurePolicy(builder);
+            return manifest.WithPolicy(builder.Build());
         }
 
         /// <summary>

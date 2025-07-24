@@ -31,7 +31,7 @@ namespace StandaloneTests
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"\n❌ Test failed with exception: {ex.GetType().Name}");
+                Console.WriteLine($"\nTest failed with exception: {ex.GetType().Name}");
                 Console.WriteLine($"   Message: {ex.Message}");
                 Console.WriteLine($"   Stack trace:\n{ex.StackTrace}");
             }
@@ -108,7 +108,7 @@ namespace StandaloneTests
             try
             {
                 var dynResult = script.LoadFile(scriptPath);
-                Console.WriteLine("\n❌ ERROR: LoadFile succeeded when it should have failed!");
+                Console.WriteLine("\nERROR: LoadFile succeeded when it should have failed!");
                 Console.WriteLine("   The manifest was signed with an untrusted key but was accepted.");
                 Console.WriteLine("   This is a security vulnerability!\n");
                 
@@ -118,12 +118,12 @@ namespace StandaloneTests
             }
             catch (ManifestSignatureException ex)
             {
-                Console.WriteLine($"\n✅ SUCCESS: Got expected ManifestSignatureException!");
+                Console.WriteLine($"\nSUCCESS: Got expected ManifestSignatureException!");
                 Console.WriteLine($"   Message: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"\n⚠️  Got unexpected exception type: {ex.GetType().Name}");
+                Console.WriteLine($"\nGot unexpected exception type: {ex.GetType().Name}");
                 Console.WriteLine($"   Message: {ex.Message}");
                 throw;
             }

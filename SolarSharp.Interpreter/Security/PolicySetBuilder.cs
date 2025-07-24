@@ -13,6 +13,8 @@ namespace SolarSharp.Interpreter.Security
             new Dictionary<string, SecurityPolicy>();
         private readonly Dictionary<string, string> _filePolicies =
             new Dictionary<string, string>();
+        private readonly Dictionary<string, string> _signaturePolicies =
+            new Dictionary<string, string>();
         private string _defaultPolicyName;
 
         /// <summary>
@@ -40,10 +42,17 @@ namespace SolarSharp.Interpreter.Security
                     _filePolicies[kvp.Key] = kvp.Value;
                 }
 
+                foreach (var kvp in existing.SignaturePolicies)
+                {
+                    _signaturePolicies[kvp.Key] = kvp.Value;
+                }
+
                 _defaultPolicyName = existing.FallbackPolicyName;
             }
-
-            _defaultPolicyName = "default";
+            else
+            {
+                _defaultPolicyName = "default";
+            }
         }
 
         /// <summary>
@@ -100,6 +109,37 @@ namespace SolarSharp.Interpreter.Security
 
             _filePolicies[pattern] = policyName;
             return this;
+        }
+
+        /// <summary>
+        /// Maps a public key token to a policy name for signed scripts
+        /// </summary>
+        /// <param name="publicKeyToken">The public key token (SHA256 hash) or empty string for unsigned</param>
+        /// <param name="policyName">The name of the policy to apply</param>
+        /// <returns>This builder for chaining</returns>
+        public PolicySetBuilder MapSignaturePolicy(string publicKeyToken, string policyName)
+        {
+            if (publicKeyToken == null)
+                throw new ArgumentNullException(nameof(publicKeyToken));
+
+            if (string.IsNullOrEmpty(policyName))
+                throw new ArgumentException(
+                    "Policy name cannot be null or empty",
+                    nameof(policyName)
+                );
+
+            _signaturePolicies[publicKeyToken] = policyName;
+            return this;
+        }
+
+        /// <summary>
+        /// Convenience method to map unsigned scripts to a specific policy
+        /// </summary>
+        /// <param name="policyName">The name of the policy to apply to unsigned scripts</param>
+        /// <returns>This builder for chaining</returns>
+        public PolicySetBuilder MapUnsignedPolicy(string policyName)
+        {
+            return MapSignaturePolicy("", policyName);
         }
 
         /// <summary>
@@ -211,6 +251,7 @@ namespace SolarSharp.Interpreter.Security
             {
                 PolicyDefinitions = _policyDefinitions.ToImmutableDictionary(),
                 FilePolicies = _filePolicies.ToImmutableDictionary(),
+                SignaturePolicies = _signaturePolicies.ToImmutableDictionary(),
                 FallbackPolicyName = _defaultPolicyName,
             };
         }

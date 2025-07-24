@@ -564,7 +564,7 @@ namespace WotCI
                     ex
                 );
                 AnsiConsole.MarkupLine(
-                    $"[yellow]⚠ Failed to load plugin configuration: {ex.Message}[/]"
+                    $"[yellow]Failed to load plugin configuration: {ex.Message}[/]"
                 );
                 AnsiConsole.MarkupLine("[yellow]  Using default configuration[/]");
                 _config = new PluginConfiguration();

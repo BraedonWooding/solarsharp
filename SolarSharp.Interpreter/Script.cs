@@ -168,9 +168,20 @@ namespace SolarSharp.Interpreter
                 }
             }
 
+            // Convert BasePolicySet to signature policies for SecurityPolicyResolver
+            var signaturePolicies = new Dictionary<string, SecurityPolicy>();
+            foreach (var (publicKeyToken, policyName) in BasePolicySet.PolicySet.SignaturePolicies)
+            {
+                var policyResult = BasePolicySet.PolicySet.GetPolicyByName(policyName);
+                if (policyResult.IsSuccess)
+                {
+                    signaturePolicies[publicKeyToken] = policyResult.Value;
+                }
+            }
+
             // Initialize security policy resolver with BasePolicySet patterns and default policy as fallback
             var policyResolver = new SecurityPolicyResolver(
-                signatureDefaultPolicies: null,
+                signatureDefaultPolicies: signaturePolicies,
                 pathDefaultPolicies: pathPolicies,
                 fallbackDefaultPolicy: defaultPolicy
             );

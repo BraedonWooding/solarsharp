@@ -5,6 +5,7 @@ namespace SolarSharp.Interpreter.Security
     /// <summary>
     /// Represents a set of named security policies with file-scoped mappings.
     /// Supports the :eval suffix pattern for dynamic code execution control.
+    /// Supports public key token-based policies for signed scripts.
     /// </summary>
     public sealed record PolicySet
     {
@@ -18,6 +19,13 @@ namespace SolarSharp.Interpreter.Security
         /// Maps file patterns to policy names (e.g., "*.lua" -> "standard", "*.lua:eval" -> "restricted")
         /// </summary>
         public ImmutableDictionary<string, string> FilePolicies { get; init; } =
+            ImmutableDictionary<string, string>.Empty;
+
+        /// <summary>
+        /// Maps public key tokens to policy names for signed scripts
+        /// Empty string key "" represents unsigned scripts policy
+        /// </summary>
+        public ImmutableDictionary<string, string> SignaturePolicies { get; init; } =
             ImmutableDictionary<string, string>.Empty;
 
         /// <summary>

@@ -94,6 +94,36 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// <returns>True if any signed content blocks exist</returns>
         public bool IsSigned() =>
             HasSignedContent && SignedContent.Any(block => !string.IsNullOrEmpty(block.Signature));
+        
+        /// <summary>
+        /// Gets the first package ID from the manifest, if any.
+        /// </summary>
+        /// <returns>The ID of the first package, or empty string if no packages exist.</returns>
+        public string GetFirstPackageName()
+        {
+            var firstPackage = GetAllPackages().FirstOrDefault();
+            return firstPackage.PackageId ?? "";
+        }
+        
+        /// <summary>
+        /// Gets the metadata for the first package in the manifest.
+        /// </summary>
+        /// <returns>The package metadata, or a default instance if no packages exist.</returns>
+        public PackageMetadata GetFirstPackageMetadata()
+        {
+            var firstPackage = GetAllPackages().FirstOrDefault();
+            return firstPackage.Package?.Metadata ?? new PackageMetadata();
+        }
+        
+        /// <summary>
+        /// Checks if the manifest contains a package with the specified ID.
+        /// </summary>
+        /// <param name="packageId">The package ID to check for.</param>
+        /// <returns>True if the package exists in the manifest.</returns>
+        public bool HasPackage(string packageId)
+        {
+            return GetAllPackages().Any(p => p.PackageId == packageId);
+        }
     }
 
     /// <summary>
@@ -120,6 +150,19 @@ namespace SolarSharp.Interpreter.Security.Manifests
         public string PublicKey { get; init; } = "";
 
         /// <summary>
+        /// Public key token (hash of the public key) used for policy lookup
+        /// </summary>
+        [JsonPropertyName("public-key-token")]
+        public string PublicKeyToken { get; init; } = "";
+
+        /// <summary>
+        /// Array of intermediate CA certificates that can vouch for this signing key
+        /// Order: leaf to root (the certificate closest to the signing key comes first)
+        /// </summary>
+        [JsonPropertyName("intermediate-cas")]
+        public ImmutableArray<string> IntermediateCAs { get; init; } = ImmutableArray<string>.Empty;
+
+        /// <summary>
         /// Package definitions with their files and hashes
         /// </summary>
         [JsonPropertyName("packages")]
@@ -144,6 +187,18 @@ namespace SolarSharp.Interpreter.Security.Manifests
         /// </summary>
         public string GetKeyFingerprint() =>
             KeyId.StartsWith("sha256:") ? KeyId.Substring(7) : KeyId;
+
+        /// <summary>
+        /// Gets the public key token for policy lookup
+        /// Falls back to key fingerprint if public key token is not specified
+        /// </summary>
+        public string GetPublicKeyTokenForPolicy() =>
+            !string.IsNullOrEmpty(PublicKeyToken) ? PublicKeyToken : GetKeyFingerprint();
+
+        /// <summary>
+        /// Checks if this block has intermediate CA certificates
+        /// </summary>
+        public bool HasIntermediateCAs => !IntermediateCAs.IsDefaultOrEmpty;
     }
 
     /// <summary>

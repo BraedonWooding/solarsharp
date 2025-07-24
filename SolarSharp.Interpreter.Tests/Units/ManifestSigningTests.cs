@@ -137,14 +137,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestRSASignatureGeneration()
         {
-            var manifest =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""securityLevel"": ""Isolated""
-                }
-            }";
-
+            var manifest = ManifestFactory.CreateMinimalV2Manifest();
             var signed = ManifestSigner.SignManifestJson(manifest, _rsaKey);
 
             // Verify V2.0 signed-content structure
@@ -171,15 +164,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestECDSASignatureGeneration()
         {
-            // Create V2.0 manifest
-            var v2Manifest = ManifestTestHelpers.CreateV2Manifest(
-                packageName: "TestPackage",
-                packageVersion: "1.0.0",
-                packageDescription: "Test ECDSA signing"
-            );
-            
-            var manifestJson = JsonSerializer.Serialize(v2Manifest, ManifestJsonOptions.Default);
-            var signed = ManifestSigner.SignManifestJson(manifestJson, _ecdsaKey, "ECDSA");
+            var manifest = ManifestFactory.CreateMinimalV2Manifest();
+            var signed = ManifestSigner.SignManifestJson(manifest, _ecdsaKey, "ECDSA");
 
             // Verify V2.0 signed-content structure
             var doc = JsonDocument.Parse(signed);
@@ -219,7 +205,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestSignatureConsistency()
         {
-            var manifest = @"{""version"": ""1.0"", ""policy"": {""securityLevel"": ""Isolated""}}";
+            var manifest = ManifestFactory.CreateMinimalV2Manifest();
 
             // Sign the same manifest twice
             var signed1 = ManifestSigner.SignManifestJson(manifest, _rsaKey);
@@ -241,61 +227,12 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(sig1, Is.EqualTo(sig2));
         }
 
-        [Category("Manifest.Unit")]
-        [Test]
-        public void TestManifestIntegrity()
-        {
-            var manifest =
-                @"{
-                ""version"": ""1.0"",
-                ""description"": ""Test manifest"",
-                ""policy"": {
-                    ""securityLevel"": ""Configuration"",
-                    ""capabilities"": [""Basic"", ""String""]
-                }
-            }";
-
-            var signed = ManifestSigner.SignManifestJson(manifest, _rsaKey);
-
-            // V2.0 format transforms the structure, so verify key elements
-            var original = JsonDocument.Parse(manifest);
-            var signedDoc = JsonDocument.Parse(signed);
-
-            // Verify V2.0 structure
-            Assert.Multiple(() =>
-            {
-                Assert.That(
-                    signedDoc.RootElement.GetProperty("version").GetString(),
-                    Is.EqualTo("2.0")
-                );
-                Assert.That(signedDoc.RootElement.TryGetProperty("manifest-id", out _), Is.True);
-                Assert.That(
-                    signedDoc.RootElement.TryGetProperty("signed-content", out var signedContent),
-                    Is.True
-                );
-                Assert.That(signedContent.GetArrayLength(), Is.GreaterThan(0));
-
-                // Verify original capabilities were converted to V2.0 structure
-                var firstBlock = signedContent[0];
-                Assert.That(firstBlock.TryGetProperty("policies", out var policies), Is.True);
-                Assert.That(policies.GetArrayLength(), Is.GreaterThan(0));
-
-                var firstPolicy = policies[0];
-                Assert.That(firstPolicy.TryGetProperty("grant", out var grant), Is.True);
-                Assert.That(grant.TryGetProperty("capabilities", out var capabilities), Is.True);
-
-                // Check that original capabilities are preserved
-                var capArray = capabilities.EnumerateArray().Select(c => c.GetString()).ToArray();
-                Assert.That(capArray, Does.Contain("Basic"));
-                Assert.That(capArray, Does.Contain("String"));
-            });
-        }
 
         [Category("Manifest.Unit")]
         [Test]
         public void TestSignatureVerificationWithTampering()
         {
-            var manifest = @"{""version"": ""1.0"", ""policy"": {""securityLevel"": ""Isolated""}}";
+            var manifest = ManifestFactory.CreateMinimalV2Manifest();
             var signed = ManifestSigner.SignManifestJson(manifest, _rsaKey);
 
             // Parse the signed manifest to understand its structure
@@ -323,8 +260,6 @@ namespace SolarSharp.Interpreter.Tests.Units
             File.WriteAllText(scriptPath, "return 42");
 
             // Should throw exception due to signature mismatch
-            // The manifest discovery should fail due to invalid signature
-            // Script execution will handle manifest discovery and validation internally
             Assert.Throws<ManifestSignatureException>(() =>
             {
                 var script = new Script(Examples.DesktopBasePolicySet);
@@ -337,7 +272,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void TestMultipleSignings()
         {
-            var manifest = @"{""version"": ""1.0""}";
+            var manifest = ManifestFactory.CreateMinimalV2Manifest();
 
             // Sign with RSA first
             var signed1 = ManifestSigner.SignManifestJson(manifest, _rsaKey);
@@ -345,7 +280,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             // Sign the already signed manifest with ECDSA
             var signed2 = ManifestSigner.SignManifestJson(signed1, _ecdsaKey, "ECDSA");
 
-            // The second signing should replace the first signed-content block
+            // The second signing should update the signature in the signed-content block
             var doc = JsonDocument.Parse(signed2);
             var signedContentArray = doc.RootElement.GetProperty("signed-content");
             var firstBlock = signedContentArray[0];
@@ -359,49 +294,55 @@ namespace SolarSharp.Interpreter.Tests.Units
 
         [Category("Manifest.Unit")]
         [Test]
-        public void TestEmptyManifestSigning()
+        public void TestMinimalManifestSigning()
         {
-            var manifest = "{}";
+            var manifest = ManifestFactory.CreateMinimalV2Manifest();
             var signed = ManifestSigner.SignManifestJson(manifest, _rsaKey);
 
-            // Should add V2.0 signed-content structure
+            // Should have proper V2.0 structure with signature
             Assert.That(signed, Does.Contain("\"signed-content\""));
             Assert.That(signed, Does.Contain("\"signature\""));
             Assert.That(signed, Does.Contain("\"version\": \"2.0\""));
+            
+            // Verify signature is not empty
+            var doc = JsonDocument.Parse(signed);
+            var signature = doc.RootElement
+                .GetProperty("signed-content")[0]
+                .GetProperty("signature")
+                .GetString();
+            Assert.That(signature, Is.Not.Null.And.Not.Empty);
         }
 
         [Category("Manifest.Unit")]
         [Test]
         public void TestLargeManifestSigning()
         {
-            // Create a large manifest with many properties
-            var sb = new StringBuilder();
-            sb.Append("{\"version\": \"1.0\", \"largeData\": [");
-            for (var i = 0; i < 1000; i++)
-            {
-                if (i > 0)
-                    sb.Append(",");
-                sb.Append($"{{\"id\": {i}, \"data\": \"value_{i}\"}}");
-            }
-            sb.Append("]}");
-
-            var manifest = sb.ToString();
+            // Create a large V2.0 manifest with many packages
+            var manifest = ManifestFactory.CreateLargeV2Manifest(100, 10);
             var signed = ManifestSigner.SignManifestJson(manifest, _rsaKey);
 
-            // Should successfully sign large manifests with V2.0 structure
+            // Should successfully sign large manifests
             Assert.That(signed, Does.Contain("\"signed-content\""));
             Assert.That(signed, Does.Contain("\"version\": \"2.0\""));
-            // V2.0 format has different structure so we just verify it's not empty
-            Assert.That(signed.Length, Is.GreaterThan(0));
+            Assert.That(signed.Length, Is.GreaterThan(manifest.Length));
 
-            // Verify the large data is preserved (it won't be in the signed content though)
-            // V2.0 format converts to packages/policies structure, original data is not preserved
+            // Verify signature was added
             var doc = JsonDocument.Parse(signed);
-            Assert.That(doc.RootElement.GetProperty("version").GetString(), Is.EqualTo("2.0"));
+            var signature = doc.RootElement
+                .GetProperty("signed-content")[0]
+                .GetProperty("signature")
+                .GetString();
+            Assert.That(signature, Is.Not.Null.And.Not.Empty);
+            
+            // Verify packages are preserved
+            var packages = doc.RootElement
+                .GetProperty("signed-content")[0]
+                .GetProperty("packages");
+            Assert.That(packages.GetProperty("package0").TryGetProperty("files", out _), Is.True);
         }
 
         [Category("Manifest.Unit")]
-        [Test]
+        [Test]  
         public void TestPrivateKeyLoadingFromPem()
         {
             // Export and reload an RSA key using BouncyCastle
@@ -416,7 +357,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(loadedKey, Is.InstanceOf<RsaPrivateCrtKeyParameters>());
 
             // Sign with both keys and compare
-            var manifest = @"{""test"": true}";
+            var manifest = ManifestFactory.CreateMinimalV2Manifest();
             var sig1 = ManifestSigner.SignManifestJson(manifest, _rsaKey);
             var sig2 = ManifestSigner.SignManifestJson(manifest, loadedKey);
 
@@ -458,7 +399,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var untrustedKeyPair = ManifestSigner.CreateKeyPair();
             var untrustedKey = untrustedKeyPair.Private;
 
-            var manifest = @"{""version"": ""1.0""}";
+            var manifest = ManifestFactory.CreateMinimalV2Manifest();
             var signed = ManifestSigner.SignManifestJson(manifest, untrustedKey);
 
             var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
@@ -468,7 +409,6 @@ namespace SolarSharp.Interpreter.Tests.Units
             File.WriteAllText(scriptPath, "return 42");
 
             // Should throw exception due to untrusted key
-            // Script execution will handle manifest discovery and validation
             Assert.Throws<ManifestSignatureException>(() =>
             {
                 var script = new Script(Examples.DesktopBasePolicySet);

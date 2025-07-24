@@ -407,14 +407,8 @@ namespace SolarSharp.Interpreter.Tests.Units
             var script = new Script(Examples.DesktopBasePolicySet);
             script.LoadKey(_validKeyPem);
 
-            // Create properly signed manifest
-            var manifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 30000
-                }
-            }";
+            // Create properly signed V2.0 manifest
+            var manifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
             var signedManifest = SignManifestContent(manifestContent, _validKey);
 
             var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
@@ -450,11 +444,9 @@ namespace SolarSharp.Interpreter.Tests.Units
             var manifestContent =
                 @"{
                 ""version"": ""2.0"",
-                ""manifestId"": ""test-wrong-key-manifest"",
-                ""signedContent"": [
+                ""manifest-id"": ""test-wrong-key-manifest"",
+                ""signed-content"": [
                     {
-                        ""keyId"": ""sha256:attackerkey123"",
-                        ""signature"": ""placeholder"",
                         ""packages"": {
                             ""test-package"": {
                                 ""files"": {
@@ -471,13 +463,12 @@ namespace SolarSharp.Interpreter.Tests.Units
                             {
                                 ""packages"": [""test-package""],
                                 ""selector"": "":file"",
-                                ""grant"": {
-                                    ""capabilities"": [""safe-compute""]
+                                ""capabilities"": {
+                                    ""deny-all"": false,
+                                    ""capabilities"": [""FileRead""]
                                 },
-                                ""restrict"": {
-                                    ""timeout"": ""30s"",
-                                    ""maxMemory"": ""64MB""
-                                }
+                                ""timeout"": ""30s"",
+                                ""max-memory"": ""64MB""
                             }
                         ]
                     }
@@ -611,81 +602,8 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.Throws<UnauthorizedProcessExecutionException>(() => script.DoFile(luaFile));
         }
 
-        /// <summary>
-        ///     Validates the behaviour of the signed manifest chain when an untrusted key is used to sign a child manifest.
-        ///     Ensures that a manifest signed with an untrusted key is correctly blocked by the trust store during script
-        ///     execution.
-        /// </summary>
-        /// <remarks>
-        ///     This test simulates a scenario where a parent manifest signed with a trusted key includes a child manifest
-        ///     signed with an untrusted key. The test verifies that the manifest signature validation logic raises a
-        ///     <see cref="ManifestSignatureException" /> when encountering the untrusted key, preventing the script from
-        ///     executing.
-        /// </remarks>
-        /// <exception cref="ManifestSignatureException">
-        ///     Thrown when the manifest signature validation fails due to the inclusion of a manifest signed with an untrusted
-        ///     key.
-        ///     The exception message must indicate the key is not trusted or mention a chain violation.
-        /// </exception>    [Category("Manifest.Security")]
-        [Category("Security.Unit")]
-        [Test]
-        public void TestSignedManifestChain_UntrustedKeyBlocked()
-        {
-            var script = new Script(Examples.DesktopBasePolicySet);
-            script.LoadKey(_validKeyPem);
-            // NOTE: _attackerKeyPem is NOT added to Script's trust store
-
-            // Create parent manifest signed with valid key
-            var parentManifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 30000
-                },
-                ""includes"": [""sub/LuaManifest.json""]
-            }";
-            // Should throw ManifestFormatException because manifests with includes are not supported at signing stage
-            Assert.Throws<ManifestFormatException>(() =>
-                SignManifestContent(parentManifestContent, _validKey)
-            );
-        }
-
-        /// <summary>
-        ///     Tests the validation of a chain of manifests where both the parent and child
-        ///     manifests are signed with the same trusted key. Validates that the script execution
-        ///     proceeds successfully when the manifests satisfy the signature validation requirements.
-        /// </summary>
-        /// <remarks>
-        ///     This test creates a parent manifest and a child manifest. Both manifests are signed
-        ///     using the same key and written to corresponding file paths within a temporary directory.
-        ///     The valid key is added to the trusted key store for signature verification. The test then
-        ///     verifies that the script execution completes successfully when the manifests pass signature validation.
-        /// </remarks>
-        /// <exception cref="AssertionException">
-        ///     Thrown if the result of the script execution does not match the expected value or
-        ///     if any manifest verification fails unexpectedly.
-        /// </exception>    [Category("Manifest.Security")]
-        [Category("Security.Unit")]
-        [Test]
-        public void TestSignedManifestChain_SameKeyValid()
-        {
-            var script = new Script(Examples.DesktopBasePolicySet);
-            script.LoadKey(_validKeyPem);
-
-            // Create parent manifest signed with valid key
-            var parentManifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 30000
-                },
-                ""includes"": [""sub/LuaManifest.json""]
-            }";
-            // Should throw ManifestFormatException because manifests with includes are not supported at signing stage
-            Assert.Throws<ManifestFormatException>(() =>
-                SignManifestContent(parentManifestContent, _validKey)
-            );
-        }
+        // NOTE: Removed TestSignedManifestChain_UntrustedKeyBlocked and TestSignedManifestChain_SameKeyValid
+        // as they tested manifest includes functionality which is not supported in V2.0 manifests
 
         /// <summary>
         ///     Exports the public key of the provided RSA object as a PEM-formatted string.
@@ -773,14 +691,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         /// <returns>Returns a signed manifest as a string.</returns>
         private static string CreateSignedManifest(string description, AsymmetricKeyParameter key)
         {
-            var content =
-                $@"{{
-                ""version"": ""1.0"",
-                ""description"": ""{description}"",
-                ""policy"": {{
-                    ""timeoutMs"": 30000
-                }}
-            }}";
+            // Create a V2.0 manifest (ignore description parameter for V2.0 compatibility)
+            var content = ManifestFactory.CreateV2ManifestWithPolicies();
             return SignManifestContent(content, key);
         }
     }

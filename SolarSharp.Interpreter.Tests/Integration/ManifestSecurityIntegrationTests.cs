@@ -86,11 +86,33 @@ namespace SolarSharp.Interpreter.Tests.Integration
                 // Create manifest content
                 var manifestContent =
                     $@"{{
-                    ""version"": ""1.0"",
-                    ""name"": ""{scenario.Algorithm} Test Manifest"",
-                    ""policy"": {{
-                        ""capabilities"": ""FileRead""
-                    }}
+                    ""version"": ""2.0"",
+                    ""manifest-id"": ""{Guid.NewGuid()}"",
+                    ""signed-content"": [
+                        {{
+                            ""packages"": {{
+                                ""test-package"": {{
+                                    ""files"": {{
+                                        ""test.lua"": ""sha256:placeholder""
+                                    }},
+                                    ""metadata"": {{
+                                        ""name"": ""{scenario.Algorithm} Test Manifest"",
+                                        ""version"": ""1.0.0""
+                                    }}
+                                }}
+                            }},
+                            ""policies"": [
+                                {{
+                                    ""packages"": [""*""],
+                                    ""selector"": "":file"",
+                                    ""capabilities"": {{
+                                        ""deny-all"": true,
+                                        ""capabilities"": [""FileRead""]
+                                    }}
+                                }}
+                            ]
+                        }}
+                    ]
                 }}";
 
                 // Sign the manifest
@@ -312,10 +334,34 @@ namespace SolarSharp.Interpreter.Tests.Integration
         {
             var manifestContent =
                 @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""capabilities"": ""FileRead""
-                }
+                ""version"": ""2.0"",
+                ""manifest-id"": """ + Guid.NewGuid().ToString() + @""",
+                ""signed-content"": [
+                    {
+                        ""packages"": {
+                            ""test-package"": {
+                                ""files"": {
+                                    ""test.lua"": ""sha256:placeholder""
+                                },
+                                ""metadata"": {
+                                    ""name"": ""Test Package"",
+                                    ""version"": ""1.0.0"",
+                                    ""description"": ""Test package""
+                                }
+                            }
+                        },
+                        ""policies"": [
+                            {
+                                ""packages"": [""test-package""],
+                                ""selector"": "":file"",
+                                ""capabilities"": {
+                                    ""deny-all"": true,
+                                    ""capabilities"": [""FileRead""]
+                                }
+                            }
+                        ]
+                    }
+                ]
             }";
 
             var signedManifest = ManifestSigner.SignManifestJson(

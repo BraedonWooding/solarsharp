@@ -113,6 +113,16 @@ namespace SolarSharp.Interpreter.Security.Manifests.Events
     }
 
     /// <summary>
+    /// Event raised when a key is automatically imported through CA validation
+    /// </summary>
+    public sealed record ManifestKeyAutoImportedEvent : ManifestValidationEvent
+    {
+        public string KeyFingerprint { get; init; } = "";
+        public string TrustedCA { get; init; } = "";
+        public string ImportReason { get; init; } = "";
+    }
+
+    /// <summary>
     /// Types of manifest validation failures
     /// </summary>
     public enum ManifestValidationFailureType

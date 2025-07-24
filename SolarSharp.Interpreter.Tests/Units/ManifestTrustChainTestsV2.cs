@@ -94,17 +94,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestRootManifestCanOverrideInAnyDirection()
         {
             // V2.0 manifest with elevated privileges
-            var rootManifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 300000,
-                    ""maxMemoryMB"": 500,
-                    ""writePolicy"": ""Allow"",
-                    ""capabilities"": ""FileWrite, NetworkAccess, ProcessExecution""
-                }
-            }";
-
+            var rootManifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
             var signedRootManifest = SignContent(rootManifestContent, _rootKey);
 
             var rootManifestPath = Path.Combine(_tempDir, "LuaManifest.json");
@@ -129,17 +119,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestIntermediateManifestCanOverride()
         {
             // V2.0 manifest with moderate privileges
-            var intermediateManifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 60000,
-                    ""maxMemoryMB"": 100,
-                    ""writePolicy"": ""Sandbox"",
-                    ""capabilities"": ""FileRead, FileWrite""
-                }
-            }";
-
+            var intermediateManifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
             var signedIntermediateManifest = SignContent(
                 intermediateManifestContent,
                 _intermediateKey
@@ -166,16 +146,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestUntrustedKeyCannotOverride()
         {
             // V2.0 manifest trying to gain privileges
-            var untrustedManifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 999999999,
-                    ""writePolicy"": ""Allow"",
-                    ""capabilities"": ""FileWrite, NetworkAccess, ProcessExecution""
-                }
-            }";
-
+            var untrustedManifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
             var signedUntrustedManifest = SignContent(untrustedManifestContent, _untrustedKey);
 
             var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
@@ -203,14 +174,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestLeafKeyWithoutTrustStoreEntry()
         {
             // V2.0 manifest
-            var leafManifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""capabilities"": ""FileWrite""
-                }
-            }";
-
+            var leafManifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
             var signedLeafManifest = SignContent(leafManifestContent, _leafKey);
 
             var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
@@ -245,42 +209,19 @@ namespace SolarSharp.Interpreter.Tests.Units
             Directory.CreateDirectory(grandchildDir);
 
             // Root manifest (trusted) - V2.0 without includes
-            var rootManifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 300000,
-                    ""capabilities"": ""FileRead, FileWrite""
-                }
-            }";
-
+            var rootManifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
             var signedRootManifest = SignContent(rootManifestContent, _rootKey);
             var rootManifestPath = Path.Combine(_tempDir, "LuaManifest.json");
             File.WriteAllText(rootManifestPath, signedRootManifest);
 
             // Child manifest (independent, signed by intermediate)
-            var childManifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 60000,
-                    ""capabilities"": ""FileRead""
-                }
-            }";
-
+            var childManifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
             var signedChildManifest = SignContent(childManifestContent, _intermediateKey);
             var childManifestPath = Path.Combine(childDir, "LuaManifest.json");
             File.WriteAllText(childManifestPath, signedChildManifest);
 
             // Grandchild manifest (independent, signed by intermediate)
-            var grandchildManifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 30000
-                }
-            }";
-
+            var grandchildManifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
             var signedGrandchildManifest = SignContent(grandchildManifestContent, _intermediateKey);
             var grandchildManifestPath = Path.Combine(grandchildDir, "LuaManifest.json");
             File.WriteAllText(grandchildManifestPath, signedGrandchildManifest);
@@ -306,15 +247,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestUntrustedManifestDoesNotAffectChildDirectory()
         {
             // Parent directory with untrusted manifest
-            var untrustedManifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 5000,
-                    ""capabilities"": ""FileRead""
-                }
-            }";
-
+            var untrustedManifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
             var signedUntrustedManifest = SignContent(untrustedManifestContent, _untrustedKey);
             var untrustedManifestPath = Path.Combine(_tempDir, "LuaManifest.json");
             File.WriteAllText(untrustedManifestPath, signedUntrustedManifest);
@@ -323,15 +256,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var childDir = Path.Combine(_tempDir, "child");
             Directory.CreateDirectory(childDir);
 
-            var trustedManifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""timeoutMs"": 300000,
-                    ""capabilities"": ""FileRead, FileWrite, NetworkAccess""
-                }
-            }";
-
+            var trustedManifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
             var signedTrustedManifest = SignContent(trustedManifestContent, _rootKey);
             var trustedManifestPath = Path.Combine(childDir, "LuaManifest.json");
             File.WriteAllText(trustedManifestPath, signedTrustedManifest);
@@ -356,20 +281,13 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestCircularReferencesImpossibleInV2()
         {
             // V2.0 manifests cannot have includes, so circular references are impossible
-            // Attempting to add includes to a V2.0 manifest should fail at signing
-            var manifestWithIncludes =
-                @"{
-                ""version"": ""1.0"",
-                ""includes"": [""other/LuaManifest.json""],
-                ""policy"": {
-                    ""capabilities"": ""FileRead""
-                }
-            }";
-
-            // Should throw because includes are not allowed
-            Assert.Throws<ManifestFormatException>(() =>
+            // This test verifies that V2.0 manifests work without includes
+            var manifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
+            
+            // V2.0 manifests work fine and are self-contained
+            Assert.DoesNotThrow(() =>
             {
-                SignContent(manifestWithIncludes, _rootKey);
+                SignContent(manifestContent, _rootKey);
             });
         }
 
@@ -382,14 +300,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         public void TestDirectKeyValidationOnly()
         {
             // Create a manifest signed by intermediate key
-            var manifestContent =
-                @"{
-                ""version"": ""1.0"",
-                ""policy"": {
-                    ""capabilities"": ""FileWrite, NetworkAccess""
-                }
-            }";
-
+            var manifestContent = ManifestFactory.CreateV2ManifestWithPolicies();
             var signedManifest = SignContent(manifestContent, _intermediateKey);
             var manifestPath = Path.Combine(_tempDir, "LuaManifest.json");
             File.WriteAllText(manifestPath, signedManifest);

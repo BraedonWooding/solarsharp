@@ -42,7 +42,7 @@ namespace WotCI.Tests
             ((int)gameState["day"]).Should().Be(1);
             ((int)gameState["enemies_defeated"]).Should().Be(0);
 
-            _console.Output.Should().Contain("🎮 Wrath of the Continuous Integration - Game Engine Initialized");
+            _console.Output.Should().Contain("Wrath of the Continuous Integration - Game Engine Initialized");
             _console.Output.Should().Contain("Starting with 100 health and 50 gold");
         }
 
@@ -173,10 +173,10 @@ namespace WotCI.Tests
             _game.Run();
 
             var output = _console.Output;
-            output.Should().Contain("🌅 Day 1 begins");
-            output.Should().Contain("🌅 Day 2 begins");
-            output.Should().Contain("🌅 Day 3 begins");
-            output.Should().Contain("🎮 Game Over!");
+            output.Should().Contain("Day 1 begins");
+            output.Should().Contain("Day 2 begins");
+            output.Should().Contain("Day 3 begins");
+            output.Should().Contain("Game Over!");
         }
 
         [Category("Game.Unit")]
@@ -189,7 +189,7 @@ namespace WotCI.Tests
             _game.Run();
 
             var output = _console.Output;
-            output.Should().Contain("⚔️ Combat encounter!");
+            output.Should().Contain("Combat encounter!");
             output.Should().Contain("Enemy attacks!");
             output.Should().Contain("Enemy attacks!");
             output.Should().Contain("damage");
@@ -207,9 +207,9 @@ namespace WotCI.Tests
             var output = _console.Output;
             // Should contain at least one of these events
             (
-                output.Contains("💰 Shop event!")
-                || output.Contains("🎨 Rendering frame")
-                || output.Contains("🔊 Playing sound")
+                output.Contains("Shop event!")
+                || output.Contains("Rendering frame")
+                || output.Contains("Playing sound")
             )
                 .Should()
                 .BeTrue();
@@ -226,8 +226,8 @@ namespace WotCI.Tests
             _game.Run();
 
             var output = _console.Output;
-            output.Should().Contain("💀 You died!");
-            output.Should().Contain("🎮 Game Over!");
+            output.Should().Contain("You died!");
+            output.Should().Contain("Game Over!");
 
             var finalHealth = (int)_game.GetGameState()["player_health"];
             finalHealth.Should().BeLessOrEqualTo(0);
@@ -307,10 +307,10 @@ namespace WotCI.Tests
             var output = _console.Output;
 
             // Check for variety of events
-            var combatCount = output.Split("⚔️ Combat encounter!").Length - 1;
-            var shopCount = output.Split("💰 Shop event!").Length - 1;
-            var renderCount = output.Split("🎨 Rendering frame").Length - 1;
-            var soundCount = output.Split("🔊 Playing sound").Length - 1;
+            var combatCount = output.Split("Combat encounter!").Length - 1;
+            var shopCount = output.Split("Shop event!").Length - 1;
+            var renderCount = output.Split("Rendering frame").Length - 1;
+            var soundCount = output.Split("Playing sound").Length - 1;
 
             // Should have multiple events of different types
             combatCount.Should().BeGreaterThan(0);

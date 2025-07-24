@@ -351,15 +351,11 @@ namespace SolarSharp.Interpreter.Tests.Units
                 InheritFromFile = true
             };
 
-            var manifest = ManifestTestHelpers.CreateV2Manifest(
-                manifestId: "test-manifest",
-                packageId: "api-package",
-                packageName: "TestManifest",
-                packageVersion: "1.0.0",
-                packageDescription: "Test manifest for policy application",
-                files: ManifestTestHelpers.CreateTestFiles(("api/test.lua", "api-hash")),
-                policies: ImmutableArray.Create(apiPolicy, evalPolicy)
-            );
+            var manifest = V2ManifestBuilder.CreateUnsigned("test-manifest", "api-package")
+                .WithPackageMetadata("api-package", "1.0.0", "Test manifest for policy application")
+                .WithFile("api-package", "api/test.lua", "api-hash")
+                .WithPolicy(apiPolicy)
+                .WithPolicy(evalPolicy);
 
             // Test manifest policy application
             var contextWithManifest = CreateContextWithSignatureAndManifest(
@@ -384,12 +380,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void LuaExecutionContext_CreateEvalContext_CreatesChildContext()
         {
-            var manifest = ManifestTestHelpers.CreateV2Manifest(
-                manifestId: "eval-context-test",
-                packageName: "TestScript",
-                packageVersion: "1.0.0",
-                packageDescription: "Test script for eval context"
-            );
+            var manifest = V2ManifestBuilder.CreateUnsigned("eval-context-test", "TestScript")
+                .WithPackageMetadata("TestScript", "1.0.0", "Test script for eval context");
 
             var certificate = TestHelpers.CreateTestCertificate();
             var publicKeyToken = CertificateManager.CalculatePublicKeyToken(certificate);
@@ -463,12 +455,8 @@ namespace SolarSharp.Interpreter.Tests.Units
             Manifest manifest = null
         )
         {
-            manifest ??= ManifestTestHelpers.CreateV2Manifest(
-                manifestId: "default-test",
-                packageName: "TestScript",
-                packageVersion: "1.0.0",
-                packageDescription: "Default test script"
-            );
+            manifest ??= V2ManifestBuilder.CreateUnsigned("default-test", "TestScript")
+                .WithPackageMetadata("TestScript", "1.0.0", "Default test script");
 
             // Extract package info from V2 manifest
             var (packageId, package, keyId) = manifest.GetAllPackages().FirstOrDefault();
@@ -517,12 +505,8 @@ namespace SolarSharp.Interpreter.Tests.Units
         )
         {
             var publicKeyToken = HexToBytes(signatureToken);
-            var manifest = ManifestTestHelpers.CreateV2Manifest(
-                manifestId: "signature-test",
-                packageName: "TestScript",
-                packageVersion: "1.0.0",
-                packageDescription: "Test script for signature"
-            );
+            var manifest = V2ManifestBuilder.CreateUnsigned("signature-test", "TestScript")
+                .WithPackageMetadata("TestScript", "1.0.0", "Test script for signature");
             var identity = new ScriptIdentity(
                 "TestScript",
                 NuGetVersion.Parse("1.0.0"),

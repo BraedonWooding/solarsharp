@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
+using System.Linq;
 using System.Text.Json;
 using CSharpFunctionalExtensions;
 using NuGet.Versioning;
@@ -503,9 +504,17 @@ return count
             Manifest manifest
         )
         {
+            // Get first package from manifest for identity
+            var firstPackage = manifest.SignedContent.Length > 0 && manifest.SignedContent[0].Packages.Count > 0
+                ? manifest.SignedContent[0].Packages.First().Value
+                : null;
+                
+            var packageName = firstPackage?.Metadata.Name ?? "test-package";
+            var packageVersion = firstPackage?.Metadata.Version ?? "1.0.0";
+            
             var identity = new ScriptIdentity(
-                manifest.GetTestIdentity().Name,
-                NuGetVersion.Parse(manifest.GetTestIdentity().Version),
+                packageName,
+                NuGetVersion.Parse(packageVersion),
                 publicKeyToken
             );
 
