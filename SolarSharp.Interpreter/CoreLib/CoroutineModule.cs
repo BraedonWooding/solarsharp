@@ -1,19 +1,22 @@
-﻿using SolarSharp.Interpreter.DataTypes;
+﻿using System.Collections.Generic;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
-using System.Collections.Generic;
 
 namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
-    /// Class implementing coroutine Lua functions 
+    /// Class implementing coroutine Lua functions
     /// </summary>
-    [MoonSharpModule(Namespace = "coroutine")]
+    [SolarSharpModule(Namespace = "coroutine")]
     public class CoroutineModule
     {
         [MoonSharpModuleMethod]
-        public static DynValue create(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue create(
+            ScriptExecutionContext executionContext,
+            CallbackArguments args
+        )
         {
             if (args[0].Type != DataType.Function && args[0].Type != DataType.ClrFunction)
                 args.AsType(0, "create", DataType.Function); // this throws
@@ -27,28 +30,25 @@ namespace SolarSharp.Interpreter.CoreLib
             if (args[0].Type != DataType.Function && args[0].Type != DataType.ClrFunction)
                 args.AsType(0, "wrap", DataType.Function); // this throws
 
-            DynValue v = create(executionContext, args);
-            DynValue c = DynValue.NewCallback((context, args) => v.Coroutine.Resume(args.GetArray()));
+            var v = create(executionContext, args);
+            var c = DynValue.NewCallback((context, args) => v.Coroutine.Resume(args.GetArray()));
             return c;
         }
 
         [MoonSharpModuleMethod]
         public static DynValue resume(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue handle = args.AsType(0, "resume", DataType.Thread);
+            var handle = args.AsType(0, "resume", DataType.Thread);
 
             try
             {
-                DynValue ret = handle.Coroutine.Resume(args.GetArray(1));
+                var ret = handle.Coroutine.Resume(args.GetArray(1));
 
-                List<DynValue> retval = new()
-                {
-                    DynValue.True
-                };
+                var retval = new List<DynValue> { DynValue.True };
 
                 if (ret.Type == DataType.Tuple)
                 {
-                    for (int i = 0; i < ret.Tuple.Length; i++)
+                    for (var i = 0; i < ret.Tuple.Length; i++)
                     {
                         var v = ret.Tuple[i];
 
@@ -71,9 +71,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
             catch (ScriptRuntimeException ex)
             {
-                return DynValue.NewTuple(
-                    DynValue.False,
-                    DynValue.NewString(ex.Message));
+                return DynValue.NewTuple(DynValue.False, DynValue.NewString(ex.Message));
             }
         }
 
@@ -86,24 +84,30 @@ namespace SolarSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue running(ScriptExecutionContext executionContext, CallbackArguments _)
         {
-            Coroutine C = executionContext.GetCallingCoroutine();
-            return DynValue.NewTuple(DynValue.NewCoroutine(C), DynValue.NewBoolean(C.State == CoroutineState.Main));
+            var C = executionContext.GetCallingCoroutine();
+            return DynValue.NewTuple(
+                DynValue.NewCoroutine(C),
+                DynValue.NewBoolean(C.State == CoroutineState.Main)
+            );
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue status(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue status(
+            ScriptExecutionContext executionContext,
+            CallbackArguments args
+        )
         {
-            DynValue handle = args.AsType(0, "status", DataType.Thread);
-            Coroutine running = executionContext.GetCallingCoroutine();
-            CoroutineState cs = handle.Coroutine.State;
+            var handle = args.AsType(0, "status", DataType.Thread);
+            var running = executionContext.GetCallingCoroutine();
+            var cs = handle.Coroutine.State;
 
             switch (cs)
             {
                 case CoroutineState.Main:
                 case CoroutineState.Running:
-                    return handle.Coroutine == running ?
-                        DynValue.NewString("running") :
-                        DynValue.NewString("normal");
+                    return handle.Coroutine == running
+                        ? DynValue.NewString("running")
+                        : DynValue.NewString("normal");
                 case CoroutineState.NotStarted:
                 case CoroutineState.Suspended:
                     return DynValue.NewString("suspended");
@@ -112,9 +116,6 @@ namespace SolarSharp.Interpreter.CoreLib
                 default:
                     throw new InternalErrorException("Unexpected coroutine state {0}", cs);
             }
-
         }
-
-
     }
 }

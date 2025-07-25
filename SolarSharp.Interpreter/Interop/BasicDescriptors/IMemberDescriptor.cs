@@ -5,7 +5,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
 {
     /// <summary>
     /// Base interface to describe access to members of a given type.
-    /// While it's not infrastructural to implement custom type descriptors, it's needed for 
+    /// While it's not infrastructural to implement custom type descriptors, it's needed for
     /// classes extending <see cref="DispatchingUserDataDescriptor"/>.
     /// </summary>
     public interface IMemberDescriptor
@@ -14,14 +14,17 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// Gets a value indicating whether the described member is static.
         /// </summary>
         bool IsStatic { get; }
+
         /// <summary>
         /// Gets the name of the member
         /// </summary>
         string Name { get; }
+
         /// <summary>
         /// Gets the types of access supported by this member
         /// </summary>
         MemberDescriptorAccess MemberAccess { get; }
+
         /// <summary>
         /// Gets the value of this member as a <see cref="DynValue"/> to be exposed to scripts.
         /// Implementors should raise exceptions if the value cannot be read or if access to an
@@ -31,6 +34,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="obj">The object owning this member, or null if static.</param>
         /// <returns>The value of this member as a <see cref="DynValue"/>.</returns>
         DynValue GetValue(Script script, object obj);
+
         /// <summary>
         /// Sets the value of this member from a <see cref="DynValue"/>.
         /// Implementors should raise exceptions if the value cannot be read or if access to an
@@ -41,7 +45,6 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="value">The value to be set.</param>
         void SetValue(Script script, object obj, DynValue value);
     }
-
 
     /// <summary>
     /// Extension methods for <see cref="IMemberDescriptor" /> and <see cref="MemberDescriptorAccess"/> .
@@ -54,7 +57,10 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="access">The access.</param>
         /// <param name="flag">The flag.</param>
         /// <returns></returns>
-        public static bool HasAllFlags(this MemberDescriptorAccess access, MemberDescriptorAccess flag)
+        public static bool HasAllFlags(
+            this MemberDescriptorAccess access,
+            MemberDescriptorAccess flag
+        )
         {
             return (access & flag) == flag;
         }
@@ -96,7 +102,11 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="script">The script.</param>
         /// <param name="obj">The object.</param>
         /// <returns></returns>
-        public static DynValue GetGetterCallbackAsDynValue(this IMemberDescriptor desc, Script script, object obj)
+        public static DynValue GetGetterCallbackAsDynValue(
+            this IMemberDescriptor desc,
+            Script script,
+            object obj
+        )
         {
             return DynValue.NewCallback((p1, p2) => desc.GetValue(script, obj));
         }
@@ -107,7 +117,10 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="desc">The descriptor instance.</param>
         /// <param name="access">The access mode(s).</param>
         /// <returns></returns>
-        public static IMemberDescriptor WithAccessOrNull(this IMemberDescriptor desc, MemberDescriptorAccess access)
+        public static IMemberDescriptor WithAccessOrNull(
+            this IMemberDescriptor desc,
+            MemberDescriptorAccess access
+        )
         {
             if (desc == null)
                 return null;
@@ -126,24 +139,32 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="desc">The desc.</param>
         /// <param name="access">The access.</param>
         /// <param name="obj">The object to be checked for access.</param>
-        public static void CheckAccess(this IMemberDescriptor desc, MemberDescriptorAccess access, object obj)
+        public static void CheckAccess(
+            this IMemberDescriptor desc,
+            MemberDescriptorAccess access,
+            object obj
+        )
         {
             if (!desc.IsStatic && obj == null)
                 throw ScriptRuntimeException.AccessInstanceMemberOnStatics(desc);
 
             if (access.HasAllFlags(MemberDescriptorAccess.CanExecute) && !desc.CanExecute())
-                throw new ScriptRuntimeException("userdata member {0} cannot be called.", desc.Name);
+                throw new ScriptRuntimeException(
+                    "userdata member {0} cannot be called.",
+                    desc.Name
+                );
 
             if (access.HasAllFlags(MemberDescriptorAccess.CanWrite) && !desc.CanWrite())
-                throw new ScriptRuntimeException("userdata member {0} cannot be assigned to.", desc.Name);
+                throw new ScriptRuntimeException(
+                    "userdata member {0} cannot be assigned to.",
+                    desc.Name
+                );
 
             if (access.HasAllFlags(MemberDescriptorAccess.CanRead) && !desc.CanRead())
-                throw new ScriptRuntimeException("userdata member {0} cannot be read from.", desc.Name);
+                throw new ScriptRuntimeException(
+                    "userdata member {0} cannot be read from.",
+                    desc.Name
+                );
         }
-
-
-
-
     }
-
 }

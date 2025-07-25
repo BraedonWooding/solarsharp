@@ -1,13 +1,16 @@
 ﻿using System.Collections.Generic;
+using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Interop;
-using NUnit.Framework;
 using SolarSharp.Interpreter.Interop.Attributes;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("VM.Integration")]
     public class UserDataPropertiesTests
     {
         public class SomeClass
@@ -17,11 +20,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             public object ObjProp { get; set; }
             public static string StaticProp { get; set; }
 
-            public int RoIntProp { get { return 5; } }
-            public int RoIntProp2 { get; private set; }
+            public int RoIntProp
+            {
+                get { return 5; }
+            }
+            public int RoIntProp2 { get; private set; } = 1234;
 
-            public int WoIntProp { set { IntProp = value; } }
-            public int WoIntProp2 { internal get; set; }
+            public int WoIntProp
+            {
+                set { IntProp = value; }
+            }
+            public int WoIntProp2 { internal get; set; } = 1235;
 
             [MoonSharpVisible(false)]
             internal int AccessOverrProp
@@ -31,18 +40,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 set;
             }
 
-
-            public SomeClass()
-            {
-                RoIntProp2 = 1234;
-                WoIntProp2 = 1235;
-            }
-
             public static IEnumerable<int> Numbers
             {
                 get
                 {
-                    for (int i = 1; i <= 4; i++)
+                    for (var i = 1; i <= 4; i++)
                         yield return i;
                 }
             }
@@ -50,20 +52,21 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_IntPropertyGetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				x = myobj.IntProp;
 				return x;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new() { IntProp = 321 };
+            var obj = new SomeClass { IntProp = 321 };
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
 
             S.Globals.Set("myobj", UserData.Create(obj));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -74,15 +77,16 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_NIntPropertyGetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				x = myobj1.NIntProp;
 				y = myobj2.NIntProp;
 				return x,y;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj1 = new() { NIntProp = 321 };
-            SomeClass obj2 = new() { NIntProp = null };
+            var obj1 = new SomeClass { NIntProp = 321 };
+            var obj2 = new SomeClass { NIntProp = null };
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -90,7 +94,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             S.Globals.Set("myobj1", UserData.Create(obj1));
             S.Globals.Set("myobj2", UserData.Create(obj2));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -103,16 +107,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_ObjPropertyGetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				x = myobj1.ObjProp;
 				y = myobj2.ObjProp;
 				z = myobj2.ObjProp.ObjProp;
 				return x,y,z;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj1 = new() { ObjProp = "ciao" };
-            SomeClass obj2 = new() { ObjProp = obj1 };
+            var obj1 = new SomeClass { ObjProp = "ciao" };
+            var obj2 = new SomeClass { ObjProp = obj1 };
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -120,7 +125,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             S.Globals.Set("myobj1", UserData.Create(obj1));
             S.Globals.Set("myobj2", UserData.Create(obj2));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -136,12 +141,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_IntPropertySetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				myobj.IntProp = 19;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new() { IntProp = 321 };
+            var obj = new SomeClass { IntProp = 321 };
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -157,14 +163,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_NIntPropertySetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				myobj1.NIntProp = nil;
 				myobj2.NIntProp = 19;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj1 = new() { NIntProp = 321 };
-            SomeClass obj2 = new() { NIntProp = null };
+            var obj1 = new SomeClass { NIntProp = 321 };
+            var obj2 = new SomeClass { NIntProp = null };
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -178,7 +185,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(obj2.NIntProp, Is.EqualTo(null));
             });
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -189,14 +196,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_ObjPropertySetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				myobj1.ObjProp = myobj2;
 				myobj2.ObjProp = 'hello';";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj1 = new() { ObjProp = "ciao" };
-            SomeClass obj2 = new() { ObjProp = obj1 };
+            var obj1 = new SomeClass { ObjProp = "ciao" };
+            var obj2 = new SomeClass { ObjProp = obj1 };
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -210,7 +218,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(obj2.ObjProp, Is.EqualTo(obj1));
             });
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -221,12 +229,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_InvalidPropertySetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				myobj.IntProp = '19';";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new() { IntProp = 321 };
+            var obj = new SomeClass { IntProp = 321 };
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -240,10 +249,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_StaticPropertyAccess(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				static.StaticProp = 'asdasd' .. static.StaticProp;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
             SomeClass.StaticProp = "qweqwe";
 
@@ -261,7 +271,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_IteratorPropertyGetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				x = 0;
 				for i in myobj.Numbers do
 					x = x + i;
@@ -269,16 +280,16 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return x;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
 
             S.Globals.Set("myobj", UserData.Create(obj));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -289,20 +300,21 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_RoIntPropertyGetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				x = myobj.RoIntProp;
 				return x;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
 
             S.Globals.Set("myobj", UserData.Create(obj));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -313,20 +325,21 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_RoIntProperty2Getter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				x = myobj.RoIntProp2;
 				return x;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
 
             S.Globals.Set("myobj", UserData.Create(obj));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -339,21 +352,22 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             try
             {
-                string script = @"    
+                var script =
+                    @"    
 				myobj.RoIntProp = 19;
 				return myobj.RoIntProp;
 			";
 
-                Script S = new();
+                var S = new Script(Examples.DesktopBasePolicySet);
 
-                SomeClass obj = new();
+                var obj = new SomeClass();
 
                 UserData.UnregisterType<SomeClass>();
                 UserData.RegisterType<SomeClass>(opt);
 
                 S.Globals.Set("myobj", UserData.Create(obj));
 
-                DynValue res = S.DoString(script);
+                var res = S.DoString(script);
             }
             catch (ScriptRuntimeException)
             {
@@ -367,21 +381,22 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             try
             {
-                string script = @"    
+                var script =
+                    @"    
 				myobj.RoIntProp2 = 19;
 				return myobj.RoIntProp2;
 			";
 
-                Script S = new();
+                var S = new Script(Examples.DesktopBasePolicySet);
 
-                SomeClass obj = new();
+                var obj = new SomeClass();
 
                 UserData.UnregisterType<SomeClass>();
                 UserData.RegisterType<SomeClass>(opt);
 
                 S.Globals.Set("myobj", UserData.Create(obj));
 
-                DynValue res = S.DoString(script);
+                var res = S.DoString(script);
             }
             catch (ScriptRuntimeException)
             {
@@ -391,16 +406,16 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Fail();
         }
 
-
         private static void Test_WoIntPropertySetter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				myobj.WoIntProp = 19;
 			";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -414,13 +429,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void Test_WoIntProperty2Setter(InteropAccessMode opt)
         {
-            string script = @"    
+            var script =
+                @"    
 				myobj.WoIntProp2 = 19;
 			";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>(opt);
@@ -432,25 +448,25 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.That(obj.WoIntProp2, Is.EqualTo(19));
         }
 
-
         private static void Test_WoIntPropertyGetter(InteropAccessMode opt)
         {
             try
             {
-                string script = @"    
+                var script =
+                    @"    
 				x = myobj.WoIntProp;
 				return x;";
 
-                Script S = new();
+                var S = new Script(Examples.DesktopBasePolicySet);
 
-                SomeClass obj = new();
+                var obj = new SomeClass();
 
                 UserData.UnregisterType<SomeClass>();
                 UserData.RegisterType<SomeClass>(opt);
 
                 S.Globals.Set("myobj", UserData.Create(obj));
 
-                DynValue res = S.DoString(script);
+                var res = S.DoString(script);
 
                 Assert.Multiple(() =>
                 {
@@ -470,20 +486,21 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             try
             {
-                string script = @"    
+                var script =
+                    @"    
 				x = myobj.WoIntProp2;
 				return x;";
 
-                Script S = new();
+                var S = new Script(Examples.DesktopBasePolicySet);
 
-                SomeClass obj = new();
+                var obj = new SomeClass();
 
                 UserData.UnregisterType<SomeClass>();
                 UserData.RegisterType<SomeClass>(opt);
 
                 S.Globals.Set("myobj", UserData.Create(obj));
 
-                DynValue res = S.DoString(script);
+                var res = S.DoString(script);
 
                 Assert.Multiple(() =>
                 {
@@ -499,19 +516,19 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Fail();
         }
 
-
         private static void Test_PropertyAccessOverrides(InteropAccessMode opt)
         {
-            SomeClass obj = new();
+            var obj = new SomeClass();
 
             try
             {
-                string script = @"    
+                var script =
+                    @"    
 				myobj.AccessOverrProp = 19;
 				return myobj.AccessOverrProp;
 			";
 
-                Script S = new();
+                var S = new Script(Examples.DesktopBasePolicySet);
 
                 obj.AccessOverrProp = 13;
 
@@ -520,7 +537,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 S.Globals.Set("myobj", UserData.Create(obj));
 
-                DynValue res = S.DoString(script);
+                var res = S.DoString(script);
             }
             catch (ScriptRuntimeException)
             {
@@ -530,7 +547,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.Fail();
         }
-
 
         [Test]
         public void Interop_IntPropertyGetter_None()
@@ -859,17 +875,16 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Test_PropertyAccessOverrides(InteropAccessMode.Preoptimized);
         }
 
-
-
         [Test]
         public void Interop_IntPropertySetterWithSimplifiedSyntax()
         {
-            string script = @"    
+            var script =
+                @"    
 				myobj.IntProp = 19;";
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            SomeClass obj = new() { IntProp = 321 };
+            var obj = new SomeClass { IntProp = 321 };
 
             UserData.UnregisterType<SomeClass>();
             UserData.RegisterType<SomeClass>();
@@ -878,7 +893,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(obj.IntProp, Is.EqualTo(321));
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -890,11 +905,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_OutOfRangeNumber()
         {
-            Script s = new();
-            long big = long.MaxValue;
+            var s = new Script(Examples.DesktopBasePolicySet);
+            var big = long.MaxValue;
             var v = DynValue.FromObject(s, big);
             Assert.That(v, Is.Not.Null);
         }
-
     }
 }

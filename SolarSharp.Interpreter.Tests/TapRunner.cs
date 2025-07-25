@@ -1,8 +1,12 @@
 ﻿using System.IO;
+using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Loaders;
-using NUnit.Framework;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Security.Operations;
+
+// Type alias for backward compatibility
 
 namespace SolarSharp.Interpreter.Tests
 {
@@ -33,36 +37,67 @@ namespace SolarSharp.Interpreter.Tests
         {
             // System.Diagnostics.Debug.WriteLine(str);
 
-            Assert.That(str.Trim(), Does.Not.StartWith("not ok"), string.Format("TAP fail ({0}) : {1}", m_File, str));
+            Assert.That(str.Trim(), Does.Not.StartWith("not ok"), $"TAP fail ({m_File}) : {str}");
         }
 
-        public TapRunner(string filename)
+        private TapRunner(string filename)
         {
             m_File = filename;
         }
 
-        public void Run()
+        private void Run()
         {
-            Script S = new(CoreModules.Preset_Complete);
+            // Special handling for deep recursion test
+            var callDepthLimit = m_File.Contains("305-table.t") ? 100000 : 20000;
 
-            S.Options.DebugPrint = Print;
+            var customPolicy = Examples.DesktopSecurityPolicy with
+            {
+                MaxCallDepth = callDepthLimit, // Higher limit for table permutation test
+                AllowedModules = CoreModules.Preset_Complete,
+                Capabilities =
+                    Examples.DesktopSecurityPolicy.Capabilities
+                    | ScriptCapabilities.FileRead
+                    | ScriptCapabilities.FileWrite
+                    | ScriptCapabilities.FileDelete, // Enable file operations for IO tests
+                DefaultFileAccess = FilePermissions.SandboxedReadWrite,
+                DefaultDirectoryAccess = DirectoryPermissions.ListAndCreateFiles,
+            };
 
-            S.Options.UseLuaErrorLocations = true;
+            var policySet = new PolicySetBuilder()
+                .DefinePolicy("taprunner", customPolicy)
+                .MapFilePattern("*", "taprunner")
+                .WithDefaultPolicy("taprunner")
+                .Build();
+
+            var basePolicySetResult = BasePolicySetFactory.Create(policySet);
+            Assert.That(
+                basePolicySetResult.IsSuccess,
+                Is.True,
+                basePolicySetResult.IsFailure
+                    ? $"Policy set creation failed: {basePolicySetResult.Error}"
+                    : "Policy set creation failed"
+            );
+            var basePolicySet = basePolicySetResult.Value;
+            var S = new Script(basePolicySet)
+            {
+                Options = { DebugPrint = Print, UseLuaErrorLocations = true },
+            };
 
             S.Globals.Set("arg", DynValue.NewTable(S));
 
-            ((ScriptLoaderBase)S.Options.ScriptLoader).ModulePaths = new string[] { "TestMore/Modules/?", "TestMore/Modules/?.lua" };
+            ((ScriptLoaderBase)S.Options.ScriptLoader).ModulePaths = new[]
+            {
+                "TestMore/Modules/?",
+                "TestMore/Modules/?.lua",
+            };
 
             S.DoFile(m_File);
         }
 
         public static void Run(string filename)
         {
-            TapRunner t = new(filename);
+            var t = new TapRunner(filename);
             t.Run();
         }
-
-
-
     }
 }

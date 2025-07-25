@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.IO;
+using System.Text;
+using System.Text.Json;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Tree.Lexer;
@@ -21,56 +23,45 @@ namespace SolarSharp.Interpreter.Serialization.Json
         /// <returns></returns>
         public static string TableToJson(this Table table)
         {
-            StringBuilder sb = new();
-            TableToJson(sb, table);
-            return sb.ToString();
+            using var stream = new MemoryStream();
+            using var writer = new Utf8JsonWriter(stream);
+            TableToJson(writer, table);
+            writer.Flush();
+            return Encoding.UTF8.GetString(stream.ToArray());
         }
 
         /// <summary>
         /// Tables to json.
         /// </summary>
-        /// <param name="sb">The sb.</param>
+        /// <param name="writer">The JSON writer.</param>
         /// <param name="table">The table.</param>
-        private static void TableToJson(StringBuilder sb, Table table)
+        private static void TableToJson(Utf8JsonWriter writer, Table table)
         {
-            bool first = true;
-
             if (table.Length == 0)
             {
-                sb.Append("{");
+                writer.WriteStartObject();
                 foreach (var pair in table)
                 {
                     if (pair.Key.Type == DataType.String && IsValueJsonCompatible(pair.Value))
                     {
-                        if (!first)
-                            sb.Append(',');
-
-                        ValueToJson(sb, pair.Key);
-                        sb.Append(':');
-                        ValueToJson(sb, pair.Value);
-
-                        first = false;
+                        writer.WritePropertyName(pair.Key.String);
+                        ValueToJson(writer, pair.Value);
                     }
                 }
-                sb.Append("}");
+                writer.WriteEndObject();
             }
             else
             {
-                sb.Append("[");
-                for (int i = 1; i <= table.Length; i++)
+                writer.WriteStartArray();
+                for (var i = 1; i <= table.Length; i++)
                 {
-                    DynValue value = table.Get(i);
+                    var value = table.Get(i);
                     if (IsValueJsonCompatible(value))
                     {
-                        if (!first)
-                            sb.Append(',');
-
-                        ValueToJson(sb, value);
-
-                        first = false;
+                        ValueToJson(writer, value);
                     }
                 }
-                sb.Append("]");
+                writer.WriteEndArray();
             }
         }
 
@@ -79,56 +70,43 @@ namespace SolarSharp.Interpreter.Serialization.Json
         /// </summary>
         public static string ObjectToJson(object obj)
         {
-            DynValue v = ObjectValueConverter.SerializeObjectToDynValue(null, obj, JsonNull.Create());
+            var v = ObjectValueConverter.SerializeObjectToDynValue(null, obj, JsonNull.Create());
             return v.Table.TableToJson();
         }
 
-
-
-        private static void ValueToJson(StringBuilder sb, DynValue value)
+        private static void ValueToJson(Utf8JsonWriter writer, DynValue value)
         {
             switch (value.Type)
             {
                 case DataType.Boolean:
-                    sb.Append(value.Boolean ? "true" : "false");
+                    writer.WriteBooleanValue(value.Boolean);
                     break;
                 case DataType.Number:
-                    sb.Append(value.Number.ToString("r"));
+                    writer.WriteNumberValue(value.Number);
                     break;
                 case DataType.String:
-                    sb.Append(EscapeString(value.String ?? ""));
+                    writer.WriteStringValue(value.String ?? "");
                     break;
                 case DataType.Table:
-                    TableToJson(sb, value.Table);
+                    TableToJson(writer, value.Table);
                     break;
                 case DataType.Nil:
                 case DataType.Void:
                 case DataType.UserData:
                 default:
-                    sb.Append("null");
+                    writer.WriteNullValue();
                     break;
             }
         }
 
-        private static string EscapeString(string s)
-        {
-            s = s.Replace(@"\", @"\\");
-            s = s.Replace(@"/", @"\/");
-            s = s.Replace("\"", "\\\"");
-            s = s.Replace("\f", @"\f");
-            s = s.Replace("\b", @"\b");
-            s = s.Replace("\n", @"\n");
-            s = s.Replace("\r", @"\r");
-            s = s.Replace("\t", @"\t");
-            return "\"" + s + "\"";
-        }
-
         private static bool IsValueJsonCompatible(DynValue value)
         {
-            return value.Type == DataType.Boolean || value.IsNil() ||
-                value.Type == DataType.Number || value.Type == DataType.String ||
-                value.Type == DataType.Table ||
-                JsonNull.IsJsonNull(value);
+            return value.Type == DataType.Boolean
+                || value.IsNil()
+                || value.Type == DataType.Number
+                || value.Type == DataType.String
+                || value.Type == DataType.Table
+                || JsonNull.IsJsonNull(value);
         }
 
         /// <summary>
@@ -139,30 +117,34 @@ namespace SolarSharp.Interpreter.Serialization.Json
         /// <returns>A table containing the representation of the given json.</returns>
         public static Table JsonToTable(string json, Script script = null)
         {
-            Lexer L = new(0, json, false);
+            var L = new Lexer(0, json, false);
 
             if (L.Current.Type == TokenType.Brk_Open_Curly)
                 return ParseJsonObject(L, script);
-            else if (L.Current.Type == TokenType.Brk_Open_Square)
+            if (L.Current.Type == TokenType.Brk_Open_Square)
                 return ParseJsonArray(L, script);
-            else
-                throw new SyntaxErrorException(L.Current, "Unexpected token : '{0}'", L.Current.Text);
+            throw new SyntaxErrorException(L.Current, "Unexpected token : '{0}'", L.Current.Text);
         }
 
         private static void AssertToken(Lexer L, TokenType type)
         {
             if (L.Current.Type != type)
-                throw new SyntaxErrorException(L.Current, "Unexpected token : '{0}'", L.Current.Text);
+                throw new SyntaxErrorException(
+                    L.Current,
+                    "Unexpected token : '{0}'",
+                    L.Current.Text
+                );
         }
+
         private static Table ParseJsonArray(Lexer L, Script script)
         {
-            Table t = new(script);
+            var t = new Table();
 
             L.Next();
 
             while (L.Current.Type != TokenType.Brk_Close_Square)
             {
-                DynValue v = ParseJsonValue(L, script);
+                var v = ParseJsonValue(L, script);
                 t.Append(v);
                 L.Next();
 
@@ -175,18 +157,18 @@ namespace SolarSharp.Interpreter.Serialization.Json
 
         private static Table ParseJsonObject(Lexer L, Script script)
         {
-            Table t = new(script);
+            var t = new Table();
 
             L.Next();
 
             while (L.Current.Type != TokenType.Brk_Close_Curly)
             {
                 AssertToken(L, TokenType.String);
-                string key = L.Current.Text;
+                var key = L.Current.Text;
                 L.Next();
                 AssertToken(L, TokenType.Colon);
                 L.Next();
-                DynValue v = ParseJsonValue(L, script);
+                var v = ParseJsonValue(L, script);
                 t.Set(key, v);
                 L.Next();
 
@@ -201,38 +183,35 @@ namespace SolarSharp.Interpreter.Serialization.Json
         {
             if (L.Current.Type == TokenType.Brk_Open_Curly)
             {
-                Table t = ParseJsonObject(L, script);
+                var t = ParseJsonObject(L, script);
                 return DynValue.NewTable(t);
             }
-            else if (L.Current.Type == TokenType.Brk_Open_Square)
+            if (L.Current.Type == TokenType.Brk_Open_Square)
             {
-                Table t = ParseJsonArray(L, script);
+                var t = ParseJsonArray(L, script);
                 return DynValue.NewTable(t);
             }
-            else if (L.Current.Type == TokenType.String)
+            if (L.Current.Type == TokenType.String)
             {
                 return DynValue.NewString(L.Current.Text);
             }
-            else if (L.Current.Type == TokenType.Number || L.Current.Type == TokenType.Op_MinusOrSub)
+            if (L.Current.Type is TokenType.Number or TokenType.Op_MinusOrSub)
             {
                 return ParseJsonNumberValue(L, script);
             }
-            else if (L.Current.Type == TokenType.True)
+            if (L.Current.Type == TokenType.True)
             {
                 return DynValue.True;
             }
-            else if (L.Current.Type == TokenType.False)
+            if (L.Current.Type == TokenType.False)
             {
                 return DynValue.False;
             }
-            else if (L.Current.Type == TokenType.Name && L.Current.Text == "null")
+            if (L.Current.Type == TokenType.Name && L.Current.Text == "null")
             {
                 return JsonNull.Create();
             }
-            else
-            {
-                throw new SyntaxErrorException(L.Current, "Unexpected token : '{0}'", L.Current.Text);
-            }
+            throw new SyntaxErrorException(L.Current, "Unexpected token : '{0}'", L.Current.Text);
         }
 
         private static DynValue ParseJsonNumberValue(Lexer L, Script _)
@@ -250,7 +229,11 @@ namespace SolarSharp.Interpreter.Serialization.Json
             }
             if (L.Current.Type != TokenType.Number)
             {
-                throw new SyntaxErrorException(L.Current, "Unexpected token : '{0}'", L.Current.Text);
+                throw new SyntaxErrorException(
+                    L.Current,
+                    "Unexpected token : '{0}'",
+                    L.Current.Text
+                );
             }
             var numberValue = L.Current.GetNumberValue();
             if (negative)

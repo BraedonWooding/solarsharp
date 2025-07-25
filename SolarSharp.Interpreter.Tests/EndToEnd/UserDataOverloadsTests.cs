@@ -1,16 +1,21 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
+using NUnit.Framework;
 using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataTypes;
-using NUnit.Framework;
-using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     public static class OverloadsExtMethods
     {
-        public static string Method1(this UserDataOverloadsTests.OverloadsTestClass obj, string x, bool b)
+        public static string Method1(
+            this UserDataOverloadsTests.OverloadsTestClass obj,
+            string x,
+            bool b
+        )
         {
             return "X" + obj.Method1();
         }
@@ -21,15 +26,22 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             return "X3";
         }
     }
+
     public static class OverloadsExtMethods2
     {
-        public static string MethodXXX(this UserDataOverloadsTests.OverloadsTestClass obj, string x, bool b)
+        public static string MethodXXX(
+            this UserDataOverloadsTests.OverloadsTestClass obj,
+            string x,
+            bool b
+        )
         {
             return "X!";
         }
     }
 
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("VM.Integration")]
     public class UserDataOverloadsTests
     {
         public class OverloadsTestClass
@@ -90,18 +102,22 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
         }
 
-        private static void RunTestOverload(string code, string expected, bool tupleExpected = false)
+        private static void RunTestOverload(
+            string code,
+            string expected,
+            bool tupleExpected = false
+        )
         {
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            OverloadsTestClass obj = new();
+            var obj = new OverloadsTestClass();
 
             UserData.RegisterType<OverloadsTestClass>();
 
             S.Globals.Set("s", UserData.CreateStatic<OverloadsTestClass>());
             S.Globals.Set("o", UserData.Create(obj));
 
-            DynValue v = S.DoString("return " + code);
+            var v = S.DoString("return " + code);
 
             if (tupleExpected)
             {
@@ -116,7 +132,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
-
         [Test]
         public void Interop_OutParamInOverloadResolution()
         {
@@ -125,10 +140,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             try
             {
-                var lua = new Script();
-                lua.Globals["DictionaryIntInt"] = typeof(Dictionary<int, int>);
+                var lua = new Script(Examples.DesktopBasePolicySet)
+                {
+                    Globals = { ["DictionaryIntInt"] = typeof(Dictionary<int, int>) },
+                };
 
-                var script = @"local dict = DictionaryIntInt.__new(); local res, v = dict.TryGetValue(0)";
+                var script =
+                    @"local dict = DictionaryIntInt.__new(); local res, v = dict.TryGetValue(0)";
                 lua.DoString(script);
                 lua.DoString(script);
             }
@@ -149,7 +167,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             RunTestOverload("o:methodV('{0}-{1}-{2}', 15, true, false)", "varargs:15-True-False");
         }
-
 
         [Test]
         public void Interop_Overloads_ByRef()
@@ -292,24 +309,27 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OverloadTest_WithoutObjects()
         {
-            Script s = new();
+            var s = new Script(Examples.DesktopBasePolicySet);
 
             // Create an instance of the overload resolver
             var ov = new OverloadedMethodMemberDescriptor("Method1", GetType());
 
             // Iterate over the two methods through reflection
-            foreach (var method in Framework.Do.GetMethods(GetType())
-                .Where(mi => mi.Name == "Method1" && mi.IsPrivate && !mi.IsStatic))
+            foreach (
+                var method in Framework
+                    .Do.GetMethods(GetType())
+                    .Where(mi => mi.Name == "Method1" && mi.IsPrivate && !mi.IsStatic)
+            )
             {
                 ov.AddOverload(new MethodMemberDescriptor(method));
             }
 
             // Creates the callback over the 'this' object
-            DynValue callback = DynValue.NewCallback(ov.GetCallbackFunction(s, this));
+            var callback = DynValue.NewCallback(ov.GetCallbackFunction(s, this));
             s.Globals.Set("func", callback);
 
             // Execute and check the results.
-            DynValue result = s.DoString("return func(), func(17)");
+            var result = s.DoString("return func(), func(17)");
 
             Assert.Multiple(() =>
             {

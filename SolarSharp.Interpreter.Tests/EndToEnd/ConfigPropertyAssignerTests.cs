@@ -1,13 +1,14 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Interop;
-using SolarSharp.Interpreter.Modules;
-using NUnit.Framework;
-using SolarSharp.Interpreter.Interop.Attributes;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Interop.Attributes;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [Category("VM.Integration")]
     public class ConfigPropertyAssignerTests
     {
         private class MySubclass
@@ -39,18 +40,18 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static MyClass Test(string tableDef)
         {
-            Script s = new(CoreModules.None);
+            var s = new Script(Examples.DesktopBasePolicySet);
 
-            DynValue table = s.DoString("return " + tableDef);
+            var table = s.DoString("return " + tableDef);
 
             Assert.That(table.Type, Is.EqualTo(DataType.Table));
 
-            PropertyTableAssigner<MyClass> pta = new("class");
-            PropertyTableAssigner<MySubclass> pta2 = new();
+            var pta = new PropertyTableAssigner<MyClass>("class");
+            var pta2 = new PropertyTableAssigner<MySubclass>();
 
             pta.SetSubassigner(pta2);
 
-            MyClass o = new();
+            var o = new MyClass();
 
             pta.AssignObject(o, table.Table);
 
@@ -60,7 +61,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void ConfigProp_SimpleAssign()
         {
-            MyClass x = Test(@"
+            var x = Test(
+                @"
 				{
 				class = 'oohoh',
 				myString = 'ciao',
@@ -68,7 +70,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				some_table = {},
 				nativeValue = function() end,
 				subObj = { number = 15, myString = 'hi' },
-				}");
+				}"
+            );
 
             Assert.Multiple(() =>
             {
@@ -84,7 +87,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void ConfigProp_ThrowsOnInvalid()
         {
-            Assert.Throws<ScriptRuntimeException>(() => Test(@"
+            Assert.Throws<ScriptRuntimeException>(() =>
+                Test(
+                    @"
 				{
 				class = 'oohoh',
 				myString = 'ciao',
@@ -92,8 +97,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				some_table = {},
 				invalid = 3,
 				nativeValue = function() end,
-				}"));
+				}"
+                )
+            );
         }
-
     }
 }

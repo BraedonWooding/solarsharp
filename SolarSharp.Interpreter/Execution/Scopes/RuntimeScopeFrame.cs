@@ -1,22 +1,20 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Execution.Scopes
 {
     internal class RuntimeScopeFrame
     {
-        public List<SymbolRef> DebugSymbols { get; private set; }
-        public int Count { get { return DebugSymbols.Count; } }
-        public int ToFirstBlock { get; internal set; }
-
-        public RuntimeScopeFrame()
+        public List<SymbolRef> DebugSymbols { get; private set; } = new List<SymbolRef>();
+        public int Count
         {
-            DebugSymbols = new List<SymbolRef>();
+            get { return DebugSymbols.Count; }
         }
+        public int ToFirstBlock { get; internal set; }
 
         public override string ToString()
         {
-            return string.Format("ScopeFrame : #{0}", Count);
+            return $"ScopeFrame : #{Count}";
         }
     }
 }

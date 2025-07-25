@@ -1,5 +1,5 @@
-﻿using SolarSharp.Hardwire.Generators.Base;
-using System.CodeDom;
+﻿using System.CodeDom;
+using SolarSharp.Hardwire.Generators.Base;
 
 namespace SolarSharp.Hardwire.Generators
 {
@@ -10,7 +10,10 @@ namespace SolarSharp.Hardwire.Generators
             get { return "SolarSharp.Interpreter.Interop.FieldMemberDescriptor"; }
         }
 
-        protected override CodeExpression GetMemberAccessExpression(CodeExpression thisObj, string name)
+        protected override CodeExpression GetMemberAccessExpression(
+            CodeExpression thisObj,
+            string name
+        )
         {
             return new CodeFieldReferenceExpression(thisObj, name);
         }

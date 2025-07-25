@@ -4,21 +4,20 @@ namespace SolarSharp.Interpreter.Diagnostics.PerformanceCounters
 {
     internal class DummyPerformanceStopwatch : IPerformanceStopwatch, IDisposable
     {
-        public static DummyPerformanceStopwatch Instance = new();
+        public static DummyPerformanceStopwatch Instance = new DummyPerformanceStopwatch();
         private readonly PerformanceResult m_Result;
 
         private DummyPerformanceStopwatch()
         {
-            m_Result = new PerformanceResult()
+            m_Result = new PerformanceResult
             {
                 Counter = 0,
                 Global = true,
                 Instances = 0,
                 Name = "::dummy::",
-                Type = PerformanceCounterType.TimeMilliseconds
+                Type = PerformanceCounterType.TimeMilliseconds,
             };
         }
-
 
         public IDisposable Start()
         {
@@ -30,8 +29,6 @@ namespace SolarSharp.Interpreter.Diagnostics.PerformanceCounters
             return m_Result;
         }
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() { }
     }
 }

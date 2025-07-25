@@ -1,19 +1,19 @@
 ﻿using System;
-using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Interop.LuaStateInterop;
 
 namespace SolarSharp.Interpreter.Execution
 {
     /// <summary>
     /// Class giving access to details of the environment where the script is executing
-    /// 
+    ///
     /// TODO: We can probably remove this class since we only need it for calling location right now...
     ///       but I think in the majority of cases we can probably handle calling location in processor...
     /// </summary>
-    public struct ScriptExecutionContext : IScriptPrivateResource
+    public struct ScriptExecutionContext
     {
         private readonly Processor m_Processor;
 
@@ -24,7 +24,7 @@ namespace SolarSharp.Interpreter.Execution
         }
 
         /// <summary>
-        /// Gets the location of the code calling back 
+        /// Gets the location of the code calling back
         /// </summary>
         public SourceRef CallingLocation { get; private set; }
 
@@ -52,10 +52,15 @@ namespace SolarSharp.Interpreter.Execution
         /// <summary>
         /// prepares a tail call request for the specified metamethod, or null if no metamethod is found.
         /// </summary>
-        public DynValue GetMetamethodTailCall(DynValue value, string metamethod, params DynValue[] args)
+        public DynValue GetMetamethodTailCall(
+            DynValue value,
+            string metamethod,
+            params DynValue[] args
+        )
         {
-            DynValue meta = GetMetamethod(value, metamethod);
-            if (meta == null) return null;
+            var meta = GetMetamethod(value, metamethod);
+            if (meta == null)
+                return null;
             return DynValue.NewTailCallReq(meta, args);
         }
 
@@ -85,7 +90,7 @@ namespace SolarSharp.Interpreter.Execution
         }
 
         /// <summary>
-        /// Calls a callback function implemented in "classic way". 
+        /// Calls a callback function implemented in "classic way".
         /// Useful to port C code from Lua, or C# code from UniLua and KopiLua.
         /// Lua : http://www.lua.org/
         /// UniLua : http://github.com/xebecnan/UniLua
@@ -95,10 +100,14 @@ namespace SolarSharp.Interpreter.Execution
         /// <param name="functionName">Name of the function - for error messages.</param>
         /// <param name="callback">The callback.</param>
         /// <returns></returns>
-        public DynValue EmulateClassicCall(CallbackArguments args, string functionName, Func<LuaState, int> callback)
+        public DynValue EmulateClassicCall(
+            CallbackArguments args,
+            string functionName,
+            Func<LuaState, int> callback
+        )
         {
-            LuaState L = new(this, args, functionName);
-            int retvals = callback(L);
+            var L = new LuaState(this, args, functionName);
+            var retvals = callback(L);
             return L.GetReturnValue(retvals);
         }
 
@@ -115,29 +124,28 @@ namespace SolarSharp.Interpreter.Execution
             {
                 return GetScript().Call(func, args);
             }
-            else if (func.Type == DataType.ClrFunction)
+            if (func.Type == DataType.ClrFunction)
             {
                 while (true)
                 {
-                    DynValue ret = func.Callback.Invoke(this, args, false);
+                    var ret = func.Callback.Invoke(this, args);
 
                     if (ret.Type == DataType.YieldRequest)
                     {
                         throw ScriptRuntimeException.CannotYield();
                     }
-                    else if (ret.Type == DataType.TailCallRequest)
+                    if (ret.Type == DataType.TailCallRequest)
                     {
                         var tail = ret.TailCallData;
 
                         if (tail.Continuation != null || tail.ErrorHandler != null)
                         {
-                            throw new ScriptRuntimeException("the function passed cannot be called directly. wrap in a script function instead.");
+                            throw new ScriptRuntimeException(
+                                "the function passed cannot be called directly. wrap in a script function instead."
+                            );
                         }
-                        else
-                        {
-                            args = tail.Args;
-                            func = tail.Function;
-                        }
+                        args = tail.Args;
+                        func = tail.Function;
                     }
                     else
                     {
@@ -145,29 +153,26 @@ namespace SolarSharp.Interpreter.Execution
                     }
                 }
             }
-            else
+            var maxloops = 10;
+
+            while (maxloops > 0)
             {
-                int maxloops = 10;
+                var v = GetMetamethod(func, "__call");
 
-                while (maxloops > 0)
+                if (v == null && v.IsNil())
                 {
-                    DynValue v = GetMetamethod(func, "__call");
-
-                    if (v == null && v.IsNil())
-                    {
-                        throw ScriptRuntimeException.AttemptToCallNonFunc(func.Type);
-                    }
-
-                    func = v;
-
-                    if (func.Type == DataType.Function || func.Type == DataType.ClrFunction)
-                    {
-                        return Call(func, args);
-                    }
+                    throw ScriptRuntimeException.AttemptToCallNonFunc(func.Type);
                 }
 
-                throw ScriptRuntimeException.LoopInCall();
+                func = v;
+
+                if (func.Type is DataType.Function or DataType.ClrFunction)
+                {
+                    return Call(func, args);
+                }
             }
+
+            throw ScriptRuntimeException.LoopInCall();
         }
 
         /// <summary>
@@ -204,11 +209,11 @@ namespace SolarSharp.Interpreter.Execution
         {
             get
             {
-                DynValue env = EvaluateSymbolByName(WellKnownSymbols.ENV);
+                var env = EvaluateSymbolByName(WellKnownSymbols.ENV);
 
                 if (env == null || env.Type != DataType.Table)
                     return null;
-                else return env.Table;
+                return env.Table;
             }
         }
 
@@ -217,22 +222,19 @@ namespace SolarSharp.Interpreter.Execution
         /// </summary>
         /// <param name="messageHandler">The message handler.</param>
         /// <param name="exception">The exception.</param>
-        public void PerformMessageDecorationBeforeUnwind(DynValue messageHandler, ScriptRuntimeException exception)
+        public void PerformMessageDecorationBeforeUnwind(
+            DynValue messageHandler,
+            ScriptRuntimeException exception
+        )
         {
-            exception.DecoratedMessage = messageHandler != null
-                ? m_Processor.PerformMessageDecorationBeforeUnwind(messageHandler, exception.Message, CallingLocation)
-                : exception.Message;
-        }
-
-        /// <summary>
-        /// Gets the script owning this resource.
-        /// </summary>
-        /// <value>
-        /// The script owning this resource.
-        /// </value>
-        public Script OwnerScript
-        {
-            get { return GetScript(); }
+            exception.DecoratedMessage =
+                messageHandler != null
+                    ? m_Processor.PerformMessageDecorationBeforeUnwind(
+                        messageHandler,
+                        exception.Message,
+                        CallingLocation
+                    )
+                    : exception.Message;
         }
     }
 }

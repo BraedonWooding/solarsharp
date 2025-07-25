@@ -15,7 +15,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
     {
         public DynValue lines(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            List<DynValue> readLines = new();
+            var readLines = new List<DynValue>();
 
             DynValue readValue = null;
 
@@ -23,7 +23,6 @@ namespace SolarSharp.Interpreter.CoreLib.IO
             {
                 readValue = read(executionContext, args);
                 readLines.Add(readValue);
-
             } while (readValue.IsNotNil());
 
             return DynValue.FromObject(executionContext.GetScript(), readLines.Select(s => s));
@@ -33,7 +32,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
         {
             if (args.Count == 0)
             {
-                string str = ReadLine();
+                var str = ReadLine();
 
                 if (str == null)
                     return DynValue.Nil;
@@ -41,80 +40,76 @@ namespace SolarSharp.Interpreter.CoreLib.IO
                 str = str.TrimEnd('\n', '\r');
                 return DynValue.NewString(str);
             }
-            else
+            var rets = new List<DynValue>();
+
+            for (var i = 0; i < args.Count; i++)
             {
-                List<DynValue> rets = new();
+                DynValue v;
 
-                for (int i = 0; i < args.Count; i++)
+                if (args[i].Type == DataType.Number)
                 {
-                    DynValue v;
+                    if (Eof())
+                        return DynValue.Nil;
 
-                    if (args[i].Type == DataType.Number)
+                    var howmany = (int)args[i].Number;
+
+                    var str = ReadBuffer(howmany);
+                    v = DynValue.NewString(str);
+                }
+                else
+                {
+                    var opt = args.AsType(i, "read", DataType.String).String;
+
+                    if (Eof())
                     {
-                        if (Eof())
-                            return DynValue.Nil;
+                        v = opt.StartsWith("*a") ? DynValue.NewString("") : DynValue.Nil;
+                    }
+                    else if (opt.StartsWith("*n"))
+                    {
+                        var d = ReadNumber();
 
-                        int howmany = (int)args[i].Number;
+                        v = d.HasValue ? DynValue.NewNumber(d.Value) : DynValue.Nil;
+                    }
+                    else if (opt.StartsWith("*a"))
+                    {
+                        var str = ReadToEnd();
+                        v = DynValue.NewString(str);
+                    }
+                    else if (opt.StartsWith("*l"))
+                    {
+                        var str = ReadLine();
+                        str = str.TrimEnd('\n', '\r');
+                        v = DynValue.NewString(str);
+                    }
+                    else if (opt.StartsWith("*L"))
+                    {
+                        var str = ReadLine();
 
-                        string str = ReadBuffer(howmany);
+                        str = str.TrimEnd('\n', '\r');
+                        str += "\n";
+
                         v = DynValue.NewString(str);
                     }
                     else
                     {
-                        string opt = args.AsType(i, "read", DataType.String, false).String;
-
-                        if (Eof())
-                        {
-                            v = opt.StartsWith("*a") ? DynValue.NewString("") : DynValue.Nil;
-                        }
-                        else if (opt.StartsWith("*n"))
-                        {
-                            double? d = ReadNumber();
-
-                            v = d.HasValue ? DynValue.NewNumber(d.Value) : DynValue.Nil;
-                        }
-                        else if (opt.StartsWith("*a"))
-                        {
-                            string str = ReadToEnd();
-                            v = DynValue.NewString(str);
-                        }
-                        else if (opt.StartsWith("*l"))
-                        {
-                            string str = ReadLine();
-                            str = str.TrimEnd('\n', '\r');
-                            v = DynValue.NewString(str);
-                        }
-                        else if (opt.StartsWith("*L"))
-                        {
-                            string str = ReadLine();
-
-                            str = str.TrimEnd('\n', '\r');
-                            str += "\n";
-
-                            v = DynValue.NewString(str);
-                        }
-                        else
-                        {
-                            throw ScriptRuntimeException.BadArgument(i, "read", "invalid option");
-                        }
+                        throw ScriptRuntimeException.BadArgument(i, "read", "invalid option");
                     }
-
-                    rets.Add(v);
                 }
 
-                return DynValue.NewTuple(rets.ToArray());
+                rets.Add(v);
             }
-        }
 
+            return DynValue.NewTuple(rets.ToArray());
+        }
 
         public DynValue write(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             try
             {
-                for (int i = 0; i < args.Count; i++)
+                for (var i = 0; i < args.Count; i++)
                 {
                     //string str = args.AsStringUsingMeta(executionContext, i, "file:write");
-                    string str = args.AsType(i, "write", DataType.String, false).String;
+                    var str = args.AsType(i, "write", DataType.String).String;
                     Write(str);
                 }
 
@@ -134,11 +129,10 @@ namespace SolarSharp.Interpreter.CoreLib.IO
         {
             try
             {
-                string msg = Close();
+                var msg = Close();
                 if (msg == null)
                     return DynValue.True;
-                else
-                    return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(msg));
+                return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(msg));
             }
             catch (ScriptRuntimeException)
             {
@@ -152,11 +146,11 @@ namespace SolarSharp.Interpreter.CoreLib.IO
 
         private double? ReadNumber()
         {
-            string chr = "";
+            var chr = "";
 
             while (!Eof())
             {
-                char c = Peek();
+                var c = Peek();
                 if (char.IsWhiteSpace(c))
                 {
                     ReadBuffer(1);
@@ -166,18 +160,15 @@ namespace SolarSharp.Interpreter.CoreLib.IO
                     ReadBuffer(1);
                     chr += c;
                 }
-                else break;
+                else
+                    break;
             }
 
-
-            if (double.TryParse(chr, out double d))
+            if (double.TryParse(chr, out var d))
             {
                 return d;
             }
-            else
-            {
-                return null;
-            }
+            return null;
         }
 
         private bool IsNumericChar(char c, string numAsFar)
@@ -191,8 +182,11 @@ namespace SolarSharp.Interpreter.CoreLib.IO
             if (c == '.')
                 return !Framework.Do.StringContainsChar(numAsFar, '.');
 
-            if (c == 'E' || c == 'e')
-                return !(Framework.Do.StringContainsChar(numAsFar, 'E') || Framework.Do.StringContainsChar(numAsFar, 'e'));
+            if (c is 'E' or 'e')
+                return !(
+                    Framework.Do.StringContainsChar(numAsFar, 'E')
+                    || Framework.Do.StringContainsChar(numAsFar, 'e')
+                );
 
             return false;
         }
@@ -204,7 +198,6 @@ namespace SolarSharp.Interpreter.CoreLib.IO
         protected abstract char Peek();
         protected abstract void Write(string value);
 
-
         protected internal abstract bool isopen();
         protected abstract string Close();
 
@@ -215,9 +208,8 @@ namespace SolarSharp.Interpreter.CoreLib.IO
         public override string ToString()
         {
             if (isopen())
-                return string.Format("file ({0:X8})", ReferenceID);
-            else
-                return "file (closed)";
+                return $"file ({ReferenceID:X8})";
+            return "file (closed)";
         }
     }
 }

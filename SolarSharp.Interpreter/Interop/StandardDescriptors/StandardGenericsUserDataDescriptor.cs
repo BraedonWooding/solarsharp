@@ -7,13 +7,14 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
     /// <summary>
     /// Standard user data descriptor used to instantiate generics.
     /// </summary>
-    public class StandardGenericsUserDataDescriptor : IUserDataDescriptor, IGeneratorUserDataDescriptor
+    public class StandardGenericsUserDataDescriptor
+        : IUserDataDescriptor,
+            IGeneratorUserDataDescriptor
     {
         /// <summary>
         /// Gets the interop access mode this descriptor uses for members access
         /// </summary>
         public InteropAccessMode AccessMode { get; private set; }
-
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StandardUserDataDescriptor"/> class.
@@ -23,13 +24,14 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         public StandardGenericsUserDataDescriptor(Type type, InteropAccessMode accessMode)
         {
             if (accessMode == InteropAccessMode.NoReflectionAllowed)
-                throw new ArgumentException("Can't create a StandardGenericsUserDataDescriptor under a NoReflectionAllowed access mode");
+                throw new ArgumentException(
+                    "Can't create a StandardGenericsUserDataDescriptor under a NoReflectionAllowed access mode"
+                );
 
             AccessMode = accessMode;
             Type = type;
             Name = "@@" + type.FullName;
         }
-
 
         /// <inheritdoc/>
         public string Name { get; private set; }
@@ -44,7 +46,13 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         }
 
         /// <inheritdoc/>
-        public bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
+        public bool SetIndex(
+            Script script,
+            object obj,
+            DynValue index,
+            DynValue value,
+            bool isDirectIndexing
+        )
         {
             return false;
         }

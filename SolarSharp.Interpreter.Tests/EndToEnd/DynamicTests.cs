@@ -1,19 +1,23 @@
-﻿using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [Category("VM.Integration")]
     public class DynamicTests
     {
+        [Category("VM.E2E")]
         [Test]
         public void DynamicAccessEval()
         {
-            string script = @"
+            var script =
+                @"
 				return dynamic.eval('5+1');		
 				";
 
-            DynValue res = Script.RunString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -25,12 +29,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void DynamicAccessPrepare()
         {
-            string script = @"
+            var script =
+                @"
 				x = dynamic.prepare('5+1');		
 				return dynamic.eval(x);
 				";
 
-            DynValue res = Script.RunString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -42,7 +47,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void DynamicAccessScope()
         {
-            string script = @"
+            var script =
+                @"
 				a = 3;
 
 				x = dynamic.prepare('a+1');		
@@ -55,7 +61,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return f();
 				";
 
-            DynValue res = Script.RunString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -67,7 +73,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void DynamicAccessScopeSecurity()
         {
-            string script = @"
+            var script =
+                @"
 				a = 5;
 
 				local x = dynamic.prepare('a');		
@@ -83,27 +90,26 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return f();
 				";
 
-            DynValue res = Script.RunString(script);
+            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
 
             Assert.That(res.Type, Is.EqualTo(DataType.Nil));
-            //Assert.AreEqual(6, res.Number);
+            //Assert.That(res.Number, Is.EqualTo(6));
         }
 
         [Test]
         public void DynamicAccessFromCSharp()
         {
-            string code = @"
+            var code =
+                @"
 				t = { ciao = { 'hello' } }
 				";
 
-            Script script = new();
+            var script = new Script(Examples.DesktopBasePolicySet);
             script.DoString(code);
 
-            DynValue v = script.CreateDynamicExpression("t.ciao[1] .. ' world'").Evaluate();
+            var v = script.CreateDynamicExpression("t.ciao[1] .. ' world'").Evaluate();
 
             Assert.That(v.String, Is.EqualTo("hello world"));
         }
-
-
     }
 }

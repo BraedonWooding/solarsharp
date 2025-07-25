@@ -1,5 +1,6 @@
 ﻿using Benchmark.Implementations;
 using BenchmarkDotNet.Attributes;
+
 #pragma warning disable CA1822 // Mark members as static
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -7,6 +8,7 @@ namespace Benchmark
 {
     [MaxIterationCount(30)]
     [JsonExporterAttribute.FullCompressed]
+    [MemoryDiagnoser]  // Track memory allocations
     public class Benchmarks
     {
         [ParamsSource(nameof(Impls))]
@@ -36,7 +38,13 @@ namespace Benchmark
             yield return new LuaFile("./Tests/regexredux.lua-2.lua");
             yield return new LuaFile("./Tests/startup.lua");
 
-            foreach (var file in Directory.GetFiles("./Tests/specific_features", "*.lua", SearchOption.AllDirectories))
+            foreach (
+                var file in Directory.GetFiles(
+                    "./Tests/specific_features",
+                    "*.lua",
+                    SearchOption.AllDirectories
+                )
+            )
             {
                 yield return new LuaFile(file);
             }
@@ -50,7 +58,8 @@ namespace Benchmark
                 // Very hacky, but create a new version of the type and instantiate that
                 // This will have overhead from it being reflection but since they'll all have the same rough
                 // overhead, it should be okay as a comparison.  We should ideally fix this later.
-                Implementation = (AImplementation)Implementation.GetType().GetConstructor([])?.Invoke(null)!;
+                Implementation = (AImplementation)
+                    Implementation.GetType().GetConstructor([])?.Invoke(null)!;
             }
 
             var t = Task.Run(() => Implementation.Run(Test.Contents));
@@ -61,10 +70,7 @@ namespace Benchmark
                 // success
                 return ((Task<object>)winner).Result;
             }
-            else
-            {
-                throw new TimeoutException();
-            }
+            throw new TimeoutException();
         }
     }
 }

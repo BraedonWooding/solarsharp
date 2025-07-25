@@ -2,3 +2,7 @@
 
 # IDE1006: Naming Styles
 dotnet_diagnostic.IDE1006.severity = none
+
+# CS8002: Referenced assembly does not have a strong name
+# Strong naming has no benefits on .NET Core/5+, so suppress this warning
+dotnet_diagnostic.CS8002.severity = none

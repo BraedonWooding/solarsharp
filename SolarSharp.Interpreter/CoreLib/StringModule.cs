@@ -6,40 +6,47 @@ using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Security.FunctionBinding;
 
 namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
-    /// Class implementing string Lua functions 
+    /// Class implementing string Lua functions
     /// </summary>
-    [MoonSharpModule(Namespace = "string")]
+    [SolarSharpModule(Namespace = "string")]
     public class StringModule
     {
         public const string BASE64_DUMP_HEADER = "MoonSharp_dump_b64::";
 
-        public static void MoonSharpInit(Table globalTable, Table stringTable)
+        public static void MoonSharpInit(Script script, Table globalTable, Table stringTable)
         {
-            Table stringMetatable = new(globalTable.OwnerScript);
+            var stringMetatable = new Table();
             stringMetatable.Set("__index", DynValue.NewTable(stringTable));
-            globalTable.OwnerScript.SetTypeMetatable(DataType.String, stringMetatable);
+            script.SetTypeMetatable(DataType.String, stringMetatable);
         }
 
-
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Serialize function to binary dump format"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue dump(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            DynValue fn = args.AsType(0, "dump", DataType.Function, false);
+            var fn = args.AsType(0, "dump", DataType.Function);
 
             try
             {
                 byte[] bytes;
-                using (MemoryStream ms = new())
+                using (var ms = new MemoryStream())
                 {
                     executionContext.GetScript().Dump(fn, ms);
                     ms.Seek(0, SeekOrigin.Begin);
                     bytes = ms.ToArray();
                 }
-                string base64 = Convert.ToBase64String(bytes);
+                var base64 = Convert.ToBase64String(bytes);
                 return DynValue.NewString(BASE64_DUMP_HEADER + base64);
             }
             catch (Exception ex)
@@ -48,28 +55,33 @@ namespace SolarSharp.Interpreter.CoreLib
             }
         }
 
-
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Convert numeric character codes to string characters"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue @char(ScriptExecutionContext _, CallbackArguments args)
         {
-            StringBuilder sb = new(args.Count);
+            var sb = new StringBuilder(args.Count);
 
-            for (int i = 0; i < args.Count; i++)
+            for (var i = 0; i < args.Count; i++)
             {
-                DynValue v = args[i];
-                double d = 0d;
+                var v = args[i];
+                var d = 0d;
 
                 if (v.Type == DataType.String)
                 {
-                    double? nd = v.CastToNumber();
+                    var nd = v.CastToNumber();
                     if (nd == null)
-                        args.AsType(i, "char", DataType.Number, false);
+                        args.AsType(i, "char", DataType.Number);
                     else
                         d = nd.Value;
                 }
                 else
                 {
-                    args.AsType(i, "char", DataType.Number, false);
+                    args.AsType(i, "char", DataType.Number);
                     d = v.Number;
                 }
 
@@ -79,45 +91,60 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewString(sb.ToString());
         }
 
-
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Convert string characters to ASCII byte values"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue @byte(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue vs = args.AsType(0, "byte", DataType.String, false);
-            DynValue vi = args.AsType(1, "byte", DataType.Number, true);
-            DynValue vj = args.AsType(2, "byte", DataType.Number, true);
+            var vs = args.AsType(0, "byte", DataType.String);
+            var vi = args.AsType(1, "byte", DataType.Number, true);
+            var vj = args.AsType(2, "byte", DataType.Number, true);
 
-            return PerformByteLike(vs, vi, vj,
-                i => Unicode2Ascii(i));
+            return PerformByteLike(vs, vi, vj, i => Unicode2Ascii(i));
         }
 
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Convert string characters to Unicode code points"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue unicode(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue vs = args.AsType(0, "unicode", DataType.String, false);
-            DynValue vi = args.AsType(1, "unicode", DataType.Number, true);
-            DynValue vj = args.AsType(2, "unicode", DataType.Number, true);
+            var vs = args.AsType(0, "unicode", DataType.String);
+            var vi = args.AsType(1, "unicode", DataType.Number, true);
+            var vj = args.AsType(2, "unicode", DataType.Number, true);
 
             return PerformByteLike(vs, vi, vj, i => i);
         }
 
         private static int Unicode2Ascii(int i)
         {
-            if (i >= 0 && i <= 255)
+            if (i is >= 0 and <= 255)
                 return i;
 
             return '?';
         }
 
-        private static DynValue PerformByteLike(DynValue vs, DynValue vi, DynValue vj, Func<int, int> filter)
+        private static DynValue PerformByteLike(
+            DynValue vs,
+            DynValue vi,
+            DynValue vj,
+            Func<int, int> filter
+        )
         {
-            StringRange range = StringRange.FromLuaRange(vi, vj, null);
-            string s = range.ApplyToString(vs.String);
+            var range = StringRange.FromLuaRange(vi, vj);
+            var s = range.ApplyToString(vs.String);
 
-            int length = s.Length;
-            DynValue[] rets = new DynValue[length];
+            var length = s.Length;
+            var rets = new DynValue[length];
 
-            for (int i = 0; i < length; ++i)
+            for (var i = 0; i < length; ++i)
             {
                 rets[i] = DynValue.NewNumber(filter(s[i]));
             }
@@ -132,7 +159,7 @@ namespace SolarSharp.Interpreter.CoreLib
             if (vi.IsNil())
                 return defval;
 
-            int i = (int)Math.Round(vi.Number, 0);
+            var i = (int)Math.Round(vi.Number, 0);
 
             if (i == 0)
                 return null;
@@ -143,74 +170,145 @@ namespace SolarSharp.Interpreter.CoreLib
             return s.Length - i;
         }
 
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Get length of string in characters"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue len(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue vs = args.AsType(0, "len", DataType.String, false);
+            var vs = args.AsType(0, "len", DataType.String);
             return DynValue.NewNumber(vs.String.Length);
         }
 
-
-
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Find first pattern match in string and return captures"
+        )]
         [MoonSharpModuleMethod]
-        public static DynValue match(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue match(
+            ScriptExecutionContext executionContext,
+            CallbackArguments args
+        )
         {
             return executionContext.EmulateClassicCall(args, "match", KopiLua_StringLib.str_match);
         }
 
-
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Create iterator to find all pattern matches in string"
+        )]
         [MoonSharpModuleMethod]
-        public static DynValue gmatch(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue gmatch(
+            ScriptExecutionContext executionContext,
+            CallbackArguments args
+        )
         {
-            return executionContext.EmulateClassicCall(args, "gmatch", KopiLua_StringLib.str_gmatch);
+            return executionContext.EmulateClassicCall(
+                args,
+                "gmatch",
+                KopiLua_StringLib.str_gmatch
+            );
         }
 
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Replace all pattern matches in string with replacement text"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue gsub(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             return executionContext.EmulateClassicCall(args, "gsub", KopiLua_StringLib.str_gsub);
         }
 
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Find pattern in string and return start/end positions"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue find(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            return executionContext.EmulateClassicCall(args, "find",
-                KopiLua_StringLib.str_find);
+            return executionContext.EmulateClassicCall(args, "find", KopiLua_StringLib.str_find);
         }
 
-
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Convert string to lowercase letters"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue lower(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue arg_s = args.AsType(0, "lower", DataType.String, false);
+            var arg_s = args.AsType(0, "lower", DataType.String);
             return DynValue.NewString(arg_s.String.ToLower());
         }
 
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Convert string to uppercase letters"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue upper(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue arg_s = args.AsType(0, "upper", DataType.String, false);
+            var arg_s = args.AsType(0, "upper", DataType.String);
             return DynValue.NewString(arg_s.String.ToUpper());
         }
 
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Repeat string specified number of times with optional separator"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue rep(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue arg_s = args.AsType(0, "rep", DataType.String, false);
-            DynValue arg_n = args.AsType(1, "rep", DataType.Number, false);
-            DynValue arg_sep = args.AsType(2, "rep", DataType.String, true);
+            var arg_s = args.AsType(0, "rep", DataType.String);
+            var arg_n = args.AsType(1, "rep", DataType.Number);
+            var arg_sep = args.AsType(2, "rep", DataType.String, true);
 
             if (string.IsNullOrEmpty(arg_s.String) || arg_n.Number < 1)
             {
                 return DynValue.NewString("");
             }
 
-            string sep = arg_sep.IsNotNil() ? arg_sep.String : null;
+            var sep = arg_sep.IsNotNil() ? arg_sep.String : null;
 
-            int count = (int)arg_n.Number;
-            StringBuilder result = new(arg_s.String.Length * count);
+            var count = (int)arg_n.Number;
 
-            for (int i = 0; i < count; ++i)
+            // Check potential string length before creating
+            var script = _.GetScript();
+            if (script.IsAuthorizedToRun())
+            {
+                var resourceController = script.ResourceController();
+                if (resourceController != null)
+                {
+                    // Calculate total length including separators
+                    var totalLength = arg_s.String.Length * count;
+                    if (sep != null && count > 1)
+                    {
+                        totalLength += sep.Length * (count - 1);
+                    }
+                    resourceController.CheckStringLength(totalLength);
+                }
+            }
+
+            var result = new StringBuilder(arg_s.String.Length * count);
+
+            for (var i = 0; i < count; ++i)
             {
                 if (i != 0 && sep != null)
                     result.Append(sep);
@@ -218,51 +316,89 @@ namespace SolarSharp.Interpreter.CoreLib
                 result.Append(arg_s.String);
             }
 
-            return DynValue.NewString(result.ToString());
+            var resultString = result.ToString();
+
+            // Force memory check after large string allocation
+            if (script.IsAuthorizedToRun())
+            {
+                var resourceController = script.ResourceController();
+                resourceController?.CheckResourceLimits();
+            }
+
+            return DynValue.NewString(resultString);
         }
 
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Format string with printf-style format specifiers"
+        )]
         [MoonSharpModuleMethod]
-        public static DynValue format(ScriptExecutionContext executionContext, CallbackArguments args)
+        public static DynValue format(
+            ScriptExecutionContext executionContext,
+            CallbackArguments args
+        )
         {
-            return executionContext.EmulateClassicCall(args, "format", KopiLua_StringLib.str_format);
+            return executionContext.EmulateClassicCall(
+                args,
+                "format",
+                KopiLua_StringLib.str_format
+            );
         }
 
-
-
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Reverse the order of characters in string"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue reverse(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue arg_s = args.AsType(0, "reverse", DataType.String, false);
+            var arg_s = args.AsType(0, "reverse", DataType.String);
 
             if (string.IsNullOrEmpty(arg_s.String))
             {
                 return DynValue.NewString("");
             }
 
-            char[] elements = arg_s.String.ToCharArray();
+            var elements = arg_s.String.ToCharArray();
             Array.Reverse(elements);
 
             return DynValue.NewString(new string(elements));
         }
 
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Extract substring from string using start and end positions"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue sub(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue arg_s = args.AsType(0, "sub", DataType.String, false);
-            DynValue arg_i = args.AsType(1, "sub", DataType.Number, true);
-            DynValue arg_j = args.AsType(2, "sub", DataType.Number, true);
+            var arg_s = args.AsType(0, "sub", DataType.String);
+            var arg_i = args.AsType(1, "sub", DataType.Number, true);
+            var arg_j = args.AsType(2, "sub", DataType.Number, true);
 
-            StringRange range = StringRange.FromLuaRange(arg_i, arg_j, -1);
-            string s = range.ApplyToString(arg_s.String);
+            var range = StringRange.FromLuaRange(arg_i, arg_j, -1);
+            var s = range.ApplyToString(arg_s.String);
 
             return DynValue.NewString(s);
         }
 
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Check if string starts with specified prefix"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue startsWith(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue arg_s1 = args.AsType(0, "startsWith", DataType.String, true);
-            DynValue arg_s2 = args.AsType(1, "startsWith", DataType.String, true);
+            var arg_s1 = args.AsType(0, "startsWith", DataType.String, true);
+            var arg_s2 = args.AsType(1, "startsWith", DataType.String, true);
 
             if (arg_s1.IsNil() || arg_s2.IsNil())
                 return DynValue.False;
@@ -270,11 +406,17 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewBoolean(arg_s1.String.StartsWith(arg_s2.String));
         }
 
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Check if string ends with specified suffix"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue endsWith(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue arg_s1 = args.AsType(0, "endsWith", DataType.String, true);
-            DynValue arg_s2 = args.AsType(1, "endsWith", DataType.String, true);
+            var arg_s1 = args.AsType(0, "endsWith", DataType.String, true);
+            var arg_s2 = args.AsType(1, "endsWith", DataType.String, true);
 
             if (arg_s1.IsNil() || arg_s2.IsNil())
                 return DynValue.False;
@@ -282,17 +424,22 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewBoolean(arg_s1.String.EndsWith(arg_s2.String));
         }
 
+        [SecurityBoundFunction(
+            requiredModule: CoreModules.String,
+            requiredCapabilities: ScriptCapabilities.None,
+            returnNilOnDenied: true,
+            description: "Check if string contains specified substring"
+        )]
         [MoonSharpModuleMethod]
         public static DynValue contains(ScriptExecutionContext _, CallbackArguments args)
         {
-            DynValue arg_s1 = args.AsType(0, "contains", DataType.String, true);
-            DynValue arg_s2 = args.AsType(1, "contains", DataType.String, true);
+            var arg_s1 = args.AsType(0, "contains", DataType.String, true);
+            var arg_s2 = args.AsType(1, "contains", DataType.String, true);
 
             if (arg_s1.IsNil() || arg_s2.IsNil())
                 return DynValue.False;
 
             return DynValue.NewBoolean(arg_s1.String.Contains(arg_s2.String));
         }
-
     }
 }

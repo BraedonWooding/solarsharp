@@ -1,11 +1,13 @@
 ﻿// This is just a simple playground for profiling
+
 using Benchmark;
 using Benchmark.Implementations;
 
-var file = new LuaFile("./Tests/specific_features/table_map_pairs_remove.lua");
+var file = new LuaFile("../Benchmark/Tests/sieve.lua");
 var itCount = 300;
 
 var impl = new SolarSharpImplementation();
+
 //impl.Run(file.Contents);
 
 //impl.script.Globals.Set("A", (DynValue.NewCallback((ctx, arg) =>
@@ -50,7 +52,7 @@ var impl = new SolarSharpImplementation();
 //Console.ReadKey();
 
 // recommended you put your debugger here
-for (int i = 0; i < itCount; i++)
+for (var i = 0; i < itCount; i++)
 {
     impl.Run(file.Contents);
 }

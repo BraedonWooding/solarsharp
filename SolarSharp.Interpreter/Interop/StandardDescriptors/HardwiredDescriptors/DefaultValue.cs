@@ -2,6 +2,6 @@
 {
     public sealed class DefaultValue
     {
-        public static readonly DefaultValue Instance = new();
+        public static readonly DefaultValue Instance = new DefaultValue();
     }
 }

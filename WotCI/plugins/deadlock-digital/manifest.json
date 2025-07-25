@@ -1,0 +1,50 @@
+{
+  "version": "2.0",
+  "manifest-id": "deadlock-digital-plugin-suite",
+  "signed-content": [
+    {
+      "key-id": "sha256:deadlockdigital",
+      "signature": "",
+      "packages": {
+        "deadlock-digital": {
+          "metadata": {
+            "name": "Deadlock Digital Plugin Suite",
+            "version": "1.0.0",
+            "description": "Plugin suite by Deadlock Digital"
+          },
+          "files": {}
+        }
+      },
+      "policies": [
+        {
+          "packages": ["deadlock-digital"],
+          "selector": ":file",
+          "max-memory": "100MB",
+          "timeout": "30s",
+          "modules": {
+            "deny-all": true,
+            "modules": ["basic", "string", "table", "math", "io", "os"]
+          },
+          "capabilities": {
+            "deny-all": true,
+            "capabilities": ["FileRead", "FileWrite", "DirectoryOperations"]
+          },
+          "paths": {
+            "deny-all": true,
+            "patterns": [
+              "/game/assets/**",
+              "/game/saves/*.sav",
+              "/game/logs/*.log"
+            ]
+          },
+          "hosts": {
+            "deny-all": false,
+            "patterns": []
+          },
+          "deny-all": false,
+          "inherit-from-file": true
+        }
+      ]
+    }
+  ]
+}

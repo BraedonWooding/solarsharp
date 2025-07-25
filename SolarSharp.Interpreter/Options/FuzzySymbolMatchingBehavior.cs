@@ -2,14 +2,12 @@ using System;
 
 namespace SolarSharp.Interpreter.Options
 {
-
     /// <summary>
     /// A flag that controls if/how symbols (method, property, userdata) are fuzzily matched when they do not exist. Flags can be combined for multiple checks.
     /// </summary>
     [Flags]
-    public enum FuzzySymbolMatchingBehavior
+    public enum FuzzySymbolMatchingbehaviour
     {
-
         /// <summary>No fuzzy matching is performed.</summary>
         None = 0,
 
@@ -22,8 +20,6 @@ namespace SolarSharp.Interpreter.Options
         /// <summary>
         /// Converts a symbol to pascal case. For example, test_Method_two() becomes TestMethodTwo()
         /// </summary>
-        PascalCase = 4
-
+        PascalCase = 4,
     }
-
 }

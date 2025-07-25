@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -11,7 +10,7 @@ namespace SolarSharp.Interpreter.Execution.VM
 {
     /// <summary>
     /// The bytecode instruction that is executed on our CLR VM
-    /// 
+    ///
     /// This is very large at 56 bytes per instruction given lua
     /// can store their bytecode instructions in 4 bytes we clearly can do better.
     /// </summary>
@@ -33,20 +32,24 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         public override string ToString()
         {
-            string append = OpCode.ToString().ToUpperInvariant();
+            var append = OpCode.ToString().ToUpperInvariant();
 
-            int usage = (int)OpCode.GetFieldUsage();
+            var usage = (int)OpCode.GetFieldUsage();
 
             if (usage != 0)
                 append += GenSpaces();
 
-            if (OpCode == OpCode.Meta || (usage & (int)InstructionFieldUsage.NumValAsCodeAddress) == (int)InstructionFieldUsage.NumValAsCodeAddress)
+            if (
+                OpCode == OpCode.Meta
+                || (usage & (int)InstructionFieldUsage.NumValAsCodeAddress)
+                    == (int)InstructionFieldUsage.NumValAsCodeAddress
+            )
                 append += " " + NumVal.ToString("X8");
             else if ((usage & (int)InstructionFieldUsage.NumVal) != 0)
-                append += " " + NumVal.ToString();
+                append += " " + NumVal;
 
             if ((usage & (int)InstructionFieldUsage.NumVal2) != 0)
-                append += " " + NumVal2.ToString();
+                append += " " + NumVal2;
 
             if ((usage & (int)InstructionFieldUsage.Name) != 0)
                 append += " " + Name;
@@ -76,13 +79,20 @@ namespace SolarSharp.Interpreter.Execution.VM
             return new string(' ', 10 - OpCode.ToString().Length);
         }
 
-        internal void WriteBinary(BinaryWriter wr, int baseAddress, LuaDictionary<SymbolRef, int> symbolMap)
+        internal void WriteBinary(
+            BinaryWriter wr,
+            int baseAddress,
+            LuaDictionary<SymbolRef, int> symbolMap
+        )
         {
             wr.Write((byte)OpCode);
 
-            int usage = (int)OpCode.GetFieldUsage();
+            var usage = (int)OpCode.GetFieldUsage();
 
-            if ((usage & (int)InstructionFieldUsage.NumValAsCodeAddress) == (int)InstructionFieldUsage.NumValAsCodeAddress)
+            if (
+                (usage & (int)InstructionFieldUsage.NumValAsCodeAddress)
+                == (int)InstructionFieldUsage.NumValAsCodeAddress
+            )
                 wr.Write(NumVal - baseAddress);
             else if ((usage & (int)InstructionFieldUsage.NumVal) != 0)
                 wr.Write(NumVal);
@@ -102,37 +112,48 @@ namespace SolarSharp.Interpreter.Execution.VM
             if ((usage & (int)InstructionFieldUsage.SymbolList) != 0)
             {
                 wr.Write(SymbolList.Length);
-                for (int i = 0; i < SymbolList.Length; i++)
+                for (var i = 0; i < SymbolList.Length; i++)
                     WriteSymbol(wr, SymbolList[i], symbolMap);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteSymbol(BinaryWriter wr, SymbolRef symbolRef, LuaDictionary<SymbolRef, int> symbolMap)
+        private static void WriteSymbol(
+            BinaryWriter wr,
+            SymbolRef symbolRef,
+            LuaDictionary<SymbolRef, int> symbolMap
+        )
         {
-            int id = symbolRef == null ? -1 : symbolMap[symbolRef];
+            var id = symbolRef == null ? -1 : symbolMap[symbolRef];
             wr.Write(id);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static SymbolRef ReadSymbol(BinaryReader rd, SymbolRef[] deserializedSymbols)
         {
-            int id = rd.ReadInt32();
+            var id = rd.ReadInt32();
 
-            if (id < 0) return null;
+            if (id < 0)
+                return null;
             return deserializedSymbols[id];
         }
 
-        internal static Instruction ReadBinary(SourceRef chunkRef, BinaryReader rd, int baseAddress, Table envTable, SymbolRef[] deserializedSymbols)
+        internal static Instruction ReadBinary(
+            SourceRef chunkRef,
+            BinaryReader rd,
+            int baseAddress,
+            Table envTable,
+            SymbolRef[] deserializedSymbols
+        )
         {
-            Instruction that = new(chunkRef)
-            {
-                OpCode = (OpCode)rd.ReadByte()
-            };
+            var that = new Instruction(chunkRef) { OpCode = (OpCode)rd.ReadByte() };
 
-            int usage = (int)that.OpCode.GetFieldUsage();
+            var usage = (int)that.OpCode.GetFieldUsage();
 
-            if ((usage & (int)InstructionFieldUsage.NumValAsCodeAddress) == (int)InstructionFieldUsage.NumValAsCodeAddress)
+            if (
+                (usage & (int)InstructionFieldUsage.NumValAsCodeAddress)
+                == (int)InstructionFieldUsage.NumValAsCodeAddress
+            )
                 that.NumVal = rd.ReadInt32() + baseAddress;
             else if ((usage & (int)InstructionFieldUsage.NumVal) != 0)
                 that.NumVal = rd.ReadInt32();
@@ -151,10 +172,10 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             if ((usage & (int)InstructionFieldUsage.SymbolList) != 0)
             {
-                int len = rd.ReadInt32();
+                var len = rd.ReadInt32();
                 that.SymbolList = new SymbolRef[len];
 
-                for (int i = 0; i < that.SymbolList.Length; i++)
+                for (var i = 0; i < that.SymbolList.Length; i++)
                     that.SymbolList[i] = ReadSymbol(rd, deserializedSymbols);
             }
 
@@ -163,11 +184,12 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private static DynValue ReadValue(BinaryReader rd, Table envTable)
         {
-            bool isnull = !rd.ReadBoolean();
+            var isnull = !rd.ReadBoolean();
 
-            if (isnull) return null;
+            if (isnull)
+                return null;
 
-            DataType dt = (DataType)rd.ReadByte();
+            var dt = (DataType)rd.ReadByte();
 
             switch (dt)
             {
@@ -184,10 +206,9 @@ namespace SolarSharp.Interpreter.Execution.VM
                 case DataType.Table:
                     return DynValue.NewTable(envTable);
                 default:
-                    throw new NotSupportedException(string.Format("Unsupported type in chunk dump : {0}", dt));
+                    throw new NotSupportedException($"Unsupported type in chunk dump : {dt}");
             }
         }
-
 
         private void DumpValue(BinaryWriter wr, DynValue value)
         {
@@ -216,13 +237,15 @@ namespace SolarSharp.Interpreter.Execution.VM
                     wr.Write(value.String);
                     break;
                 default:
-                    throw new NotSupportedException(string.Format("Unsupported type in chunk dump : {0}", value.Type));
+                    throw new NotSupportedException(
+                        $"Unsupported type in chunk dump : {value.Type}"
+                    );
             }
         }
 
         internal void GetSymbolReferences(out SymbolRef[] symbolList, out SymbolRef symbol)
         {
-            int usage = (int)OpCode.GetFieldUsage();
+            var usage = (int)OpCode.GetFieldUsage();
 
             symbol = null;
             symbolList = null;

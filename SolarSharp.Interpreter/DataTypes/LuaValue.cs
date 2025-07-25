@@ -5,7 +5,7 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// Inspired by Lua's actual implementation of values, is a significantly more efficient
     /// value than a <see cref="DynValue"/> since it's 1) a struct and 2) stores a lot less information
-    /// 
+    ///
     /// Note: we may have to do some unsafe stuff like; https://stackoverflow.com/a/72507955 to make *some* writes performant
     /// but I don't think the vast majority of this will be true.
     /// </summary>
@@ -22,7 +22,7 @@ namespace SolarSharp.Interpreter.DataTypes
 
         /// <summary>
         /// Is just a "ptr" or object reference.
-        /// 
+        ///
         /// I may change this to dynamic just to allow for easier function calls.
         /// </summary>
         [FieldOffset(0)]
@@ -68,7 +68,7 @@ namespace SolarSharp.Interpreter.DataTypes
 
         /// <summary>
         /// The type of lua value
-        /// 
+        ///
         /// In future I'm planning on using a NaN tagged value (potentially) to get better performance
         /// </summary>
         [FieldOffset(8)]
@@ -77,6 +77,6 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Create a new nil value.
         /// </summary>
-        public static readonly LuaValue Nil = new() { Type = LuaDataType.Nil };
+        public static readonly LuaValue Nil = new LuaValue { Type = LuaDataType.Nil };
     }
 }

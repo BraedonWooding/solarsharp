@@ -1,16 +1,19 @@
-﻿using System.Collections.Generic;
-using SolarSharp.Interpreter.DataTypes;
+using System.Collections.Generic;
 using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("VM.Integration")]
     public class UserDataIndexerTests
     {
         public class IndexerTestClass
         {
-            private readonly Dictionary<int, int> mymap = new();
+            private readonly Dictionary<int, int> mymap = new Dictionary<int, int>();
 
             public int this[int idx]
             {
@@ -20,22 +23,30 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public int this[int idx1, int idx2, int idx3]
             {
-                get { int idx = (idx1 + idx2) * idx3; return mymap[idx]; }
-                set { int idx = (idx1 + idx2) * idx3; mymap[idx] = value; }
+                get
+                {
+                    var idx = (idx1 + idx2) * idx3;
+                    return mymap[idx];
+                }
+                set
+                {
+                    var idx = (idx1 + idx2) * idx3;
+                    mymap[idx] = value;
+                }
             }
         }
 
         private static void IndexerTest(string code, int expected)
         {
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            IndexerTestClass obj = new();
+            var obj = new IndexerTestClass();
 
             UserData.RegisterType<IndexerTestClass>();
 
             S.Globals.Set("o", UserData.Create(obj));
 
-            DynValue v = S.DoString(code);
+            var v = S.DoString(code);
 
             Assert.Multiple(() =>
             {
@@ -47,29 +58,29 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_SingleSetterOnly()
         {
-            string script = @"o[1] = 1; return 13";
+            var script = @"o[1] = 1; return 13";
             IndexerTest(script, 13);
         }
-
 
         [Test]
         public void Interop_SingleIndexerGetSet()
         {
-            string script = @"o[5] = 19; return o[5];";
+            var script = @"o[5] = 19; return o[5];";
             IndexerTest(script, 19);
         }
 
         [Test]
         public void Interop_MultiIndexerGetSet()
         {
-            string script = @"o[1,2,3] = 47; return o[1,2,3];";
+            var script = @"o[1,2,3] = 47; return o[1,2,3];";
             IndexerTest(script, 47);
         }
 
         [Test]
         public void Interop_MultiIndexerMetatableGetSet()
         {
-            string script = @"
+            var script =
+                @"
 				m = { 
 					__index = o,
 					__newindex = o
@@ -86,7 +97,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_MultiIndexerMetamethodGetSet()
         {
-            string script = @"
+            var script =
+                @"
 				m = { 
 					__index = function() end,
 					__newindex = function() end
@@ -103,30 +115,36 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_MixedIndexerGetSet()
         {
-            string script = @"o[3,2,3] = 119; return o[15];";
+            var script = @"o[3,2,3] = 119; return o[15];";
             IndexerTest(script, 119);
         }
 
         [Test]
         public void Interop_ExpListIndexingCompilesButNotRun1()
         {
-            string script = @"    
+            var script =
+                @"    
 				x = { 99, 98, 97, 96 }				
 				return x[2,3];
 				";
 
-            Assert.Throws<ScriptRuntimeException>(() => Script.RunString(script));
+            Assert.Throws<ScriptRuntimeException>(() =>
+                new Script(Examples.DesktopBasePolicySet).DoString(script)
+            );
         }
 
         [Test]
         public void Interop_ExpListIndexingCompilesButNotRun2()
         {
-            string script = @"    
+            var script =
+                @"    
 				x = { 99, 98, 97, 96 }				
 				x[2,3] = 5;
 				";
 
-            Assert.Throws<ScriptRuntimeException>(() => Script.RunString(script));
+            Assert.Throws<ScriptRuntimeException>(() =>
+                new Script(Examples.DesktopBasePolicySet).DoString(script)
+            );
         }
     }
 }

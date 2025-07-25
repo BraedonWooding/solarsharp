@@ -1,5 +1,6 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
 
 namespace SolarSharp.Interpreter.Tree.Expressions
 {
@@ -13,7 +14,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             expression = exp;
         }
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        public override void Compile(ByteCode bc)
         {
             expression.Compile(bc);
             bc.Emit_Scalar();

@@ -8,8 +8,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>
-    </AssemblyOriginatorKeyFile>
     <AssemblyTitle>MoonSharp.Hardwire</AssemblyTitle>
     <Product>MoonSharp.Hardwire</Product>
     <Copyright>Copyright ©  2024</Copyright>

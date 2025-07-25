@@ -14,7 +14,6 @@ namespace SolarSharp.Interpreter.Execution.VM
             return null;
         }
 
-
         private void FillDebugData(InterpreterException ex, int ip)
         {
             // adjust IP
@@ -25,13 +24,11 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             ex.InstructionPtr = ip;
 
-            SourceRef sref = GetCurrentSourceRef(ip);
+            var sref = GetCurrentSourceRef(ip);
 
             ex.DecorateMessage(m_Script, sref, ip);
 
             ex.CallStack = Debugger_GetCallStack(sref);
         }
-
-
     }
 }

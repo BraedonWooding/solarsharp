@@ -1,21 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Benchmark
+﻿namespace Benchmark
 {
-    public class LuaFile
+    public class LuaFile(string fileName)
     {
-        public LuaFile(string fileName)
-        {
-            FileName = fileName;
-            Contents = File.ReadAllText(fileName);
-        }
-
-        public string FileName { get; set; }
-        public string Contents { get; set; }
+        public string FileName { get; set; } = fileName;
+        public string Contents { get; set; } = File.ReadAllText(fileName);
 
         public override string? ToString()
         {

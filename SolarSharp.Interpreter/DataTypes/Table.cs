@@ -11,15 +11,14 @@ namespace SolarSharp.Interpreter.DataTypes
     /// <summary>
     /// A class representing a Lua table.
     /// </summary>
-    public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePair<DynValue, DynValue>>
+    public class Table : RefIdObject, IEnumerable<KeyValuePair<DynValue, DynValue>>
     {
-        private readonly Script m_Owner;
         private int m_CachedLength = -1;
 
         /// <summary>
         /// The array segment of the table.  This starts from 0
         /// with the first slot always being empty (similar to LuaJIT)
-        /// 
+        ///
         /// This does mean that doing table[0] = X will write to the 0 slot.
         /// </summary>
         private DynValue[] ArraySegment;
@@ -32,12 +31,10 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Initializes a new instance of the <see cref="Table"/> class.
         /// </summary>
-        /// <param name="owner">The owner script.</param>
         /// <param name="arraySizeHint">A hint for the length of the array component</param>
         /// <param name="associativeSizeHint">A hint for thet length of the map component</param>
-        public Table(Script owner, int arraySizeHint = 0, int associativeSizeHint = 0)
+        public Table(int arraySizeHint = 0, int associativeSizeHint = 0)
         {
-            m_Owner = owner;
             ArraySegment = new DynValue[arraySizeHint + 1];
             // we don't have a string map here too because strings are pretty efficiently handled by dynvalues.
             ValueMap = new LuaDictionary<DynValue, DynValue>(associativeSizeHint);
@@ -46,23 +43,17 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Initializes a new instance of the <see cref="Table"/> class.
         /// </summary>
-        /// <param name="owner">The owner.</param>
         /// <param name="arrayValues">The values for the "array-like" part of the table.</param>
-        public Table(Script owner, params DynValue[] arrayValues)
-            : this(owner)
+        public Table(params DynValue[] arrayValues)
+            : this(arrayValues?.Length ?? 0)
         {
-            for (int i = 0; i < arrayValues.Length; i++)
+            if (arrayValues != null)
             {
-                Set(i + 1, arrayValues[i]);
+                for (var i = 0; i < arrayValues.Length; i++)
+                {
+                    Set(i + 1, arrayValues[i]);
+                }
             }
-        }
-
-        /// <summary>
-        /// Gets the script owning this resource.
-        /// </summary>
-        public Script OwnerScript
-        {
-            get { return m_Owner; }
         }
 
         /// <summary>
@@ -80,7 +71,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         private int GetIntegralKey(double d)
         {
-            int v = (int)d;
+            var v = (int)d;
             if (d >= 0.0 && d == v)
                 return v;
 
@@ -88,7 +79,7 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Gets or sets the 
+        /// Gets or sets the
         /// <see cref="object" /> with the specified key(s).
         /// This will marshall CLR and MoonSharp objects in the best possible way.
         /// Multiple keys can be used to access subtables.
@@ -99,14 +90,8 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="keys">The keys to access the table and subtables</param>
         public object this[params object[] keys]
         {
-            get
-            {
-                return Get(keys).ToObject();
-            }
-            set
-            {
-                Set(keys, DynValue.FromObject(OwnerScript, value));
-            }
+            get { return Get(keys).ToObject(); }
+            set { Set(keys, DynValue.FromObject(null, value)); }
         }
 
         /// <summary>
@@ -120,25 +105,20 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public object this[object key]
         {
-            get
-            {
-                return Get(key).ToObject();
-            }
-            set
-            {
-                Set(key, DynValue.FromObject(OwnerScript, value));
-            }
+            get { return Get(key).ToObject(); }
+            set { Set(key, DynValue.FromObject(null, value)); }
         }
 
         private Table ResolveMultipleKeys(object[] keys, out object key)
         {
-            Table t = this;
+            var t = this;
             key = keys.Length > 0 ? keys[0] : null;
 
-            for (int i = 1; i < keys.Length; ++i)
+            for (var i = 1; i < keys.Length; ++i)
             {
-                DynValue vt = t.Get(key);
-                if (vt.IsNil()) throw new ScriptRuntimeException("Key '{0}' did not point to anything");
+                var vt = t.Get(key);
+                if (vt.IsNil())
+                    throw new ScriptRuntimeException("Key '{0}' did not point to anything");
                 if (vt.Type != DataType.Table)
                     throw new ScriptRuntimeException("Key '{0}' did not point to a table");
 
@@ -178,9 +158,8 @@ namespace SolarSharp.Interpreter.DataTypes
             v++;
             return v;
         }
-        private const int MAX_INT_KEY_ARRAY = 16_000_000;
 
-        #region Set
+        private const int MAX_INT_KEY_ARRAY = 16_000_000;
 
         public void Insert(int index, DynValue value)
         {
@@ -206,12 +185,12 @@ namespace SolarSharp.Interpreter.DataTypes
 
                 Array.Copy(ArraySegment, index, ArraySegment, index + 1, Length - index + 1);
                 ArraySegment[index] = value;
-                m_CachedLength++; 
+                m_CachedLength++;
             }
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="index"></param>
         /// <param name="value"></param>
@@ -224,8 +203,9 @@ namespace SolarSharp.Interpreter.DataTypes
                 Array.Resize(ref ArraySegment, NextPowOfTwo(index + 1));
             }
 
-            DynValue prev = ArraySegment[index];
-            if (prev == null && !setIfAbsent) return false;
+            var prev = ArraySegment[index];
+            if (prev == null && !setIfAbsent)
+                return false;
 
             if (value.IsNil())
             {
@@ -242,7 +222,17 @@ namespace SolarSharp.Interpreter.DataTypes
                 if (prev == null)
                 {
                     // then we can increment it if we are adding to end
-                    if (m_CachedLength == index - 1 && (m_CachedLength >= ArraySegment.Length || ArraySegment[m_CachedLength] == null))
+                    if (
+                        m_CachedLength == index - 1
+                        && (
+                            m_CachedLength >= ArraySegment.Length
+                            || (
+                                m_CachedLength >= 0
+                                && m_CachedLength < ArraySegment.Length
+                                && ArraySegment[m_CachedLength] == null
+                            )
+                        )
+                    )
                     {
                         m_CachedLength = index;
                     }
@@ -267,18 +257,18 @@ namespace SolarSharp.Interpreter.DataTypes
                 return MapSet(DynValue.NewNumber(index), value, invokeMetaMethods);
             }
 
-            if (!RawArraySet(index, value, setIfAbsent: !invokeMetaMethods || MetaTable == null) && invokeMetaMethods)
+            if (
+                !RawArraySet(index, value, setIfAbsent: !invokeMetaMethods || MetaTable == null)
+                && invokeMetaMethods
+            )
             {
                 if (MetaTable?.Get("__newindex") is DynValue newIndex && newIndex.IsNotNil())
                 {
                     return newIndex;
                 }
-                else
-                {
-                    ArraySegment[index] = value;
-                    // The meta method could do anything to the array so I can't presume it's length
-                    m_CachedLength = -1;
-                }
+                ArraySegment[index] = value;
+                // The meta method could do anything to the array so I can't presume it's length
+                m_CachedLength = -1;
             }
 
             return DynValue.Nil;
@@ -297,14 +287,13 @@ namespace SolarSharp.Interpreter.DataTypes
             {
                 if (key.IsNil())
                     throw ScriptRuntimeException.TableIndexIsNil();
-                else
-                    throw ScriptRuntimeException.TableIndexIsNaN();
+                throw ScriptRuntimeException.TableIndexIsNaN();
             }
 
             if (key.Type == DataType.Number)
             {
-                int idx = GetIntegralKey(key.Number);
-                if (idx >= 0 && idx < MAX_INT_KEY_ARRAY)
+                var idx = GetIntegralKey(key.Number);
+                if (idx is >= 0 and < MAX_INT_KEY_ARRAY)
                 {
                     return ArraySet(idx, value, invokeMetaMethods);
                 }
@@ -325,10 +314,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 ValueMap.Remove(key);
                 return true;
             }
-            else
-            {
-                return ValueMap.DictionaryConditionalSet(key, value, setIfAbsent);
-            }
+            return ValueMap.DictionaryConditionalSet(key, value, setIfAbsent);
         }
 
         /// <summary>
@@ -339,16 +325,16 @@ namespace SolarSharp.Interpreter.DataTypes
         private DynValue MapSet(DynValue key, DynValue value, bool invokeMetaMethods)
         {
             // we optimize specifically for MetaTable == null which is quite common
-            if (!RawMapSet(key, value, setIfAbsent: !invokeMetaMethods || MetaTable == null) && invokeMetaMethods)
+            if (
+                !RawMapSet(key, value, setIfAbsent: !invokeMetaMethods || MetaTable == null)
+                && invokeMetaMethods
+            )
             {
                 if (MetaTable?.Get("__newindex") is DynValue newIndex && newIndex.IsNotNil())
                 {
                     return newIndex;
                 }
-                else
-                {
-                    ValueMap[key] = value;
-                }
+                ValueMap[key] = value;
             }
 
             return DynValue.Nil;
@@ -370,7 +356,7 @@ namespace SolarSharp.Interpreter.DataTypes
             if (key == null)
                 throw ScriptRuntimeException.TableIndexIsNil();
 
-            Set(DynValue.FromObject(OwnerScript, key), value, invokeMetaMethods: false);
+            Set(DynValue.FromObject(null, key), value, invokeMetaMethods: false);
         }
 
         /// <summary>
@@ -384,12 +370,8 @@ namespace SolarSharp.Interpreter.DataTypes
             if (keys == null || keys.Length <= 0)
                 throw ScriptRuntimeException.TableIndexIsNil();
 
-            ResolveMultipleKeys(keys, out object key).Set(key, value);
+            ResolveMultipleKeys(keys, out var key).Set(key, value);
         }
-
-        #endregion
-
-        #region Get
 
         /// <summary>
         /// Gets the value associated with the specified key.
@@ -408,8 +390,10 @@ namespace SolarSharp.Interpreter.DataTypes
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DynValue Get(int key)
         {
-            if (key < MAX_INT_KEY_ARRAY && key >= 0)
-                return key < ArraySegment.Length ? (ArraySegment[key] ?? DynValue.Nil) : DynValue.Nil;
+            if (key is < MAX_INT_KEY_ARRAY and >= 0)
+                return key < ArraySegment.Length
+                    ? (ArraySegment[key] ?? DynValue.Nil)
+                    : DynValue.Nil;
             return Get(DynValue.NewNumber(key));
         }
 
@@ -421,8 +405,9 @@ namespace SolarSharp.Interpreter.DataTypes
         {
             if (key.Type == DataType.Number)
             {
-                int idx = GetIntegralKey(key.Number);
-                if (idx > 0 && idx < MAX_INT_KEY_ARRAY) return Get(idx);
+                var idx = GetIntegralKey(key.Number);
+                if (idx is > 0 and < MAX_INT_KEY_ARRAY)
+                    return Get(idx);
             }
 
             return ValueMap.GetValueOrDefault(key) ?? DynValue.Nil;
@@ -439,14 +424,14 @@ namespace SolarSharp.Interpreter.DataTypes
             if (key == null)
                 return null;
 
-            if (key is int v && v < MAX_INT_KEY_ARRAY)
+            if (key is int v and < MAX_INT_KEY_ARRAY)
                 return Get(v);
 
-            return Get(DynValue.FromObject(OwnerScript, key));
+            return Get(DynValue.FromObject(null, key));
         }
 
         /// <summary>
-        /// Gets the value associated with the specified keys (expressed as an 
+        /// Gets the value associated with the specified keys (expressed as an
         /// array of <see cref="object"/>).
         /// This will marshall CLR and MoonSharp objects in the best possible way.
         /// Multiple keys can be used to access subtables.
@@ -457,10 +442,8 @@ namespace SolarSharp.Interpreter.DataTypes
             if (keys == null || keys.Length <= 0)
                 return DynValue.Nil;
 
-            return ResolveMultipleKeys(keys, out object key).Get(key);
+            return ResolveMultipleKeys(keys, out var key).Get(key);
         }
-
-        #endregion
 
         /// <summary>
         /// Performs the Next() operation
@@ -468,7 +451,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="v">The previous value or nil</param>
         public DynValue GetNextFromIt(DynValue v)
         {
-            bool wasNil = false;
+            var wasNil = false;
             // note a custom dictionary may be a smart idea to make some of this faster
             if (v.IsNil())
             {
@@ -480,9 +463,11 @@ namespace SolarSharp.Interpreter.DataTypes
                 }
             }
 
-            bool skipFinding = false;
-            if (v.Type == DataType.Number && GetIntegralKey(v.Number) is var n
-                && n >= 0 && n < MAX_INT_KEY_ARRAY)
+            var skipFinding = false;
+            if (
+                v.Type == DataType.Number
+                && GetIntegralKey(v.Number) is var n and >= 0 and < MAX_INT_KEY_ARRAY
+            )
             {
                 if (!wasNil && n >= ArraySegment.Length)
                 {
@@ -494,8 +479,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 do
                 {
                     n++;
-                }
-                while (n < ArraySegment.Length && ArraySegment[n] == null);
+                } while (n < ArraySegment.Length && ArraySegment[n] == null);
 
                 // if we are at the end
                 if (n < ArraySegment.Length)
@@ -506,13 +490,17 @@ namespace SolarSharp.Interpreter.DataTypes
 
             if (skipFinding)
             {
-                if (ValueMap.Count == 0) return DynValue.Nil;
+                if (ValueMap.Count == 0)
+                    return DynValue.Nil;
                 var kvp = ValueMap.First();
                 return DynValue.NewTuple(kvp.Key, kvp.Value);
             }
 
-            var it = ValueMap.TryGetEnumeratorFrom(v) ?? throw new ScriptRuntimeException("invalid key to 'next'");
-            if (!it.MoveNext()) return DynValue.Nil;
+            var it =
+                ValueMap.TryGetEnumeratorFrom(v)
+                ?? throw new ScriptRuntimeException("invalid key to 'next'");
+            if (!it.MoveNext())
+                return DynValue.Nil;
             return DynValue.NewTuple(it.Current.Key, it.Current.Value);
         }
 
@@ -527,7 +515,7 @@ namespace SolarSharp.Interpreter.DataTypes
                 {
                     m_CachedLength = 0;
 
-                    for (int i = 1; i < ArraySegment.Length && ArraySegment[i] != null; i++)
+                    for (var i = 1; i < ArraySegment.Length && ArraySegment[i] != null; i++)
                         m_CachedLength = i;
                 }
 
@@ -537,7 +525,11 @@ namespace SolarSharp.Interpreter.DataTypes
 
         internal void InitNextArrayKeys(DynValue val, int idx)
         {
-            if (idx == ArraySegment.Length - 1 && val.Type == DataType.Tuple && val.Tuple.Length > 1)
+            if (
+                idx == ArraySegment.Length - 1
+                && val.Type == DataType.Tuple
+                && val.Tuple.Length > 1
+            )
             {
                 // in this specific case we are creating a table from a tuple
                 // i.e. function a() return 1, 2 end; local t = { a() }
@@ -548,8 +540,11 @@ namespace SolarSharp.Interpreter.DataTypes
                 // wrapped in a structure they are returning multiple values).
 
                 // For performance let's reserve now since we know the final tuple length
-                Array.Resize(ref ArraySegment, NextPowOfTwo(ArraySegment.Length + val.Tuple.Length));
-                for (int i = 0; i < val.Tuple.Length; i++)
+                Array.Resize(
+                    ref ArraySegment,
+                    NextPowOfTwo(ArraySegment.Length + val.Tuple.Length)
+                );
+                for (var i = 0; i < val.Tuple.Length; i++)
                 {
                     // we can presume that tuples can't be composed of other tuples
                     // tuples in general are a concept that I'm likely to be phasing out / removing
@@ -571,7 +566,8 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Sort the array segment of the table.
         /// </summary>
-        public void Sort(IComparer<DynValue> sortComparer) => Array.Sort(ArraySegment, 1, Length, sortComparer);
+        public void Sort(IComparer<DynValue> sortComparer) =>
+            Array.Sort(ArraySegment, 1, Length, sortComparer);
 
         IEnumerator IEnumerable.GetEnumerator()
         {
@@ -586,30 +582,39 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Enumerates the key/value pairs.
         /// </summary>
-        public IEnumerator<KeyValuePair<DynValue, DynValue>> AssociativePairs => ValueMap.GetEnumerator();
+        public IEnumerator<KeyValuePair<DynValue, DynValue>> AssociativePairs
+        {
+            get { return ValueMap.GetEnumerator(); }
+        }
 
         /// <summary>
         /// Enumerates the values
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<DynValue> Values => this.Select(kvp => kvp.Value);
+        public IEnumerable<DynValue> Values
+        {
+            get { return this.Select(kvp => kvp.Value); }
+        }
 
         private struct Enumerator : IEnumerator<KeyValuePair<DynValue, DynValue>>, IEnumerator
         {
             private readonly Table table;
             private int _index;
-            private KeyValuePair<DynValue, DynValue> _current;
             private IEnumerator<KeyValuePair<DynValue, DynValue>> _map;
 
-            public Enumerator(Table table) : this()
+            public Enumerator(Table table)
+                : this()
             {
                 this.table = table;
                 _index = -1;
             }
 
-            public readonly KeyValuePair<DynValue, DynValue> Current => _current;
+            public KeyValuePair<DynValue, DynValue> Current { get; private set; }
 
-            readonly object IEnumerator.Current => _current;
+            readonly object IEnumerator.Current
+            {
+                get { return Current; }
+            }
 
             public void Dispose() { }
 
@@ -620,7 +625,9 @@ namespace SolarSharp.Interpreter.DataTypes
                     do
                     {
                         _index++;
-                    } while (_index < table.ArraySegment.Length && table.ArraySegment[_index] == null);
+                    } while (
+                        _index < table.ArraySegment.Length && table.ArraySegment[_index] == null
+                    );
 
                     if (_index >= table.ArraySegment.Length)
                     {
@@ -629,27 +636,27 @@ namespace SolarSharp.Interpreter.DataTypes
                     }
                     else
                     {
-                        _current = new KeyValuePair<DynValue, DynValue>(DynValue.NewNumber(_index), table.ArraySegment[_index]);
+                        Current = new KeyValuePair<DynValue, DynValue>(
+                            DynValue.NewNumber(_index),
+                            table.ArraySegment[_index]
+                        );
                         return true;
                     }
                 }
 
                 if (_map.MoveNext())
                 {
-                    _current = _map.Current;
+                    Current = _map.Current;
                     return true;
                 }
-                else
-                {
-                    _current = default;
-                    return false;
-                }
+                Current = default;
+                return false;
             }
 
             public void Reset()
             {
                 _index = -1;
-                _current = default;
+                Current = default;
                 _map = null;
             }
         }

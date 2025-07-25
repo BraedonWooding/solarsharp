@@ -9,6 +9,7 @@
         /// The performance counter is specified in bytes (of memory)
         /// </summary>
         MemoryBytes,
+
         /// <summary>
         /// The performance counter is specified in milliseconds
         /// </summary>

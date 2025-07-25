@@ -1,60 +1,84 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     /// <summary>
-    /// Selected tests extracted from Lua test suite
+    ///     Selected tests extracted from Lua test suite
     /// </summary>
     [TestFixture]
+    [Category("VM.Integration")]
     internal class LuaTestSuiteExtract
     {
         private static void RunTest(string script)
         {
-            HashSet<string> failedTests = new();
-            int i = 0;
+            var failedTests = new HashSet<string>();
+            var i = 0;
 
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
             var globalCtx = S.Globals;
-            globalCtx.Set(DynValue.NewString("xassert"), DynValue.NewCallback(new CallbackFunction(
-                (x, a) =>
-                {
-                    if (!a[1].CastToBool())
-                        failedTests.Add(a[0].String);
+            globalCtx.Set(
+                DynValue.NewString("xassert"),
+                DynValue.NewCallback(
+                    new CallbackFunction(
+                        (x, a) =>
+                        {
+                            if (!a[1].CastToBool())
+                                failedTests.Add(a[0].String);
 
-                    return DynValue.Nil;
-                })));
-            globalCtx.Set(DynValue.NewString("assert"), DynValue.NewCallback(new CallbackFunction(
-                (x, a) =>
-                {
-                    ++i;
+                            return DynValue.Nil;
+                        }
+                    )
+                )
+            );
+            globalCtx.Set(
+                DynValue.NewString("assert"),
+                DynValue.NewCallback(
+                    new CallbackFunction(
+                        (x, a) =>
+                        {
+                            ++i;
 
-                    if (!a[0].CastToBool())
-                        failedTests.Add(string.Format("assert #{0}", i));
+                            if (!a[0].CastToBool())
+                                failedTests.Add($"assert #{i}");
 
-                    return DynValue.Nil;
-                })));
+                            return DynValue.Nil;
+                        }
+                    )
+                )
+            );
 
-            globalCtx.Set(DynValue.NewString("print"), DynValue.NewCallback(new CallbackFunction((x, a) =>
-            {
-                // Debug.WriteLine(string.Join(" ", a.Select(v => v.AsString()).ToArray()));
-                return DynValue.Nil;
-            })));
+            globalCtx.Set(
+                DynValue.NewString("print"),
+                DynValue.NewCallback(
+                    new CallbackFunction(
+                        (x, a) =>
+                        {
+                            // Debug.WriteLine(string.Join(" ", a.Select(v => v.AsString()).ToArray()));
+                            return DynValue.Nil;
+                        }
+                    )
+                )
+            );
 
+            var res = S.DoString(script);
 
-            DynValue res = S.DoString(script);
-
-            Assert.That(failedTests.Any(), Is.False, string.Format("Failed asserts {0}",
-                string.Join(", ", failedTests.Select(xi => xi.ToString()).ToArray())));
+            Assert.That(
+                failedTests.Any(),
+                Is.False,
+                $"Failed asserts {string.Join(", ", failedTests.Select(xi => xi.ToString()).ToArray())}"
+            );
         }
 
         [Test]
         public void LuaSuite_Calls_LocalFunctionRecursion()
         {
-            RunTest(@"
+            RunTest(
+                @"
 				-- testing local-function recursion
 				fact = false
 				do
@@ -67,13 +91,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				  xassert('fact(5) == 120', fact(5) == 120)
 				end
 				xassert('fact == false', fact == false)
-				");
+				"
+            );
         }
 
         [Test]
         public void LuaSuite_Calls_Declarations()
         {
-            RunTest(@"
+            RunTest(
+                @"
 				-- testing local-function recursion
 				-- testing declarations
 				a = {i = 10}
@@ -113,15 +139,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 					  3,4)
 				xassert('extraparam', t[1] == 1 and t[2] == 2 and t[3] == 3 and t[4] == 'a')
 
-				");
+				"
+            );
         }
-
-
 
         [Test]
         public void LuaSuite_Calls_Closures()
         {
-            RunTest(@"
+            RunTest(
+                @"
 				-- fixed-point operator
 				Z = function (le)
 					  local function a (f)
@@ -157,12 +183,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				Z, F, f = nil
 				--print('+')
-				");
+				"
+            );
         }
-
-
-
-
-
     }
 }

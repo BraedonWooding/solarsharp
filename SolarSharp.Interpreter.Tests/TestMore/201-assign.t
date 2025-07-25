@@ -48,7 +48,7 @@ is(b, nil)
 a = {}
 i = 3
 i, a[i] = i+1, 20
--- this behavior is undefined
+-- this behaviour is undefined
 -- see http://lua-users.org/lists/lua-l/2006-06/msg00378.html
 -- is(i, 4, "check eval")
 -- is(a[3], 20)

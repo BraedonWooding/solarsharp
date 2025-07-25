@@ -1,28 +1,49 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Errors;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Serialization
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public static class SerializationExtensions
     {
-        private static readonly HashSet<string> LUAKEYWORDS = new()
+        private static readonly HashSet<string> LUAKEYWORDS = new HashSet<string>
         {
-            "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "goto", "if", "in", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while"
+            "and",
+            "break",
+            "do",
+            "else",
+            "elseif",
+            "end",
+            "false",
+            "for",
+            "function",
+            "goto",
+            "if",
+            "in",
+            "local",
+            "nil",
+            "not",
+            "or",
+            "repeat",
+            "return",
+            "then",
+            "true",
+            "until",
+            "while",
         };
 
         public static string Serialize(this Table table, bool prefixReturn = false, int tabs = 0)
         {
-            if (table.OwnerScript != null)
-                throw new ScriptRuntimeException("Table is not a prime table.");
+            // Tables are now always "prime" tables since we removed ownership
+            // This check is no longer needed
 
-            string tabstr = new('\t', tabs);
-            StringBuilder sb = new();
+            var tabstr = new string('\t', tabs);
+            var sb = new StringBuilder();
 
             //sb.Append(tabstr);
 
@@ -41,12 +62,11 @@ namespace SolarSharp.Interpreter.Serialization
             {
                 sb.Append(tabstr);
 
-                string key =
-                    IsStringIdentifierValid(kvp.Key) ?
-                    kvp.Key.String : "[" + kvp.Key.SerializeValue(tabs + 1) + "]";
+                var key = IsStringIdentifierValid(kvp.Key)
+                    ? kvp.Key.String
+                    : "[" + kvp.Key.SerializeValue(tabs + 1) + "]";
 
-                sb.AppendFormat("\t{0} = {1},\n",
-                    key, kvp.Value.SerializeValue(tabs + 1));
+                sb.AppendFormat("\t{0} = {1},\n", key, kvp.Value.SerializeValue(tabs + 1));
             }
 
             sb.Append(tabstr);
@@ -72,7 +92,7 @@ namespace SolarSharp.Interpreter.Serialization
             if (!char.IsLetter(dynValue.String[0]) && dynValue.String[0] != '_')
                 return false;
 
-            foreach (char c in dynValue.String)
+            foreach (var c in dynValue.String)
             {
                 if (!char.IsLetterOrDigit(c) && c != '_')
                     return false;
@@ -83,20 +103,19 @@ namespace SolarSharp.Interpreter.Serialization
 
         public static string SerializeValue(this DynValue dynValue, int tabs = 0)
         {
-            if (dynValue.Type == DataType.Nil || dynValue.Type == DataType.Void)
+            if (dynValue.Type is DataType.Nil or DataType.Void)
                 return "nil";
-            else if (dynValue.Type == DataType.Tuple)
+            if (dynValue.Type == DataType.Tuple)
                 return dynValue.Tuple.Any() ? dynValue.Tuple[0].SerializeValue(tabs) : "nil";
-            else if (dynValue.Type == DataType.Number)
+            if (dynValue.Type == DataType.Number)
                 return dynValue.Number.ToString("r");
-            else if (dynValue.Type == DataType.Boolean)
+            if (dynValue.Type == DataType.Boolean)
                 return dynValue.Boolean ? "true" : "false";
-            else if (dynValue.Type == DataType.String)
+            if (dynValue.Type == DataType.String)
                 return EscapeString(dynValue.String ?? "");
-            else if (dynValue.Type == DataType.Table && dynValue.Table.OwnerScript == null)
+            if (dynValue.Type == DataType.Table)
                 return dynValue.Table.Serialize(false, tabs);
-            else
-                throw new ScriptRuntimeException("Value is not a primitive value or a prime table.");
+            throw new ScriptRuntimeException("Value is not a primitive value or a prime table.");
         }
 
         private static string EscapeString(string s)

@@ -10,9 +10,7 @@ namespace SolarSharp.Interpreter
     /// </summary>
     public class ScriptOptions
     {
-        internal ScriptOptions()
-        {
-        }
+        internal ScriptOptions() { }
 
         internal ScriptOptions(ScriptOptions defaults)
         {
@@ -46,7 +44,7 @@ namespace SolarSharp.Interpreter
         public Func<string, string> DebugInput { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether error messages will use Lua error locations instead of MoonSharp 
+        /// Gets or sets a value indicating whether error messages will use Lua error locations instead of MoonSharp
         /// improved ones. Use this for compatibility with legacy Lua code which parses error messages.
         /// </summary>
         public bool UseLuaErrorLocations { get; set; }
@@ -75,7 +73,7 @@ namespace SolarSharp.Interpreter
         /// Gets or sets the stack depth threshold at which MoonSharp starts doing
         /// tail call optimizations.
         /// TCOs can provide the little benefit of avoiding stack overflows in corner case
-        /// scenarios, at the expense of losing debug information and error stack traces 
+        /// scenarios, at the expense of losing debug information and error stack traces
         /// in all other, more common scenarios. MoonSharp choice is to start performing
         /// TCOs only after a certain threshold of stack usage is reached - by default
         /// half the current stack depth (128K entries), thus 64K entries, on either
@@ -89,13 +87,12 @@ namespace SolarSharp.Interpreter
         /// Gets or sets a value indicating whether the thread check is enabled.
         /// A "lazy" thread check is performed everytime execution is entered to ensure that no two threads
         /// calls MoonSharp execution concurrently. However 1) the check is performed best effort (thus, it might
-        /// not detect all issues) and 2) it might trigger in very odd legal situations (like, switching threads 
+        /// not detect all issues) and 2) it might trigger in very odd legal situations (like, switching threads
         /// inside a CLR-callback without actually having concurrency.
-        /// 
+        ///
         /// Disable this option if the thread check is giving problems in your scenario, but please check that
         /// you are not calling MoonSharp execution concurrently as it is not supported.
         /// </summary>
         public bool CheckThreadAccess { get; set; }
-
     }
 }

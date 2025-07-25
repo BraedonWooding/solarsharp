@@ -1,20 +1,21 @@
-﻿using SolarSharp.Interpreter.Tree.Statements;
-using SolarSharp.Interpreter.Execution;
+﻿using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.Tree.Lexer;
+using SolarSharp.Interpreter.Tree.Statements;
 
 namespace SolarSharp.Interpreter.Tree
 {
     internal abstract class Statement : NodeBase
     {
         public Statement(ScriptLoadingContext lcontext)
-            : base(lcontext)
-        { }
+            : base(lcontext) { }
 
-
-        protected static Statement CreateStatement(ScriptLoadingContext lcontext, out bool forceLast)
+        protected static Statement CreateStatement(
+            ScriptLoadingContext lcontext,
+            out bool forceLast
+        )
         {
-            Token tkn = lcontext.Lexer.Current;
+            var tkn = lcontext.Lexer.Current;
 
             forceLast = false;
 
@@ -40,50 +41,40 @@ namespace SolarSharp.Interpreter.Tree
                 case TokenType.Function:
                     return new FunctionDefinitionStatement(lcontext, false, null);
                 case TokenType.Local:
-                    Token localToken = lcontext.Lexer.Current;
+                    var localToken = lcontext.Lexer.Current;
                     lcontext.Lexer.Next();
                     if (lcontext.Lexer.Current.Type == TokenType.Function)
                         return new FunctionDefinitionStatement(lcontext, true, localToken);
-                    else
-                        return new AssignmentStatement(lcontext, localToken);
+                    return new AssignmentStatement(lcontext, localToken);
                 case TokenType.Return:
                     forceLast = true;
                     return new ReturnStatement(lcontext);
                 case TokenType.Break:
                     return new BreakStatement(lcontext);
                 default:
-                    {
-                        Token l = lcontext.Lexer.Current;
-                        Expression exp = Expression.PrimaryExp(lcontext);
+                {
+                    var l = lcontext.Lexer.Current;
+                    var exp = Expression.PrimaryExp(lcontext);
 
-                        if (exp is FunctionCallExpression fnexp)
-                            return new FunctionCallStatement(lcontext, fnexp);
-                        else
-                            return new AssignmentStatement(lcontext, exp, l);
-                    }
+                    if (exp is FunctionCallExpression fnexp)
+                        return new FunctionCallStatement(lcontext, fnexp);
+                    return new AssignmentStatement(lcontext, exp, l);
+                }
             }
         }
 
         private static Statement DispatchForLoopStatement(ScriptLoadingContext lcontext)
         {
-            //	for Name ‘=’ exp ‘,’ exp [‘,’ exp] do block end | 
-            //	for namelist in explist do block end | 		
+            //	for Name ‘=’ exp ‘,’ exp [‘,’ exp] do block end |
+            //	for namelist in explist do block end |
 
-            Token forTkn = CheckTokenType(lcontext, TokenType.For);
+            var forTkn = CheckTokenType(lcontext, TokenType.For);
 
-            Token name = CheckTokenType(lcontext, TokenType.Name);
+            var name = CheckTokenType(lcontext, TokenType.Name);
 
             if (lcontext.Lexer.Current.Type == TokenType.Op_Assignment)
                 return new ForLoopStatement(lcontext, name, forTkn);
-            else
-                return new ForEachLoopStatement(lcontext, name, forTkn);
+            return new ForEachLoopStatement(lcontext, name, forTkn);
         }
-
-
-
-
     }
-
-
-
 }

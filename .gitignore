@@ -162,3 +162,26 @@ $RECYCLE.BIN/
 
 # Mac desktop service store files
 .DS_Store
+
+# =========================
+# IDE Files
+# =========================
+
+# JetBrains IDEs (IntelliJ, Rider, etc.)
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Visual Studio backup files
+*.sln.bak
+*.sln.DotSettings.user
+
+# Test output and temp files
+TestResults/
+*test_output*
+*nunit_random_seed*
+
+# Game demo artifacts (if not intended for production)
+/game/saves/autosave.sav
+/SolarSharp.CLI/packages/

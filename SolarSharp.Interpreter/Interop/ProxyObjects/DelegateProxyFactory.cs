@@ -58,5 +58,4 @@ namespace SolarSharp.Interpreter.Interop.ProxyObjects
             get { return typeof(TProxy); }
         }
     }
-
 }

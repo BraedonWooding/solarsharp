@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.DataTypes.Custom;
@@ -12,10 +12,10 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// <summary>
         /// Converts an IList to a Lua table.
         /// </summary>
-        internal static Table ConvertIListToTable(Script script, System.Collections.IList list)
+        internal static Table ConvertIListToTable(Script script, IList list)
         {
-            Table t = new(script);
-            for (int i = 0; i < list.Count; i++)
+            var t = new Table();
+            for (var i = 0; i < list.Count; i++)
             {
                 t[i + 1] = ClrToScriptConversions.ObjectToDynValue(script, list[i]);
             }
@@ -25,14 +25,14 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// <summary>
         /// Converts an IDictionary to a Lua table.
         /// </summary>
-        internal static Table ConvertIDictionaryToTable(Script script, System.Collections.IDictionary dict)
+        internal static Table ConvertIDictionaryToTable(Script script, IDictionary dict)
         {
-            Table t = new(script);
+            var t = new Table();
 
-            foreach (System.Collections.DictionaryEntry kvp in dict)
+            foreach (DictionaryEntry kvp in dict)
             {
-                DynValue key = ClrToScriptConversions.ObjectToDynValue(script, kvp.Key);
-                DynValue val = ClrToScriptConversions.ObjectToDynValue(script, kvp.Value);
+                var key = ClrToScriptConversions.ObjectToDynValue(script, kvp.Key);
+                var val = ClrToScriptConversions.ObjectToDynValue(script, kvp.Value);
                 t.Set(key, val);
             }
 
@@ -49,30 +49,31 @@ namespace SolarSharp.Interpreter.Interop.Converters
         {
             if (Framework.Do.IsAssignableFrom(t, typeof(Dictionary<object, object>)))
                 return true;
-            else if (Framework.Do.IsAssignableFrom(t, typeof(Dictionary<DynValue, DynValue>)))
+            if (Framework.Do.IsAssignableFrom(t, typeof(Dictionary<DynValue, DynValue>)))
                 return true;
-            else if (Framework.Do.IsAssignableFrom(t, typeof(List<object>)))
+            if (Framework.Do.IsAssignableFrom(t, typeof(List<object>)))
                 return true;
-            else if (Framework.Do.IsAssignableFrom(t, typeof(List<DynValue>)))
+            if (Framework.Do.IsAssignableFrom(t, typeof(List<DynValue>)))
                 return true;
-            else if (Framework.Do.IsAssignableFrom(t, typeof(object[])))
+            if (Framework.Do.IsAssignableFrom(t, typeof(object[])))
                 return true;
-            else if (Framework.Do.IsAssignableFrom(t, typeof(DynValue[])))
+            if (Framework.Do.IsAssignableFrom(t, typeof(DynValue[])))
                 return true;
 
             if (Framework.Do.IsGenericType(t))
             {
-                Type generic = t.GetGenericTypeDefinition();
+                var generic = t.GetGenericTypeDefinition();
 
-                if (generic == typeof(List<>)
+                if (
+                    generic == typeof(List<>)
                     || generic == typeof(IList<>)
-                     || generic == typeof(ICollection<>)
-                     || generic == typeof(IEnumerable<>))
+                    || generic == typeof(ICollection<>)
+                    || generic == typeof(IEnumerable<>)
+                )
                 {
                     return true;
                 }
-                else if (generic == typeof(Dictionary<,>)
-                    || generic == typeof(IDictionary<,>))
+                if (generic == typeof(Dictionary<,>) || generic == typeof(IDictionary<,>))
                 {
                     return true;
                 }
@@ -84,8 +85,6 @@ namespace SolarSharp.Interpreter.Interop.Converters
             return false;
         }
 
-
-
         /// <summary>
         /// Converts a table to a CLR object of a given type
         /// </summary>
@@ -93,32 +92,42 @@ namespace SolarSharp.Interpreter.Interop.Converters
         {
             if (Framework.Do.IsAssignableFrom(t, typeof(Dictionary<object, object>)))
                 return TableToDictionary(table, v => v.ToObject(), v => v.ToObject());
-            else if (Framework.Do.IsAssignableFrom(t, typeof(Dictionary<DynValue, DynValue>)))
+            if (Framework.Do.IsAssignableFrom(t, typeof(Dictionary<DynValue, DynValue>)))
                 return TableToDictionary(table, v => v, v => v);
-            else if (Framework.Do.IsAssignableFrom(t, typeof(List<object>)))
+            if (Framework.Do.IsAssignableFrom(t, typeof(List<object>)))
                 return TableToList(table, v => v.ToObject());
-            else if (Framework.Do.IsAssignableFrom(t, typeof(List<DynValue>)))
+            if (Framework.Do.IsAssignableFrom(t, typeof(List<DynValue>)))
                 return TableToList(table, v => v);
-            else if (Framework.Do.IsAssignableFrom(t, typeof(object[])))
+            if (Framework.Do.IsAssignableFrom(t, typeof(object[])))
                 return TableToList(table, v => v.ToObject()).ToArray();
-            else if (Framework.Do.IsAssignableFrom(t, typeof(DynValue[])))
+            if (Framework.Do.IsAssignableFrom(t, typeof(DynValue[])))
                 return TableToList(table, v => v).ToArray();
 
             if (Framework.Do.IsGenericType(t))
             {
-                Type generic = t.GetGenericTypeDefinition();
+                var generic = t.GetGenericTypeDefinition();
 
-                if (generic == typeof(List<>)
+                if (
+                    generic == typeof(List<>)
                     || generic == typeof(IList<>)
-                     || generic == typeof(ICollection<>)
-                     || generic == typeof(IEnumerable<>))
+                    || generic == typeof(ICollection<>)
+                    || generic == typeof(IEnumerable<>)
+                )
                 {
-                    return ConvertTableToListOfGenericType(t, Framework.Do.GetGenericArguments(t)[0], table);
+                    return ConvertTableToListOfGenericType(
+                        t,
+                        Framework.Do.GetGenericArguments(t)[0],
+                        table
+                    );
                 }
-                else if (generic == typeof(Dictionary<,>)
-                    || generic == typeof(IDictionary<,>))
+                if (generic == typeof(Dictionary<,>) || generic == typeof(IDictionary<,>))
                 {
-                    return ConvertTableToDictionaryOfGenericType(t, Framework.Do.GetGenericArguments(t)[0], Framework.Do.GetGenericArguments(t)[1], table);
+                    return ConvertTableToDictionaryOfGenericType(
+                        t,
+                        Framework.Do.GetGenericArguments(t)[0],
+                        Framework.Do.GetGenericArguments(t)[1],
+                        table
+                    );
                 }
             }
 
@@ -128,11 +137,15 @@ namespace SolarSharp.Interpreter.Interop.Converters
             return null;
         }
 
-
         /// <summary>
         /// Converts a table to a <see cref="LuaDictionary{K,V}"/>
         /// </summary>
-        internal static object ConvertTableToDictionaryOfGenericType(Type dictionaryType, Type keyType, Type valueType, Table table)
+        internal static object ConvertTableToDictionaryOfGenericType(
+            Type dictionaryType,
+            Type keyType,
+            Type valueType,
+            Table table
+        )
         {
             if (dictionaryType.GetGenericTypeDefinition() != typeof(Dictionary<,>))
             {
@@ -140,12 +153,22 @@ namespace SolarSharp.Interpreter.Interop.Converters
                 dictionaryType = dictionaryType.MakeGenericType(keyType, valueType);
             }
 
-            System.Collections.IDictionary dic = (System.Collections.IDictionary)Activator.CreateInstance(dictionaryType);
+            var dic = (IDictionary)Activator.CreateInstance(dictionaryType);
 
             foreach (var kvp in table)
             {
-                object key = ScriptToClrConversions.DynValueToObjectOfType(kvp.Key, keyType, null, false);
-                object val = ScriptToClrConversions.DynValueToObjectOfType(kvp.Value, valueType, null, false);
+                var key = ScriptToClrConversions.DynValueToObjectOfType(
+                    kvp.Key,
+                    keyType,
+                    null,
+                    false
+                );
+                var val = ScriptToClrConversions.DynValueToObjectOfType(
+                    kvp.Value,
+                    valueType,
+                    null,
+                    false
+                );
 
                 dic.Add(key, val);
             }
@@ -156,30 +179,37 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// <summary>
         /// Converts a table to a T[]
         /// </summary>
-        internal static object ConvertTableToArrayOfGenericType(Type arrayType, Type itemType, Table table)
+        internal static object ConvertTableToArrayOfGenericType(
+            Type arrayType,
+            Type itemType,
+            Table table
+        )
         {
-            List<object> lst = new();
+            var lst = new List<object>();
 
             for (int i = 1, l = table.Length; i <= l; i++)
             {
-                DynValue v = table.Get(i);
-                object o = ScriptToClrConversions.DynValueToObjectOfType(v, itemType, null, false);
+                var v = table.Get(i);
+                var o = ScriptToClrConversions.DynValueToObjectOfType(v, itemType, null, false);
                 lst.Add(o);
             }
 
-            System.Collections.IList array = (System.Collections.IList)Activator.CreateInstance(arrayType, new object[] { lst.Count });
+            var array = (IList)Activator.CreateInstance(arrayType, lst.Count);
 
-            for (int i = 0; i < lst.Count; i++)
+            for (var i = 0; i < lst.Count; i++)
                 array[i] = lst[i];
 
             return array;
         }
 
-
         /// <summary>
         /// Converts a table to a <see cref="List{T}"/>
         /// </summary>
-        internal static object ConvertTableToListOfGenericType(Type listType, Type itemType, Table table)
+        internal static object ConvertTableToListOfGenericType(
+            Type listType,
+            Type itemType,
+            Table table
+        )
         {
             if (listType.GetGenericTypeDefinition() != typeof(List<>))
             {
@@ -187,12 +217,12 @@ namespace SolarSharp.Interpreter.Interop.Converters
                 listType = listType.MakeGenericType(itemType);
             }
 
-            System.Collections.IList lst = (System.Collections.IList)Activator.CreateInstance(listType);
+            var lst = (IList)Activator.CreateInstance(listType);
 
             for (int i = 1, l = table.Length; i <= l; i++)
             {
-                DynValue v = table.Get(i);
-                object o = ScriptToClrConversions.DynValueToObjectOfType(v, itemType, null, false);
+                var v = table.Get(i);
+                var o = ScriptToClrConversions.DynValueToObjectOfType(v, itemType, null, false);
                 lst.Add(o);
             }
 
@@ -204,12 +234,12 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// </summary>
         internal static List<T> TableToList<T>(Table table, Func<DynValue, T> converter)
         {
-            List<T> lst = new();
+            var lst = new List<T>();
 
             for (int i = 1, l = table.Length; i <= l; i++)
             {
-                DynValue v = table.Get(i);
-                T o = converter(v);
+                var v = table.Get(i);
+                var o = converter(v);
                 lst.Add(o);
             }
 
@@ -219,14 +249,18 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// <summary>
         /// Converts a table to a Dictionary, known in advance
         /// </summary>
-        internal static Dictionary<TK, TV> TableToDictionary<TK, TV>(Table table, Func<DynValue, TK> keyconverter, Func<DynValue, TV> valconverter)
+        internal static Dictionary<TK, TV> TableToDictionary<TK, TV>(
+            Table table,
+            Func<DynValue, TK> keyconverter,
+            Func<DynValue, TV> valconverter
+        )
         {
-            Dictionary<TK, TV> dict = new();
+            var dict = new Dictionary<TK, TV>();
 
             foreach (var kvp in table)
             {
-                TK key = keyconverter(kvp.Key);
-                TV val = valconverter(kvp.Value);
+                var key = keyconverter(kvp.Key);
+                var val = valconverter(kvp.Value);
 
                 dict.Add(key, val);
             }

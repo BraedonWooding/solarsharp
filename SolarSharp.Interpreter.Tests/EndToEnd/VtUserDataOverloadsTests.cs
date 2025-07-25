@@ -1,12 +1,17 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using NUnit.Framework;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     public static class VtOverloadsExtMethods
     {
-        public static string Method1(this VtUserDataOverloadsTests.OverloadsTestClass obj, string x, bool b)
+        public static string Method1(
+            this VtUserDataOverloadsTests.OverloadsTestClass obj,
+            string x,
+            bool b
+        )
         {
             return "X" + obj.Method1();
         }
@@ -18,8 +23,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
     }
 
-
     [TestFixture]
+    [NonParallelizable] // Uses global UserData registration
+    [Category("VM.Integration")]
     public class VtUserDataOverloadsTests
     {
         public struct OverloadsTestClass
@@ -87,18 +93,22 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
         }
 
-        private static void RunTestOverload(string code, string expected, bool tupleExpected = false)
+        private static void RunTestOverload(
+            string code,
+            string expected,
+            bool tupleExpected = false
+        )
         {
-            Script S = new();
+            var S = new Script(Examples.DesktopBasePolicySet);
 
-            OverloadsTestClass obj = new();
+            var obj = new OverloadsTestClass();
 
             UserData.RegisterType<OverloadsTestClass>();
 
             S.Globals.Set("s", UserData.CreateStatic<OverloadsTestClass>());
             S.Globals.Set("o", UserData.Create(obj));
 
-            DynValue v = S.DoString("return " + code);
+            var v = S.DoString("return " + code);
 
             if (tupleExpected)
             {
@@ -113,7 +123,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
-
         [Test]
         public void VInterop_Overloads_Varargs1()
         {
@@ -125,7 +134,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             RunTestOverload("o:methodV('{0}-{1}-{2}', 15, true, false)", "varargs:15-True-False");
         }
-
 
         [Test]
         public void VInterop_Overloads_ByRef()

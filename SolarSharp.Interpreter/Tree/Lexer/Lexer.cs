@@ -1,19 +1,19 @@
-﻿using SolarSharp.Interpreter.Errors;
-using System.Text;
+﻿using System.Text;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Tree.Lexer
 {
     internal class Lexer
     {
-        private Token m_Current = null;
+        private Token m_Current;
         private readonly string m_Code;
-        private int m_PrevLineTo = 0;
+        private int m_PrevLineTo;
         private int m_PrevColTo = 1;
-        private int m_Cursor = 0;
+        private int m_Cursor;
         private int m_Line = 1;
-        private int m_Col = 0;
+        private int m_Col;
         private readonly int m_SourceId;
-        private readonly bool m_AutoSkipComments = false;
+        private readonly bool m_AutoSkipComments;
 
         public Lexer(int sourceID, string scriptContent, bool autoSkipComments)
         {
@@ -42,11 +42,14 @@ namespace SolarSharp.Interpreter.Tree.Lexer
         {
             while (true)
             {
-                Token T = ReadToken();
+                var T = ReadToken();
 
                 //System.Diagnostics.Debug.WriteLine("LEXER : " + T.ToString());
 
-                if (T.Type != TokenType.Comment && T.Type != TokenType.HashBang || !m_AutoSkipComments)
+                if (
+                    T.Type != TokenType.Comment && T.Type != TokenType.HashBang
+                    || !m_AutoSkipComments
+                )
                     return T;
             }
         }
@@ -58,13 +61,13 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         public Token PeekNext()
         {
-            int snapshot = m_Cursor;
-            Token current = m_Current;
-            int line = m_Line;
-            int col = m_Col;
+            var snapshot = m_Cursor;
+            var current = m_Current;
+            var line = m_Line;
+            var col = m_Col;
 
             Next();
-            Token t = Current;
+            var t = Current;
 
             m_Cursor = snapshot;
             m_Current = current;
@@ -73,7 +76,6 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
             return t;
         }
-
 
         private void CursorNext()
         {
@@ -97,8 +99,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
         {
             if (m_Cursor < m_Code.Length)
                 return m_Code[m_Cursor];
-            else
-                return '\0'; //  sentinel
+            return '\0'; //  sentinel
         }
 
         private char CursorCharNext()
@@ -109,9 +110,9 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         private bool CursorMatches(string pattern)
         {
-            for (int i = 0; i < pattern.Length; i++)
+            for (var i = 0; i < pattern.Length; i++)
             {
-                int j = m_Cursor + i;
+                var j = m_Cursor + i;
 
                 if (j >= m_Code.Length)
                     return false;
@@ -133,23 +134,20 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         private void SkipWhiteSpace()
         {
-            for (; CursorNotEof() && IsWhiteSpace(CursorChar()); CursorNext())
-            {
-            }
+            for (; CursorNotEof() && IsWhiteSpace(CursorChar()); CursorNext()) { }
         }
-
 
         private Token ReadToken()
         {
             SkipWhiteSpace();
 
-            int fromLine = m_Line;
-            int fromCol = m_Col;
+            var fromLine = m_Line;
+            var fromCol = m_Col;
 
             if (!CursorNotEof())
                 return CreateToken(TokenType.Eof, fromLine, fromCol, "<eof>");
 
-            char c = CursorChar();
+            var c = CursorChar();
 
             switch (c)
             {
@@ -160,42 +158,66 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                     CursorCharNext();
                     return CreateToken(TokenType.SemiColon, fromLine, fromCol, ";");
                 case '=':
-                    return PotentiallyDoubleCharOperator('=', TokenType.Op_Assignment, TokenType.Op_Equal, fromLine, fromCol);
+                    return PotentiallyDoubleCharOperator(
+                        '=',
+                        TokenType.Op_Assignment,
+                        TokenType.Op_Equal,
+                        fromLine,
+                        fromCol
+                    );
                 case '<':
-                    return PotentiallyDoubleCharOperator('=', TokenType.Op_LessThan, TokenType.Op_LessThanEqual, fromLine, fromCol);
+                    return PotentiallyDoubleCharOperator(
+                        '=',
+                        TokenType.Op_LessThan,
+                        TokenType.Op_LessThanEqual,
+                        fromLine,
+                        fromCol
+                    );
                 case '>':
-                    return PotentiallyDoubleCharOperator('=', TokenType.Op_GreaterThan, TokenType.Op_GreaterThanEqual, fromLine, fromCol);
+                    return PotentiallyDoubleCharOperator(
+                        '=',
+                        TokenType.Op_GreaterThan,
+                        TokenType.Op_GreaterThanEqual,
+                        fromLine,
+                        fromCol
+                    );
                 case '~':
                 case '!':
                     if (CursorCharNext() != '=')
-                        throw new SyntaxErrorException(CreateToken(TokenType.Invalid, fromLine, fromCol), "unexpected symbol near '{0}'", c);
+                        throw new SyntaxErrorException(
+                            CreateToken(TokenType.Invalid, fromLine, fromCol),
+                            "unexpected symbol near '{0}'",
+                            c
+                        );
 
                     CursorCharNext();
                     return CreateToken(TokenType.Op_NotEqual, fromLine, fromCol, "~=");
                 case '.':
-                    {
-                        char next = CursorCharNext();
-                        if (next == '.')
-                            return PotentiallyDoubleCharOperator('.', TokenType.Op_Concat, TokenType.VarArgs, fromLine, fromCol);
-                        else if (LexerUtils.CharIsDigit(next))
-                            return ReadNumberToken(fromLine, fromCol, true);
-                        else
-                            return CreateToken(TokenType.Dot, fromLine, fromCol, ".");
-                    }
+                {
+                    var next = CursorCharNext();
+                    if (next == '.')
+                        return PotentiallyDoubleCharOperator(
+                            '.',
+                            TokenType.Op_Concat,
+                            TokenType.VarArgs,
+                            fromLine,
+                            fromCol
+                        );
+                    if (LexerUtils.CharIsDigit(next))
+                        return ReadNumberToken(fromLine, fromCol, true);
+                    return CreateToken(TokenType.Dot, fromLine, fromCol, ".");
+                }
                 case '+':
                     return CreateSingleCharToken(TokenType.Op_Add, fromLine, fromCol);
                 case '-':
+                {
+                    var next = CursorCharNext();
+                    if (next == '-')
                     {
-                        char next = CursorCharNext();
-                        if (next == '-')
-                        {
-                            return ReadComment(fromLine, fromCol);
-                        }
-                        else
-                        {
-                            return CreateToken(TokenType.Op_MinusOrSub, fromLine, fromCol, "-");
-                        }
+                        return ReadComment(fromLine, fromCol);
                     }
+                    return CreateToken(TokenType.Op_MinusOrSub, fromLine, fromCol, "-");
+                }
                 case '*':
                     return CreateSingleCharToken(TokenType.Op_Mul, fromLine, fromCol);
                 case '/':
@@ -210,15 +232,15 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
                     return CreateSingleCharToken(TokenType.Op_Len, fromLine, fromCol);
                 case '[':
+                {
+                    var next = CursorCharNext();
+                    if (next is '=' or '[')
                     {
-                        char next = CursorCharNext();
-                        if (next == '=' || next == '[')
-                        {
-                            string str = ReadLongString(fromLine, fromCol, null, "string");
-                            return CreateToken(TokenType.String_Long, fromLine, fromCol, str);
-                        }
-                        return CreateToken(TokenType.Brk_Open_Square, fromLine, fromCol, "[");
+                        var str = ReadLongString(fromLine, fromCol, null, "string");
+                        return CreateToken(TokenType.String_Long, fromLine, fromCol, str);
                     }
+                    return CreateToken(TokenType.Brk_Open_Square, fromLine, fromCol, "[");
+                }
                 case ']':
                     return CreateSingleCharToken(TokenType.Brk_Close_Square, fromLine, fromCol);
                 case '(':
@@ -232,50 +254,73 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 case ',':
                     return CreateSingleCharToken(TokenType.Comma, fromLine, fromCol);
                 case ':':
-                    return PotentiallyDoubleCharOperator(':', TokenType.Colon, TokenType.DoubleColon, fromLine, fromCol);
+                    return PotentiallyDoubleCharOperator(
+                        ':',
+                        TokenType.Colon,
+                        TokenType.DoubleColon,
+                        fromLine,
+                        fromCol
+                    );
                 case '"':
                 case '\'':
                     return ReadSimpleStringToken(fromLine, fromCol);
                 case '\0':
-                    throw new SyntaxErrorException(CreateToken(TokenType.Invalid, fromLine, fromCol), "unexpected symbol near '{0}'", CursorChar())
+                    throw new SyntaxErrorException(
+                        CreateToken(TokenType.Invalid, fromLine, fromCol),
+                        "unexpected symbol near '{0}'",
+                        CursorChar()
+                    )
                     {
-                        IsPrematureStreamTermination = true
+                        IsPrematureStreamTermination = true,
                     };
                 default:
                     {
                         if (char.IsLetter(c) || c == '_')
                         {
-                            string name = ReadNameToken();
+                            var name = ReadNameToken();
                             return CreateNameToken(name, fromLine, fromCol);
                         }
-                        else if (LexerUtils.CharIsDigit(c))
+                        if (LexerUtils.CharIsDigit(c))
                         {
                             return ReadNumberToken(fromLine, fromCol, false);
                         }
                     }
 
-                    throw new SyntaxErrorException(CreateToken(TokenType.Invalid, fromLine, fromCol), "unexpected symbol near '{0}'", CursorChar());
+                    throw new SyntaxErrorException(
+                        CreateToken(TokenType.Invalid, fromLine, fromCol),
+                        "unexpected symbol near '{0}'",
+                        CursorChar()
+                    );
             }
         }
 
-        private string ReadLongString(int fromLine, int fromCol, string startpattern, string subtypeforerrors)
+        private string ReadLongString(
+            int fromLine,
+            int fromCol,
+            string startpattern,
+            string subtypeforerrors
+        )
         {
             // here we are at the first '=' or second '['
-            StringBuilder text = new(1024);
-            string end_pattern = "]";
+            var text = new StringBuilder(1024);
+            var end_pattern = "]";
 
             if (startpattern == null)
             {
-                for (char c = CursorChar(); ; c = CursorCharNext())
+                for (var c = CursorChar(); ; c = CursorCharNext())
                 {
                     if (c == '\0' || !CursorNotEof())
                     {
                         throw new SyntaxErrorException(
                             CreateToken(TokenType.Invalid, fromLine, fromCol),
-                            "unfinished long {0} near '<eof>'", subtypeforerrors)
-                        { IsPrematureStreamTermination = true };
+                            "unfinished long {0} near '<eof>'",
+                            subtypeforerrors
+                        )
+                        {
+                            IsPrematureStreamTermination = true,
+                        };
                     }
-                    else if (c == '=')
+                    if (c == '=')
                     {
                         end_pattern += "=";
                     }
@@ -288,8 +333,13 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                     {
                         throw new SyntaxErrorException(
                             CreateToken(TokenType.Invalid, fromLine, fromCol),
-                            "invalid long {0} delimiter near '{1}'", subtypeforerrors, c)
-                        { IsPrematureStreamTermination = true };
+                            "invalid long {0} delimiter near '{1}'",
+                            subtypeforerrors,
+                            c
+                        )
+                        {
+                            IsPrematureStreamTermination = true,
+                        };
                     }
                 }
             }
@@ -298,8 +348,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 end_pattern = startpattern.Replace('[', ']');
             }
 
-
-            for (char c = CursorCharNext(); ; c = CursorCharNext())
+            for (var c = CursorCharNext(); ; c = CursorCharNext())
             {
                 if (c == '\r') // XXI century and we still debate on how a newline is made. throw new DeveloperExtremelyAngryException.
                     continue;
@@ -307,27 +356,29 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 if (c == '\0' || !CursorNotEof())
                 {
                     throw new SyntaxErrorException(
-                            CreateToken(TokenType.Invalid, fromLine, fromCol),
-                            "unfinished long {0} near '{1}'", subtypeforerrors, text.ToString())
-                    { IsPrematureStreamTermination = true };
+                        CreateToken(TokenType.Invalid, fromLine, fromCol),
+                        "unfinished long {0} near '{1}'",
+                        subtypeforerrors,
+                        text.ToString()
+                    )
+                    {
+                        IsPrematureStreamTermination = true,
+                    };
                 }
-                else if (c == ']' && CursorMatches(end_pattern))
+                if (c == ']' && CursorMatches(end_pattern))
                 {
-                    for (int i = 0; i < end_pattern.Length; i++)
+                    for (var i = 0; i < end_pattern.Length; i++)
                         CursorCharNext();
 
                     return LexerUtils.AdjustLuaLongString(text.ToString());
                 }
-                else
-                {
-                    text.Append(c);
-                }
+                text.Append(c);
             }
         }
 
         private Token ReadNumberToken(int fromLine, int fromCol, bool leadingDot)
         {
-            StringBuilder text = new(32);
+            var text = new StringBuilder(32);
 
             //INT : Digit+
             //HEX : '0' [xX] HexDigit+
@@ -341,10 +392,10 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             // ExponentPart : [eE] [+-]? Digit+
             // HexExponentPart : [pP] [+-]? Digit+
 
-            bool isHex = false;
-            bool dotAdded = false;
-            bool exponentPart = false;
-            bool exponentSignAllowed = false;
+            var isHex = false;
+            var dotAdded = false;
+            var exponentPart = false;
+            var exponentSignAllowed = false;
 
             if (leadingDot)
             {
@@ -353,9 +404,9 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             else if (CursorChar() == '0')
             {
                 text.Append(CursorChar());
-                char secondChar = CursorCharNext();
+                var secondChar = CursorCharNext();
 
-                if (secondChar == 'x' || secondChar == 'X')
+                if (secondChar is 'x' or 'X')
                 {
                     isHex = true;
                     text.Append(CursorChar());
@@ -363,9 +414,9 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 }
             }
 
-            for (char c = CursorChar(); CursorNotEof(); c = CursorCharNext())
+            for (var c = CursorChar(); CursorNotEof(); c = CursorCharNext())
             {
-                if (exponentSignAllowed && (c == '+' || c == '-'))
+                if (exponentSignAllowed && c is '+' or '-')
                 {
                     exponentSignAllowed = false;
                     text.Append(c);
@@ -383,7 +434,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 {
                     text.Append(c);
                 }
-                else if (c == 'e' || c == 'E' || isHex && (c == 'p' || c == 'P'))
+                else if (c == 'e' || c == 'E' || isHex && c is 'p' or 'P')
                 {
                     text.Append(c);
                     exponentPart = true;
@@ -396,36 +447,36 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 }
             }
 
-            TokenType numberType = TokenType.Number;
+            var numberType = TokenType.Number;
 
             if (isHex && (dotAdded || exponentPart))
                 numberType = TokenType.Number_HexFloat;
             else if (isHex)
                 numberType = TokenType.Number_Hex;
 
-            string tokenStr = text.ToString();
+            var tokenStr = text.ToString();
             return CreateToken(numberType, fromLine, fromCol, tokenStr);
         }
 
         private Token CreateSingleCharToken(TokenType tokenType, int fromLine, int fromCol)
         {
-            char c = CursorChar();
+            var c = CursorChar();
             CursorCharNext();
             return CreateToken(tokenType, fromLine, fromCol, c.ToString());
         }
 
         private Token ReadHashBang(int fromLine, int fromCol)
         {
-            StringBuilder text = new(32);
+            var text = new StringBuilder(32);
 
-            for (char c = CursorChar(); CursorNotEof(); c = CursorCharNext())
+            for (var c = CursorChar(); CursorNotEof(); c = CursorCharNext())
             {
                 if (c == '\n')
                 {
                     CursorCharNext();
                     return CreateToken(TokenType.HashBang, fromLine, fromCol, text.ToString());
                 }
-                else if (c != '\r')
+                if (c != '\r')
                 {
                     text.Append(c);
                 }
@@ -434,28 +485,27 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             return CreateToken(TokenType.HashBang, fromLine, fromCol, text.ToString());
         }
 
-
         private Token ReadComment(int fromLine, int fromCol)
         {
-            StringBuilder text = new(32);
+            var text = new StringBuilder(32);
 
-            bool extraneousFound = false;
+            var extraneousFound = false;
 
-            for (char c = CursorCharNext(); CursorNotEof(); c = CursorCharNext())
+            for (var c = CursorCharNext(); CursorNotEof(); c = CursorCharNext())
             {
                 if (c == '[' && !extraneousFound && text.Length > 0)
                 {
                     text.Append('[');
                     //CursorCharNext();
-                    string comment = ReadLongString(fromLine, fromCol, text.ToString(), "comment");
+                    var comment = ReadLongString(fromLine, fromCol, text.ToString(), "comment");
                     return CreateToken(TokenType.Comment, fromLine, fromCol, comment);
                 }
-                else if (c == '\n')
+                if (c == '\n')
                 {
                     CursorCharNext();
                     return CreateToken(TokenType.Comment, fromLine, fromCol, text.ToString());
                 }
-                else if (c != '\r')
+                if (c != '\r')
                 {
                     if (c != '[' && c != '=')
                         extraneousFound = true;
@@ -469,12 +519,12 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         private Token ReadSimpleStringToken(int fromLine, int fromCol)
         {
-            StringBuilder text = new(32);
-            char separator = CursorChar();
+            var text = new StringBuilder(32);
+            var separator = CursorChar();
 
-            for (char c = CursorCharNext(); CursorNotEof(); c = CursorCharNext())
+            for (var c = CursorCharNext(); CursorNotEof(); c = CursorCharNext())
             {
-            redo_Loop:
+                redo_Loop:
 
                 if (c == '\\')
                 {
@@ -502,16 +552,18 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                         goto redo_Loop;
                     }
                 }
-                else if (c == '\n' || c == '\r')
+                else if (c is '\n' or '\r')
                 {
                     throw new SyntaxErrorException(
                         CreateToken(TokenType.Invalid, fromLine, fromCol),
-                        "unfinished string near '{0}'", text.ToString());
+                        "unfinished string near '{0}'",
+                        text.ToString()
+                    );
                 }
                 else if (c == separator)
                 {
                     CursorCharNext();
-                    Token t = CreateToken(TokenType.String, fromLine, fromCol);
+                    var t = CreateToken(TokenType.String, fromLine, fromCol);
                     t.Text = LexerUtils.UnescapeLuaString(t, text.ToString());
                     return t;
                 }
@@ -523,14 +575,23 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
             throw new SyntaxErrorException(
                 CreateToken(TokenType.Invalid, fromLine, fromCol),
-                "unfinished string near '{0}'", text.ToString())
-            { IsPrematureStreamTermination = true };
+                "unfinished string near '{0}'",
+                text.ToString()
+            )
+            {
+                IsPrematureStreamTermination = true,
+            };
         }
 
-
-        private Token PotentiallyDoubleCharOperator(char expectedSecondChar, TokenType singleCharToken, TokenType doubleCharToken, int fromLine, int fromCol)
+        private Token PotentiallyDoubleCharOperator(
+            char expectedSecondChar,
+            TokenType singleCharToken,
+            TokenType doubleCharToken,
+            int fromLine,
+            int fromCol
+        )
         {
-            string op = CursorChar().ToString();
+            var op = CursorChar().ToString();
 
             CursorCharNext();
 
@@ -539,32 +600,39 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                 CursorCharNext();
                 return CreateToken(doubleCharToken, fromLine, fromCol, op + expectedSecondChar);
             }
-            else
-                return CreateToken(singleCharToken, fromLine, fromCol, op);
+            return CreateToken(singleCharToken, fromLine, fromCol, op);
         }
-
-
 
         private Token CreateNameToken(string name, int fromLine, int fromCol)
         {
-            TokenType? reservedType = Token.GetReservedTokenType(name);
+            var reservedType = Token.GetReservedTokenType(name);
 
             if (reservedType.HasValue)
             {
                 return CreateToken(reservedType.Value, fromLine, fromCol, name);
             }
-            else
-            {
-                return CreateToken(TokenType.Name, fromLine, fromCol, name);
-            }
+            return CreateToken(TokenType.Name, fromLine, fromCol, name);
         }
 
-
-        private Token CreateToken(TokenType tokenType, int fromLine, int fromCol, string text = null)
+        private Token CreateToken(
+            TokenType tokenType,
+            int fromLine,
+            int fromCol,
+            string text = null
+        )
         {
-            Token t = new(tokenType, m_SourceId, fromLine, fromCol, m_Line, m_Col, m_PrevLineTo, m_PrevColTo)
+            var t = new Token(
+                tokenType,
+                m_SourceId,
+                fromLine,
+                fromCol,
+                m_Line,
+                m_Col,
+                m_PrevLineTo,
+                m_PrevColTo
+            )
             {
-                Text = text
+                Text = text,
             };
             m_PrevLineTo = m_Line;
             m_PrevColTo = m_Col;
@@ -573,9 +641,9 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         private string ReadNameToken()
         {
-            StringBuilder name = new(32);
+            var name = new StringBuilder(32);
 
-            for (char c = CursorChar(); CursorNotEof(); c = CursorCharNext())
+            for (var c = CursorChar(); CursorNotEof(); c = CursorCharNext())
             {
                 if (char.IsLetterOrDigit(c) || c == '_')
                     name.Append(c);
@@ -585,9 +653,5 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
             return name.ToString();
         }
-
-
-
-
     }
 }

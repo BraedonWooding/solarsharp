@@ -8,7 +8,7 @@ namespace SolarSharp.Interpreter.Execution.Scopes
     {
         private readonly BuildTimeScopeBlock m_ScopeTreeRoot;
         private BuildTimeScopeBlock m_ScopeTreeHead;
-        private readonly RuntimeScopeFrame m_ScopeFrame = new();
+        private readonly RuntimeScopeFrame m_ScopeFrame = new RuntimeScopeFrame();
 
         public bool HasVarArgs { get; private set; }
 
@@ -51,7 +51,7 @@ namespace SolarSharp.Interpreter.Execution.Scopes
         {
             for (var tree = m_ScopeTreeHead; tree != null; tree = tree.Parent)
             {
-                SymbolRef l = tree.Find(name);
+                var l = tree.Find(name);
 
                 if (l != null)
                     return l;

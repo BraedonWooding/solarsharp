@@ -60,7 +60,6 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
     internal static class NamespaceDoc { }
 }
 
-
 namespace SolarSharp.Interpreter.Loaders
 {
     /// <summary>
@@ -68,7 +67,6 @@ namespace SolarSharp.Interpreter.Loaders
     /// </summary>
     internal static class NamespaceDoc { }
 }
-
 
 namespace SolarSharp.Interpreter.Platforms
 {
@@ -88,9 +86,3 @@ namespace SolarSharp.Interpreter.REPL
     /// </summary>
     internal static class NamespaceDoc { }
 }
-
-
-
-
-
-

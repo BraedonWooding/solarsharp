@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-
 #if DOTNET_CORE
-	using TTypeInfo = System.Reflection.TypeInfo;
+using TTypeInfo = System.Reflection.TypeInfo;
 #elif NETFX_CORE
-	using TTypeInfo = System.Reflection.TypeInfo;
+using TTypeInfo = System.Reflection.TypeInfo;
 #else
 using TTypeInfo = System.Type;
 #endif
@@ -26,7 +25,6 @@ namespace SolarSharp.Interpreter.Compatibility.Frameworks.Base
             return GetTypeInfoFromType(t).BaseType;
         }
 
-
         public override bool IsValueType(TTypeInfo t)
         {
             return GetTypeInfoFromType(t).IsValueType;
@@ -41,6 +39,7 @@ namespace SolarSharp.Interpreter.Compatibility.Frameworks.Base
         {
             return GetTypeInfoFromType(t).IsNestedPublic;
         }
+
         public override bool IsAbstract(TTypeInfo t)
         {
             return GetTypeInfoFromType(t).IsAbstract;
@@ -63,14 +62,18 @@ namespace SolarSharp.Interpreter.Compatibility.Frameworks.Base
 
         public override Attribute[] GetCustomAttributes(TTypeInfo t, bool inherit)
         {
-            return GetTypeInfoFromType(t).GetCustomAttributes(inherit).OfType<Attribute>().ToArray();
+            return GetTypeInfoFromType(t)
+                .GetCustomAttributes(inherit)
+                .OfType<Attribute>()
+                .ToArray();
         }
 
         public override Attribute[] GetCustomAttributes(TTypeInfo t, TTypeInfo at, bool inherit)
         {
-            return GetTypeInfoFromType(t).GetCustomAttributes(at, inherit).OfType<Attribute>().ToArray();
+            return GetTypeInfoFromType(t)
+                .GetCustomAttributes(at, inherit)
+                .OfType<Attribute>()
+                .ToArray();
         }
-
-
     }
 }

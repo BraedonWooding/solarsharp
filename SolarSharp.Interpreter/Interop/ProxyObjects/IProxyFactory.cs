@@ -11,10 +11,12 @@ namespace SolarSharp.Interpreter.Interop.ProxyObjects
         /// Takes an instance of a target object and returns a proxy object wrapping it
         /// </summary>
         object CreateProxyObject(object o);
+
         /// <summary>
         /// Gets the proxied type
         /// </summary>
         Type TargetType { get; }
+
         /// <summary>
         /// Gets the proxy type
         /// </summary>
@@ -35,5 +37,4 @@ namespace SolarSharp.Interpreter.Interop.ProxyObjects
         /// </summary>
         TProxy CreateProxyObject(TTarget target);
     }
-
 }

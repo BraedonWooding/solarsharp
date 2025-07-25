@@ -4,12 +4,7 @@ namespace Benchmark.Implementations
 {
     public class NeoImplementation : AImplementation
     {
-        private readonly Lua state;
-
-        public NeoImplementation()
-        {
-            state = new Lua();
-        }
+        private readonly Lua state = new Lua();
 
         public override object Run(string file)
         {

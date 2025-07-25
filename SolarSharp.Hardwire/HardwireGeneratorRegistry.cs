@@ -8,7 +8,8 @@ namespace SolarSharp.Hardwire
 {
     public static class HardwireGeneratorRegistry
     {
-        private static readonly Dictionary<string, IHardwireGenerator> m_Generators = new();
+        private static readonly Dictionary<string, IHardwireGenerator> m_Generators =
+            new Dictionary<string, IHardwireGenerator>();
 
         public static void Register(IHardwireGenerator g)
         {
@@ -19,8 +20,7 @@ namespace SolarSharp.Hardwire
         {
             if (m_Generators.ContainsKey(type))
                 return m_Generators[type];
-            else
-                return new NullGenerator(type);
+            return new NullGenerator(type);
         }
 
         public static void RegisterPredefined()
@@ -33,11 +33,13 @@ namespace SolarSharp.Hardwire
             if (asm == null)
                 asm = Assembly.GetCallingAssembly();
 
-            foreach (Type type in asm.GetTypes()
-                .Where(t => !(t.IsAbstract || t.IsGenericTypeDefinition || t.IsGenericType))
-                .Where(t => typeof(IHardwireGenerator).IsAssignableFrom(t)))
+            foreach (
+                var type in asm.GetTypes()
+                    .Where(t => !(t.IsAbstract || t.IsGenericTypeDefinition || t.IsGenericType))
+                    .Where(t => typeof(IHardwireGenerator).IsAssignableFrom(t))
+            )
             {
-                IHardwireGenerator g = (IHardwireGenerator)Activator.CreateInstance(type);
+                var g = (IHardwireGenerator)Activator.CreateInstance(type);
                 Register(g);
             }
         }

@@ -6,6 +6,7 @@
     /// <param name="args">The arguments.</param>
     /// <returns>The return value of the script function</returns>
     public delegate object ScriptFunctionDelegate(params object[] args);
+
     /// <summary>
     /// A Delegate type which can wrap a script function with a generic typed return value
     /// </summary>

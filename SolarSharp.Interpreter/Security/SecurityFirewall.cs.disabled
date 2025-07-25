@@ -1,0 +1,570 @@
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using CSharpFunctionalExtensions;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Security.Cryptography;
+using SolarSharp.Interpreter.Security.Manifests;
+using SolarSharp.Interpreter.CoreLib;
+using SolarSharp.Interpreter.Modules;
+
+namespace SolarSharp.Interpreter.Security
+{
+    /// <summary>
+    /// Security firewall that enforces access control at Script boundaries.
+    /// Built into the Script class for boundary-level access control.
+    /// Uses pure BouncyCastle cryptographic verification.
+    /// </summary>
+    public sealed class SecurityFirewall
+    {
+        private readonly Script _script;
+        private readonly SecurityPolicyResolver _policyResolver;
+        private readonly ISecurityAuditor _auditor;
+        private readonly ConcurrentDictionary<string, CryptographicContext> _contextCache;
+        private readonly ConcurrentDictionary<string, SecurityDomain> _domainCache;
+        
+        /// <summary>
+        /// Initialize security firewall for a script instance.
+        /// Pure functional initialization with no side effects.
+        /// </summary>
+        public SecurityFirewall(
+            Script script,
+            SecurityPolicyResolver policyResolver,
+            ISecurityAuditor auditor)
+        {
+            _script = script ?? throw new ArgumentNullException(nameof(script));
+            _policyResolver = policyResolver ?? throw new ArgumentNullException(nameof(policyResolver));
+            _auditor = auditor ?? throw new ArgumentNullException(nameof(auditor));
+            _contextCache = new ConcurrentDictionary<string, CryptographicContext>();
+            _domainCache = new ConcurrentDictionary<string, SecurityDomain>();
+        }
+
+        /// <summary>
+        /// Check if a function call is authorized based on cryptographic security domains.
+        /// Uses pure BouncyCastle signature verification.
+        /// </summary>
+        /// <param name="functionName">Name of the function being called</param>
+        /// <param name="requiredCapabilities">Required capabilities for the function</param>
+        /// <param name="requiredModule">Required module permissions</param>
+        /// <param name="context">Current execution context</param>
+        /// <returns>Authorization result with details</returns>
+        public Result<AuthorizationResult, SecurityError> CheckFunctionAuthorization(
+            string functionName,
+            ScriptCapabilities requiredCapabilities,
+            CoreModules requiredModule,
+            ScriptExecutionContext context)
+        {
+            try
+            {
+                // Get the current security domain for this execution context
+                var securityDomain = GetSecurityDomain(context);
+                
+                // If no security domain is available, use default policy
+                if (securityDomain.HasNoValue)
+                {
+                    return CheckDefaultPolicy(functionName, requiredCapabilities, requiredModule, context);
+                }
+                
+                var domain = securityDomain.Value;
+                
+                // Verify the domain's cryptographic authenticity
+                var verificationResult = VerifyDomainAuthenticity(domain, context);
+                if (verificationResult.IsFailure)
+                {
+                    return LogAndReturnSecurityViolation(
+                        $"Domain verification failed for function '{functionName}': {verificationResult.Error}",
+                        functionName,
+                        context
+                    );
+                }
+                
+                // Check if the domain has the required capabilities
+                var authorizationResult = CheckDomainCapabilities(domain, requiredCapabilities, requiredModule);
+                if (authorizationResult.IsFailure)
+                {
+                    return LogAndReturnSecurityViolation(
+                        $"Insufficient capabilities for function '{functionName}': {authorizationResult.Error}",
+                        functionName,
+                        context
+                    );
+                }
+                
+                // Log successful authorization
+                _auditor.LogSecurityEvent(SecurityEventType.AccessGranted, new SecurityEvent
+                {
+                    EventType = SecurityEventType.AccessGranted,
+                    Timestamp = DateTime.UtcNow,
+                    Source = context.GetCurrentScriptName(),
+                    Target = functionName,
+                    Details = $"Function authorized for domain: {domain.DisplayName}",
+                    SecurityContext = domain.CryptographicContext.SubjectName
+                });
+                
+                return Result.Success<AuthorizationResult, SecurityError>(
+                    new AuthorizationResult(
+                        IsAuthorized: true,
+                        SecurityDomain: Maybe<SecurityDomain>.From(domain),
+                        RequiredCapabilities: requiredCapabilities,
+                        GrantedCapabilities: domain.EffectivePolicy.Capabilities,
+                        AuthorizationReason: $"Cryptographically verified domain: {domain.DisplayName}"
+                    )
+                );
+            }
+            catch (Exception ex)
+            {
+                return LogAndReturnSecurityViolation(
+                    $"Security firewall error for function '{functionName}': {ex.Message}",
+                    functionName,
+                    context
+                );
+            }
+        }
+
+        /// <summary>
+        /// Verify message routing authorization based on cryptographic signatures.
+        /// Implements JavaCard-style security domain message routing.
+        /// </summary>
+        /// <param name="message">Message to route</param>
+        /// <param name="targetDomain">Target security domain</param>
+        /// <param name="context">Current execution context</param>
+        /// <returns>Message routing authorization result</returns>
+        public Result<MessageRoutingResult, SecurityError> CheckMessageRouting(
+            SecurityMessage message,
+            SecurityDomain targetDomain,
+            ScriptExecutionContext context)
+        {
+            try
+            {
+                // Get the source security domain
+                var sourceDomain = GetSecurityDomain(context);
+                if (sourceDomain.HasNoValue)
+                {
+                    return Result.Failure<MessageRoutingResult, SecurityError>(
+                        new SecurityError("No source security domain available for message routing")
+                    );
+                }
+                
+                // Verify message signature matches source domain
+                var signatureVerification = VerifyMessageSignature(message, sourceDomain.Value);
+                if (signatureVerification.IsFailure)
+                {
+                    return Result.Failure<MessageRoutingResult, SecurityError>(
+                        new SecurityError($"Message signature verification failed: {signatureVerification.Error}")
+                    );
+                }
+                
+                // Check if source domain is authorized to send to target domain
+                var routingAuthorization = CheckRoutingPolicy(sourceDomain.Value, targetDomain, message.Topic);
+                if (routingAuthorization.IsFailure)
+                {
+                    return Result.Failure<MessageRoutingResult, SecurityError>(
+                        new SecurityError($"Message routing denied: {routingAuthorization.Error}")
+                    );
+                }
+                
+                // Log successful message routing
+                _auditor.LogSecurityEvent(SecurityEventType.MessageRouted, new SecurityEvent
+                {
+                    EventType = SecurityEventType.MessageRouted,
+                    Timestamp = DateTime.UtcNow,
+                    Source = sourceDomain.Value.DisplayName,
+                    Target = targetDomain.DisplayName,
+                    Details = $"Message routed on topic: {message.Topic}",
+                    SecurityContext = message.CorrelationId
+                });
+                
+                return Result.Success<MessageRoutingResult, SecurityError>(
+                    new MessageRoutingResult(
+                        IsAuthorized: true,
+                        SourceDomain: sourceDomain.Value,
+                        TargetDomain: targetDomain,
+                        Message: message,
+                        RoutingReason: "Cryptographic verification and policy authorization successful"
+                    )
+                );
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure<MessageRoutingResult, SecurityError>(
+                    new SecurityError($"Message routing error: {ex.Message}")
+                );
+            }
+        }
+
+        /// <summary>
+        /// Get the security domain for the current execution context.
+        /// Pure function with caching for performance.
+        /// </summary>
+        private Maybe<SecurityDomain> GetSecurityDomain(ScriptExecutionContext context)
+        {
+            var scriptName = context.GetCurrentScriptName();
+            
+            // Check domain cache first
+            if (_domainCache.TryGetValue(scriptName, out var cachedDomain))
+            {
+                return Maybe<SecurityDomain>.From(cachedDomain);
+            }
+            
+            // Resolve manifest for this script
+            var manifestResult = _policyResolver.ResolveManifest(scriptName);
+            if (manifestResult.IsFailure)
+            {
+                return Maybe<SecurityDomain>.None;
+            }
+            
+            var manifest = manifestResult.Value;
+            
+            // Get or create cryptographic context
+            var contextResult = GetOrCreateCryptographicContext(manifest);
+            if (contextResult.IsFailure)
+            {
+                return Maybe<SecurityDomain>.None;
+            }
+            
+            // Create security domain
+            var domain = SecurityDomain.Create(
+                manifest.ManifestId,
+                contextResult.Value,
+                manifest.SecurityPolicy,
+                manifest.DisplayName ?? scriptName
+            );
+            
+            // Cache the domain for future use
+            _domainCache.TryAdd(scriptName, domain);
+            
+            return Maybe<SecurityDomain>.From(domain);
+        }
+
+        /// <summary>
+        /// Get or create a cryptographic context from a manifest.
+        /// Uses pure BouncyCastle implementation with caching.
+        /// </summary>
+        private Result<CryptographicContext, SecurityError> GetOrCreateCryptographicContext(Manifest manifest)
+        {
+            var manifestId = manifest.ManifestId;
+            
+            // Check context cache first
+            if (_contextCache.TryGetValue(manifestId, out var cachedContext))
+            {
+                return Result.Success<CryptographicContext, SecurityError>(cachedContext);
+            }
+            
+            // Create new cryptographic context from manifest certificate
+            // Note: Using empty certificates for now - need to implement certificate storage in Manifest
+            var contextResult = CryptographicContext.FromBytes(
+                new byte[0], // manifest.Certificate - to be implemented
+                ImmutableList<Org.BouncyCastle.X509.X509Certificate>.Empty.ToList(), // manifest.IntermediateCertificates
+                GetTrustedCAs()
+            );
+            
+            if (contextResult.IsFailure)
+            {
+                return Result.Failure<CryptographicContext, SecurityError>(
+                    new SecurityError($"Failed to create cryptographic context: {contextResult.Error.Message}")
+                );
+            }
+            
+            var context = contextResult.Value;
+            
+            // Cache the context for future use
+            _contextCache.TryAdd(manifestId, context);
+            
+            return Result.Success<CryptographicContext, SecurityError>(context);
+        }
+
+        /// <summary>
+        /// Verify the cryptographic authenticity of a security domain.
+        /// Pure BouncyCastle signature verification.
+        /// </summary>
+        private UnitResult<SecurityError> VerifyDomainAuthenticity(SecurityDomain domain, ScriptExecutionContext context)
+        {
+            // Check certificate validity period
+            var validity = domain.CryptographicContext.GetValidityPeriod();
+            if (!validity.IsCurrentlyValid)
+            {
+                return UnitResult.Failure<SecurityError>(
+                    new SecurityError($"Certificate expired for domain: {domain.DisplayName}")
+                );
+            }
+            
+            // Verify certificate chain if validation was performed
+            if (domain.CryptographicContext.ValidationResult.HasValue && !domain.CryptographicContext.IsTrusted)
+            {
+                return UnitResult.Failure<SecurityError>(
+                    new SecurityError($"Certificate chain validation failed for domain: {domain.DisplayName}")
+                );
+            }
+            
+            return UnitResult.Success<SecurityError>();
+        }
+
+        /// <summary>
+        /// Check if a security domain has the required capabilities.
+        /// Pure functional capability checking.
+        /// </summary>
+        private UnitResult<SecurityError> CheckDomainCapabilities(
+            SecurityDomain domain,
+            ScriptCapabilities requiredCapabilities,
+            CoreModules requiredModule)
+        {
+            var effectivePolicy = domain.EffectivePolicy;
+            
+            // Check script capabilities
+            if (!effectivePolicy.Capabilities.HasFlag(requiredCapabilities))
+            {
+                var missing = requiredCapabilities & ~effectivePolicy.Capabilities;
+                return UnitResult.Failure<SecurityError>(
+                    new SecurityError($"Missing capabilities: {missing}")
+                );
+            }
+            
+            // Check module permissions
+            if (requiredModule != CoreModules.None && !effectivePolicy.AllowedModules.HasFlag(requiredModule))
+            {
+                return UnitResult.Failure<SecurityError>(
+                    new SecurityError($"Module access denied: {requiredModule}")
+                );
+            }
+            
+            return UnitResult.Success<SecurityError>();
+        }
+
+        /// <summary>
+        /// Check default policy when no security domain is available.
+        /// </summary>
+        private Result<AuthorizationResult, SecurityError> CheckDefaultPolicy(
+            string functionName,
+            ScriptCapabilities requiredCapabilities,
+            CoreModules requiredModule,
+            ScriptExecutionContext context)
+        {
+            var defaultPolicyResult = _policyResolver.GetDefaultPolicy(context.GetCurrentScriptName());
+            if (defaultPolicyResult.IsFailure)
+            {
+                return LogAndReturnSecurityViolation(
+                    $"No default policy available for function '{functionName}'",
+                    functionName,
+                    context
+                );
+            }
+            
+            var defaultPolicy = defaultPolicyResult.Value;
+            
+            // Check if default policy allows the required capabilities
+            if (!defaultPolicy.Capabilities.HasFlag(requiredCapabilities))
+            {
+                return LogAndReturnSecurityViolation(
+                    $"Default policy insufficient for function '{functionName}' - missing capabilities: {requiredCapabilities & ~defaultPolicy.Capabilities}",
+                    functionName,
+                    context
+                );
+            }
+            
+            return Result.Success<AuthorizationResult, SecurityError>(
+                new AuthorizationResult(
+                    IsAuthorized: true,
+                    SecurityDomain: Maybe<SecurityDomain>.None,
+                    RequiredCapabilities: requiredCapabilities,
+                    GrantedCapabilities: defaultPolicy.Capabilities,
+                    AuthorizationReason: "Default policy authorization"
+                )
+            );
+        }
+
+        /// <summary>
+        /// Verify message signature using BouncyCastle cryptography.
+        /// </summary>
+        private UnitResult<SecurityError> VerifyMessageSignature(SecurityMessage message, SecurityDomain sourceDomain)
+        {
+            if (message.Signature == null || message.Signature.Length == 0)
+            {
+                return UnitResult.Failure<SecurityError>(
+                    new SecurityError("Message signature is required")
+                );
+            }
+            
+            var verificationResult = sourceDomain.CryptographicContext.VerifySignature(
+                message.GetSignableData(),
+                message.Signature
+            );
+            
+            if (verificationResult.IsFailure)
+            {
+                return UnitResult.Failure<SecurityError>(
+                    new SecurityError($"Signature verification failed: {verificationResult.Error.Message}")
+                );
+            }
+            
+            if (!verificationResult.Value)
+            {
+                return UnitResult.Failure<SecurityError>(
+                    new SecurityError("Message signature is invalid")
+                );
+            }
+            
+            return UnitResult.Success<SecurityError>();
+        }
+
+        /// <summary>
+        /// Check routing policy between security domains.
+        /// </summary>
+        private UnitResult<SecurityError> CheckRoutingPolicy(
+            SecurityDomain sourceDomain,
+            SecurityDomain targetDomain,
+            string topic)
+        {
+            // Implementation would check routing rules defined in security policies
+            // For now, allow all routing between trusted domains
+            if (sourceDomain.CryptographicContext.IsTrusted && targetDomain.CryptographicContext.IsTrusted)
+            {
+                return UnitResult.Success<SecurityError>();
+            }
+            
+            return UnitResult.Failure<SecurityError>(
+                new SecurityError("Message routing denied between untrusted domains")
+            );
+        }
+
+        /// <summary>
+        /// Get trusted CA certificates for chain validation.
+        /// </summary>
+        private IList<Org.BouncyCastle.X509.X509Certificate> GetTrustedCAs()
+        {
+            // Implementation would load trusted CAs from configuration
+            // For now, return empty list (validation will be skipped)
+            return ImmutableList<Org.BouncyCastle.X509.X509Certificate>.Empty;
+        }
+
+        /// <summary>
+        /// Log security violation and return standardized error result.
+        /// </summary>
+        private Result<AuthorizationResult, SecurityError> LogAndReturnSecurityViolation(
+            string message,
+            string functionName,
+            ScriptExecutionContext context)
+        {
+            _auditor.LogSecurityEvent(SecurityEventType.AccessDenied, new SecurityEvent
+            {
+                EventType = SecurityEventType.AccessDenied,
+                Timestamp = DateTime.UtcNow,
+                Source = context.GetCurrentScriptName(),
+                Target = functionName,
+                Details = message,
+                SecurityContext = "SecurityFirewall"
+            });
+            
+            return Result.Failure<AuthorizationResult, SecurityError>(new SecurityError(message));
+        }
+    }
+
+    /// <summary>
+    /// Result of function authorization check.
+    /// </summary>
+    public sealed record AuthorizationResult(
+        bool IsAuthorized,
+        Maybe<SecurityDomain> SecurityDomain,
+        ScriptCapabilities RequiredCapabilities,
+        ScriptCapabilities GrantedCapabilities,
+        string AuthorizationReason
+    );
+
+    /// <summary>
+    /// Result of message routing authorization.
+    /// </summary>
+    public sealed record MessageRoutingResult(
+        bool IsAuthorized,
+        SecurityDomain SourceDomain,
+        SecurityDomain TargetDomain,
+        SecurityMessage Message,
+        string RoutingReason
+    );
+
+    /// <summary>
+    /// Security domain representing cryptographic identity and policy.
+    /// </summary>
+    public sealed record SecurityDomain(
+        string DomainId,
+        CryptographicContext CryptographicContext,
+        SecurityPolicy EffectivePolicy,
+        string DisplayName
+    )
+    {
+        /// <summary>
+        /// Create a security domain from components.
+        /// </summary>
+        public static SecurityDomain Create(
+            string domainId,
+            CryptographicContext cryptographicContext,
+            SecurityPolicy effectivePolicy,
+            string displayName)
+        {
+            return new SecurityDomain(
+                DomainId: domainId,
+                CryptographicContext: cryptographicContext,
+                EffectivePolicy: effectivePolicy,
+                DisplayName: displayName
+            );
+        }
+
+        /// <summary>
+        /// Check if this domain matches a public key hash.
+        /// </summary>
+        public bool MatchesPublicKeyHash(string publicKeyHash) =>
+            CryptographicContext.MatchesPublicKeyHash(publicKeyHash);
+
+        /// <summary>
+        /// Check if this domain matches a subject name.
+        /// </summary>
+        public bool MatchesSubjectName(string subjectName) =>
+            CryptographicContext.MatchesSubjectName(subjectName);
+    }
+
+    /// <summary>
+    /// Security message for inter-domain communication.
+    /// </summary>
+    public sealed record SecurityMessage(
+        string Topic,
+        byte[] Data,
+        byte[] Signature,
+        string CorrelationId,
+        DateTime Timestamp
+    )
+    {
+        /// <summary>
+        /// Get signable data for this message.
+        /// </summary>
+        public byte[] GetSignableData()
+        {
+            var topicBytes = System.Text.Encoding.UTF8.GetBytes(Topic);
+            var correlationBytes = System.Text.Encoding.UTF8.GetBytes(CorrelationId);
+            var timestampBytes = BitConverter.GetBytes(Timestamp.ToBinary());
+            
+            var signableData = new byte[topicBytes.Length + Data.Length + correlationBytes.Length + timestampBytes.Length];
+            var offset = 0;
+            
+            Array.Copy(topicBytes, 0, signableData, offset, topicBytes.Length);
+            offset += topicBytes.Length;
+            
+            Array.Copy(Data, 0, signableData, offset, Data.Length);
+            offset += Data.Length;
+            
+            Array.Copy(correlationBytes, 0, signableData, offset, correlationBytes.Length);
+            offset += correlationBytes.Length;
+            
+            Array.Copy(timestampBytes, 0, signableData, offset, timestampBytes.Length);
+            
+            return signableData;
+        }
+    }
+
+    /// <summary>
+    /// Security error type for firewall operations.
+    /// </summary>
+    public sealed record SecurityError(string Message)
+    {
+        public override string ToString() => $"SecurityError: {Message}";
+    }
+}

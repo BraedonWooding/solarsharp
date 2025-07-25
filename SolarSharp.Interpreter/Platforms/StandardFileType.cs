@@ -9,13 +9,15 @@
         /// Standard Input
         /// </summary>
         StdIn,
+
         /// <summary>
         /// Standard Output
         /// </summary>
         StdOut,
+
         /// <summary>
         /// Standard Error Output
         /// </summary>
-        StdErr
+        StdErr,
     }
 }

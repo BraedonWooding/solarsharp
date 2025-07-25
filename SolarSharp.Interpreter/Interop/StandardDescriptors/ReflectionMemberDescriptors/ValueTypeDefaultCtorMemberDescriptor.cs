@@ -10,13 +10,18 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
     /// <summary>
     /// Member descriptor for the default constructor of value types.
     /// </summary>
-    public class ValueTypeDefaultCtorMemberDescriptor : IOverloadableMemberDescriptor,
-        IWireableDescriptor
+    public class ValueTypeDefaultCtorMemberDescriptor
+        : IOverloadableMemberDescriptor,
+            IWireableDescriptor
     {
         /// <summary>
         /// Gets a value indicating whether the described method is static.
         /// </summary>
-        public bool IsStatic { get { return true; } }
+        public bool IsStatic
+        {
+            get { return true; }
+        }
+
         /// <summary>
         /// Gets the name of the described method
         /// </summary>
@@ -31,7 +36,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// Gets the type of the arguments of the underlying CLR function
         /// </summary>
         public ParameterDescriptor[] Parameters { get; private set; }
-
 
         /// <summary>
         /// Gets the type which this extension method extends, null if this is not an extension method.
@@ -77,7 +81,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             ValueTypeDefaultCtor = valueType;
         }
 
-
         /// <summary>
         /// Invokes the member from script.
         /// Implementors should raise exceptions if the value cannot be executed or if access to an
@@ -88,14 +91,18 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="context">The context.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        public DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
+        public DynValue Execute(
+            Script script,
+            object obj,
+            ScriptExecutionContext context,
+            CallbackArguments args
+        )
         {
             this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
 
-            object vto = Activator.CreateInstance(ValueTypeDefaultCtor);
+            var vto = Activator.CreateInstance(ValueTypeDefaultCtor);
             return ClrToScriptConversions.ObjectToDynValue(script, vto);
         }
-
 
         /// <summary>
         /// Gets a sort discriminant to give consistent overload resolution matching in case of perfectly equal scores
@@ -104,7 +111,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         {
             get { return "@.ctor"; }
         }
-
 
         /// <summary>
         /// Gets the types of access supported by this member
@@ -115,7 +121,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         }
 
         /// <summary>
-        /// Gets the value of this member as a 
+        /// Gets the value of this member as a
         /// <see cref="DynValue" /> to be exposed to scripts.
         /// Implementors should raise exceptions if the value cannot be read or if access to an
         /// instance member through a static userdata is attempted.
@@ -129,12 +135,12 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         {
             this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
 
-            object vto = Activator.CreateInstance(ValueTypeDefaultCtor);
+            var vto = Activator.CreateInstance(ValueTypeDefaultCtor);
             return ClrToScriptConversions.ObjectToDynValue(script, vto);
         }
 
         /// <summary>
-        /// Sets the value of this member from a 
+        /// Sets the value of this member from a
         /// <see cref="DynValue" />.
         /// Implementors should raise exceptions if the value cannot be read or if access to an
         /// instance member through a static userdata is attempted.

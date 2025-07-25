@@ -1,7 +1,7 @@
 ﻿#if !(DOTNET_CORE || NETFX_CORE) && !PCL
 
-using SolarSharp.Interpreter.Compatibility.Frameworks.Base;
 using System;
+using SolarSharp.Interpreter.Compatibility.Frameworks.Base;
 
 namespace SolarSharp.Interpreter.Compatibility.Frameworks
 {
@@ -16,7 +16,6 @@ namespace SolarSharp.Interpreter.Compatibility.Frameworks
         {
             return o != null && Convert.IsDBNull(o);
         }
-
 
         public override bool StringContainsChar(string str, char chr)
         {

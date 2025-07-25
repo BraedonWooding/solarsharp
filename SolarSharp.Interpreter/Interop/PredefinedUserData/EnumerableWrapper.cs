@@ -13,7 +13,7 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
         private readonly IEnumerator m_Enumerator;
         private readonly Script m_Script;
         private DynValue m_Prev = DynValue.Nil;
-        private bool m_HasTurnOnce = false;
+        private bool m_HasTurnOnce;
 
         private EnumerableWrapper(Script script, IEnumerator enumerator)
         {
@@ -36,7 +36,7 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
 
             while (m_Enumerator.MoveNext())
             {
-                DynValue v = ClrToScriptConversions.ObjectToDynValue(m_Script, m_Enumerator.Current);
+                var v = ClrToScriptConversions.ObjectToDynValue(m_Script, m_Enumerator.Current);
 
                 if (!v.IsNil())
                     return v;
@@ -45,7 +45,10 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
             return DynValue.Nil;
         }
 
-        private DynValue LuaIteratorCallback(ScriptExecutionContext executionContext, CallbackArguments args)
+        private DynValue LuaIteratorCallback(
+            ScriptExecutionContext executionContext,
+            CallbackArguments args
+        )
         {
             m_Prev = GetNext(m_Prev);
             return m_Prev;
@@ -53,32 +56,40 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
 
         internal static DynValue ConvertIterator(Script script, IEnumerator enumerator)
         {
-            EnumerableWrapper ei = new(script, enumerator);
+            var ei = new EnumerableWrapper(script, enumerator);
             return DynValue.NewTuple(UserData.Create(ei), DynValue.Nil, DynValue.Nil);
         }
 
-        internal static DynValue ConvertTable(Table table)
+        internal static DynValue ConvertTable(Table table, Script script)
         {
-            return ConvertIterator(table.OwnerScript, table.Values.GetEnumerator());
+            return ConvertIterator(script, table.Values.GetEnumerator());
         }
 
         public DynValue Index(Script script, DynValue index, bool isDirectIndexing)
         {
             if (index.Type == DataType.String)
             {
-                string idx = index.String;
+                var idx = index.String;
 
-                if (idx == "Current" || idx == "current")
+                if (idx is "Current" or "current")
                 {
                     return DynValue.FromObject(script, m_Enumerator.Current);
                 }
-                else if (idx == "MoveNext" || idx == "moveNext" || idx == "move_next")
+                if (idx is "MoveNext" or "moveNext" or "move_next")
                 {
-                    return DynValue.NewCallback((ctx, args) => DynValue.NewBoolean(m_Enumerator.MoveNext()));
+                    return DynValue.NewCallback(
+                        (ctx, args) => DynValue.NewBoolean(m_Enumerator.MoveNext())
+                    );
                 }
-                else if (idx == "Reset" || idx == "reset")
+                if (idx is "Reset" or "reset")
                 {
-                    return DynValue.NewCallback((ctx, args) => { Reset(); return DynValue.Nil; });
+                    return DynValue.NewCallback(
+                        (ctx, args) =>
+                        {
+                            Reset();
+                            return DynValue.Nil;
+                        }
+                    );
                 }
             }
             return null;
@@ -93,8 +104,7 @@ namespace SolarSharp.Interpreter.Interop.PredefinedUserData
         {
             if (metaname == "__call")
                 return DynValue.NewCallback(LuaIteratorCallback);
-            else
-                return null;
+            return null;
         }
     }
 }

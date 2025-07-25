@@ -24,16 +24,19 @@ namespace SolarSharp.Interpreter.Tree.Statements
             m_Block = new CompositeStatement(lcontext);
 
             if (lcontext.Lexer.Current.Type != TokenType.Eof)
-                throw new SyntaxErrorException(lcontext.Lexer.Current, "<eof> expected near '{0}'", lcontext.Lexer.Current.Text);
+                throw new SyntaxErrorException(
+                    lcontext.Lexer.Current,
+                    "<eof> expected near '{0}'",
+                    lcontext.Lexer.Current.Text
+                );
 
             m_StackFrame = lcontext.Scope.PopFunction();
         }
 
-
         public override void Compile(ByteCode bc)
         {
-            Instruction meta = bc.Emit_Meta("<chunk-root>", OpCodeMetadataType.ChunkEntrypoint);
-            int metaip = bc.GetJumpPointForLastInstruction();
+            var meta = bc.Emit_Meta("<chunk-root>", OpCodeMetadataType.ChunkEntrypoint);
+            var metaip = bc.GetJumpPointForLastInstruction();
 
             bc.Emit_BeginFn(m_StackFrame);
             bc.Emit_Args(m_VarArgs);

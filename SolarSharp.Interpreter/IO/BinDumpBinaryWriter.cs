@@ -9,14 +9,17 @@ namespace SolarSharp.Interpreter.IO
     /// </summary>
     public class BinDumpBinaryWriter : BinaryWriter
     {
-        private readonly Dictionary<string, int> m_StringMap = new();
+        private readonly Dictionary<string, int> m_StringMap = new Dictionary<string, int>();
 
-        public BinDumpBinaryWriter(Stream s) : base(s) { }
-        public BinDumpBinaryWriter(Stream s, Encoding e) : base(s, e) { }
+        public BinDumpBinaryWriter(Stream s)
+            : base(s) { }
+
+        public BinDumpBinaryWriter(Stream s, Encoding e)
+            : base(s, e) { }
 
         public override void Write(uint value)
         {
-            byte v8 = (byte)value;
+            var v8 = (byte)value;
 
             if (v8 == value && v8 != 0x7F && v8 != 0x7E)
             {
@@ -24,7 +27,7 @@ namespace SolarSharp.Interpreter.IO
             }
             else
             {
-                ushort v16 = (ushort)value;
+                var v16 = (ushort)value;
 
                 if (v16 == value)
                 {
@@ -41,7 +44,7 @@ namespace SolarSharp.Interpreter.IO
 
         public override void Write(int value)
         {
-            sbyte vsbyte = (sbyte)value;
+            var vsbyte = (sbyte)value;
 
             if (vsbyte == value && vsbyte != 0x7F && vsbyte != 0x7E)
             {
@@ -49,7 +52,7 @@ namespace SolarSharp.Interpreter.IO
             }
             else
             {
-                short vshort = (short)value;
+                var vshort = (short)value;
 
                 if (vshort == value)
                 {
@@ -66,8 +69,7 @@ namespace SolarSharp.Interpreter.IO
 
         public override void Write(string value)
         {
-
-            if (m_StringMap.TryGetValue(value, out int pos))
+            if (m_StringMap.TryGetValue(value, out var pos))
             {
                 Write(m_StringMap[value]);
             }

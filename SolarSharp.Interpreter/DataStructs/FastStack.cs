@@ -11,47 +11,44 @@ namespace SolarSharp.Interpreter.DataStructs
     /// <typeparam name="T"></typeparam>
     internal class FastStack<T>
     {
-        private readonly T[] m_Storage;
-        private int m_HeadIdx = 0;
-
-        public T[] Storage => m_Storage;
+        public T[] Storage { get; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FastStack(int maxCapacity)
         {
-            m_Storage = new T[maxCapacity];
+            Storage = new T[maxCapacity];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Push(T item)
         {
-            m_Storage[m_HeadIdx++] = item;
+            Storage[Count++] = item;
             return item;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Expand(int size)
         {
-            m_HeadIdx += size;
+            Count += size;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Zero(int from, int to)
         {
-            Array.Clear(m_Storage, from, to - from + 1);
+            Array.Clear(Storage, from, to - from + 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Peek(int idxofs = 0)
         {
-            T item = m_Storage[m_HeadIdx - 1 - idxofs];
+            var item = Storage[Count - 1 - idxofs];
             return item;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Set(int idxofs, T item)
         {
-            m_Storage[m_HeadIdx - 1 - idxofs] = item;
+            Storage[Count - 1 - idxofs] = item;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -65,34 +62,34 @@ namespace SolarSharp.Interpreter.DataStructs
         {
             if (cnt == 1)
             {
-                --m_HeadIdx;
-                m_Storage[m_HeadIdx] = default;
+                --Count;
+                Storage[Count] = default;
             }
             else
             {
-                int oldhead = m_HeadIdx;
-                m_HeadIdx -= cnt;
-                Zero(m_HeadIdx, oldhead);
+                var oldhead = Count;
+                Count -= cnt;
+                Zero(Count, oldhead);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Pop()
         {
-            --m_HeadIdx;
-            T retval = m_Storage[m_HeadIdx];
-            m_Storage[m_HeadIdx] = default;
+            --Count;
+            var retval = Storage[Count];
+            Storage[Count] = default;
             return retval;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ClearUsed()
         {
-            Array.Clear(m_Storage, 0, m_HeadIdx);
-            m_HeadIdx = 0;
+            Array.Clear(Storage, 0, Count);
+            Count = 0;
         }
 
-        public int Count => m_HeadIdx;
+        public int Count { get; private set; }
     }
 }
 

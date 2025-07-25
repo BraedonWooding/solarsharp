@@ -3,7 +3,7 @@
     <LangVersion>9.0</LangVersion>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <RootNamespace>SolarSharp</RootNamespace>
+    <RootNamespace>SolarSharp.CLI</RootNamespace>
     <AssemblyName>SolarSharp</AssemblyName>
     <Copyright>2024</Copyright>
     <Authors>Marco Mastropaolo, Braedon Wooding, MoonSharp Contributors</Authors>
@@ -13,6 +13,11 @@
     <ProjectReference Include="..\SolarSharp.Interpreter\SolarSharp.Interpreter.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="System.CommandLine.Hosting" Version="0.4.0-alpha.22272.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+    <PackageReference Include="System.IO.Abstractions" Version="19.2.69" />
   </ItemGroup>
 </Project>
