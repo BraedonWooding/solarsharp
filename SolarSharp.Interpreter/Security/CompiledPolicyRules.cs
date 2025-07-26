@@ -223,7 +223,7 @@ namespace SolarSharp.Interpreter.Security
         public SecurityPolicy FindPolicy(string publicKeyToken)
         {
             // Fast path: if no token policies exist, return unsigned immediately
-            return !_hasAnyTokenPolicies ? _unsignedPolicy : CollectionExtensions.GetValueOrDefault(_tokenToPolicyMap, publicKeyToken, _unsignedPolicy);
+            return !_hasAnyTokenPolicies ? _unsignedPolicy : _tokenToPolicyMap.GetValueOrDefault(publicKeyToken, _unsignedPolicy);
 
         }
     }

@@ -62,7 +62,7 @@ namespace SolarSharp.Interpreter.Security
             // Check if path is within sandbox
             if (realPath.StartsWith(_sandboxRoot, StringComparison.OrdinalIgnoreCase))
             {
-                var relativePath = Path.GetRelativePath(_sandboxRoot, realPath);
+                var relativePath = PathExtensions.GetRelativePath(_sandboxRoot, realPath);
                 return "/" + relativePath.Replace(Path.DirectorySeparatorChar, '/');
             }
 
@@ -71,7 +71,7 @@ namespace SolarSharp.Interpreter.Security
             {
                 if (realPath.StartsWith(kvp.Value, StringComparison.OrdinalIgnoreCase))
                 {
-                    var relativePath = Path.GetRelativePath(kvp.Value, realPath);
+                    var relativePath = PathExtensions.GetRelativePath(kvp.Value, realPath);
                     return Path.Combine(kvp.Key, relativePath)
                         .Replace(Path.DirectorySeparatorChar, '/');
                 }

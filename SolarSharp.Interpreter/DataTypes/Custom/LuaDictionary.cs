@@ -1147,10 +1147,17 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                         // we don't clear out entry.key for a few specific reasons;
                         // 1. we want iterators to still be able to get reference to a "freed" key
                         // 2. we should really only have strings as keys
+
+                        // We should clear out the value though for GC efficiency.
+                        // Does this check actually improve performance though?  TODO: Verify.
+#if NETSTANDARD2_1_OR_GREATER || NET8_0_OR_GREATER
                         if (RuntimeHelpers.IsReferenceOrContainsReferences<TValue>())
                         {
                             entry.value = default!;
                         }
+#else
+                        entry.value = default!;
+#endif
 
                         _freeList = i;
                         _freeCount++;
@@ -1230,15 +1237,20 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                         );
                         entry.next = StartOfFreeList - _freeList;
 
-                        if (RuntimeHelpers.IsReferenceOrContainsReferences<TKey>())
-                        {
-                            entry.key = default!;
-                        }
+                        // we don't clear out entry.key for a few specific reasons;
+                        // 1. we want iterators to still be able to get reference to a "freed" key
+                        // 2. we should really only have strings as keys
 
+                        // We should clear out the value though for GC efficiency.
+                        // Does this check actually improve performance though?  TODO: Verify.
+#if NETSTANDARD2_1_OR_GREATER || NET8_0_OR_GREATER
                         if (RuntimeHelpers.IsReferenceOrContainsReferences<TValue>())
                         {
                             entry.value = default!;
                         }
+#else
+                        entry.value = default!;
+#endif
 
                         _freeList = i;
                         _freeCount++;

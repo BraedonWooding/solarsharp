@@ -1,8 +1,7 @@
+#nullable enable
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -15,11 +14,6 @@ namespace SolarSharp.Interpreter.Security
     /// </summary>
     public sealed class CrossPlatformPathCanonicalizer
     {
-        private readonly ConcurrentDictionary<string, CachedPath> _pathCache = new();
-        private readonly TimeSpan _cacheExpiry;
-        private readonly object _cleanupLock = new();
-        private DateTime _lastCleanup = DateTime.UtcNow;
-
         // Platform-specific dangerous paths
         private static readonly ImmutableHashSet<string> WindowsDeviceNames =
             ImmutableHashSet.Create(
@@ -58,26 +52,12 @@ namespace SolarSharp.Interpreter.Security
                 "/boot"
             );
 
-        private static readonly Regex AlternateDataStreamPattern = new(
-            @":[^\\/:]+$",
-            RegexOptions.Compiled
-        );
-        private static readonly Regex UncPathPattern = new(
-            @"^\\\\[^\\]+\\[^\\]+",
-            RegexOptions.Compiled
-        );
-
-        public CrossPlatformPathCanonicalizer(TimeSpan? cacheExpiry = null)
-        {
-            _cacheExpiry = cacheExpiry ?? TimeSpan.FromMinutes(5);
-        }
-
         /// <summary>
         /// Canonicalizes a path for the current platform with full security checks
         /// </summary>
         public Result<CanonicalPath, PathSecurityViolation> Canonicalize(
             string path,
-            string sandboxRoot = null
+            string? sandboxRoot = null
         )
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -89,30 +69,15 @@ namespace SolarSharp.Interpreter.Security
                     )
                 );
 
-            // Check cache first
-            if (TryGetCached(path, out var cached))
-            {
-                if (cached.IsSuccess)
-                    return Result.Success<CanonicalPath, PathSecurityViolation>(cached.Value);
-                else
-                    return Result.Failure<CanonicalPath, PathSecurityViolation>(cached.Error);
-            }
-
             // Perform canonicalization
             var result = CanonicalizeInternal(path, sandboxRoot);
-
-            // Cache the result
-            CacheResult(path, result);
-
-            // Periodic cache cleanup
-            CleanupCacheIfNeeded();
 
             return result;
         }
 
         private Result<CanonicalPath, PathSecurityViolation> CanonicalizeInternal(
             string path,
-            string sandboxRoot
+            string? sandboxRoot
         )
         {
             try
@@ -153,11 +118,23 @@ namespace SolarSharp.Interpreter.Security
                         );
                 }
 
-                // Get the full path (resolves relative paths and .. sequences)
                 string fullPath;
                 try
                 {
-                    fullPath = Path.GetFullPath(normalized);
+                    // Ensure the path is a uri, this blocks UNC & alternate data streams
+                    var file_uri = new Uri(new Uri(Directory.GetCurrentDirectory()), normalized);
+                    fullPath = file_uri.AbsolutePath;
+                    // And ensure it's a file uri and not a url or whatever.
+                    if (file_uri.Scheme != Uri.UriSchemeFile)
+                    {
+                        return Result.Failure<CanonicalPath, PathSecurityViolation>(
+                            new PathSecurityViolation(
+                                "Path must be a standard file, and not UNC or device",
+                                PathViolationType.InvalidPath,
+                                path
+                            )
+                        );
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -170,14 +147,13 @@ namespace SolarSharp.Interpreter.Security
                     );
                 }
 
-                // Resolve symbolic links to get the real path
-                var realPath = ResolveRealPath(fullPath);
+
 
                 // Validate sandbox constraints if provided
                 if (!string.IsNullOrEmpty(sandboxRoot))
                 {
                     var sandboxFullPath = Path.GetFullPath(sandboxRoot);
-                    if (!realPath.StartsWith(sandboxFullPath, GetPathComparison()))
+                    if (!fullPath.StartsWith(sandboxFullPath, GetPathComparison()))
                     {
                         return Result.Failure<CanonicalPath, PathSecurityViolation>(
                             new PathSecurityViolation(
@@ -193,9 +169,8 @@ namespace SolarSharp.Interpreter.Security
                 var canonical = new CanonicalPath(
                     Original: path,
                     Normalized: fullPath,
-                    Resolved: realPath,
-                    IsSymbolicLink: fullPath != realPath,
-                    Platform: GetCurrentPlatform()
+                    Resolved: fullPath,
+                    IsSymbolicLink: false
                 );
 
                 return Result.Success<CanonicalPath, PathSecurityViolation>(canonical);
@@ -214,51 +189,15 @@ namespace SolarSharp.Interpreter.Security
 
         private Result<bool, PathSecurityViolation> ValidateWindowsPath(string path)
         {
-            // Check for alternate data streams
-            if (AlternateDataStreamPattern.IsMatch(path))
-            {
-                return Result.Failure<bool, PathSecurityViolation>(
-                    new PathSecurityViolation(
-                        "Alternate data streams not allowed",
-                        PathViolationType.PlatformSpecific,
-                        path
-                    )
-                );
-            }
-
-            // Check for UNC paths (could be used to access network resources)
-            if (UncPathPattern.IsMatch(path))
-            {
-                return Result.Failure<bool, PathSecurityViolation>(
-                    new PathSecurityViolation(
-                        "UNC paths not allowed",
-                        PathViolationType.PlatformSpecific,
-                        path
-                    )
-                );
-            }
-
-            // Check for device names
-            var fileName = Path.GetFileNameWithoutExtension(path);
+            // Check for device names, note: this includes extension because Windows allows
+            // filenames like CON.txt
+            var fileName = Path.GetFileName(path);
             if (!string.IsNullOrEmpty(fileName) && WindowsDeviceNames.Contains(fileName))
             {
                 return Result.Failure<bool, PathSecurityViolation>(
                     new PathSecurityViolation(
                         $"Windows device name not allowed: {fileName}",
                         PathViolationType.DangerousFileName,
-                        path
-                    )
-                );
-            }
-
-            // Check for paths ending with space or period (Windows strips these)
-            var segments = path.Split('\\', '/');
-            if (segments.Any(s => s.EndsWith(" ") || s.EndsWith(".")))
-            {
-                return Result.Failure<bool, PathSecurityViolation>(
-                    new PathSecurityViolation(
-                        "Path segments cannot end with space or period",
-                        PathViolationType.PlatformSpecific,
                         path
                     )
                 );
@@ -293,49 +232,6 @@ namespace SolarSharp.Interpreter.Security
             return Result.Success<bool, PathSecurityViolation>(true);
         }
 
-        private string ResolveRealPath(string path)
-        {
-            try
-            {
-                // Try to resolve symbolic links
-                var fileInfo = new FileInfo(path);
-                if (fileInfo.Exists && fileInfo.Attributes.HasFlag(FileAttributes.ReparsePoint))
-                {
-                    // This is a symbolic link or junction
-                    return GetRealPath(path);
-                }
-
-                var dirInfo = new DirectoryInfo(path);
-                if (dirInfo.Exists && dirInfo.Attributes.HasFlag(FileAttributes.ReparsePoint))
-                {
-                    // This is a symbolic link or junction
-                    return GetRealPath(path);
-                }
-
-                return path;
-            }
-            catch
-            {
-                // If we can't resolve, return the original path
-                return path;
-            }
-        }
-
-        private string GetRealPath(string path)
-        {
-            // Platform-specific real path resolution
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                // On Windows, use GetFinalPathNameByHandle
-                return path; // Simplified for now
-            }
-            else
-            {
-                // On Unix, we could use readlink
-                return path; // Simplified for now
-            }
-        }
-
         private StringComparison GetPathComparison()
         {
             // Windows and macOS are case-insensitive, Linux is case-sensitive
@@ -343,99 +239,6 @@ namespace SolarSharp.Interpreter.Security
                 ? StringComparison.Ordinal
                 : StringComparison.OrdinalIgnoreCase;
         }
-
-        private Platform GetCurrentPlatform()
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return Platform.Windows;
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return Platform.Linux;
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return Platform.MacOS;
-            else
-                return Platform.Unknown;
-        }
-
-        private bool TryGetCached(
-            string path,
-            out Result<CanonicalPath, PathSecurityViolation> result
-        )
-        {
-            if (_pathCache.TryGetValue(path, out var cached))
-            {
-                if (cached.Expiry > DateTime.UtcNow)
-                {
-                    result = cached.Result;
-                    return true;
-                }
-                else
-                {
-                    // Expired, remove it
-                    _pathCache.TryRemove(path, out _);
-                }
-            }
-
-            result = default;
-            return false;
-        }
-
-        private void CacheResult(string path, Result<CanonicalPath, PathSecurityViolation> result)
-        {
-            var cached = new CachedPath(result, DateTime.UtcNow.Add(_cacheExpiry));
-            _pathCache.TryAdd(path, cached);
-        }
-
-        private void CleanupCacheIfNeeded()
-        {
-            var now = DateTime.UtcNow;
-            if (now - _lastCleanup > _cacheExpiry)
-            {
-                lock (_cleanupLock)
-                {
-                    if (now - _lastCleanup > _cacheExpiry)
-                    {
-                        var expired = _pathCache
-                            .Where(kvp => kvp.Value.Expiry <= now)
-                            .Select(kvp => kvp.Key)
-                            .ToList();
-
-                        foreach (var key in expired)
-                        {
-                            _pathCache.TryRemove(key, out _);
-                        }
-
-                        _lastCleanup = now;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets cache statistics for monitoring
-        /// </summary>
-        public CacheStatistics GetStatistics()
-        {
-            var validEntries = _pathCache.Count(kvp => kvp.Value.Expiry > DateTime.UtcNow);
-            return new CacheStatistics(
-                TotalEntries: _pathCache.Count,
-                ValidEntries: validEntries,
-                LastCleanup: _lastCleanup
-            );
-        }
-
-        /// <summary>
-        /// Clears the entire cache
-        /// </summary>
-        public void ClearCache()
-        {
-            _pathCache.Clear();
-            _lastCleanup = DateTime.UtcNow;
-        }
-
-        private sealed record CachedPath(
-            Result<CanonicalPath, PathSecurityViolation> Result,
-            DateTime Expiry
-        );
     }
 
     /// <summary>
@@ -445,8 +248,7 @@ namespace SolarSharp.Interpreter.Security
         string Original,
         string Normalized,
         string Resolved,
-        bool IsSymbolicLink,
-        Platform Platform
+        bool IsSymbolicLink
     )
     {
         /// <summary>
@@ -459,20 +261,4 @@ namespace SolarSharp.Interpreter.Security
         /// </summary>
         public string DisplayPath => Normalized;
     }
-
-    /// <summary>
-    /// Platform enumeration
-    /// </summary>
-    public enum Platform
-    {
-        Windows,
-        Linux,
-        MacOS,
-        Unknown,
-    }
-
-    /// <summary>
-    /// Cache statistics for monitoring
-    /// </summary>
-    public sealed record CacheStatistics(int TotalEntries, int ValidEntries, DateTime LastCleanup);
 }

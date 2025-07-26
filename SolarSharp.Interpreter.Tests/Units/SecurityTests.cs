@@ -597,60 +597,6 @@ namespace SolarSharp.Interpreter.Tests.Units
         }
 
         /// <summary>
-        ///     Tests that string operations are restricted when the string length limit is exceeded.
-        /// </summary>
-        /// <remarks>
-        ///     This test verifies that the security system prevents memory attacks through
-        ///     excessively long string operations that could consume system resources.
-        /// </remarks>
-        /// <summary>
-        ///     Tests that string operations are restricted when the string length limit is exceeded.
-        /// </summary>
-        /// <remarks>
-        ///     String length limits prevent memory attacks through:
-        ///     - Exponential string concatenation
-        ///     - string.rep() with large counts
-        ///     - Reading huge files into strings
-        ///     Current Status:
-        ///     The test acknowledges that string length limits may not be fully
-        ///     implemented in the core interpreter yet. It tests for either:
-        ///     - SecurityException with proper violation type
-        ///     - Any exception (partial implementation)
-        ///     - No exception (not implemented - marked as inconclusive)
-        ///     When fully implemented, this should prevent creation of strings
-        ///     longer than the configured limit, throwing SecurityException
-        ///     before memory is actually allocated.
-        /// </remarks>    [Category("Security.Unit")]
-        [Test]
-        [Ignore("MaxStringLength property removed in security refactoring")]
-        public void TestStringLengthLimit()
-        {
-            var config = Examples.IsolatedBasePolicySet;
-            // config = config with { MaxStringLength = 100 }; // Property removed
-
-            var script = new Script(config);
-
-            // Try to create a string that's too long - may not be enforced yet
-            try
-            {
-                var result = script.DoString("return string.rep('x', 200)");
-                // If no exception was thrown, string length limit is not yet implemented
-                Assert.Inconclusive(
-                    "String length limit enforcement not yet implemented in core interpreter"
-                );
-            }
-            catch (SecurityException ex)
-            {
-                Assert.That(ex.ViolationType, Is.EqualTo(SecurityEventType.ResourceLimitExceeded));
-            }
-            catch (Exception)
-            {
-                // Any other exception also means the limit might be working, just not as SecurityException
-                Assert.Pass("String length limit is working, though not as SecurityException");
-            }
-        }
-
-        /// <summary>
         ///     Tests that path traversal attacks are blocked by the security system.
         /// </summary>
         /// <remarks>

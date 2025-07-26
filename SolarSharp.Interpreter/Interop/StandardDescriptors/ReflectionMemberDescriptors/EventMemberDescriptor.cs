@@ -25,11 +25,11 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         private readonly MultiDictionary<object, Closure> m_Callbacks = new MultiDictionary<
             object,
             Closure
-        >(new ReferenceEqualityComparer());
+        >(new SimpleReferenceEqualityComparer());
         private readonly Dictionary<object, Delegate> m_Delegates = new Dictionary<
             object,
             Delegate
-        >(new ReferenceEqualityComparer());
+        >(new SimpleReferenceEqualityComparer());
 
         /// <summary>
         /// Tries to create a new StandardUserDataEventDescriptor, returning <c>null</c> in case the method is not

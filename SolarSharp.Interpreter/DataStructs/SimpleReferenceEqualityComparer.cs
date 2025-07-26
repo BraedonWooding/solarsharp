@@ -5,7 +5,7 @@ namespace SolarSharp.Interpreter.DataStructs
     /// <summary>
     /// Implementation of IEqualityComparer enforcing reference equality
     /// </summary>
-    internal class ReferenceEqualityComparer : IEqualityComparer<object>
+    internal class SimpleReferenceEqualityComparer : IEqualityComparer<object>
     {
         bool IEqualityComparer<object>.Equals(object x, object y)
         {

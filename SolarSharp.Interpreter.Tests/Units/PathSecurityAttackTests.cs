@@ -438,22 +438,5 @@ namespace SolarSharp.Interpreter.Tests.Units
             // Should be very fast due to caching
             Assert.That(elapsed.TotalMilliseconds, Is.LessThan(100));
         }
-
-        [Category("Security.Unit")]
-        [Test]
-        public void ResourceExhaustion_ManyUniquePaths_HandledGracefully()
-        {
-            // Try to exhaust cache with many unique paths
-            for (var i = 0; i < 10000; i++)
-            {
-                var path = $"/data/unique/path/{Guid.NewGuid()}.txt";
-                var result = _canonicalizer.Canonicalize(path);
-                // Should not throw OutOfMemoryException
-            }
-
-            var stats = _canonicalizer.GetStatistics();
-            // Cache should have reasonable size due to cleanup
-            Assert.That(stats.TotalEntries, Is.LessThan(50000));
-        }
     }
 }

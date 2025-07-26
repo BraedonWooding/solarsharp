@@ -144,7 +144,10 @@ namespace SolarSharp.Interpreter.Security
                     }
 
                     // Also try to extract relative path from full path if it's absolute
-                    if (Path.IsPathFullyQualified(filePath))
+                    // TODO: Note this doesn't mean it's fully absolute, but this class likely needs an update
+                    // anyways to be faster (building tons of strings like this is expensive) so I would likely
+                    // solve this differently then.
+                    if (Path.IsPathRooted(filePath))
                     {
                         // Try to make it relative by removing leading path components
                         var pathParts = normalizedPath.Replace('\\', '/').Split('/');
@@ -406,8 +409,10 @@ namespace SolarSharp.Interpreter.Security
             // Check for relative path matches (similar to GetFileAccess)
             foreach (var kvp in DirectoryPermissions)
             {
+                // TODO: Same here, path rooted != fully qualified, but this code
+                // needs an update to be faster, and just be a cheaper lookup ideally.
                 // Check if key is a relative path pattern and try to match
-                if (!Path.IsPathFullyQualified(kvp.Key))
+                if (!Path.IsPathRooted(kvp.Key))
                 {
                     // Try original path (relative format)
                     var relativePath = directoryPath.Replace('\\', '/').TrimEnd('/');
@@ -419,7 +424,7 @@ namespace SolarSharp.Interpreter.Security
                     }
 
                     // Also try to extract relative path from full path if it's absolute
-                    if (Path.IsPathFullyQualified(directoryPath))
+                    if (Path.IsPathRooted(directoryPath))
                     {
                         // Try to make it relative by removing leading path components
                         var pathParts = normalizedPath.Replace('\\', '/').Split('/');
