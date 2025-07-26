@@ -236,7 +236,7 @@ namespace SolarSharp.Interpreter.Security.Manifests
                     DirectoryPath = Path.GetDirectoryName(manifestPath),
                     RelativePath = string.IsNullOrEmpty(options.RootPath)
                         ? manifestPath
-                        : Path.GetRelativePath(options.RootPath, manifestPath),
+                        : PathExtensions.GetRelativePath(options.RootPath, manifestPath),
                 };
             }
             catch (JsonException ex)

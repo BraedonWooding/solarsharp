@@ -113,7 +113,7 @@ namespace SolarSharp.Interpreter.Security.FunctionBinding
             var contextKey = GetContextKey(context);
             if (!_contextViews.ContainsKey(contextKey))
             {
-                _pureContextCache.AddOrUpdate(context, new object());
+                _pureContextCache.GetOrCreateValue(context);
             }
         }
 

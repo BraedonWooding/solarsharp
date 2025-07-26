@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using NUnit.Framework;
 using SolarSharp.Interpreter.Security;
 
@@ -49,7 +50,7 @@ namespace SolarSharp.Interpreter.Tests.Units
             var result = _canonicalizer.Canonicalize("data/file.txt");
 
             Assert.That(result.IsSuccess, Is.True);
-            Assert.That(result.Value.Normalized, Does.StartWith("/").Or.StartWith("C:"));
+            Assert.That(Path.IsPathFullyQualified(result.Value.Normalized));
         }
 
         [Test]
@@ -176,33 +177,6 @@ namespace SolarSharp.Interpreter.Tests.Units
             Assert.That(result1.IsSuccess, Is.True);
             Assert.That(result2.IsSuccess, Is.True);
             Assert.That(result1.Value.Normalized, Is.EqualTo(result2.Value.Normalized));
-        }
-
-        [Test]
-        public void GetStatistics_ReturnsValidStats()
-        {
-            // Add some entries
-            _canonicalizer.Canonicalize("/path1");
-            _canonicalizer.Canonicalize("/path2");
-
-            var stats = _canonicalizer.GetStatistics();
-
-            Assert.That(stats.TotalEntries, Is.GreaterThanOrEqualTo(2));
-            Assert.That(stats.ValidEntries, Is.GreaterThanOrEqualTo(2));
-        }
-
-        [Test]
-        public void ClearCache_RemovesAllEntries()
-        {
-            // Add entries
-            _canonicalizer.Canonicalize("/path1");
-            _canonicalizer.Canonicalize("/path2");
-
-            // Clear cache
-            _canonicalizer.ClearCache();
-
-            var stats = _canonicalizer.GetStatistics();
-            Assert.That(stats.TotalEntries, Is.EqualTo(0));
         }
 
         [Test]

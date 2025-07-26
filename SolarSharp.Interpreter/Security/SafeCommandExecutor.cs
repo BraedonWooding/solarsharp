@@ -463,11 +463,7 @@ namespace SolarSharp.Interpreter.Security
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.RedirectStandardInput = true;
 
-            // Add arguments
-            foreach (var arg in arguments)
-            {
-                process.StartInfo.ArgumentList.Add(arg);
-            }
+            process.StartInfo.AddArguments(arguments);
 
             // Set working directory
             if (_fileSystemMapper != null)
