@@ -151,6 +151,9 @@ function renderAllChars(dataSets) {
     const options = {
       responsive: true,
       plugins: {
+        legend: {
+          display: false, // Disable individual chart legends
+        },
         tooltip: {
           callbacks: {
             afterTitle: (items) => {
@@ -213,6 +216,14 @@ function renderAllChars(dataSets) {
       data,
       options,
     });
+
+    // Store chart reference for legend control
+    if (typeof window.globalCharts === "undefined") {
+      window.globalCharts = [];
+    }
+    window.globalCharts.push(chart);
+
+    return chart;
   }
 
   function groupBy(list, keyGetter) {
@@ -230,14 +241,98 @@ function renderAllChars(dataSets) {
   }
 
   function renderBenchSet(name, benchSet, main) {
+    // Create shared legend container
+    const legendContainer = document.createElement("div");
+    legendContainer.className = "shared-legend";
+    legendContainer.style.display = "flex";
+    legendContainer.style.justifyContent = "center";
+    legendContainer.style.flexWrap = "wrap";
+    legendContainer.style.gap = "20px";
+    legendContainer.style.padding = "20px";
+    legendContainer.style.backgroundColor = "#f8f9fa";
+    legendContainer.style.border = "1px solid #dee2e6";
+    legendContainer.style.borderRadius = "8px";
+    legendContainer.style.marginBottom = "20px";
+    main.appendChild(legendContainer);
+
+    // Collect all unique implementations across all benchmark sets
+    const allImplementations = new Set();
+    for (const [benchName, benches] of groupBy(
+      benchSet.entries(),
+      function (k) {
+        const match = k[0].match(
+          /Benchmark.Benchmarks.Benchmark\(Implementation: (.*?), Test: (.*?)\)/
+        );
+        k[1][0].bench.name = match[1];
+        allImplementations.add(match[1]);
+        return match[2];
+      }
+    ).entries()) {
+      // Just collect implementations in this pass
+    }
+
+    // Create legend items
+    const charts = []; // Store chart references for legend control
+    allImplementations.forEach((implementation) => {
+      const legendItem = document.createElement("div");
+      legendItem.style.display = "flex";
+      legendItem.style.alignItems = "center";
+      legendItem.style.cursor = "pointer";
+      legendItem.style.userSelect = "none";
+
+      const colorBox = document.createElement("div");
+      colorBox.style.width = "20px";
+      colorBox.style.height = "20px";
+      colorBox.style.backgroundColor =
+        implementationColors[implementation] || "#333333";
+      colorBox.style.marginRight = "8px";
+      colorBox.style.border = "1px solid #ccc";
+
+      const label = document.createElement("span");
+      label.textContent = implementation;
+      label.style.fontSize = "14px";
+
+      legendItem.appendChild(colorBox);
+      legendItem.appendChild(label);
+
+      // Add click handler for show/hide functionality
+      legendItem.addEventListener("click", () => {
+        charts.forEach((chart) => {
+          const datasetIndex = chart.data.datasets.findIndex(
+            (dataset) => dataset.label === implementation
+          );
+          if (datasetIndex !== -1) {
+            const dataset = chart.data.datasets[datasetIndex];
+            const isHidden = chart.isDatasetVisible(datasetIndex) === false;
+            chart.setDatasetVisibility(datasetIndex, isHidden);
+            chart.update();
+          }
+        });
+
+        // Update legend item appearance
+        const isHidden =
+          charts.length > 0 &&
+          charts[0].data.datasets.some(
+            (dataset) =>
+              dataset.label === implementation &&
+              charts[0].isDatasetVisible(
+                charts[0].data.datasets.indexOf(dataset)
+              ) === false
+          );
+        legendItem.style.opacity = isHidden ? "0.5" : "1";
+      });
+
+      legendContainer.appendChild(legendItem);
+    });
+
     // Create a grid container for all benchmark sets
     const gridContainer = document.createElement("div");
     gridContainer.className = "benchmark-grid";
     gridContainer.style.display = "grid";
     gridContainer.style.gridTemplateColumns =
       "repeat(auto-fit, minmax(500px, 1fr))";
-    gridContainer.style.gap = "20px";
-    gridContainer.style.padding = "20px";
+    gridContainer.style.gap = "40px";
+    gridContainer.style.padding = "30px";
     main.appendChild(gridContainer);
 
     for (const [benchName, benches] of groupBy(
@@ -270,13 +365,16 @@ function renderAllChars(dataSets) {
       graphsElem.className = "benchmark-graphs";
       setElem.appendChild(graphsElem);
 
-      renderGraph(
+      const chart = renderGraph(
         graphsElem,
         benchName,
         benches.map(function (b) {
           return b[1];
         })
       );
+
+      // Add chart to our collection for legend control
+      charts.push(chart);
     }
   }
 
