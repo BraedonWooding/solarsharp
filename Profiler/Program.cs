@@ -3,8 +3,7 @@
 using Benchmark;
 using Benchmark.Implementations;
 
-var file = new LuaFile("../Benchmark/Tests/sieve.lua");
-var itCount = 300;
+var file = new LuaFile("./Tests/empty_test.lua");
 
 var impl = new SolarSharpImplementation();
 
@@ -52,9 +51,6 @@ var impl = new SolarSharpImplementation();
 //Console.ReadKey();
 
 // recommended you put your debugger here
-for (var i = 0; i < itCount; i++)
-{
-    impl.Run(file.Contents);
-}
+impl.Run(file.Contents);
 
-//Console.WriteLine("Done");
+Console.WriteLine("Done");

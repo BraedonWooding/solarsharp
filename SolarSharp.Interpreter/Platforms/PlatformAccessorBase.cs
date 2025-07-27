@@ -34,35 +34,26 @@ namespace SolarSharp.Interpreter.Platforms
 
             if (PlatformAutoDetector.IsRunningOnUnity)
             {
-                if (PlatformAutoDetector.IsUnityNative)
-                {
-                    suffix =
-                        "unity." + GetUnityPlatformName().ToLower() + "." + GetUnityRuntimeName();
-                }
-                else
-                {
-                    suffix = PlatformAutoDetector.IsRunningOnMono
-                        ? "unity.dll.mono"
-                        : "unity.dll.unknown";
-                }
+                suffix = "unity." + GetUnityPlatformName().ToLower() + "." + GetUnityRuntimeName();
             }
             else
+            {
                 suffix = PlatformAutoDetector.IsRunningOnMono ? "mono" : "dotnet";
+            }
 
             if (PlatformAutoDetector.IsPortableFramework)
+            {
                 suffix += ".portable";
-
-            if (PlatformAutoDetector.IsRunningOnClr4)
-                suffix += ".clr4";
-            else
-                suffix += ".clr2";
+            }
 
 #if DOTNET_CORE
             suffix += ".netcore";
 #endif
 
             if (PlatformAutoDetector.IsRunningOnAOT)
+            {
                 suffix += ".aot";
+            }
 
             return GetPlatformNamePrefix() + "." + suffix;
         }

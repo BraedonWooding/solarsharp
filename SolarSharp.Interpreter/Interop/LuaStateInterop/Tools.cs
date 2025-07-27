@@ -264,9 +264,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             Destination.Write(sprintf(Format, Parameters));
         }
 
-        internal static Regex r = new Regex(
-            @"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])"
-        );
+        internal static Regex r = new Regex(@"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])", RegexOptions.Compiled);
 
         public static string sprintf(string Format, params object[] Parameters)
         {
