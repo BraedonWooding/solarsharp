@@ -243,8 +243,23 @@
 
             for (const set of dataset) {
               for (const subset of set) {
-                subset.bench.unit = 'ms'
-                subset.bench.value /= 1000;
+                const currentUnit = subset.bench.unit;
+                  switch (currentUnit) {
+                    case 's':
+                      subset.bench.value *= 1000; // seconds to milliseconds
+                      break;
+                    case 'ms':
+                      // already in milliseconds, no conversion needed
+                      break;
+                    case 'us':
+                      subset.bench.value /= 1000; // microseconds to milliseconds
+                      break;
+                    case 'ns':
+                      subset.bench.value /= 1000000; // nanoseconds to milliseconds
+                      break;
+                  }
+                  
+                  subset.bench.unit = 'ms';
               }
             }
 
