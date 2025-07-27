@@ -117,6 +117,10 @@ function renderAllChars(dataSets) {
     for (const set of dataset) {
       for (const subset of set) {
         const currentUnit = subset.bench.unit;
+
+        // Store original unit before conversion
+        subset.bench.originalUnit = currentUnit;
+
         switch (currentUnit) {
           case "s":
             subset.bench.value *= 1000; // seconds to milliseconds
@@ -175,8 +179,30 @@ function renderAllChars(dataSets) {
                 dataset[item.datasetIndex][item.dataIndex].bench;
               label += " " + unit;
               if (range) {
-                label +=
-                  " (" + "± " + Number(range.replace("±", "")) / 1000 + ")";
+                // Convert range to milliseconds if needed
+                const rangeValue = Number(range.replace("±", ""));
+                let convertedRange = rangeValue;
+
+                // Convert range to milliseconds based on original unit
+                const originalUnit =
+                  dataset[item.datasetIndex][item.dataIndex].bench
+                    .originalUnit || unit;
+                switch (originalUnit) {
+                  case "s":
+                    convertedRange = rangeValue * 1000; // seconds to milliseconds
+                    break;
+                  case "ms":
+                    convertedRange = rangeValue; // already in milliseconds
+                    break;
+                  case "us":
+                    convertedRange = rangeValue / 1000; // microseconds to milliseconds
+                    break;
+                  case "ns":
+                    convertedRange = rangeValue / 1000000; // nanoseconds to milliseconds
+                    break;
+                }
+
+                label += " (± " + convertedRange.toFixed(2) + ")";
               }
               return label;
             },
@@ -190,11 +216,17 @@ function renderAllChars(dataSets) {
       scales: {
         x: {
           display: true,
-          text: "commit",
+          title: {
+            display: true,
+            text: "Commit",
+          },
         },
         y: {
           display: true,
-          text: dataset.length > 0 ? dataset[0][0].bench.unit : "",
+          title: {
+            display: true,
+            text: "Time (ms)",
+          },
           ticks: {
             beginAtZero: true,
           },
@@ -273,6 +305,78 @@ function renderAllChars(dataSets) {
 
     // Create legend items
     const charts = []; // Store chart references for legend control
+
+    // Add "Show Only SolarSharp" button
+    const showOnlyButton = document.createElement("button");
+    showOnlyButton.textContent = "Show Only SolarSharp";
+    showOnlyButton.style.padding = "8px 16px";
+    showOnlyButton.style.backgroundColor = "#3572a5";
+    showOnlyButton.style.color = "white";
+    showOnlyButton.style.border = "none";
+    showOnlyButton.style.borderRadius = "4px";
+    showOnlyButton.style.cursor = "pointer";
+    showOnlyButton.style.fontSize = "14px";
+    showOnlyButton.style.fontWeight = "bold";
+    showOnlyButton.style.marginRight = "20px";
+
+    showOnlyButton.addEventListener("click", () => {
+      // Check if only SolarSharp is currently visible
+      let onlySolarSharpVisible = true;
+      let hasSolarSharp = false;
+
+      if (charts.length > 0) {
+        charts[0].data.datasets.forEach((dataset, index) => {
+          const isVisible = charts[0].isDatasetVisible(index) !== false;
+          if (dataset.label === "SolarSharpImplementation") {
+            hasSolarSharp = true;
+            if (!isVisible) {
+              onlySolarSharpVisible = false;
+            }
+          } else if (isVisible) {
+            onlySolarSharpVisible = false;
+          }
+        });
+      }
+
+      // If only SolarSharp is visible, show all. Otherwise, show only SolarSharp
+      const showAll = onlySolarSharpVisible && hasSolarSharp;
+
+      charts.forEach((chart) => {
+        chart.data.datasets.forEach((dataset, index) => {
+          if (showAll) {
+            // Show all implementations
+            chart.setDatasetVisibility(index, true);
+          } else {
+            // Show only SolarSharp
+            const shouldShow = dataset.label === "SolarSharpImplementation";
+            chart.setDatasetVisibility(index, shouldShow);
+          }
+        });
+        chart.update();
+      });
+
+      // Update legend item appearances and button text
+      const legendItems = legendContainer.querySelectorAll(
+        "div:not(:first-child)"
+      );
+      legendItems.forEach((item) => {
+        const label = item.querySelector("span").textContent;
+        if (showAll) {
+          item.style.opacity = "1";
+        } else {
+          item.style.opacity =
+            label === "SolarSharpImplementation" ? "1" : "0.5";
+        }
+      });
+
+      // Update button text
+      showOnlyButton.textContent = showAll
+        ? "Show Only SolarSharp"
+        : "Show All";
+    });
+
+    legendContainer.appendChild(showOnlyButton);
+
     allImplementations.forEach((implementation) => {
       const legendItem = document.createElement("div");
       legendItem.style.display = "flex";
@@ -360,6 +464,143 @@ function renderAllChars(dataSets) {
       nameElem.style.fontSize = "1.2em";
       nameElem.style.marginBottom = "15px";
       setElem.appendChild(nameElem);
+
+      // Add performance change indicators
+      const changesContainer = document.createElement("div");
+      changesContainer.className = "performance-changes";
+      changesContainer.style.display = "flex";
+      changesContainer.style.flexWrap = "wrap";
+      changesContainer.style.gap = "8px";
+      changesContainer.style.marginBottom = "15px";
+
+      // Calculate percentage changes for each implementation
+      benches
+        .map(function (b) {
+          return b[1];
+        })
+        .forEach((implementationData) => {
+          if (implementationData.length >= 2) {
+            const latest = implementationData[implementationData.length - 1];
+            const previous = implementationData[implementationData.length - 2];
+
+            // Convert both values to milliseconds before comparison
+            const convertToMs = (value, unit) => {
+              switch (unit) {
+                case "s":
+                  return value * 1000; // seconds to milliseconds
+                case "ms":
+                  return value; // already in milliseconds
+                case "us":
+                  return value / 1000; // microseconds to milliseconds
+                case "ns":
+                  return value / 1000000; // nanoseconds to milliseconds
+                default:
+                  return value;
+              }
+            };
+
+            const latestValueMs = convertToMs(
+              latest.bench.value,
+              latest.bench.unit
+            );
+            const previousValueMs = convertToMs(
+              previous.bench.value,
+              previous.bench.unit
+            );
+
+            const change =
+              ((latestValueMs - previousValueMs) / previousValueMs) * 100;
+
+            // Check if change is statistically significant
+            let isSignificant = false;
+            if (latest.bench.range && previous.bench.range) {
+              // Extract standard deviation from range (format: "± 64768.29586634039")
+              const latestStdevRaw = parseFloat(
+                latest.bench.range.replace(/[±\s]/g, "")
+              );
+              const previousStdevRaw = parseFloat(
+                previous.bench.range.replace(/[±\s]/g, "")
+              );
+
+              // Convert standard deviations to milliseconds as well
+              const latestStdev = convertToMs(
+                latestStdevRaw,
+                latest.bench.unit
+              );
+              const previousStdev = convertToMs(
+                previousStdevRaw,
+                previous.bench.unit
+              );
+
+              // Calculate the absolute difference between values (in ms)
+              const absoluteChange = Math.abs(latestValueMs - previousValueMs);
+
+              // Use combined standard error (sqrt of sum of variances)
+              const combinedStdev = Math.sqrt(
+                latestStdev * latestStdev + previousStdev * previousStdev
+              );
+
+              // Consider significant if change is greater than 2 standard deviations (95% confidence)
+              isSignificant = absoluteChange > 2 * combinedStdev;
+            } else {
+              // Fallback: consider significant if change is greater than 5%
+              isSignificant = Math.abs(change) > 5;
+            }
+
+            // Only show indicator if change is statistically significant
+            if (isSignificant) {
+              const changeIndicator = document.createElement("div");
+              changeIndicator.style.display = "inline-flex";
+              changeIndicator.style.alignItems = "center";
+              changeIndicator.style.padding = "4px 8px";
+              changeIndicator.style.borderRadius = "12px";
+              changeIndicator.style.fontSize = "12px";
+              changeIndicator.style.fontWeight = "bold";
+              changeIndicator.style.border = "1px solid";
+
+              const implementation = latest.bench.name;
+              const color = implementationColors[implementation] || "#333333";
+
+              if (change > 0) {
+                // Performance regression (slower = bad)
+                changeIndicator.style.backgroundColor = "#fff5f5";
+                changeIndicator.style.color = "#dc3545";
+                changeIndicator.style.borderColor = "#dc3545";
+                changeIndicator.textContent = `${implementation}: +${change.toFixed(
+                  1
+                )}%`;
+              } else {
+                // Performance improvement (faster = good)
+                changeIndicator.style.backgroundColor = "#f0fff4";
+                changeIndicator.style.color = "#28a745";
+                changeIndicator.style.borderColor = "#28a745";
+                changeIndicator.textContent = `${implementation}: ${change.toFixed(
+                  1
+                )}%`;
+              }
+
+              // Add implementation color dot
+              const colorDot = document.createElement("span");
+              colorDot.style.display = "inline-block";
+              colorDot.style.width = "8px";
+              colorDot.style.height = "8px";
+              colorDot.style.borderRadius = "50%";
+              colorDot.style.backgroundColor = color;
+              colorDot.style.marginRight = "6px";
+              changeIndicator.insertBefore(
+                colorDot,
+                changeIndicator.firstChild
+              );
+
+              // Add tooltip showing statistical significance
+              changeIndicator.title = `Statistically significant change (>2σ confidence)`;
+
+              changesContainer.appendChild(changeIndicator);
+            }
+          }
+        });
+
+      setElem.appendChild(changesContainer);
 
       const graphsElem = document.createElement("div");
       graphsElem.className = "benchmark-graphs";
