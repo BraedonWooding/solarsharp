@@ -59,7 +59,7 @@ namespace SolarSharp.Interpreter.Security
             // Initialize new security components
             _environmentEmulator = new EnvironmentEmulator(
                 config.EnvironmentEmulation,
-                config.AllowedEnvironmentVariables.ToList()
+                config.AllowedEnvironmentVariables
             );
             _fileSystemMapper = config.EnableChroot
                 ? new VirtualFileSystemMapper(new VirtualFileSystemPolicy())
@@ -111,7 +111,7 @@ namespace SolarSharp.Interpreter.Security
             // Initialize new security components
             _environmentEmulator = new EnvironmentEmulator(
                 config.EnvironmentEmulation,
-                config.AllowedEnvironmentVariables.ToList()
+                config.AllowedEnvironmentVariables
             );
             _fileSystemMapper = config.EnableChroot
                 ? new VirtualFileSystemMapper(new VirtualFileSystemPolicy())

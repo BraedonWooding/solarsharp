@@ -583,6 +583,11 @@ namespace SolarSharp.Interpreter.Security
                     AllowEnvironmentAccess = true,
                     AllowedEnvironmentVariables = ImmutableArray<string>.Empty, // Empty means all vars allowed
 
+                    EnvironmentEmulation =
+                    {
+                        BlockDangerousVariables = false,
+                    },
+                    
                     // Modules - everything enabled
                     AllowedModules = CoreModules.Preset_Complete | CoreModules.PubSub,
                     Capabilities = ScriptCapabilities.All,
