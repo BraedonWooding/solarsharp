@@ -373,6 +373,9 @@ function renderAllChars(dataSets) {
       showOnlyButton.textContent = showAll
         ? "Show Only SolarSharp"
         : "Show All";
+
+      // Update change indicators visibility
+      updateChangeIndicatorsVisibility();
     });
 
     legendContainer.appendChild(showOnlyButton);
@@ -424,6 +427,9 @@ function renderAllChars(dataSets) {
               ) === false
           );
         legendItem.style.opacity = isHidden ? "0.5" : "1";
+
+        // Update change indicators visibility
+        updateChangeIndicatorsVisibility();
       });
 
       legendContainer.appendChild(legendItem);
@@ -541,10 +547,16 @@ function renderAllChars(dataSets) {
               );
 
               // Consider significant if change is greater than 2 standard deviations (95% confidence)
-              isSignificant = absoluteChange > 2 * combinedStdev;
+              // AND the absolute change is at least 1.5ms (practical significance)
+              // AND the percentage change is at least 3%
+              isSignificant =
+                absoluteChange > 2 * combinedStdev &&
+                absoluteChange >= 1.5 &&
+                Math.abs(change) >= 3;
             } else {
-              // Fallback: consider significant if change is greater than 5%
-              isSignificant = Math.abs(change) > 5;
+              // Fallback: consider significant if change is greater than 3% AND at least 1.5ms
+              const absoluteChange = Math.abs(latestValueMs - previousValueMs);
+              isSignificant = Math.abs(change) >= 3 && absoluteChange >= 1.5;
             }
 
             // Only show indicator if change is statistically significant
@@ -561,22 +573,35 @@ function renderAllChars(dataSets) {
               const implementation = latest.bench.name;
               const color = implementationColors[implementation] || "#333333";
 
+              // Extract clean implementation name using regex
+              let cleanImplementationName = implementation;
+              const implementationMatch = implementation.match(
+                /Implementation:\s*([^,)]+)/
+              );
+              if (implementationMatch) {
+                cleanImplementationName = implementationMatch[1];
+              }
+
               if (change > 0) {
                 // Performance regression (slower = bad)
                 changeIndicator.style.backgroundColor = "#fff5f5";
                 changeIndicator.style.color = "#dc3545";
                 changeIndicator.style.borderColor = "#dc3545";
-                changeIndicator.textContent = `${implementation}: +${change.toFixed(
+                const deltaMs = (latestValueMs - previousValueMs).toFixed(2);
+                changeIndicator.textContent = `${cleanImplementationName}: +${change.toFixed(
                   1
-                )}%`;
+                )}% (+${deltaMs}ms)`;
               } else {
                 // Performance improvement (faster = good)
                 changeIndicator.style.backgroundColor = "#f0fff4";
                 changeIndicator.style.color = "#28a745";
                 changeIndicator.style.borderColor = "#28a745";
-                changeIndicator.textContent = `${implementation}: ${change.toFixed(
+                const deltaMs = Math.abs(
+                  latestValueMs - previousValueMs
+                ).toFixed(2);
+                changeIndicator.textContent = `${cleanImplementationName}: ${change.toFixed(
                   1
-                )}%`;
+                )}% (-${deltaMs}ms)`;
               }
 
               // Add implementation color dot
@@ -595,12 +620,44 @@ function renderAllChars(dataSets) {
               // Add tooltip showing statistical significance
               changeIndicator.title = `Statistically significant change (>2σ confidence)`;
 
+              // Add data attribute for filtering
+              changeIndicator.setAttribute(
+                "data-implementation",
+                cleanImplementationName
+              );
+
               changesContainer.appendChild(changeIndicator);
             }
           }
         });
 
       setElem.appendChild(changesContainer);
+
+      // Function to update change indicators visibility based on chart visibility
+      const updateChangeIndicatorsVisibility = () => {
+        const changeIndicators = document.querySelectorAll(
+          "[data-implementation]"
+        );
+        changeIndicators.forEach((indicator) => {
+          const implementation = indicator.getAttribute("data-implementation");
+          let isVisible = true;
+
+          if (charts.length > 0) {
+            const datasetIndex = charts[0].data.datasets.findIndex(
+              (dataset) => dataset.label === implementation
+            );
+            if (datasetIndex !== -1) {
+              isVisible = charts[0].isDatasetVisible(datasetIndex) !== false;
+            }
+          }
+
+          indicator.style.display = isVisible ? "inline-flex" : "none";
+        });
+      };
+
+      // Store the update function for use in legend handlers
+      window.updateChangeIndicatorsVisibility =
+        updateChangeIndicatorsVisibility;
 
       const graphsElem = document.createElement("div");
       graphsElem.className = "benchmark-graphs";
