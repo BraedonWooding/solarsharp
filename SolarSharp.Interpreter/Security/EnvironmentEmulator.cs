@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
@@ -15,21 +16,28 @@ namespace SolarSharp.Interpreter.Security
         private readonly List<Regex> _blockedPatterns;
         private readonly List<Regex> _passthroughPatterns;
         private readonly EnvironmentEmulationPolicy _policy;
-        private readonly List<string> _allowedVariables;
+        private readonly ImmutableArray<string> _allowedVariables;
 
         public EnvironmentEmulator(
             EnvironmentEmulationPolicy policy,
-            List<string> allowedVariables = null
+            ImmutableArray<string>? allowedVariables = null
         )
         {
             _policy = policy ?? throw new ArgumentNullException(nameof(policy));
             _emulatedVariables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             _passthroughVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            _blockedPatterns = new List<Regex>();
-            _passthroughPatterns = new List<Regex>();
-            _allowedVariables = allowedVariables ?? new List<string>();
+            _blockedPatterns = [];
+            _passthroughPatterns = [];
+            _allowedVariables = allowedVariables ?? ImmutableArray<string>.Empty;
 
-            Initialize();
+            // Initialize blocked patterns for security-critical variables
+            InitializeBlockedPatterns();
+
+            // Initialize emulated variables based on policy
+            InitializeEmulatedVariables();
+
+            // Initialize passthrough variables and patterns
+            InitializePassthroughVariables();
         }
 
         /// <summary>
@@ -49,7 +57,7 @@ namespace SolarSharp.Interpreter.Security
                 return null;
 
             // In sandboxed mode, check if variable is in the allowed list
-            if (_policy.Mode == EnvironmentMode.Sandboxed && _allowedVariables.Count > 0)
+            if (_policy.Mode == EnvironmentMode.Sandboxed && _allowedVariables.Length > 0)
             {
                 var isAllowed = false;
                 foreach (var pattern in _allowedVariables)
@@ -121,18 +129,6 @@ namespace SolarSharp.Interpreter.Security
             }
 
             return result;
-        }
-
-        private void Initialize()
-        {
-            // Initialize blocked patterns for security-critical variables
-            InitializeBlockedPatterns();
-
-            // Initialize emulated variables based on policy
-            InitializeEmulatedVariables();
-
-            // Initialize passthrough variables and patterns
-            InitializePassthroughVariables();
         }
 
         private void InitializeBlockedPatterns()
