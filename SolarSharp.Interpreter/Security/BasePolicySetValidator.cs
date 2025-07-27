@@ -11,15 +11,12 @@ namespace SolarSharp.Interpreter.Security
     /// Enforces security requirements: unique policy scopes, no directory overlaps,
     /// no digest-based file policies, and referential integrity.
     /// </summary>
-    public sealed class BasePolicySetValidator : AbstractValidator<PolicySet>
+    public sealed partial class BasePolicySetValidator : AbstractValidator<PolicySet>
     {
         /// <summary>
         /// Regex pattern for detecting digest-based file policies (SHA256, MD5, etc.)
         /// </summary>
-        private static readonly Regex DigestPattern = new Regex(
-            @"^[a-fA-F0-9]{32,128}$|sha256:|md5:|sha1:",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase
-        );
+        private static readonly Regex DigestPattern = GenerateDigestPatternRegex();
 
         /// <summary>
         /// Reserved characters that are not allowed in policy names for security reasons
@@ -177,5 +174,8 @@ namespace SolarSharp.Interpreter.Security
         {
             return pattern.Trim().ToLowerInvariant();
         }
+
+        [GeneratedRegex(@"^[a-fA-F0-9]{32,128}$|sha256:|md5:|sha1:", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        private static partial Regex GenerateDigestPatternRegex();
     }
 }

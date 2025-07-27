@@ -1,4 +1,3 @@
-using System;
 using System.Text.RegularExpressions;
 using CSharpFunctionalExtensions;
 
@@ -8,11 +7,9 @@ namespace SolarSharp.Interpreter.Security.ValueTypes
     /// Represents a network host pattern for security rules.
     /// Immutable value type following domain-driven design principles.
     /// </summary>
-    public sealed record HostPattern
+    public sealed partial record HostPattern
     {
-        private static readonly Regex ValidHostPattern = new Regex(
-            @"^(\*\.)?([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$|^\*$",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex ValidHostPattern = GetValidHostPattern();
 
         /// <summary>
         /// Gets the normalized host pattern string.
@@ -119,5 +116,8 @@ namespace SolarSharp.Interpreter.Security.ValueTypes
 
             return Maybe<string>.From(Pattern);
         }
+
+        [GeneratedRegex(@"^(\*\.)?([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$|^\*$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        private static partial Regex GetValidHostPattern();
     }
 }

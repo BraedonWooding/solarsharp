@@ -36,11 +36,6 @@ namespace SolarSharp.Interpreter.Platforms
         public static bool IsPortableFramework { get; private set; }
 
         /// <summary>
-        /// Gets a value indicating whether this instance has been compiled natively in Unity (as opposite to importing a DLL).
-        /// </summary>
-        public static bool IsUnityNative { get; private set; }
-
-        /// <summary>
         /// Gets a value indicating whether this instance has been compiled natively in Unity AND is using IL2CPP
         /// </summary>
         public static bool IsUnityIL2CPP { get; private set; }
@@ -84,29 +79,22 @@ namespace SolarSharp.Interpreter.Platforms
                 return;
 #if PCL
             IsPortableFramework = true;
+#endif
 #if ENABLE_DOTNET
             IsRunningOnUnity = true;
             IsUnityNative = true;
 #endif
-#else
-#if UNITY_5
+#if UNITY_5 || UNITY_2017_1_OR_NEWER
             IsRunningOnUnity = true;
             IsUnityNative = true;
-
+#endif
 #if ENABLE_IL2CPP
             IsUnityIL2CPP = true;
 #endif
-#elif !(NETFX_CORE)
-            IsRunningOnUnity = AppDomain
-                .CurrentDomain.GetAssemblies()
-                .SelectMany(a => a.SafeGetTypes())
-                .Any(t => t.FullName.StartsWith("UnityEngine."));
-#endif
-#endif
 
+#if !NETCOREAPP
             IsRunningOnMono = Type.GetType("Mono.Runtime") != null;
-
-            IsRunningOnClr4 = Type.GetType("System.Lazy`1") != null;
+#endif
 
             m_AutoDetectionsDone = true;
         }

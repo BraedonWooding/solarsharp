@@ -12,7 +12,7 @@ namespace SolarSharp.Interpreter.Security
     /// <summary>
     /// Executes system commands safely with strict validation and sandboxing
     /// </summary>
-    public class SafeCommandExecutor
+    public partial class SafeCommandExecutor
     {
         private readonly SafeCommandPolicy _policy;
         private readonly Dictionary<string, CommandDefinition> _allowedCommands;
@@ -21,42 +21,15 @@ namespace SolarSharp.Interpreter.Security
         private readonly VirtualFileSystemMapper _fileSystemMapper;
 
         // Pre-compiled regex patterns for common security checks
-        private static readonly Regex ShellMetaCharsPattern = new Regex(
-            @"[;&|`$()]",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase
-        );
-        private static readonly Regex EvalPattern = new Regex(
-            @"--eval|--execute",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase
-        );
-        private static readonly Regex ShortEvalPattern = new Regex(
-            @"-[ec]",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase
-        );
-        private static readonly Regex EscapeSequencePattern = new Regex(
-            @"\\[nrt]",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase
-        );
-        private static readonly Regex CommandSubstitutionPattern = new Regex(
-            @"\$\(",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase
-        );
-        private static readonly Regex BacktickPattern = new Regex(
-            @"`.*`",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase
-        );
-        private static readonly Regex DeviceAccessPattern = new Regex(
-            @">\s*/dev/",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase
-        );
-        private static readonly Regex OutputRedirectionPattern = new Regex(
-            @"2>&1",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase
-        );
-        private static readonly Regex DeviceInputPattern = new Regex(
-            @"</dev/",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase
-        );
+        private static readonly Regex ShellMetaCharsPattern = GetShellMetaCharsPattern();
+        private static readonly Regex EvalPattern = GetEvalPattern();
+        private static readonly Regex ShortEvalPattern = GetShortEvalPattern();
+        private static readonly Regex EscapeSequencePattern = GetEscapeSequencePattern();
+        private static readonly Regex CommandSubstitutionPattern = GetCommandSubstitutionPattern();
+        private static readonly Regex BacktickPattern = GetBacktickPattern();
+        private static readonly Regex DeviceAccessPattern = GetDeviceAccessPattern();
+        private static readonly Regex OutputRedirectionPattern = GetOutputRedirectionPattern();
+        private static readonly Regex DeviceInputPattern = GetDeviceInputPattern();
 
         public SafeCommandExecutor(
             SafeCommandPolicy policy,
@@ -567,6 +540,25 @@ namespace SolarSharp.Interpreter.Security
                 startInfo.Environment["HOME"] = "/tmp";
             }
         }
+
+        [GeneratedRegex(@"[;&|`$()]", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        private static partial Regex GetShellMetaCharsPattern();
+        [GeneratedRegex(@"--eval|--execute", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        private static partial Regex GetEvalPattern();
+        [GeneratedRegex(@"-[ec]", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        private static partial Regex GetShortEvalPattern();
+        [GeneratedRegex(@"\\[nrt]", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        private static partial Regex GetEscapeSequencePattern();
+        [GeneratedRegex(@"\$\(", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        private static partial Regex GetCommandSubstitutionPattern();
+        [GeneratedRegex(@"`.*`", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        private static partial Regex GetBacktickPattern();
+        [GeneratedRegex(@">\s*/dev/", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        private static partial Regex GetDeviceAccessPattern();
+        [GeneratedRegex(@"2>&1", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        private static partial Regex GetOutputRedirectionPattern();
+        [GeneratedRegex(@"</dev/", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+        private static partial Regex GetDeviceInputPattern();
     }
 
     /// <summary>
