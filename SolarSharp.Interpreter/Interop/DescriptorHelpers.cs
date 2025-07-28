@@ -30,22 +30,17 @@ namespace SolarSharp.Interpreter.Interop
             if (mi == null)
                 return false;
 
-            var va = mi.GetCustomAttributes(true)
-                .OfType<MoonSharpVisibleAttribute>()
-                .SingleOrDefault();
-            var ha = mi.GetCustomAttributes(true)
-                .OfType<MoonSharpHiddenAttribute>()
-                .SingleOrDefault();
+            MoonSharpVisibleAttribute va = mi.GetCustomAttributes(true).OfType<MoonSharpVisibleAttribute>().SingleOrDefault();
+            MoonSharpHiddenAttribute ha = mi.GetCustomAttributes(true).OfType<MoonSharpHiddenAttribute>().SingleOrDefault();
 
             if (va != null && ha != null && va.Visible)
-                throw new InvalidOperationException(
-                    $"A member ('{mi.Name}') can't have discording MoonSharpHiddenAttribute and MoonSharpVisibleAttribute."
-                );
-            if (ha != null)
+                throw new InvalidOperationException(string.Format("A member ('{0}') can't have discording MoonSharpHiddenAttribute and MoonSharpVisibleAttribute.", mi.Name));
+            else if (ha != null)
                 return false;
-            if (va != null)
+            else if (va != null)
                 return va.Visible;
-            return null;
+            else
+                return null;
         }
 
         public static bool IsDelegateType(this Type t)
@@ -59,9 +54,9 @@ namespace SolarSharp.Interpreter.Interop
         public static string GetClrVisibility(this Type type)
         {
 #if NETFX_CORE
-            var t = type.GetTypeInfo();
+			var t = type.GetTypeInfo();
 #else
-            var t = type;
+            Type t = type;
 #endif
             if (t.IsPublic || t.IsNestedPublic)
                 return "public";
@@ -100,17 +95,18 @@ namespace SolarSharp.Interpreter.Interop
         /// </summary>
         public static string GetClrVisibility(this PropertyInfo info)
         {
-            var gm = Framework.Do.GetGetMethod(info);
-            var sm = Framework.Do.GetSetMethod(info);
+            MethodInfo gm = Framework.Do.GetGetMethod(info);
+            MethodInfo sm = Framework.Do.GetSetMethod(info);
 
-            var gv = gm != null ? gm.GetClrVisibility() : "private";
-            var sv = sm != null ? sm.GetClrVisibility() : "private";
+            string gv = gm != null ? gm.GetClrVisibility() : "private";
+            string sv = sm != null ? sm.GetClrVisibility() : "private";
 
             if (gv == "public" || sv == "public")
                 return "public";
-            if (gv == "internal" || sv == "internal")
+            else if (gv == "internal" || sv == "internal")
                 return "internal";
-            return gv;
+            else
+                return gv;
         }
 
         /// <summary>
@@ -132,6 +128,9 @@ namespace SolarSharp.Interpreter.Interop
             return "unknown";
         }
 
+
+
+
         /// <summary>
         /// Determines whether the specified PropertyInfo is visible publicly (either the getter or the setter is public).
         /// </summary>
@@ -139,8 +138,8 @@ namespace SolarSharp.Interpreter.Interop
         /// <returns></returns>
         public static bool IsPropertyInfoPublic(this PropertyInfo pi)
         {
-            var getter = Framework.Do.GetGetMethod(pi);
-            var setter = Framework.Do.GetSetMethod(pi);
+            MethodInfo getter = Framework.Do.GetGetMethod(pi);
+            MethodInfo setter = Framework.Do.GetSetMethod(pi);
 
             return getter != null && getter.IsPublic || setter != null && setter.IsPublic;
         }
@@ -176,6 +175,9 @@ namespace SolarSharp.Interpreter.Interop
             }
         }
 
+
+
+
         /// <summary>
         /// Gets the name of a conversion method to be exposed to Lua scripts
         /// </summary>
@@ -183,14 +185,14 @@ namespace SolarSharp.Interpreter.Interop
         /// <returns></returns>
         public static string GetConversionMethodName(this Type type)
         {
-            var sb = new StringBuilder(type.Name);
+            StringBuilder sb = new(type.Name);
 
-            for (var i = 0; i < sb.Length; i++)
-                if (!char.IsLetterOrDigit(sb[i]))
-                    sb[i] = '_';
+            for (int i = 0; i < sb.Length; i++)
+                if (!char.IsLetterOrDigit(sb[i])) sb[i] = '_';
 
-            return "__to" + sb;
+            return "__to" + sb.ToString();
         }
+
 
         /// <summary>
         /// Gets all implemented types by a given type
@@ -199,12 +201,13 @@ namespace SolarSharp.Interpreter.Interop
         /// <returns></returns>
         public static IEnumerable<Type> GetAllImplementedTypes(this Type t)
         {
-            for (var ot = t; ot != null; ot = Framework.Do.GetBaseType(ot))
+            for (Type ot = t; ot != null; ot = Framework.Do.GetBaseType(ot))
                 yield return ot;
 
-            foreach (var it in Framework.Do.GetInterfaces(t))
+            foreach (Type it in Framework.Do.GetInterfaces(t))
                 yield return it;
         }
+
 
         /// <summary>
         /// Determines whether the string is a valid simple identifier (starts with letter or underscore
@@ -218,7 +221,7 @@ namespace SolarSharp.Interpreter.Interop
             if (str[0] != '_' && !char.IsLetter(str[0]))
                 return false;
 
-            for (var i = 1; i < str.Length; i++)
+            for (int i = 1; i < str.Length; i++)
                 if (str[i] != '_' && !char.IsLetterOrDigit(str[i]))
                     return false;
 
@@ -237,9 +240,9 @@ namespace SolarSharp.Interpreter.Interop
             if (str[0] != '_' && !char.IsLetter(str[0]))
                 str = "_" + str;
 
-            var sb = new StringBuilder(str);
+            StringBuilder sb = new(str);
 
-            for (var i = 0; i < sb.Length; i++)
+            for (int i = 0; i < sb.Length; i++)
                 if (sb[i] != '_' && !char.IsLetterOrDigit(sb[i]))
                     sb[i] = '_';
 
@@ -253,10 +256,10 @@ namespace SolarSharp.Interpreter.Interop
         /// <returns></returns>
         public static string Camelify(string name)
         {
-            var sb = new StringBuilder(name.Length);
+            StringBuilder sb = new(name.Length);
 
-            var lastWasUnderscore = false;
-            for (var i = 0; i < name.Length; i++)
+            bool lastWasUnderscore = false;
+            for (int i = 0; i < name.Length; i++)
             {
                 if (name[i] == '_' && i != 0)
                 {
@@ -288,5 +291,9 @@ namespace SolarSharp.Interpreter.Interop
 
             return name;
         }
+
+
+
+
     }
 }

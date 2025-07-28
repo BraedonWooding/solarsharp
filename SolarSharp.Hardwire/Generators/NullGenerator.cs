@@ -15,13 +15,13 @@ namespace SolarSharp.Hardwire.Generators
             ManagedType = type;
         }
 
-        public string ManagedType { get; private set; }
+        public string ManagedType
+        {
+            get;
+            private set;
+        }
 
-        public CodeExpression[] Generate(
-            Table table,
-            HardwireCodeGenerationContext generator,
-            CodeTypeMemberCollection members
-        )
+        public CodeExpression[] Generate(Table table, HardwireCodeGenerationContext generator, CodeTypeMemberCollection members)
         {
             generator.Error("Missing code generator for '{0}'.", ManagedType);
 

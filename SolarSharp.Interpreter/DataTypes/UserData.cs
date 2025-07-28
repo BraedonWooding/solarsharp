@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using SolarSharp.Interpreter.Interop;
-using SolarSharp.Interpreter.Interop.BasicDescriptors;
-using SolarSharp.Interpreter.Interop.PredefinedUserData;
-using SolarSharp.Interpreter.Interop.ProxyObjects;
-using SolarSharp.Interpreter.Interop.RegistrationPolicies;
-using SolarSharp.Interpreter.Interop.StandardDescriptors;
-using SolarSharp.Interpreter.Interop.UserDataRegistries;
+using System.Linq;
 using SolarSharp.Interpreter.Serialization.Json;
+using SolarSharp.Interpreter.Interop.StandardDescriptors;
+using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Interop.RegistrationPolicies;
+using SolarSharp.Interpreter.Interop.PredefinedUserData;
+using SolarSharp.Interpreter.Interop.UserDataRegistries;
+using SolarSharp.Interpreter.Interop.ProxyObjects;
 
 namespace SolarSharp.Interpreter.DataTypes
 {
@@ -40,6 +40,8 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public IUserDataDescriptor Descriptor { get; private set; }
 
+
+
         static UserData()
         {
             RegistrationPolicy = InteropRegistrationPolicy.Default;
@@ -58,17 +60,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <typeparam name="T">The type to be registered</typeparam>
         /// <param name="accessMode">The access mode (optional).</param>
         /// <param name="friendlyName">Friendly name for the type (optional)</param>
-        public static IUserDataDescriptor RegisterType<T>(
-            InteropAccessMode accessMode = InteropAccessMode.Default,
-            string friendlyName = null
-        )
+        public static IUserDataDescriptor RegisterType<T>(InteropAccessMode accessMode = InteropAccessMode.Default, string friendlyName = null)
         {
-            return TypeDescriptorRegistry.RegisterType_Impl(
-                typeof(T),
-                accessMode,
-                friendlyName,
-                null
-            );
+            return TypeDescriptorRegistry.RegisterType_Impl(typeof(T), accessMode, friendlyName, null);
         }
 
         /// <summary>
@@ -77,14 +71,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="type">The type to be registered</param>
         /// <param name="accessMode">The access mode (optional).</param>
         /// <param name="friendlyName">Friendly name for the type (optional)</param>
-        public static IUserDataDescriptor RegisterType(
-            Type type,
-            InteropAccessMode accessMode = InteropAccessMode.Default,
-            string friendlyName = null
-        )
+        public static IUserDataDescriptor RegisterType(Type type, InteropAccessMode accessMode = InteropAccessMode.Default, string friendlyName = null)
         {
             return TypeDescriptorRegistry.RegisterType_Impl(type, accessMode, friendlyName, null);
         }
+
 
         /// <summary>
         /// Registers a proxy type.
@@ -93,17 +84,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="accessMode">The access mode.</param>
         /// <param name="friendlyName">A friendly name for the descriptor.</param>
         /// <returns></returns>
-        public static IUserDataDescriptor RegisterProxyType(
-            IProxyFactory proxyFactory,
-            InteropAccessMode accessMode = InteropAccessMode.Default,
-            string friendlyName = null
-        )
+        public static IUserDataDescriptor RegisterProxyType(IProxyFactory proxyFactory, InteropAccessMode accessMode = InteropAccessMode.Default, string friendlyName = null)
         {
-            return TypeDescriptorRegistry.RegisterProxyType_Impl(
-                proxyFactory,
-                accessMode,
-                friendlyName
-            );
+            return TypeDescriptorRegistry.RegisterProxyType_Impl(proxyFactory, accessMode, friendlyName);
         }
 
         /// <summary>
@@ -115,20 +98,14 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="accessMode">The access mode.</param>
         /// <param name="friendlyName">A friendly name for the descriptor.</param>
         /// <returns></returns>
-        public static IUserDataDescriptor RegisterProxyType<TProxy, TTarget>(
-            Func<TTarget, TProxy> wrapDelegate,
-            InteropAccessMode accessMode = InteropAccessMode.Default,
-            string friendlyName = null
-        )
+        public static IUserDataDescriptor RegisterProxyType<TProxy, TTarget>(Func<TTarget, TProxy> wrapDelegate, InteropAccessMode accessMode = InteropAccessMode.Default, string friendlyName = null)
             where TProxy : class
             where TTarget : class
         {
-            return RegisterProxyType(
-                new DelegateProxyFactory<TProxy, TTarget>(wrapDelegate),
-                accessMode,
-                friendlyName
-            );
+            return RegisterProxyType(new DelegateProxyFactory<TProxy, TTarget>(wrapDelegate), accessMode, friendlyName);
         }
+
+
 
         /// <summary>
         /// Registers a type with a custom userdata descriptor
@@ -137,12 +114,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="customDescriptor">The custom descriptor.</param>
         public static IUserDataDescriptor RegisterType<T>(IUserDataDescriptor customDescriptor)
         {
-            return TypeDescriptorRegistry.RegisterType_Impl(
-                typeof(T),
-                InteropAccessMode.Default,
-                null,
-                customDescriptor
-            );
+            return TypeDescriptorRegistry.RegisterType_Impl(typeof(T), InteropAccessMode.Default, null, customDescriptor);
         }
 
         /// <summary>
@@ -150,17 +122,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <param name="type">The type to be registered</param>
         /// <param name="customDescriptor">The custom descriptor.</param>
-        public static IUserDataDescriptor RegisterType(
-            Type type,
-            IUserDataDescriptor customDescriptor
-        )
+        public static IUserDataDescriptor RegisterType(Type type, IUserDataDescriptor customDescriptor)
         {
-            return TypeDescriptorRegistry.RegisterType_Impl(
-                type,
-                InteropAccessMode.Default,
-                null,
-                customDescriptor
-            );
+            return TypeDescriptorRegistry.RegisterType_Impl(type, InteropAccessMode.Default, null, customDescriptor);
         }
 
         /// <summary>
@@ -169,13 +133,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="customDescriptor">The custom descriptor.</param>
         public static IUserDataDescriptor RegisterType(IUserDataDescriptor customDescriptor)
         {
-            return TypeDescriptorRegistry.RegisterType_Impl(
-                customDescriptor.Type,
-                InteropAccessMode.Default,
-                null,
-                customDescriptor
-            );
+            return TypeDescriptorRegistry.RegisterType_Impl(customDescriptor.Type, InteropAccessMode.Default, null, customDescriptor);
         }
+
 
         /// <summary>
         /// Registers all types marked with a MoonSharpUserDataAttribute that ar contained in an assembly.
@@ -187,9 +147,7 @@ namespace SolarSharp.Interpreter.DataTypes
             if (asm == null)
             {
 #if NETFX_CORE || DOTNET_CORE
-                throw new NotSupportedException(
-                    "Assembly.GetCallingAssembly is not supported on target framework."
-                );
+					throw new NotSupportedException("Assembly.GetCallingAssembly is not supported on target framework.");
 #else
                 asm = Assembly.GetCallingAssembly();
 #endif
@@ -223,7 +181,7 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Unregisters a type.
+        /// Unregisters a type. 
         /// WARNING: unregistering types at runtime is a dangerous practice and may cause unwanted errors.
         /// Use this only for testing purposes or to re-register the same type in a slightly different way.
         /// Additionally, it's a good practice to discard all previous loaded scripts after calling this method.
@@ -254,7 +212,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public static DynValue Create(object o, IUserDataDescriptor descr)
         {
-            return DynValue.NewUserData(new UserData { Descriptor = descr, Object = o });
+            return DynValue.NewUserData(new UserData()
+            {
+                Descriptor = descr,
+                Object = o
+            });
         }
 
         /// <summary>
@@ -283,10 +245,13 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public static DynValue CreateStatic(IUserDataDescriptor descr)
         {
-            if (descr == null)
-                return null;
+            if (descr == null) return null;
 
-            return DynValue.NewUserData(new UserData { Descriptor = descr, Object = null });
+            return DynValue.NewUserData(new UserData()
+            {
+                Descriptor = descr,
+                Object = null
+            });
         }
 
         /// <summary>
@@ -336,10 +301,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         /// <param name="type">The type.</param>
         /// <param name="mode">The InteropAccessMode.</param>
-        public static void RegisterExtensionType(
-            Type type,
-            InteropAccessMode mode = InteropAccessMode.Default
-        )
+        public static void RegisterExtensionType(Type type, InteropAccessMode mode = InteropAccessMode.Default)
         {
             ExtensionMethodsRegistry.RegisterExtensionType(type, mode);
         }
@@ -350,10 +312,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="name">The name.</param>
         /// <param name="extendedType">The extended type.</param>
         /// <returns></returns>
-        public static List<IOverloadableMemberDescriptor> GetExtensionMethodsByNameAndType(
-            string name,
-            Type extendedType
-        )
+        public static List<IOverloadableMemberDescriptor> GetExtensionMethodsByNameAndType(string name, Type extendedType)
         {
             return ExtensionMethodsRegistry.GetExtensionMethodsByNameAndType(name, extendedType);
         }
@@ -390,6 +349,7 @@ namespace SolarSharp.Interpreter.DataTypes
             return TypeDescriptorRegistry.GetDescriptorForType(type, searchInterfaces);
         }
 
+
         /// <summary>
         /// Gets the best possible type descriptor for a specified CLR object.
         /// </summary>
@@ -400,6 +360,7 @@ namespace SolarSharp.Interpreter.DataTypes
             return TypeDescriptorRegistry.GetDescriptorForType(o.GetType(), true);
         }
 
+
         /// <summary>
         /// Gets a table with the description of registered types.
         /// </summary>
@@ -407,16 +368,14 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public static Table GetDescriptionOfRegisteredTypes(bool useHistoricalData = false)
         {
-            var output = DynValue.NewPrimeTable();
-            var registeredTypesPairs = useHistoricalData
-                ? TypeDescriptorRegistry.RegisteredTypesHistory
-                : TypeDescriptorRegistry.RegisteredTypes;
+            DynValue output = DynValue.NewPrimeTable();
+            var registeredTypesPairs = useHistoricalData ? TypeDescriptorRegistry.RegisteredTypesHistory : TypeDescriptorRegistry.RegisteredTypes;
 
             foreach (var descpair in registeredTypesPairs)
             {
                 if (descpair.Value is IWireableDescriptor sd)
                 {
-                    var t = DynValue.NewPrimeTable();
+                    DynValue t = DynValue.NewPrimeTable();
                     output.Table.Set(descpair.Key.FullName, t);
                     sd.PrepareForWiring(t.Table);
                 }
@@ -432,10 +391,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public static IEnumerable<Type> GetRegisteredTypes(bool useHistoricalData = false)
         {
-            var registeredTypesPairs = useHistoricalData
-                ? TypeDescriptorRegistry.RegisteredTypesHistory
-                : TypeDescriptorRegistry.RegisteredTypes;
+            var registeredTypesPairs = useHistoricalData ? TypeDescriptorRegistry.RegisteredTypesHistory : TypeDescriptorRegistry.RegisteredTypes;
             return registeredTypesPairs.Select(p => p.Value.Type);
         }
+
+
+
     }
 }

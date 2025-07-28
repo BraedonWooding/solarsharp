@@ -5,6 +5,7 @@ using SolarSharp.Interpreter.Execution.Scopes;
 using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Lexer;
 
+
 namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class IfStatement : Statement
@@ -17,17 +18,14 @@ namespace SolarSharp.Interpreter.Tree.Statements
             public SourceRef Source;
         }
 
-        private readonly List<IfBlock> m_Ifs = new List<IfBlock>();
-        private readonly IfBlock m_Else;
+        private readonly List<IfBlock> m_Ifs = new();
+        private readonly IfBlock m_Else = null;
         private readonly SourceRef m_End;
 
         public IfStatement(ScriptLoadingContext lcontext)
             : base(lcontext)
         {
-            while (
-                lcontext.Lexer.Current.Type != TokenType.Else
-                && lcontext.Lexer.Current.Type != TokenType.End
-            )
+            while (lcontext.Lexer.Current.Type != TokenType.Else && lcontext.Lexer.Current.Type != TokenType.End)
             {
                 m_Ifs.Add(CreateIfBlock(lcontext));
             }
@@ -43,7 +41,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
         private IfBlock CreateIfBlock(ScriptLoadingContext lcontext)
         {
-            var type = CheckTokenType(lcontext, TokenType.If, TokenType.ElseIf);
+            Token type = CheckTokenType(lcontext, TokenType.If, TokenType.ElseIf);
 
             lcontext.Scope.PushBlock();
 
@@ -52,16 +50,17 @@ namespace SolarSharp.Interpreter.Tree.Statements
                 Exp = Expression.Expr(lcontext),
                 Source = type.GetSourceRef(CheckTokenType(lcontext, TokenType.Then)),
                 Block = new CompositeStatement(lcontext),
-                StackFrame = lcontext.Scope.PopBlock(),
+                StackFrame = lcontext.Scope.PopBlock()
             };
             lcontext.Source.Refs.Add(ifblock.Source);
+
 
             return ifblock;
         }
 
         private IfBlock CreateElseBlock(ScriptLoadingContext lcontext)
         {
-            var type = CheckTokenType(lcontext, TokenType.Else);
+            Token type = CheckTokenType(lcontext, TokenType.Else);
 
             lcontext.Scope.PushBlock();
 
@@ -69,15 +68,16 @@ namespace SolarSharp.Interpreter.Tree.Statements
             {
                 Block = new CompositeStatement(lcontext),
                 StackFrame = lcontext.Scope.PopBlock(),
-                Source = type.GetSourceRef(),
+                Source = type.GetSourceRef()
             };
             lcontext.Source.Refs.Add(ifblock.Source);
             return ifblock;
         }
 
+
         public override void Compile(ByteCode bc)
         {
-            var endJumps = new List<Instruction>();
+            List<Instruction> endJumps = new();
 
             Instruction lastIfJmp = null;
 
@@ -117,5 +117,8 @@ namespace SolarSharp.Interpreter.Tree.Statements
             foreach (var endjmp in endJumps)
                 endjmp.NumVal = bc.GetJumpPointForNextInstruction();
         }
+
+
+
     }
 }

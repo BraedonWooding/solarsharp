@@ -1,6 +1,5 @@
 ﻿using System;
 using System.CodeDom;
-using System.Reflection;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
 using SolarSharp.Interpreter.Serialization;
@@ -14,36 +13,37 @@ namespace SolarSharp.Hardwire.Generators
             get { return "SolarSharp.Interpreter.Interop.DynValueMemberDescriptor"; }
         }
 
-        public CodeExpression[] Generate(
-            Table table,
-            HardwireCodeGenerationContext generatorContext,
-            CodeTypeMemberCollection members
-        )
+        public CodeExpression[] Generate(Table table, HardwireCodeGenerationContext generatorContext, CodeTypeMemberCollection members)
         {
-            var className = "DVAL_" + Guid.NewGuid().ToString("N");
-            var kval = table.Get("value");
+            string className = "DVAL_" + Guid.NewGuid().ToString("N");
+            DynValue kval = table.Get("value");
 
-            var vtype = table.Get("type");
-            var vstaticType = table.Get("staticType");
+            DynValue vtype = table.Get("type");
+            DynValue vstaticType = table.Get("staticType");
 
-            var type = vtype.Type == DataType.String ? vtype.String : null;
-            var staticType = vstaticType.Type == DataType.String ? vstaticType.String : null;
+            string type = vtype.Type == DataType.String ? vtype.String : null;
+            string staticType = vstaticType.Type == DataType.String ? vstaticType.String : null;
 
-            var classCode = new CodeTypeDeclaration(className)
+
+            CodeTypeDeclaration classCode = new(className)
             {
-                TypeAttributes = TypeAttributes.NestedPrivate | TypeAttributes.Sealed,
+                TypeAttributes = System.Reflection.TypeAttributes.NestedPrivate | System.Reflection.TypeAttributes.Sealed
             };
 
             classCode.BaseTypes.Add(typeof(DynValueMemberDescriptor));
 
-            var ctor = new CodeConstructor { Attributes = MemberAttributes.Assembly };
+            CodeConstructor ctor = new()
+            {
+                Attributes = MemberAttributes.Assembly
+            };
             classCode.Members.Add(ctor);
+
 
             if (type == null)
             {
-                var tbl = new Table(null);
+                Table tbl = new(null);
                 tbl.Set(1, kval);
-                var str = tbl.Serialize();
+                string str = tbl.Serialize();
 
                 ctor.BaseConstructorArgs.Add(new CodePrimitiveExpression(table.Get("name").String));
                 ctor.BaseConstructorArgs.Add(new CodePrimitiveExpression(str));
@@ -52,24 +52,21 @@ namespace SolarSharp.Hardwire.Generators
             {
                 ctor.BaseConstructorArgs.Add(new CodePrimitiveExpression(table.Get("name").String));
 
-                var p = new CodeMemberProperty
+                CodeMemberProperty p = new()
                 {
                     Name = "Value",
                     Type = new CodeTypeReference(typeof(DynValue)),
-                    Attributes = MemberAttributes.Override | MemberAttributes.Public,
+                    Attributes = MemberAttributes.Override | MemberAttributes.Public
                 };
                 p.GetStatements.Add(
                     new CodeMethodReturnStatement(
                         new CodeMethodInvokeExpression(
                             new CodeTypeReferenceExpression(typeof(UserData)),
-                            "CreateStatic",
-                            new CodeTypeOfExpression(staticType)
-                        )
-                    )
-                );
+                            "CreateStatic", new CodeTypeOfExpression(staticType))));
 
                 classCode.Members.Add(p);
             }
+
 
             members.Add(classCode);
             return new CodeExpression[] { new CodeObjectCreateExpression(className) };

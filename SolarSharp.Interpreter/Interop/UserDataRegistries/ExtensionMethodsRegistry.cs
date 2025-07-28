@@ -15,20 +15,16 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
     /// </summary>
     internal class ExtensionMethodsRegistry
     {
-        private static readonly object s_Lock = new object();
-        private static readonly MultiDictionary<string, IOverloadableMemberDescriptor> s_Registry =
-            new MultiDictionary<string, IOverloadableMemberDescriptor>();
-        private static readonly MultiDictionary<
-            string,
-            UnresolvedGenericMethod
-        > s_UnresolvedGenericsRegistry = new MultiDictionary<string, UnresolvedGenericMethod>();
-        private static int s_ExtensionMethodChangeVersion;
+        private static readonly object s_Lock = new();
+        private static readonly MultiDictionary<string, IOverloadableMemberDescriptor> s_Registry = new();
+        private static readonly MultiDictionary<string, UnresolvedGenericMethod> s_UnresolvedGenericsRegistry = new();
+        private static int s_ExtensionMethodChangeVersion = 0;
 
         private class UnresolvedGenericMethod
         {
             public readonly MethodInfo Method;
             public readonly InteropAccessMode AccessMode;
-            public readonly HashSet<Type> AlreadyAddedTypes = new HashSet<Type>();
+            public readonly HashSet<Type> AlreadyAddedTypes = new();
 
             public UnresolvedGenericMethod(MethodInfo mi, InteropAccessMode mode)
             {
@@ -42,26 +38,20 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
         /// </summary>
         /// <param name="type">The type.</param>
         /// <param name="mode">The InteropAccessMode.</param>
-        public static void RegisterExtensionType(
-            Type type,
-            InteropAccessMode mode = InteropAccessMode.Default
-        )
+        public static void RegisterExtensionType(Type type, InteropAccessMode mode = InteropAccessMode.Default)
         {
             lock (s_Lock)
             {
-                var changesDone = false;
+                bool changesDone = false;
 
-                foreach (var mi in Framework.Do.GetMethods(type).Where(_mi => _mi.IsStatic))
+                foreach (MethodInfo mi in Framework.Do.GetMethods(type).Where(_mi => _mi.IsStatic))
                 {
                     if (mi.GetCustomAttributes(typeof(ExtensionAttribute), false).Count() == 0)
                         continue;
 
                     if (mi.ContainsGenericParameters)
                     {
-                        s_UnresolvedGenericsRegistry.Add(
-                            mi.Name,
-                            new UnresolvedGenericMethod(mi, mode)
-                        );
+                        s_UnresolvedGenericsRegistry.Add(mi.Name, new UnresolvedGenericMethod(mi, mode));
                         changesDone = true;
                         continue;
                     }
@@ -90,9 +80,7 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
         /// </summary>
         /// <param name="name">The name.</param>
         /// <returns></returns>
-        public static IEnumerable<IOverloadableMemberDescriptor> GetExtensionMethodsByName(
-            string name
-        )
+        public static IEnumerable<IOverloadableMemberDescriptor> GetExtensionMethodsByName(string name)
         {
             lock (s_Lock)
                 return new List<IOverloadableMemberDescriptor>(s_Registry.Find(name));
@@ -108,16 +96,14 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
             return s_ExtensionMethodChangeVersion;
         }
 
+
         /// <summary>
         /// Gets all the extension methods which can match a given name and extending a given Type
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="extendedType">The extended type.</param>
         /// <returns></returns>
-        public static List<IOverloadableMemberDescriptor> GetExtensionMethodsByNameAndType(
-            string name,
-            Type extendedType
-        )
+        public static List<IOverloadableMemberDescriptor> GetExtensionMethodsByNameAndType(string name, Type extendedType)
         {
             List<UnresolvedGenericMethod> unresolvedGenerics = null;
 
@@ -126,25 +112,19 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
                 unresolvedGenerics = s_UnresolvedGenericsRegistry.Find(name).ToList();
             }
 
-            foreach (var ugm in unresolvedGenerics)
+            foreach (UnresolvedGenericMethod ugm in unresolvedGenerics)
             {
-                var args = ugm.Method.GetParameters();
-                if (args.Length == 0)
-                    continue;
-                var extensionType = args[0].ParameterType;
+                ParameterInfo[] args = ugm.Method.GetParameters();
+                if (args.Length == 0) continue;
+                Type extensionType = args[0].ParameterType;
 
-                var genericType = GetGenericMatch(extensionType, extendedType);
+                Type genericType = GetGenericMatch(extensionType, extendedType);
 
                 if (ugm.AlreadyAddedTypes.Add(genericType))
                 {
                     if (genericType != null)
                     {
-                        var mi = InstantiateMethodInfo(
-                            ugm.Method,
-                            extensionType,
-                            genericType,
-                            extendedType
-                        );
+                        MethodInfo mi = InstantiateMethodInfo(ugm.Method, extensionType, genericType, extendedType);
                         if (mi != null)
                         {
                             if (!MethodMemberDescriptor.CheckMethodIsCompatible(mi, false))
@@ -159,24 +139,15 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
                 }
             }
 
-            return s_Registry
-                .Find(name)
-                .Where(d =>
-                    d.ExtensionMethodType != null
-                    && Framework.Do.IsAssignableFrom(d.ExtensionMethodType, extendedType)
-                )
+            return s_Registry.Find(name)
+                .Where(d => d.ExtensionMethodType != null && Framework.Do.IsAssignableFrom(d.ExtensionMethodType, extendedType))
                 .ToList();
         }
 
-        private static MethodInfo InstantiateMethodInfo(
-            MethodInfo mi,
-            Type extensionType,
-            Type genericType,
-            Type extendedType
-        )
+        private static MethodInfo InstantiateMethodInfo(MethodInfo mi, Type extensionType, Type genericType, Type extendedType)
         {
-            var defs = mi.GetGenericArguments();
-            var tdefs = Framework.Do.GetGenericArguments(genericType);
+            Type[] defs = mi.GetGenericArguments();
+            Type[] tdefs = Framework.Do.GetGenericArguments(genericType);
 
             if (tdefs.Length == defs.Length)
             {
@@ -192,12 +163,9 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
             {
                 extensionType = extensionType.GetGenericTypeDefinition();
 
-                foreach (var t in extendedType.GetAllImplementedTypes())
+                foreach (Type t in extendedType.GetAllImplementedTypes())
                 {
-                    if (
-                        Framework.Do.IsGenericType(t)
-                        && t.GetGenericTypeDefinition() == extensionType
-                    )
+                    if (Framework.Do.IsGenericType(t) && t.GetGenericTypeDefinition() == extensionType)
                     {
                         return t;
                     }
@@ -206,5 +174,6 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
 
             return null;
         }
+
     }
 }

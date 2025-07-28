@@ -5,7 +5,7 @@ using SolarSharp.Interpreter.Tree.Lexer;
 namespace SolarSharp.Interpreter.Errors
 {
     /// <summary>
-    /// Exception for all parsing/lexing errors.
+    /// Exception for all parsing/lexing errors. 
     /// </summary>
 #if !(PCL || ((!UNITY_EDITOR) && (ENABLE_DOTNET)) || NETFX_CORE)
     [Serializable]
@@ -32,12 +32,7 @@ namespace SolarSharp.Interpreter.Errors
             Token = t;
         }
 
-        internal SyntaxErrorException(
-            Script script,
-            SourceRef sref,
-            string format,
-            params object[] args
-        )
+        internal SyntaxErrorException(Script script, SourceRef sref, string format, params object[] args)
             : base(format, args)
         {
             DecorateMessage(script, sref);
@@ -65,7 +60,7 @@ namespace SolarSharp.Interpreter.Errors
         }
 
         /// <summary>
-        /// Rethrows this instance if
+        /// Rethrows this instance if 
         /// </summary>
         /// <returns></returns>
         public override void Rethrow()
@@ -73,5 +68,6 @@ namespace SolarSharp.Interpreter.Errors
             if (Script.GlobalOptions.RethrowExceptionNested)
                 throw new SyntaxErrorException(this);
         }
+
     }
 }

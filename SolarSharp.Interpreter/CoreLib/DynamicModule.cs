@@ -9,7 +9,7 @@ namespace SolarSharp.Interpreter.CoreLib
     /// <summary>
     /// Class implementing dynamic expression evaluations at runtime (a MoonSharp addition).
     /// </summary>
-    [SolarSharpModule(Namespace = "dynamic")]
+    [MoonSharpModule(Namespace = "dynamic")]
     public class DynamicModule
     {
         private class DynamicExprWrapper
@@ -31,20 +31,22 @@ namespace SolarSharp.Interpreter.CoreLib
             {
                 if (args[0].Type == DataType.UserData)
                 {
-                    var ud = args[0].UserData;
+                    UserData ud = args[0].UserData;
                     if (ud.Object is DynamicExprWrapper wrapper)
                     {
                         return wrapper.Expr.Evaluate(executionContext);
                     }
-                    throw ScriptRuntimeException.BadArgument(
-                        0,
-                        "dynamic.eval",
-                        "A userdata was passed, but was not a previously prepared expression."
-                    );
+                    else
+                    {
+                        throw ScriptRuntimeException.BadArgument(0, "dynamic.eval", "A userdata was passed, but was not a previously prepared expression.");
+                    }
                 }
-                var vs = args.AsType(0, "dynamic.eval", DataType.String);
-                var expr = executionContext.GetScript().CreateDynamicExpression(vs.String);
-                return expr.Evaluate(executionContext);
+                else
+                {
+                    DynValue vs = args.AsType(0, "dynamic.eval", DataType.String, false);
+                    DynamicExpression expr = executionContext.GetScript().CreateDynamicExpression(vs.String);
+                    return expr.Evaluate(executionContext);
+                }
             }
             catch (SyntaxErrorException ex)
             {
@@ -53,21 +55,21 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
         [MoonSharpModuleMethod]
-        public static DynValue prepare(
-            ScriptExecutionContext executionContext,
-            CallbackArguments args
-        )
+        public static DynValue prepare(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             try
             {
-                var vs = args.AsType(0, "dynamic.prepare", DataType.String);
-                var expr = executionContext.GetScript().CreateDynamicExpression(vs.String);
-                return UserData.Create(new DynamicExprWrapper { Expr = expr });
+                DynValue vs = args.AsType(0, "dynamic.prepare", DataType.String, false);
+                DynamicExpression expr = executionContext.GetScript().CreateDynamicExpression(vs.String);
+                return UserData.Create(new DynamicExprWrapper() { Expr = expr });
             }
             catch (SyntaxErrorException ex)
             {
                 throw new ScriptRuntimeException(ex);
             }
         }
+
+
     }
+
 }

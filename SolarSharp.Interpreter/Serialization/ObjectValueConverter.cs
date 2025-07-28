@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections;
+using System.Reflection;
 using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop.Converters;
@@ -8,39 +8,34 @@ namespace SolarSharp.Interpreter.Serialization
 {
     public static class ObjectValueConverter
     {
-        public static DynValue SerializeObjectToDynValue(
-            Script script,
-            object o,
-            DynValue valueForNulls = null
-        )
+        public static DynValue SerializeObjectToDynValue(Script script, object o, DynValue valueForNulls = null)
         {
             if (o == null)
                 return valueForNulls ?? DynValue.Nil;
 
-            var v = ClrToScriptConversions.TryObjectToTrivialDynValue(script, o);
+            DynValue v = ClrToScriptConversions.TryObjectToTrivialDynValue(script, o);
 
             if (v != null)
                 return v;
 
             if (o is Enum)
-                return DynValue.NewNumber(
-                    NumericConversions.TypeToDouble(Enum.GetUnderlyingType(o.GetType()), o)
-                );
+                return DynValue.NewNumber(NumericConversions.TypeToDouble(Enum.GetUnderlyingType(o.GetType()), o));
 
-            var t = new Table();
+            Table t = new(script);
 
-            if (o is IEnumerable ienum)
+
+            if (o is System.Collections.IEnumerable ienum)
             {
-                foreach (var obj in ienum)
+                foreach (object obj in ienum)
                 {
                     t.Append(SerializeObjectToDynValue(script, obj, valueForNulls));
                 }
             }
             else
             {
-                var type = o.GetType();
+                Type type = o.GetType();
 
-                foreach (var pi in Framework.Do.GetProperties(type))
+                foreach (PropertyInfo pi in Framework.Do.GetProperties(type))
                 {
                     var getter = Framework.Do.GetGetMethod(pi);
                     var isStatic = getter.IsStatic;

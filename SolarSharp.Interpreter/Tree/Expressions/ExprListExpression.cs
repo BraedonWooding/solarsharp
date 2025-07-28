@@ -15,6 +15,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions
             expressions = exps;
         }
 
+
         public Expression[] GetExpressions()
         {
             return expressions.ToArray();

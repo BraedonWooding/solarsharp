@@ -1,5 +1,5 @@
-﻿using NUnit.Framework;
-using SolarSharp.Interpreter.DataTypes;
+﻿using SolarSharp.Interpreter.DataTypes;
+using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -9,6 +9,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             if (args == null)
                 args = new object[1] { DataType.Void };
+
 
             if (args.Length == 1)
             {
@@ -22,7 +23,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     Assert.That(result.Tuple, Has.Length.EqualTo(args.Length));
                 });
 
-                for (var i = 0; i < args.Length; i++)
+                for (int i = 0; i < args.Length; i++)
                     DynAssertValue(args[i], result.Tuple[i]);
             }
         }
@@ -30,27 +31,39 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         private static void DynAssertValue(object reference, DynValue dynValue)
         {
             if (reference == (object)DataType.Void)
+            {
                 Assert.That(dynValue.Type, Is.EqualTo(DataType.Void));
+            }
             else if (reference == null)
+            {
                 Assert.That(dynValue.Type, Is.EqualTo(DataType.Nil));
+            }
             else if (reference is double)
+            {
                 Assert.Multiple(() =>
                 {
                     Assert.That(dynValue.Type, Is.EqualTo(DataType.Number));
                     Assert.That(dynValue.Number, Is.EqualTo((double)reference));
                 });
+            }
             else if (reference is int)
+            {
                 Assert.Multiple(() =>
                 {
                     Assert.That(dynValue.Type, Is.EqualTo(DataType.Number));
                     Assert.That(dynValue.Number, Is.EqualTo((int)reference));
                 });
+            }
             else if (reference is string)
+            {
                 Assert.Multiple(() =>
                 {
                     Assert.That(dynValue.Type, Is.EqualTo(DataType.String));
                     Assert.That(dynValue.String, Is.EqualTo((string)reference));
                 });
+            }
         }
+
+
     }
 }

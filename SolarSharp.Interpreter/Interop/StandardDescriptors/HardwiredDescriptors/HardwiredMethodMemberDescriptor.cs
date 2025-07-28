@@ -1,4 +1,5 @@
-﻿using SolarSharp.Interpreter.DataTypes;
+﻿using System.Collections.Generic;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
@@ -7,26 +8,21 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptor
 {
     public abstract class HardwiredMethodMemberDescriptor : FunctionMemberDescriptorBase
     {
-        public override DynValue Execute(
-            Script script,
-            object obj,
-            ScriptExecutionContext context,
-            CallbackArguments args
-        )
+        public override DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
         {
             this.CheckAccess(MemberDescriptorAccess.CanExecute, obj);
 
-            var pars = base.BuildArgumentList(script, obj, context, args, out var outParams);
-            var retv = Invoke(script, obj, pars, CalcArgsCount(pars));
+            object[] pars = base.BuildArgumentList(script, obj, context, args, out List<int> outParams);
+            object retv = Invoke(script, obj, pars, CalcArgsCount(pars));
 
             return DynValue.FromObject(script, retv);
         }
 
         private int CalcArgsCount(object[] pars)
         {
-            var count = pars.Length;
+            int count = pars.Length;
 
-            for (var i = 0; i < pars.Length; i++)
+            for (int i = 0; i < pars.Length; i++)
                 if (Parameters[i].HasDefaultValue && pars[i] is DefaultValue)
                 {
                     count -= 1;

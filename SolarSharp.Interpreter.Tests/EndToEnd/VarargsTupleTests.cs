@@ -1,19 +1,18 @@
-﻿using NUnit.Framework;
-using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Security;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Modules;
+using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [Category("VM.Integration")]
     public class VarargsTupleTests
     {
+
         private static void DoTest(string code, string expectedResult)
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
 
-            S.DoString(
-                @"
+            S.DoString(@"
 function f(a,b)
 	local debug = 'a: ' .. tostring(a) .. ' b: ' .. tostring(b)
 	return debug
@@ -42,9 +41,8 @@ end
 function i(...)
 	return g('extra', ...)
 end
-"
-            );
-            var res = S.DoString("return " + code);
+");
+            DynValue res = S.DoString("return " + code);
 
             Assert.Multiple(() =>
             {
@@ -93,8 +91,7 @@ end
         [Test]
         public void VarArgsTuple_DontCrash()
         {
-            var script =
-                @"
+            string script = @"
 				function Obj(...)
 					do
 						local args = { ... }
@@ -103,9 +100,11 @@ end
 				Obj(1)
 			";
 
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new(CoreModules.None);
 
             S.DoString(script);
+
         }
+
     }
 }

@@ -10,15 +10,13 @@
         /// The colon is treated the same as the dot ('.') operator.
         /// </summary>
         TreatAsDot,
-
         /// <summary>
         /// The colon is treated the same as the dot ('.') operator if the first argument is userdata, as a Lua colon operator otherwise.
         /// </summary>
         TreatAsDotOnUserData,
-
         /// <summary>
         /// The colon is treated in the same as the Lua colon operator works.
         /// </summary>
-        TreatAsColon,
+        TreatAsColon
     }
 }

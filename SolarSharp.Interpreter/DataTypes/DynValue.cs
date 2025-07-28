@@ -1,11 +1,11 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.Converters;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.Execution;
-using SolarSharp.Interpreter.Interop.Converters;
 
 namespace SolarSharp.Interpreter.DataTypes
 {
@@ -14,107 +14,70 @@ namespace SolarSharp.Interpreter.DataTypes
     /// </summary>
     public sealed class DynValue
     {
-        private static int s_RefIDCounter;
+        private static int s_RefIDCounter = 0;
 
+        private readonly int m_RefID = ++s_RefIDCounter;
         private int m_HashCode = -1;
 
+        private double m_Number;
         private object m_Object;
+        private DataType m_Type;
+
 
         /// <summary>
         /// Gets a unique reference identifier. This is guaranteed to be unique only for dynvalues created in a single thread as it's not thread-safe.
         /// </summary>
-        public int ReferenceID { get; } = ++s_RefIDCounter;
+        public int ReferenceID { get { return m_RefID; } }
 
         /// <summary>
         /// Gets the type of the value.
         /// </summary>
-        public DataType Type { get; private set; }
-
+        public DataType Type { get { return m_Type; } }
         /// <summary>
         /// Gets the function (valid only if the <see cref="Type"/> is <see cref="DataType.Function"/>)
         /// </summary>
-        public Closure Function
-        {
-            get { return m_Object as Closure; }
-        }
-
+        public Closure Function { get { return m_Object as Closure; } }
         /// <summary>
         /// Gets the numeric value (valid only if the <see cref="Type"/> is <see cref="DataType.Number"/>)
         /// </summary>
-        public double Number { get; private set; }
-
+        public double Number { get { return m_Number; } }
         /// <summary>
         /// Gets the values in the tuple (valid only if the <see cref="Type"/> is Tuple).
         /// This field is currently also used to hold arguments in values whose <see cref="Type"/> is <see cref="DataType.TailCallRequest"/>.
         /// </summary>
-        public DynValue[] Tuple
-        {
-            get { return m_Object as DynValue[]; }
-        }
-
+        public DynValue[] Tuple { get { return m_Object as DynValue[]; } }
         /// <summary>
         /// Gets the coroutine handle. (valid only if the <see cref="Type"/> is Thread).
         /// </summary>
-        public Coroutine Coroutine
-        {
-            get { return m_Object as Coroutine; }
-        }
-
+        public Coroutine Coroutine { get { return m_Object as Coroutine; } }
         /// <summary>
         /// Gets the table (valid only if the <see cref="Type"/> is <see cref="DataType.Table"/>)
         /// </summary>
-        public Table Table
-        {
-            get { return m_Object as Table; }
-        }
-
+        public Table Table { get { return m_Object as Table; } }
         /// <summary>
         /// Gets the boolean value (valid only if the <see cref="Type"/> is <see cref="DataType.Boolean"/>)
         /// </summary>
-        public bool Boolean
-        {
-            get { return Number != 0; }
-        }
-
+        public bool Boolean { get { return Number != 0; } }
         /// <summary>
         /// Gets the string value (valid only if the <see cref="Type"/> is <see cref="DataType.String"/>)
         /// </summary>
-        public string String
-        {
-            get { return m_Object as string; }
-        }
-
+        public string String { get { return m_Object as string; } }
         /// <summary>
         /// Gets the CLR callback (valid only if the <see cref="Type"/> is <see cref="DataType.ClrFunction"/>)
         /// </summary>
-        public CallbackFunction Callback
-        {
-            get { return m_Object as CallbackFunction; }
-        }
-
+        public CallbackFunction Callback { get { return m_Object as CallbackFunction; } }
         /// <summary>
         /// Gets the tail call data.
         /// </summary>
-        public TailCallData TailCallData
-        {
-            get { return m_Object as TailCallData; }
-        }
-
+        public TailCallData TailCallData { get { return m_Object as TailCallData; } }
         /// <summary>
         /// Gets the yield request data.
         /// </summary>
-        public YieldRequest YieldRequest
-        {
-            get { return m_Object as YieldRequest; }
-        }
-
+        public YieldRequest YieldRequest { get { return m_Object as YieldRequest; } }
         /// <summary>
         /// Gets the user data.
         /// </summary>
-        public UserData UserData
-        {
-            get { return m_Object as UserData; }
-        }
+        public UserData UserData { get { return m_Object as UserData; } }
 
         /// <summary>
         /// Creates a new writable value initialized to Nil.
@@ -129,7 +92,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public static DynValue NewBoolean(bool v)
         {
-            return new DynValue { Number = v ? 1 : 0, Type = DataType.Boolean };
+            return new DynValue()
+            {
+                m_Number = v ? 1 : 0,
+                m_Type = DataType.Boolean,
+            };
         }
 
         /// <summary>
@@ -137,7 +104,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public static DynValue NewNumber(double num)
         {
-            return new DynValue { Number = num, Type = DataType.Number };
+            return new DynValue()
+            {
+                m_Number = num,
+                m_Type = DataType.Number,
+            };
         }
 
         /// <summary>
@@ -145,7 +116,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public static DynValue NewString(string str)
         {
-            return new DynValue { m_Object = str, Type = DataType.String };
+            return new DynValue()
+            {
+                m_Object = str,
+                m_Type = DataType.String,
+            };
         }
 
         /// <summary>
@@ -153,7 +128,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public static DynValue NewString(StringBuilder sb)
         {
-            return new DynValue { m_Object = sb.ToString(), Type = DataType.String };
+            return new DynValue()
+            {
+                m_Object = sb.ToString(),
+                m_Type = DataType.String,
+            };
         }
 
         /// <summary>
@@ -161,7 +140,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public static DynValue NewString(string format, params object[] args)
         {
-            return new DynValue { m_Object = string.Format(format, args), Type = DataType.String };
+            return new DynValue()
+            {
+                m_Object = string.Format(format, args),
+                m_Type = DataType.String,
+            };
         }
 
         /// <summary>
@@ -172,7 +155,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public static DynValue NewCoroutine(Coroutine coroutine)
         {
-            return new DynValue { m_Object = coroutine, Type = DataType.Thread };
+            return new DynValue()
+            {
+                m_Object = coroutine,
+                m_Type = DataType.Thread
+            };
         }
 
         /// <summary>
@@ -180,21 +167,22 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public static DynValue NewClosure(Closure function)
         {
-            return new DynValue { m_Object = function, Type = DataType.Function };
+            return new DynValue()
+            {
+                m_Object = function,
+                m_Type = DataType.Function,
+            };
         }
 
         /// <summary>
         /// Creates a new writable value initialized to the specified CLR callback.
         /// </summary>
-        public static DynValue NewCallback(
-            Func<ScriptExecutionContext, CallbackArguments, DynValue> callBack,
-            string name = null
-        )
+        public static DynValue NewCallback(Func<ScriptExecutionContext, CallbackArguments, DynValue> callBack, string name = null)
         {
-            return new DynValue
+            return new DynValue()
             {
                 m_Object = new CallbackFunction(callBack, name),
-                Type = DataType.ClrFunction,
+                m_Type = DataType.ClrFunction,
             };
         }
 
@@ -204,7 +192,11 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public static DynValue NewCallback(CallbackFunction function)
         {
-            return new DynValue { m_Object = function, Type = DataType.ClrFunction };
+            return new DynValue()
+            {
+                m_Object = function,
+                m_Type = DataType.ClrFunction,
+            };
         }
 
         /// <summary>
@@ -212,11 +204,15 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public static DynValue NewTable(Table table)
         {
-            return new DynValue { m_Object = table, Type = DataType.Table };
+            return new DynValue()
+            {
+                m_Object = table,
+                m_Type = DataType.Table,
+            };
         }
 
         /// <summary>
-        /// Creates a new writable value initialized to an empty prime table (a
+        /// Creates a new writable value initialized to an empty prime table (a 
         /// prime table is a table made only of numbers, strings, booleans and other
         /// prime tables).
         /// </summary>
@@ -228,13 +224,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <summary>
         /// Creates a new writable value initialized to an empty table.
         /// </summary>
-        public static DynValue NewTable(
-            Script script,
-            int arraySizeHint = 0,
-            int associativeSizeHint = 0
-        )
+        public static DynValue NewTable(Script script, int arraySizeHint = 0, int associativeSizeHint = 0)
         {
-            return NewTable(new Table(arraySizeHint, associativeSizeHint));
+            return NewTable(new Table(script, arraySizeHint, associativeSizeHint));
         }
 
         /// <summary>
@@ -242,7 +234,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public static DynValue NewTable(Script script, params DynValue[] arrayValues)
         {
-            return NewTable(new Table(arrayValues));
+            return NewTable(new Table(script, arrayValues));
         }
 
         /// <summary>
@@ -257,10 +249,14 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public static DynValue NewTailCallReq(DynValue tailFn, params DynValue[] args)
         {
-            return new DynValue
+            return new DynValue()
             {
-                m_Object = new TailCallData { Args = args, Function = tailFn },
-                Type = DataType.TailCallRequest,
+                m_Object = new TailCallData()
+                {
+                    Args = args,
+                    Function = tailFn,
+                },
+                m_Type = DataType.TailCallRequest,
             };
         }
 
@@ -275,8 +271,14 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public static DynValue NewTailCallReq(TailCallData tailCallData)
         {
-            return new DynValue { m_Object = tailCallData, Type = DataType.TailCallRequest };
+            return new DynValue()
+            {
+                m_Object = tailCallData,
+                m_Type = DataType.TailCallRequest,
+            };
         }
+
+
 
         /// <summary>
         /// Creates a new request for a yield of the current coroutine.
@@ -285,10 +287,10 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public static DynValue NewYieldReq(DynValue[] args)
         {
-            return new DynValue
+            return new DynValue()
             {
-                m_Object = new YieldRequest { ReturnValues = args },
-                Type = DataType.YieldRequest,
+                m_Object = new YieldRequest() { ReturnValues = args },
+                m_Type = DataType.YieldRequest,
             };
         }
 
@@ -303,7 +305,11 @@ namespace SolarSharp.Interpreter.DataTypes
             if (values.Length == 1)
                 return values[0];
 
-            return new DynValue { m_Object = values, Type = DataType.Tuple };
+            return new DynValue()
+            {
+                m_Object = values,
+                m_Type = DataType.Tuple,
+            };
         }
 
         /// <summary>
@@ -317,7 +323,7 @@ namespace SolarSharp.Interpreter.DataTypes
             if (values.Length == 1)
                 return values[0];
 
-            var vals = new List<DynValue>();
+            List<DynValue> vals = new();
 
             foreach (var v in values)
             {
@@ -327,15 +333,24 @@ namespace SolarSharp.Interpreter.DataTypes
                     vals.Add(v);
             }
 
-            return new DynValue { m_Object = vals.ToArray(), Type = DataType.Tuple };
+            return new DynValue()
+            {
+                m_Object = vals.ToArray(),
+                m_Type = DataType.Tuple,
+            };
         }
+
 
         /// <summary>
         /// Creates a new userdata value
         /// </summary>
         public static DynValue NewUserData(UserData userData)
         {
-            return new DynValue { m_Object = userData, Type = DataType.UserData };
+            return new DynValue()
+            {
+                m_Object = userData,
+                m_Type = DataType.UserData,
+            };
         }
 
         /// <summary>
@@ -353,12 +368,12 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns></returns>
         public DynValue Clone()
         {
-            var v = new DynValue
+            DynValue v = new()
             {
                 m_Object = m_Object,
-                Number = Number,
+                m_Number = m_Number,
                 m_HashCode = m_HashCode,
-                Type = Type,
+                m_Type = m_Type,
             };
             return v;
         }
@@ -376,17 +391,14 @@ namespace SolarSharp.Interpreter.DataTypes
         /// A preinitialized, readonly instance, equaling Void
         /// </summary>
         public static DynValue Void { get; private set; }
-
         /// <summary>
         /// A preinitialized, readonly instance, equaling Nil
         /// </summary>
         public static DynValue Nil { get; private set; }
-
         /// <summary>
         /// A preinitialized, readonly instance, equaling True
         /// </summary>
         public static DynValue True { get; private set; }
-
         /// <summary>
         /// A preinitialized, readonly instance, equaling False
         /// </summary>
@@ -394,8 +406,8 @@ namespace SolarSharp.Interpreter.DataTypes
 
         static DynValue()
         {
-            Nil = new DynValue { Type = DataType.Nil }.AsReadOnly();
-            Void = new DynValue { Type = DataType.Void }.AsReadOnly();
+            Nil = new DynValue() { m_Type = DataType.Nil }.AsReadOnly();
+            Void = new DynValue() { m_Type = DataType.Void }.AsReadOnly();
             True = NewBoolean(true).AsReadOnly();
             False = NewBoolean(false).AsReadOnly();
         }
@@ -405,16 +417,16 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public string ToPrintString()
         {
-            if (m_Object is RefIdObject)
+            if (m_Object != null && m_Object is RefIdObject)
             {
-                var refid = (RefIdObject)m_Object;
+                RefIdObject refid = (RefIdObject)m_Object;
 
-                var typeString = Type.ToLuaTypeString();
+                string typeString = Type.ToLuaTypeString();
 
                 if (m_Object is UserData)
                 {
-                    var ud = (UserData)m_Object;
-                    var str = ud.Descriptor.AsString(ud.Object);
+                    UserData ud = (UserData)m_Object;
+                    string str = ud.Descriptor.AsString(ud.Object);
                     if (str != null)
                         return str;
                 }
@@ -426,8 +438,6 @@ namespace SolarSharp.Interpreter.DataTypes
             {
                 case DataType.String:
                     return String;
-                case DataType.Number:
-                    return StringCache.NumberToString(Number);
                 case DataType.Tuple:
                     return string.Join("\t", Tuple.Select(t => t.ToPrintString()).ToArray());
                 case DataType.TailCallRequest:
@@ -444,16 +454,16 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public string ToDebugPrintString()
         {
-            if (m_Object is RefIdObject)
+            if (m_Object != null && m_Object is RefIdObject)
             {
-                var refid = (RefIdObject)m_Object;
+                RefIdObject refid = (RefIdObject)m_Object;
 
-                var typeString = Type.ToLuaTypeString();
+                string typeString = Type.ToLuaTypeString();
 
                 if (m_Object is UserData)
                 {
-                    var ud = (UserData)m_Object;
-                    var str = ud.Descriptor.AsString(ud.Object);
+                    UserData ud = (UserData)m_Object;
+                    string str = ud.Descriptor.AsString(ud.Object);
                     if (str != null)
                         return str;
                 }
@@ -474,6 +484,7 @@ namespace SolarSharp.Interpreter.DataTypes
             }
         }
 
+
         /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
@@ -487,17 +498,15 @@ namespace SolarSharp.Interpreter.DataTypes
                 DataType.Void => "void",
                 DataType.Nil => "nil",
                 DataType.Boolean => Boolean.ToString().ToLower(),
-                DataType.Number => StringCache.NumberToString(Number),
+                DataType.Number => Number.ToString(CultureInfo.InvariantCulture),
                 DataType.String => "\"" + String + "\"",
-                DataType.Function => $"(Function {Function.EntryPointByteCodeLocation:X8})",
+                DataType.Function => string.Format("(Function {0:X8})", Function.EntryPointByteCodeLocation),
                 DataType.ClrFunction => string.Format("(Function CLR)", Function),
                 DataType.Table => "(Table)",
                 DataType.Tuple => string.Join(", ", Tuple.Select(t => t.ToString()).ToArray()),
-                DataType.TailCallRequest => "Tail:("
-                    + string.Join(", ", Tuple.Select(t => t.ToString()).ToArray())
-                    + ")",
+                DataType.TailCallRequest => "Tail:(" + string.Join(", ", Tuple.Select(t => t.ToString()).ToArray()) + ")",
                 DataType.UserData => "(UserData)",
-                DataType.Thread => $"(Coroutine {Coroutine.ReferenceID:X8})",
+                DataType.Thread => string.Format("(Coroutine {0:X8})", Coroutine.ReferenceID),
                 _ => "(???)",
             };
         }
@@ -506,14 +515,14 @@ namespace SolarSharp.Interpreter.DataTypes
         /// Returns a hash code for this instance.
         /// </summary>
         /// <returns>
-        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
         /// </returns>
         public override int GetHashCode()
         {
             if (m_HashCode != -1)
                 return m_HashCode;
 
-            var baseValue = (int)Type << 27;
+            int baseValue = (int)Type << 27;
 
             m_HashCode = Type switch
             {
@@ -555,14 +564,11 @@ namespace SolarSharp.Interpreter.DataTypes
                 }
             }
 
-            if (
-                other.Type == DataType.Nil && Type == DataType.Void
-                || other.Type == DataType.Void && Type == DataType.Nil
-            )
+            if (other.Type == DataType.Nil && Type == DataType.Void
+                || other.Type == DataType.Void && Type == DataType.Nil)
                 return true;
 
-            if (other.Type != Type)
-                return false;
+            if (other.Type != Type) return false;
 
             switch (Type)
             {
@@ -587,28 +593,29 @@ namespace SolarSharp.Interpreter.DataTypes
                 case DataType.Thread:
                     return Coroutine == other.Coroutine;
                 case DataType.UserData:
-                {
-                    var ud1 = UserData;
-                    var ud2 = other.UserData;
+                    {
+                        UserData ud1 = UserData;
+                        UserData ud2 = other.UserData;
 
-                    if (ud1 == null || ud2 == null)
+                        if (ud1 == null || ud2 == null)
+                            return false;
+
+                        if (ud1.Descriptor != ud2.Descriptor)
+                            return false;
+
+                        if (ud1.Object == null && ud2.Object == null)
+                            return true;
+
+                        if (ud1.Object != null && ud2.Object != null)
+                            return ud1.Object.Equals(ud2.Object);
+
                         return false;
-
-                    if (ud1.Descriptor != ud2.Descriptor)
-                        return false;
-
-                    if (ud1.Object == null && ud2.Object == null)
-                        return true;
-
-                    if (ud1.Object != null && ud2.Object != null)
-                        return ud1.Object.Equals(ud2.Object);
-
-                    return false;
-                }
+                    }
                 default:
                     return ReferenceEquals(this, other);
             }
         }
+
 
         /// <summary>
         /// Casts this DynValue to string, using coercion if the type is number.
@@ -616,12 +623,12 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns>The string representation, or null if not number, not string.</returns>
         public string CastToString()
         {
-            var rv = ToScalar();
+            DynValue rv = ToScalar();
             if (rv.Type == DataType.Number)
             {
-                return StringCache.NumberToString(rv.Number);
+                return rv.Number.ToString();
             }
-            if (rv.Type == DataType.String)
+            else if (rv.Type == DataType.String)
             {
                 return rv.String;
             }
@@ -634,25 +641,19 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns>The string representation, or null if not number, not string or non-convertible-string.</returns>
         public double? CastToNumber()
         {
-            var rv = ToScalar();
+            DynValue rv = ToScalar();
             if (rv.Type == DataType.Number)
             {
                 return rv.Number;
             }
-            if (rv.Type == DataType.String)
+            else if (rv.Type == DataType.String)
             {
-                if (
-                    double.TryParse(
-                        rv.String,
-                        NumberStyles.Any,
-                        CultureInfo.InvariantCulture,
-                        out var num
-                    )
-                )
+                if (double.TryParse(rv.String, NumberStyles.Any, CultureInfo.InvariantCulture, out double num))
                     return num;
             }
             return null;
         }
+
 
         /// <summary>
         /// Casts this DynValue to a bool
@@ -660,10 +661,20 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <returns>False if value is false or nil, true otherwise.</returns>
         public bool CastToBool()
         {
-            var rv = ToScalar();
+            DynValue rv = ToScalar();
             if (rv.Type == DataType.Boolean)
                 return rv.Boolean;
-            return rv.Type != DataType.Nil && rv.Type != DataType.Void;
+            else return rv.Type != DataType.Nil && rv.Type != DataType.Void;
+        }
+
+        /// <summary>
+        /// Returns this DynValue as an instance of <see cref="IScriptPrivateResource"/>, if possible,
+        /// null otherwise
+        /// </summary>
+        /// <returns>False if value is false or nil, true otherwise.</returns>
+        public IScriptPrivateResource GetAsPrivateResource()
+        {
+            return m_Object as IScriptPrivateResource;
         }
 
         /// <summary>
@@ -687,9 +698,9 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="ScriptRuntimeException">If the value is readonly.</exception>
         public void Assign(DynValue value)
         {
-            Number = value.Number;
+            m_Number = value.m_Number;
             m_Object = value.m_Object;
-            Type = value.Type;
+            m_Type = value.Type;
             // TODO: I'm not certain this is correct, this seems very odd
             //       hashcodes should be preservable and we should be able to just
             //       take the dyn value's hash code.
@@ -716,7 +727,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public bool IsNil()
         {
-            return Type is DataType.Nil or DataType.Void;
+            return Type == DataType.Nil || Type == DataType.Void;
         }
 
         /// <summary>
@@ -748,9 +759,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public bool IsNilOrNan()
         {
-            return Type == DataType.Nil
-                || Type == DataType.Void
-                || Type == DataType.Number && double.IsNaN(Number);
+            return Type == DataType.Nil || Type == DataType.Void || Type == DataType.Number && double.IsNaN(Number);
         }
 
         /// <summary>
@@ -761,7 +770,7 @@ namespace SolarSharp.Interpreter.DataTypes
             if (Type != DataType.Number)
                 throw new InternalErrorException("Can't assign number to type {0}", Type);
 
-            Number = num;
+            m_Number = num;
         }
 
         /// <summary>
@@ -797,7 +806,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// </summary>
         public T ToObject<T>()
         {
-            var myObject = (T)ToObject(typeof(T));
+            T myObject = (T)ToObject(typeof(T));
             if (myObject == null)
             {
                 return default;
@@ -806,13 +815,13 @@ namespace SolarSharp.Interpreter.DataTypes
             return myObject;
         }
 
-        /// <summary>
-        /// Converts this MoonSharp DynValue to a CLR object, marked as dynamic
-        /// </summary>
-        public dynamic ToDynamic()
-        {
-            return ScriptToClrConversions.DynValueToObject(this);
-        }
+		/// <summary>
+		/// Converts this MoonSharp DynValue to a CLR object, marked as dynamic
+		/// </summary>
+		public dynamic ToDynamic()
+		{
+			return ScriptToClrConversions.DynValueToObject(this);
+		}
 
         /// <summary>
         /// Checks the type of this value corresponds to the desired type. A propert ScriptRuntimeException is thrown
@@ -827,22 +836,17 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <exception cref="ScriptRuntimeException">Thrown
         /// if the value is not of the specified type or - considering the TypeValidationFlags - is not convertible
         /// to the specified type.</exception>
-        public DynValue CheckType(
-            string funcName,
-            DataType desiredType,
-            int argNum = -1,
-            TypeValidationFlags flags = TypeValidationFlags.Default
-        )
+        public DynValue CheckType(string funcName, DataType desiredType, int argNum = -1, TypeValidationFlags flags = TypeValidationFlags.Default)
         {
             if (Type == desiredType)
                 return this;
 
-            var allowNil = (flags & TypeValidationFlags.AllowNil) != 0;
+            bool allowNil = (flags & TypeValidationFlags.AllowNil) != 0;
 
             if (allowNil && IsNil())
                 return this;
 
-            var autoConvert = (flags & TypeValidationFlags.AutoConvert) != 0;
+            bool autoConvert = (flags & TypeValidationFlags.AutoConvert) != 0;
 
             if (autoConvert)
             {
@@ -851,14 +855,14 @@ namespace SolarSharp.Interpreter.DataTypes
 
                 if (desiredType == DataType.Number)
                 {
-                    var v = CastToNumber();
+                    double? v = CastToNumber();
                     if (v.HasValue)
                         return NewNumber(v.Value);
                 }
 
                 if (desiredType == DataType.String)
                 {
-                    var v = CastToString();
+                    string v = CastToString();
                     if (v != null)
                         return NewString(v);
                 }
@@ -878,29 +882,19 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="argNum">The argument number.</param>
         /// <param name="flags">The flags.</param>
         /// <returns></returns>
-        public T CheckUserDataType<T>(
-            string funcName,
-            int argNum = -1,
-            TypeValidationFlags flags = TypeValidationFlags.Default
-        )
+        public T CheckUserDataType<T>(string funcName, int argNum = -1, TypeValidationFlags flags = TypeValidationFlags.Default)
         {
-            var v = CheckType(funcName, DataType.UserData, argNum, flags);
-            var allowNil = (flags & TypeValidationFlags.AllowNil) != 0;
+            DynValue v = CheckType(funcName, DataType.UserData, argNum, flags);
+            bool allowNil = (flags & TypeValidationFlags.AllowNil) != 0;
 
             if (v.IsNil())
                 return default;
 
-            var o = v.UserData.Object;
-            if (o is T)
+            object o = v.UserData.Object;
+            if (o != null && o is T)
                 return (T)o;
 
-            throw ScriptRuntimeException.BadArgumentUserData(
-                argNum,
-                funcName,
-                typeof(T),
-                o,
-                allowNil
-            );
+            throw ScriptRuntimeException.BadArgumentUserData(argNum, funcName, typeof(T), o, allowNil);
         }
     }
 }

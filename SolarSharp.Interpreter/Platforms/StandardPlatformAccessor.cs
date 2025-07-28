@@ -6,84 +6,78 @@ using System.Text;
 
 namespace SolarSharp.Interpreter.Platforms
 {
-    /// <summary>
-    /// Class providing the IPlatformAccessor interface for standard full-feaured implementations.
-    /// </summary>
-    public class StandardPlatformAccessor : PlatformAccessorBase
-    {
-        public override void DefaultPrint(string content)
-        {
-            throw new NotImplementedException();
-        }
+	/// <summary>
+	/// Class providing the IPlatformAccessor interface for standard full-feaured implementations.
+	/// </summary>
+	public class StandardPlatformAccessor : PlatformAccessorBase
+	{
+		public override void DefaultPrint(string content)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override CoreModules FilterSupportedCoreModules(CoreModules module)
-        {
-            throw new NotImplementedException();
-        }
+		public override CoreModules FilterSupportedCoreModules(CoreModules module)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override string GetEnvironmentVariable(string envvarname)
-        {
-            throw new NotImplementedException();
-        }
+		public override string GetEnvironmentVariable(string envvarname)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override string GetPlatformNamePrefix()
-        {
-            throw new NotImplementedException();
-        }
+		public override string GetPlatformNamePrefix()
+		{
+			throw new NotImplementedException();
+		}
 
-        public override Stream IO_GetStandardStream(StandardFileType type)
-        {
-            throw new NotImplementedException();
-        }
+		public override Stream IO_GetStandardStream(StandardFileType type)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override Stream IO_OpenFile(
-            Script script,
-            string filename,
-            Encoding encoding,
-            string mode
-        )
-        {
-            throw new NotImplementedException();
-        }
+		public override Stream IO_OpenFile(Script script, string filename, Encoding encoding, string mode)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override string IO_OS_GetTempFilename()
-        {
-            throw new NotImplementedException();
-        }
+		public override string IO_OS_GetTempFilename()
+		{
+			throw new NotImplementedException();
+		}
 
-        public override int OS_Execute(string cmdline)
-        {
-            throw new NotImplementedException();
-        }
+		public override int OS_Execute(string cmdline)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override void OS_ExitFast(int exitCode)
-        {
-            throw new NotImplementedException();
-        }
+		public override void OS_ExitFast(int exitCode)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override void OS_FileDelete(string file)
-        {
-            throw new NotImplementedException();
-        }
+		public override void OS_FileDelete(string file)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override bool OS_FileExists(string file)
-        {
-            throw new NotImplementedException();
-        }
+		public override bool OS_FileExists(string file)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override void OS_FileMove(string src, string dst)
-        {
-            throw new NotImplementedException();
-        }
-    }
+		public override void OS_FileMove(string src, string dst)
+		{
+			throw new NotImplementedException();
+		}
+	}
 }
 #else
+using SolarSharp.Interpreter.Modules;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Abstractions;
 using System.Text;
-using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Platforms
 {
@@ -92,25 +86,6 @@ namespace SolarSharp.Interpreter.Platforms
     /// </summary>
     public class StandardPlatformAccessor : PlatformAccessorBase
     {
-        private readonly IFileSystem _fileSystem;
-
-        /// <summary>
-        /// Initializes a new instance of the StandardPlatformAccessor class
-        /// </summary>
-        /// <param name="fileSystem">The file system abstraction to use</param>
-        public StandardPlatformAccessor(IFileSystem fileSystem = null)
-        {
-            _fileSystem = fileSystem ?? new FileSystem();
-        }
-
-        /// <summary>
-        /// Gets the file system abstraction used by this platform accessor
-        /// </summary>
-        public override IFileSystem FileSystem
-        {
-            get { return _fileSystem; }
-        }
-
         /// <summary>
         /// Converts a Lua string access mode to a FileAccess enum
         /// </summary>
@@ -122,13 +97,14 @@ namespace SolarSharp.Interpreter.Platforms
 
             if (mode == "r")
                 return FileAccess.Read;
-            if (mode == "r+")
+            else if (mode == "r+")
                 return FileAccess.ReadWrite;
-            if (mode == "w")
+            else if (mode == "w")
                 return FileAccess.Write;
-            if (mode == "w+")
+            else if (mode == "w+")
                 return FileAccess.ReadWrite;
-            return FileAccess.ReadWrite;
+            else
+                return FileAccess.ReadWrite;
         }
 
         /// <summary>
@@ -142,17 +118,19 @@ namespace SolarSharp.Interpreter.Platforms
 
             if (mode == "r")
                 return FileMode.Open;
-            if (mode == "r+")
+            else if (mode == "r+")
                 return FileMode.OpenOrCreate;
-            if (mode == "w")
+            else if (mode == "w")
                 return FileMode.Create;
-            if (mode == "w+")
+            else if (mode == "w+")
                 return FileMode.Truncate;
-            return FileMode.Append;
+            else
+                return FileMode.Append;
         }
 
+
         /// <summary>
-        /// A function used to open files in the 'io' module.
+        /// A function used to open files in the 'io' module. 
         /// Can have an invalid implementation if 'io' module is filtered out.
         /// It should return a correctly initialized Stream for the given file and access
         /// </summary>
@@ -161,19 +139,9 @@ namespace SolarSharp.Interpreter.Platforms
         /// <param name="encoding">The encoding.</param>
         /// <param name="mode">The mode (as per Lua usage - e.g. 'w+', 'rb', etc.).</param>
         /// <returns></returns>
-        public override Stream IO_OpenFile(
-            Script script,
-            string filename,
-            Encoding encoding,
-            string mode
-        )
+        public override Stream IO_OpenFile(Script script, string filename, Encoding encoding, string mode)
         {
-            return _fileSystem.FileStream.New(
-                filename,
-                ParseFileMode(mode),
-                ParseFileAccess(mode),
-                FileShare.ReadWrite | FileShare.Delete
-            );
+            return new FileStream(filename, ParseFileMode(mode), ParseFileAccess(mode), FileShare.ReadWrite | FileShare.Delete);
         }
 
         /// <summary>
@@ -220,6 +188,7 @@ namespace SolarSharp.Interpreter.Platforms
             Console.WriteLine(content);
         }
 
+
         /// <summary>
         /// Gets a temporary filename. Used in 'io' and 'os' modules.
         /// Can have an invalid implementation if 'io' and 'os' modules are filtered out.
@@ -227,7 +196,7 @@ namespace SolarSharp.Interpreter.Platforms
         /// <returns></returns>
         public override string IO_OS_GetTempFilename()
         {
-            return _fileSystem.Path.GetTempFileName();
+            return Path.GetTempFileName();
         }
 
         /// <summary>
@@ -250,7 +219,7 @@ namespace SolarSharp.Interpreter.Platforms
         /// </returns>
         public override bool OS_FileExists(string file)
         {
-            return _fileSystem.File.Exists(file);
+            return File.Exists(file);
         }
 
         /// <summary>
@@ -260,7 +229,7 @@ namespace SolarSharp.Interpreter.Platforms
         /// <param name="file">The file.</param>
         public override void OS_FileDelete(string file)
         {
-            _fileSystem.File.Delete(file);
+            File.Delete(file);
         }
 
         /// <summary>
@@ -272,7 +241,7 @@ namespace SolarSharp.Interpreter.Platforms
         public override void OS_FileMove(string src, string dst)
         {
 #if (!PCL) && ((!UNITY_5) || UNITY_STANDALONE)
-            _fileSystem.File.Move(src, dst);
+            File.Move(src, dst);
 #endif
         }
 
@@ -285,9 +254,12 @@ namespace SolarSharp.Interpreter.Platforms
         public override int OS_Execute(string cmdline)
         {
             // This is windows only!
-            var psi = new ProcessStartInfo("cmd.exe", $"/C {cmdline}") { ErrorDialog = false };
+            ProcessStartInfo psi = new("cmd.exe", string.Format("/C {0}", cmdline))
+            {
+                ErrorDialog = false
+            };
 
-            var proc = Process.Start(psi);
+            Process proc = Process.Start(psi);
             proc.WaitForExit();
             return proc.ExitCode;
         }

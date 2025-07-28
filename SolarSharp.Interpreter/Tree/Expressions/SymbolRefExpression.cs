@@ -1,7 +1,6 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
-using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Lexer;
 
 namespace SolarSharp.Interpreter.Tree.Expressions
@@ -24,9 +23,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                     throw new SyntaxErrorException(T, "cannot use '...' outside a vararg function");
 
                 if (lcontext.IsDynamicExpression)
-                    throw new DynamicExpressionException(
-                        "cannot use '...' in a dynamic expression."
-                    );
+                    throw new DynamicExpressionException("cannot use '...' in a dynamic expression.");
             }
             else
             {
@@ -44,18 +41,17 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 
             if (lcontext.IsDynamicExpression)
             {
-                throw new DynamicExpressionException(
-                    "Unsupported symbol reference expression detected."
-                );
+                throw new DynamicExpressionException("Unsupported symbol reference expression detected.");
             }
         }
 
-        public override void Compile(ByteCode bc)
+        public override void Compile(Execution.VM.ByteCode bc)
         {
             bc.Emit_Load(m_Ref);
         }
 
-        public void CompileAssignment(ByteCode bc, int stackofs, int tupleidx)
+
+        public void CompileAssignment(Execution.VM.ByteCode bc, int stackofs, int tupleidx)
         {
             bc.Emit_Store(m_Ref, stackofs, tupleidx);
         }

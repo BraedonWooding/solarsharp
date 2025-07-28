@@ -1,11 +1,12 @@
 ﻿using System;
 using System.CodeDom;
+using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using SolarSharp.Hardwire.Utils;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
+using SolarSharp.Hardwire;
+using SolarSharp.Hardwire.Utils;
 
 namespace SolarSharp.Hardwire.Generators
 {
@@ -16,43 +17,35 @@ namespace SolarSharp.Hardwire.Generators
             get { return "SolarSharp.Interpreter.Interop.ArrayMemberDescriptor"; }
         }
 
-        public CodeExpression[] Generate(
-            Table table,
-            HardwireCodeGenerationContext generatorContext,
-            CodeTypeMemberCollection members
-        )
+        public CodeExpression[] Generate(Table table, HardwireCodeGenerationContext generatorContext, CodeTypeMemberCollection members)
         {
-            var className = "AIDX_" + Guid.NewGuid().ToString("N");
-            var name = table.Get("name").String;
-            var setter = table.Get("setter").Boolean;
+            string className = "AIDX_" + Guid.NewGuid().ToString("N");
+            string name = table.Get("name").String;
+            bool setter = table.Get("setter").Boolean;
 
-            var classCode = new CodeTypeDeclaration(className)
+            CodeTypeDeclaration classCode = new(className)
             {
-                TypeAttributes = TypeAttributes.NestedPrivate | TypeAttributes.Sealed,
+                TypeAttributes = System.Reflection.TypeAttributes.NestedPrivate | System.Reflection.TypeAttributes.Sealed
             };
 
             classCode.BaseTypes.Add(typeof(ArrayMemberDescriptor));
 
-            var ctor = new CodeConstructor { Attributes = MemberAttributes.Assembly };
+            CodeConstructor ctor = new()
+            {
+                Attributes = MemberAttributes.Assembly
+            };
             classCode.Members.Add(ctor);
 
             ctor.BaseConstructorArgs.Add(new CodePrimitiveExpression(name));
             ctor.BaseConstructorArgs.Add(new CodePrimitiveExpression(setter));
 
-            var vparams = table.Get("params");
+            DynValue vparams = table.Get("params");
 
             if (vparams.Type == DataType.Table)
             {
-                var paramDescs = HardwireParameterDescriptor.LoadDescriptorsFromTable(
-                    vparams.Table
-                );
+                List<HardwireParameterDescriptor> paramDescs = HardwireParameterDescriptor.LoadDescriptorsFromTable(vparams.Table);
 
-                ctor.BaseConstructorArgs.Add(
-                    new CodeArrayCreateExpression(
-                        typeof(ParameterDescriptor),
-                        paramDescs.Select(e => e.Expression).ToArray()
-                    )
-                );
+                ctor.BaseConstructorArgs.Add(new CodeArrayCreateExpression(typeof(ParameterDescriptor), paramDescs.Select(e => e.Expression).ToArray()));
             }
 
             members.Add(classCode);

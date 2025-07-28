@@ -1,7 +1,7 @@
 ﻿using System.CodeDom.Compiler;
 using System.IO;
-using SolarSharp.Hardwire.Languages;
 using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Hardwire.Languages;
 
 namespace SolarSharp.Hardwire
 {
@@ -10,20 +10,11 @@ namespace SolarSharp.Hardwire
         private readonly HardwireCodeGenerationContext m_Context;
         private readonly HardwireCodeGenerationLanguage m_Language;
 
-        public HardwireGenerator(
-            string namespaceName,
-            string entryClassName,
-            ICodeGenerationLogger logger,
-            HardwireCodeGenerationLanguage language = null
-        )
+        public HardwireGenerator(string namespaceName, string entryClassName, ICodeGenerationLogger logger,
+            HardwireCodeGenerationLanguage language = null)
         {
             m_Language = language ?? HardwireCodeGenerationLanguage.CSharp;
-            m_Context = new HardwireCodeGenerationContext(
-                namespaceName,
-                entryClassName,
-                logger,
-                language
-            );
+            m_Context = new HardwireCodeGenerationContext(namespaceName, entryClassName, logger, language);
         }
 
         public void BuildCodeModel(Table table)
@@ -36,12 +27,8 @@ namespace SolarSharp.Hardwire
             var codeDomProvider = m_Language.CodeDomProvider;
             var codeGeneratorOptions = new CodeGeneratorOptions();
 
-            using var sourceWriter = new StringWriter();
-            codeDomProvider.GenerateCodeFromCompileUnit(
-                m_Context.CompileUnit,
-                sourceWriter,
-                codeGeneratorOptions
-            );
+            using StringWriter sourceWriter = new();
+            codeDomProvider.GenerateCodeFromCompileUnit(m_Context.CompileUnit, sourceWriter, codeGeneratorOptions);
             return sourceWriter.ToString();
         }
 

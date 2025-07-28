@@ -1,7 +1,7 @@
-﻿using System;
-using System.Text;
-using SolarSharp.Interpreter.DataTypes;
+﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
+using System;
+using System.Text;
 
 namespace SolarSharp.Interpreter.Interop.Converters
 {
@@ -12,26 +12,23 @@ namespace SolarSharp.Interpreter.Interop.Converters
             None,
             String,
             StringBuilder,
-            Char,
+            Char
         }
 
         internal static StringSubtype GetStringSubtype(Type desiredType)
         {
             if (desiredType == typeof(string))
                 return StringSubtype.String;
-            if (desiredType == typeof(StringBuilder))
+            else if (desiredType == typeof(StringBuilder))
                 return StringSubtype.StringBuilder;
-            if (desiredType == typeof(char))
+            else if (desiredType == typeof(char))
                 return StringSubtype.Char;
-            return StringSubtype.None;
+            else
+                return StringSubtype.None;
         }
 
-        internal static object ConvertString(
-            StringSubtype stringSubType,
-            string str,
-            Type desiredType,
-            DataType dataType
-        )
+
+        internal static object ConvertString(StringSubtype stringSubType, string str, Type desiredType, DataType dataType)
         {
             switch (stringSubType)
             {

@@ -16,27 +16,22 @@ namespace SolarSharp.Interpreter.Debugging
         /// Gets the index of the source.
         /// </summary>
         public int SourceIdx { get; private set; }
-
         /// <summary>
         /// Gets from which column the source code ref starts
         /// </summary>
         public int FromChar { get; private set; }
-
         /// <summary>
         /// Gets to which column the source code ref ends
         /// </summary>
         public int ToChar { get; private set; }
-
         /// <summary>
         /// Gets from which line the source code ref starts
         /// </summary>
         public int FromLine { get; private set; }
-
         /// <summary>
         /// Gets to which line the source code ref ends
         /// </summary>
         public int ToLine { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether this instance is a stop "step" in source mode
         /// </summary>
@@ -46,7 +41,6 @@ namespace SolarSharp.Interpreter.Debugging
         /// Gets a value indicating whether this instance is a breakpoint
         /// </summary>
         public bool Breakpoint;
-
         /// <summary>
         /// Gets a value indicating whether this instance cannot be set as a breakpoint
         /// </summary>
@@ -67,6 +61,7 @@ namespace SolarSharp.Interpreter.Debugging
             IsStepStop = isStepStop;
         }
 
+
         public SourceRef(int sourceIdx, int from, int to, int fromline, int toline, bool isStepStop)
         {
             SourceIdx = sourceIdx;
@@ -85,15 +80,10 @@ namespace SolarSharp.Interpreter.Debugging
         /// </returns>
         public override string ToString()
         {
-            return string.Format(
-                "[{0}]{1} ({2}, {3}) -> ({4}, {5})",
-                SourceIdx,
-                IsStepStop ? "*" : " ",
-                FromLine,
-                FromChar,
-                ToLine,
-                ToChar
-            );
+            return string.Format("[{0}]{1} ({2}, {3}) -> ({4}, {5})",
+                SourceIdx, IsStepStop ? "*" : " ",
+                FromLine, FromChar,
+                ToLine, ToChar);
         }
 
         internal int GetLocationDistance(int sourceIdx, int line, int col)
@@ -109,33 +99,42 @@ namespace SolarSharp.Interpreter.Debugging
                 {
                     if (col >= FromChar && col <= ToChar)
                         return 0;
-                    if (col < FromChar)
+                    else if (col < FromChar)
                         return FromChar - col;
-                    return col - ToChar;
+                    else
+                        return col - ToChar;
                 }
-                return Math.Abs(line - FromLine) * PER_LINE_FACTOR;
+                else
+                {
+                    return Math.Abs(line - FromLine) * PER_LINE_FACTOR;
+                }
             }
-            if (line == FromLine)
+            else if (line == FromLine)
             {
                 if (col < FromChar)
                     return FromChar - col;
-                return 0;
+                else
+                    return 0;
             }
-            if (line == ToLine)
+            else if (line == ToLine)
             {
                 if (col > ToChar)
                     return col - ToChar;
-                return 0;
+                else
+                    return 0;
             }
-            if (line > FromLine && line < ToLine)
+            else if (line > FromLine && line < ToLine)
             {
                 return 0;
             }
-            if (line < FromLine)
+            else if (line < FromLine)
             {
                 return (FromLine - line) * PER_LINE_FACTOR;
             }
-            return (line - ToLine) * PER_LINE_FACTOR;
+            else
+            {
+                return (line - ToLine) * PER_LINE_FACTOR;
+            }
         }
 
         /// <summary>
@@ -178,38 +177,30 @@ namespace SolarSharp.Interpreter.Debugging
         /// <returns></returns>
         public string FormatLocation(Script script, bool forceClassicFormat = false)
         {
-            var sc = script.GetSourceCode(SourceIdx);
+            SourceCode sc = script.GetSourceCode(SourceIdx);
 
             if (IsClrLocation)
                 return "[clr]";
 
             if (script.Options.UseLuaErrorLocations || forceClassicFormat)
             {
-                return $"{sc.Name}:{FromLine}";
+                return string.Format("{0}:{1}", sc.Name, FromLine);
             }
-            if (FromLine == ToLine)
+            else if (FromLine == ToLine)
             {
                 if (FromChar == ToChar)
                 {
-                    return string.Format(
-                        "{0}:({1},{2})",
-                        sc.Name,
-                        FromLine,
-                        FromChar,
-                        ToLine,
-                        ToChar
-                    );
+                    return string.Format("{0}:({1},{2})", sc.Name, FromLine, FromChar, ToLine, ToChar);
                 }
-                return string.Format(
-                    "{0}:({1},{2}-{4})",
-                    sc.Name,
-                    FromLine,
-                    FromChar,
-                    ToLine,
-                    ToChar
-                );
+                else
+                {
+                    return string.Format("{0}:({1},{2}-{4})", sc.Name, FromLine, FromChar, ToLine, ToChar);
+                }
             }
-            return $"{sc.Name}:({FromLine},{FromChar}-{ToLine},{ToChar})";
+            else
+            {
+                return string.Format("{0}:({1},{2}-{3},{4})", sc.Name, FromLine, FromChar, ToLine, ToChar);
+            }
         }
     }
 }

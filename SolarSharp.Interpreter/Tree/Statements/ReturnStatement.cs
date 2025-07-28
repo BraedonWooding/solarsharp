@@ -1,14 +1,14 @@
-﻿using SolarSharp.Interpreter.Debugging;
+﻿using SolarSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Execution.VM;
-using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.Tree.Lexer;
 
 namespace SolarSharp.Interpreter.Tree.Statements
 {
     internal class ReturnStatement : Statement
     {
-        private readonly Expression m_Expression;
+        private readonly Expression m_Expression = null;
         private readonly SourceRef m_Ref;
 
         public ReturnStatement(ScriptLoadingContext lcontext, Expression e, SourceRef sref)
@@ -19,14 +19,17 @@ namespace SolarSharp.Interpreter.Tree.Statements
             lcontext.Source.Refs.Add(sref);
         }
 
+
+
+
         public ReturnStatement(ScriptLoadingContext lcontext)
             : base(lcontext)
         {
-            var ret = lcontext.Lexer.Current;
+            Token ret = lcontext.Lexer.Current;
 
             lcontext.Lexer.Next();
 
-            var cur = lcontext.Lexer.Current;
+            Token cur = lcontext.Lexer.Current;
 
             if (cur.IsEndOfBlock() || cur.Type == TokenType.SemiColon)
             {
@@ -40,6 +43,8 @@ namespace SolarSharp.Interpreter.Tree.Statements
             }
             lcontext.Source.Refs.Add(m_Ref);
         }
+
+
 
         public override void Compile(ByteCode bc)
         {

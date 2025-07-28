@@ -11,9 +11,16 @@ namespace SolarSharp.Interpreter.Errors
     public class InternalErrorException : InterpreterException
     {
         internal InternalErrorException(string message)
-            : base(message) { }
+            : base(message)
+        {
+
+        }
 
         internal InternalErrorException(string format, params object[] args)
-            : base(format, args) { }
+            : base(format, args)
+        {
+
+        }
     }
+
 }

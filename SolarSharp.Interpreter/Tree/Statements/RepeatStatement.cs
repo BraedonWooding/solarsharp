@@ -11,8 +11,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
         private readonly Expression m_Condition;
         private readonly Statement m_Block;
         private readonly RuntimeScopeBlock m_StackFrame;
-        private readonly SourceRef m_Repeat,
-            m_Until;
+        private readonly SourceRef m_Repeat, m_Until;
 
         public RepeatStatement(ScriptLoadingContext lcontext)
             : base(lcontext)
@@ -22,7 +21,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
             lcontext.Scope.PushBlock();
             m_Block = new CompositeStatement(lcontext);
 
-            var until = CheckTokenType(lcontext, TokenType.Until);
+            Token until = CheckTokenType(lcontext, TokenType.Until);
 
             m_Condition = Expression.Expr(lcontext);
 
@@ -35,13 +34,16 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
         public override void Compile(ByteCode bc)
         {
-            var L = new Loop { Scope = m_StackFrame };
+            Loop L = new()
+            {
+                Scope = m_StackFrame
+            };
 
             bc.PushSourceRef(m_Repeat);
 
             bc.LoopTracker.Loops.Push(L);
 
-            var start = bc.GetJumpPointForNextInstruction();
+            int start = bc.GetJumpPointForNextInstruction();
 
             bc.Emit_Enter(m_StackFrame);
             m_Block.Compile(bc);
@@ -56,12 +58,14 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
             bc.LoopTracker.Loops.Pop();
 
-            var exitpoint = bc.GetJumpPointForNextInstruction();
+            int exitpoint = bc.GetJumpPointForNextInstruction();
 
-            foreach (var i in L.BreakJumps)
+            foreach (Instruction i in L.BreakJumps)
                 i.NumVal = exitpoint;
 
             bc.PopSourceRef();
         }
+
+
     }
 }

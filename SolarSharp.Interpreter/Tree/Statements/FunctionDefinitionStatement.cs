@@ -12,37 +12,33 @@ namespace SolarSharp.Interpreter.Tree.Statements
     {
         private readonly SymbolRef m_FuncSymbol;
         private readonly SourceRef m_SourceRef;
-        private readonly bool m_Local;
-        private readonly bool m_IsMethodCallingConvention;
-        private readonly string m_MethodName;
+        private readonly bool m_Local = false;
+        private readonly bool m_IsMethodCallingConvention = false;
+        private readonly string m_MethodName = null;
         private readonly string m_FriendlyName;
         private readonly List<string> m_TableAccessors;
         private readonly FunctionDefinitionExpression m_FuncDef;
 
-        public FunctionDefinitionStatement(
-            ScriptLoadingContext lcontext,
-            bool local,
-            Token localToken
-        )
+        public FunctionDefinitionStatement(ScriptLoadingContext lcontext, bool local, Token localToken)
             : base(lcontext)
         {
             // here lexer must be at the 'function' keyword
-            var funcKeyword = CheckTokenType(lcontext, TokenType.Function);
+            Token funcKeyword = CheckTokenType(lcontext, TokenType.Function);
             funcKeyword = localToken ?? funcKeyword; // for debugger purposes
 
             m_Local = local;
 
             if (m_Local)
             {
-                var name = CheckTokenType(lcontext, TokenType.Name);
+                Token name = CheckTokenType(lcontext, TokenType.Name);
                 m_FuncSymbol = lcontext.Scope.TryDefineLocal(name.Text);
-                m_FriendlyName = $"{name.Text} (local)";
+                m_FriendlyName = string.Format("{0} (local)", name.Text);
                 m_SourceRef = funcKeyword.GetSourceRef(name);
             }
             else
             {
-                var name = CheckTokenType(lcontext, TokenType.Name);
-                var firstName = name.Text;
+                Token name = CheckTokenType(lcontext, TokenType.Name);
+                string firstName = name.Text;
 
                 m_SourceRef = funcKeyword.GetSourceRef(name);
 
@@ -55,14 +51,14 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
                     while (lcontext.Lexer.Current.Type != TokenType.Brk_Open_Round)
                     {
-                        var separator = lcontext.Lexer.Current;
+                        Token separator = lcontext.Lexer.Current;
 
                         if (separator.Type != TokenType.Colon && separator.Type != TokenType.Dot)
                             UnexpectedTokenType(separator);
 
                         lcontext.Lexer.Next();
 
-                        var field = CheckTokenType(lcontext, TokenType.Name);
+                        Token field = CheckTokenType(lcontext, TokenType.Name);
 
                         m_FriendlyName += separator.Text + field.Text;
                         m_SourceRef = funcKeyword.GetSourceRef(field);
@@ -73,7 +69,10 @@ namespace SolarSharp.Interpreter.Tree.Statements
                             m_IsMethodCallingConvention = true;
                             break;
                         }
-                        m_TableAccessors.Add(field.Text);
+                        else
+                        {
+                            m_TableAccessors.Add(field.Text);
+                        }
                     }
 
                     if (m_MethodName == null && m_TableAccessors.Count > 0)
@@ -84,11 +83,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
                 }
             }
 
-            m_FuncDef = new FunctionDefinitionExpression(
-                lcontext,
-                m_IsMethodCallingConvention,
-                false
-            );
+            m_FuncDef = new FunctionDefinitionExpression(lcontext, m_IsMethodCallingConvention, false);
             lcontext.Source.Refs.Add(m_SourceRef);
         }
 
@@ -115,11 +110,11 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
         private int SetMethod(ByteCode bc)
         {
-            var cnt = 0;
+            int cnt = 0;
 
             cnt += bc.Emit_Load(m_FuncSymbol);
 
-            foreach (var str in m_TableAccessors)
+            foreach (string str in m_TableAccessors)
             {
                 bc.Emit_Index(DynValue.NewString(str), true);
                 cnt += 1;
@@ -132,9 +127,10 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
         private int SetFunction(ByteCode bc, int numPop)
         {
-            var num = bc.Emit_Store(m_FuncSymbol, 0, 0);
+            int num = bc.Emit_Store(m_FuncSymbol, 0, 0);
             bc.Emit_Pop(numPop);
             return num + 1;
         }
+
     }
 }

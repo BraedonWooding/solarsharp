@@ -5,6 +5,7 @@ using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Interop.Attributes;
 using SolarSharp.Interpreter.Interop.Converters;
 using SolarSharp.Interpreter.Interop.StandardDescriptors;
@@ -20,21 +21,16 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
     /// Metamethods are also by default dispatched to operator overloads and other similar methods - see
     /// <see cref="MetaIndex"/> .
     /// </summary>
-    public abstract class DispatchingUserDataDescriptor
-        : IUserDataDescriptor,
-            IOptimizableDescriptor
+    public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOptimizableDescriptor
     {
-        private int m_ExtMethodsVersion;
-        private readonly Dictionary<string, IMemberDescriptor> m_MetaMembers =
-            new Dictionary<string, IMemberDescriptor>();
-        private readonly Dictionary<string, IMemberDescriptor> m_Members =
-            new Dictionary<string, IMemberDescriptor>();
+        private int m_ExtMethodsVersion = 0;
+        private readonly Dictionary<string, IMemberDescriptor> m_MetaMembers = new();
+        private readonly Dictionary<string, IMemberDescriptor> m_Members = new();
 
         /// <summary>
         /// The special name used by CLR for indexer getters
         /// </summary>
         protected const string SPECIALNAME_INDEXER_GET = "get_Item";
-
         /// <summary>
         /// The special name used by CLR for indexer setters
         /// </summary>
@@ -44,22 +40,20 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// The special name used by CLR for explicit cast conversions
         /// </summary>
         protected const string SPECIALNAME_CAST_EXPLICIT = "op_Explicit";
-
         /// <summary>
         /// The special name used by CLR for implicit cast conversions
         /// </summary>
         protected const string SPECIALNAME_CAST_IMPLICIT = "op_Implicit";
 
+
         /// <summary>
         /// Gets the name of the descriptor (usually, the name of the type described).
         /// </summary>
         public string Name { get; private set; }
-
         /// <summary>
         /// Gets the type this descriptor refers to
         /// </summary>
         public Type Type { get; private set; }
-
         /// <summary>
         /// Gets a human readable friendly name of the descriptor
         /// </summary>
@@ -90,6 +84,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             if (desc != null)
                 AddMemberTo(m_MetaMembers, name, desc);
         }
+
 
         /// <summary>
         /// Adds a DynValue as a member
@@ -185,11 +180,10 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             m_MetaMembers.Remove(memberName);
         }
 
-        private void AddMemberTo(
-            Dictionary<string, IMemberDescriptor> members,
-            string name,
-            IMemberDescriptor desc
-        )
+
+
+
+        private void AddMemberTo(Dictionary<string, IMemberDescriptor> members, string name, IMemberDescriptor desc)
         {
             if (desc is IOverloadableMemberDescriptor odesc)
             {
@@ -198,9 +192,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
                     if (members[name] is OverloadedMethodMemberDescriptor overloads)
                         overloads.AddOverload(odesc);
                     else
-                        throw new ArgumentException(
-                            $"Multiple members named {name} are being added to type {Type.FullName} and one or more of these members do not support overloads."
-                        );
+                        throw new ArgumentException(string.Format("Multiple members named {0} are being added to type {1} and one or more of these members do not support overloads.", name, Type.FullName));
                 }
                 else
                 {
@@ -211,11 +203,12 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             {
                 if (members.ContainsKey(name))
                 {
-                    throw new ArgumentException(
-                        $"Multiple members named {name} are being added to type {Type.FullName} and one or more of these members do not support overloads."
-                    );
+                    throw new ArgumentException(string.Format("Multiple members named {0} are being added to type {1} and one or more of these members do not support overloads.", name, Type.FullName));
                 }
-                members.Add(name, desc);
+                else
+                {
+                    members.Add(name, desc);
+                }
             }
         }
 
@@ -227,16 +220,11 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="index">The index.</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        public virtual DynValue Index(
-            Script script,
-            object obj,
-            DynValue index,
-            bool isDirectIndexing
-        )
+        public virtual DynValue Index(Script script, object obj, DynValue index, bool isDirectIndexing)
         {
             if (!isDirectIndexing)
             {
-                var mdesc = m_Members
+                IMemberDescriptor mdesc = m_Members
                     .GetOrDefault(SPECIALNAME_INDEXER_GET)
                     .WithAccessOrNull(MemberDescriptorAccess.CanExecute);
 
@@ -249,64 +237,24 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             if (index.Type != DataType.String)
                 return null;
 
-            var v = TryIndex(script, obj, index.String);
-            if (
-                v == null
-                && (
-                    Script.GlobalOptions.FuzzySymbolMatching
-                    & FuzzySymbolMatchingbehaviour.UpperFirstLetter
-                ) == FuzzySymbolMatchingbehaviour.UpperFirstLetter
-            )
-                v = TryIndex(script, obj, UpperFirstLetter(index.String));
-            if (
-                v == null
-                && (
-                    Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingbehaviour.Camelify
-                ) == FuzzySymbolMatchingbehaviour.Camelify
-            )
-                v = TryIndex(script, obj, Camelify(index.String));
-            if (
-                v == null
-                && (
-                    Script.GlobalOptions.FuzzySymbolMatching
-                    & FuzzySymbolMatchingbehaviour.PascalCase
-                ) == FuzzySymbolMatchingbehaviour.PascalCase
-            )
-                v = TryIndex(script, obj, UpperFirstLetter(Camelify(index.String)));
+            DynValue v = TryIndex(script, obj, index.String);
+            if (v == null && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TryIndex(script, obj, UpperFirstLetter(index.String));
+            if (v == null && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TryIndex(script, obj, Camelify(index.String));
+            if (v == null && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TryIndex(script, obj, UpperFirstLetter(Camelify(index.String)));
 
             if (v == null && m_ExtMethodsVersion < UserData.GetExtensionMethodsChangeVersion())
             {
                 m_ExtMethodsVersion = UserData.GetExtensionMethodsChangeVersion();
 
                 v = TryIndexOnExtMethod(script, obj, index.String);
-                if (
-                    v == null
-                    && (
-                        Script.GlobalOptions.FuzzySymbolMatching
-                        & FuzzySymbolMatchingbehaviour.UpperFirstLetter
-                    ) == FuzzySymbolMatchingbehaviour.UpperFirstLetter
-                )
-                    v = TryIndexOnExtMethod(script, obj, UpperFirstLetter(index.String));
-                if (
-                    v == null
-                    && (
-                        Script.GlobalOptions.FuzzySymbolMatching
-                        & FuzzySymbolMatchingbehaviour.Camelify
-                    ) == FuzzySymbolMatchingbehaviour.Camelify
-                )
-                    v = TryIndexOnExtMethod(script, obj, Camelify(index.String));
-                if (
-                    v == null
-                    && (
-                        Script.GlobalOptions.FuzzySymbolMatching
-                        & FuzzySymbolMatchingbehaviour.PascalCase
-                    ) == FuzzySymbolMatchingbehaviour.PascalCase
-                )
-                    v = TryIndexOnExtMethod(script, obj, UpperFirstLetter(Camelify(index.String)));
+                if (v == null && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TryIndexOnExtMethod(script, obj, UpperFirstLetter(index.String));
+                if (v == null && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TryIndexOnExtMethod(script, obj, Camelify(index.String));
+                if (v == null && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TryIndexOnExtMethod(script, obj, UpperFirstLetter(Camelify(index.String)));
             }
 
             return v;
         }
+
 
         /// <summary>
         /// Tries to perform an indexing operation by checking newly added extension methods for the given indexName.
@@ -318,15 +266,12 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <exception cref="NotImplementedException"></exception>
         private DynValue TryIndexOnExtMethod(Script script, object obj, string indexName)
         {
-            var methods = UserData.GetExtensionMethodsByNameAndType(indexName, Type);
+            List<IOverloadableMemberDescriptor> methods = UserData.GetExtensionMethodsByNameAndType(indexName, Type);
 
-            if (methods is { Count: > 0 })
+            if (methods != null && methods.Count > 0)
             {
                 var ext = new OverloadedMethodMemberDescriptor(indexName, Type);
-                ext.SetExtensionMethodsSnapshot(
-                    UserData.GetExtensionMethodsChangeVersion(),
-                    methods
-                );
+                ext.SetExtensionMethodsSnapshot(UserData.GetExtensionMethodsChangeVersion(), methods);
                 m_Members.Add(indexName, ext);
                 return DynValue.NewCallback(ext.GetCallback(script, obj));
             }
@@ -354,6 +299,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             return m_MetaMembers.ContainsKey(exactName);
         }
 
+
         /// <summary>
         /// Tries to perform an indexing operation by checking methods and properties for the given indexName
         /// </summary>
@@ -363,7 +309,8 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <returns></returns>
         protected virtual DynValue TryIndex(Script script, object obj, string indexName)
         {
-            if (m_Members.TryGetValue(indexName, out var desc))
+
+            if (m_Members.TryGetValue(indexName, out IMemberDescriptor desc))
             {
                 return desc.GetValue(script, obj);
             }
@@ -380,17 +327,11 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="value">The value to be set</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        public virtual bool SetIndex(
-            Script script,
-            object obj,
-            DynValue index,
-            DynValue value,
-            bool isDirectIndexing
-        )
+        public virtual bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
         {
             if (!isDirectIndexing)
             {
-                var mdesc = m_Members
+                IMemberDescriptor mdesc = m_Members
                     .GetOrDefault(SPECIALNAME_INDEXER_SET)
                     .WithAccessOrNull(MemberDescriptorAccess.CanExecute);
 
@@ -406,30 +347,10 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             if (index.Type != DataType.String)
                 return false;
 
-            var v = TrySetIndex(script, obj, index.String, value);
-            if (
-                !v
-                && (
-                    Script.GlobalOptions.FuzzySymbolMatching
-                    & FuzzySymbolMatchingbehaviour.UpperFirstLetter
-                ) == FuzzySymbolMatchingbehaviour.UpperFirstLetter
-            )
-                v = TrySetIndex(script, obj, UpperFirstLetter(index.String), value);
-            if (
-                !v
-                && (
-                    Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingbehaviour.Camelify
-                ) == FuzzySymbolMatchingbehaviour.Camelify
-            )
-                v = TrySetIndex(script, obj, Camelify(index.String), value);
-            if (
-                !v
-                && (
-                    Script.GlobalOptions.FuzzySymbolMatching
-                    & FuzzySymbolMatchingbehaviour.PascalCase
-                ) == FuzzySymbolMatchingbehaviour.PascalCase
-            )
-                v = TrySetIndex(script, obj, UpperFirstLetter(Camelify(index.String)), value);
+            bool v = TrySetIndex(script, obj, index.String, value);
+            if (!v && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) == FuzzySymbolMatchingBehavior.UpperFirstLetter) v = TrySetIndex(script, obj, UpperFirstLetter(index.String), value);
+            if (!v && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.Camelify) == FuzzySymbolMatchingBehavior.Camelify) v = TrySetIndex(script, obj, Camelify(index.String), value);
+            if (!v && (Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.PascalCase) == FuzzySymbolMatchingBehavior.PascalCase) v = TrySetIndex(script, obj, UpperFirstLetter(Camelify(index.String)), value);
 
             return v;
         }
@@ -442,21 +363,19 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="indexName">Member name to be indexed.</param>
         /// <param name="value">The value.</param>
         /// <returns></returns>
-        protected virtual bool TrySetIndex(
-            Script script,
-            object obj,
-            string indexName,
-            DynValue value
-        )
+        protected virtual bool TrySetIndex(Script script, object obj, string indexName, DynValue value)
         {
-            var descr = m_Members.GetOrDefault(indexName);
+            IMemberDescriptor descr = m_Members.GetOrDefault(indexName);
 
             if (descr != null)
             {
                 descr.SetValue(script, obj, value);
                 return true;
             }
-            return false;
+            else
+            {
+                return false;
+            }
         }
 
         void IOptimizableDescriptor.Optimize()
@@ -500,6 +419,8 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             return obj?.ToString();
         }
 
+
+
         /// <summary>
         /// Executes the specified indexer method.
         /// </summary>
@@ -510,51 +431,46 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="value">The dynvalue to set on a setter, or null.</param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        protected virtual DynValue ExecuteIndexer(
-            IMemberDescriptor mdesc,
-            Script script,
-            object obj,
-            DynValue index,
-            DynValue value
-        )
+        protected virtual DynValue ExecuteIndexer(IMemberDescriptor mdesc, Script script, object obj, DynValue index, DynValue value)
         {
             IList<DynValue> values;
 
             if (index.Type == DataType.Tuple)
             {
-                values = value == null ? index.Tuple : new List<DynValue>(index.Tuple) { value };
+                values = value == null
+                    ? index.Tuple
+                    : new List<DynValue>(index.Tuple)
+                    {
+                        value
+                    };
             }
             else
             {
-                values =
-                    value == null ? (new[] { index }) : (IList<DynValue>)(new[] { index, value });
+                values = value == null ? (new DynValue[] { index }) : (IList<DynValue>)(new DynValue[] { index, value });
             }
 
-            var args = new CallbackArguments(values, false);
-            var execCtx = script.CreateDynamicExecutionContext();
+            CallbackArguments args = new(values, false);
+            ScriptExecutionContext execCtx = script.CreateDynamicExecutionContext();
 
-            var v = mdesc.GetValue(script, obj);
+            DynValue v = mdesc.GetValue(script, obj);
 
             if (v.Type != DataType.ClrFunction)
-                throw new ScriptRuntimeException(
-                    "a clr callback was expected in member {0}, while a {1} was found",
-                    mdesc.Name,
-                    v.Type
-                );
+                throw new ScriptRuntimeException("a clr callback was expected in member {0}, while a {1} was found", mdesc.Name, v.Type);
 
             return v.Callback.ClrCallback(execCtx, args);
         }
 
+
         /// <summary>
         /// Gets a "meta" operation on this userdata. If a descriptor does not support this functionality,
-        /// it should return "null" (not a nil).
+        /// it should return "null" (not a nil). 
         /// See <see cref="IUserDataDescriptor.MetaIndex" /> for further details.
-        ///
+        /// 
         /// If a method exists marked with <see cref="MoonSharpUserDataMetamethodAttribute" /> for the specific
         /// metamethod requested, that method is returned.
-        ///
+        /// 
         /// If the above fails, the following dispatching occur:
-        ///
+        /// 
         /// __add, __sub, __mul, __div, __mod and __unm are dispatched to C# operator overloads (if they exist)
         /// __eq is dispatched to System.Object.Equals.
         /// __lt and __le are dispatched IComparable.Compare, if the type implements IComparable or IComparable{object}
@@ -562,7 +478,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// __iterator is handled if the object implements IEnumerable or IEnumerator.
         /// __tonumber is dispatched to implicit or explicit conversion operators to standard numeric types.
         /// __tobool is dispatched to an implicit or explicit conversion operator to bool. If that fails, operator true is used.
-        ///
+        /// 
         /// <param name="script">The script originating the request</param>
         /// <param name="obj">The object (null if a static request is done)</param>
         /// <param name="metaname">The name of the metamember.</param>
@@ -570,7 +486,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <returns></returns>
         public virtual DynValue MetaIndex(Script script, object obj, string metaname)
         {
-            var desc = m_MetaMembers.GetOrDefault(metaname);
+            IMemberDescriptor desc = m_MetaMembers.GetOrDefault(metaname);
 
             if (desc != null)
             {
@@ -596,20 +512,24 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             };
         }
 
+        #region MetaMethodsDispatching
+
+
         private int PerformComparison(object obj, object p1, object p2)
         {
-            var comp = (IComparable)obj;
+            IComparable comp = (IComparable)obj;
 
             if (comp != null)
             {
                 if (ReferenceEquals(obj, p1))
                     return comp.CompareTo(p2);
-                if (ReferenceEquals(obj, p2))
+                else if (ReferenceEquals(obj, p2))
                     return -comp.CompareTo(p1);
             }
 
             throw new InternalErrorException("unexpected case");
         }
+
 
         private DynValue MultiDispatchLessThanOrEqual(Script _, object obj)
         {
@@ -617,10 +537,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             {
                 return DynValue.NewCallback(
                     (context, args) =>
-                        DynValue.NewBoolean(
-                            PerformComparison(obj, args[0].ToObject(), args[1].ToObject()) <= 0
-                        )
-                );
+                        DynValue.NewBoolean(PerformComparison(obj, args[0].ToObject(), args[1].ToObject()) <= 0));
             }
 
             return null;
@@ -632,10 +549,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             {
                 return DynValue.NewCallback(
                     (context, args) =>
-                        DynValue.NewBoolean(
-                            PerformComparison(obj, args[0].ToObject(), args[1].ToObject()) < 0
-                        )
-                );
+                        DynValue.NewBoolean(PerformComparison(obj, args[0].ToObject(), args[1].ToObject()) < 0));
             }
 
             return null;
@@ -643,16 +557,13 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
 
         private DynValue TryDispatchLength(Script script, object obj)
         {
-            if (obj == null)
-                return null;
+            if (obj == null) return null;
 
             var lenprop = m_Members.GetOrDefault("Length");
-            if (lenprop != null && lenprop.CanRead() && !lenprop.CanExecute())
-                return lenprop.GetGetterCallbackAsDynValue(script, obj);
+            if (lenprop != null && lenprop.CanRead() && !lenprop.CanExecute()) return lenprop.GetGetterCallbackAsDynValue(script, obj);
 
             var countprop = m_Members.GetOrDefault("Count");
-            if (countprop != null && countprop.CanRead() && !countprop.CanExecute())
-                return countprop.GetGetterCallbackAsDynValue(script, obj);
+            if (countprop != null && countprop.CanRead() && !countprop.CanExecute()) return countprop.GetGetterCallbackAsDynValue(script, obj);
 
             return null;
         }
@@ -660,9 +571,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         private DynValue MultiDispatchEqual(Script _, object obj)
         {
             return DynValue.NewCallback(
-                (context, args) =>
-                    DynValue.NewBoolean(CheckEquality(obj, args[0].ToObject(), args[1].ToObject()))
-            );
+                (context, args) => DynValue.NewBoolean(CheckEquality(obj, args[0].ToObject(), args[1].ToObject())));
         }
 
         private bool CheckEquality(object obj, object p1, object p2)
@@ -671,52 +580,52 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             {
                 if (ReferenceEquals(obj, p1))
                     return obj.Equals(p2);
-                if (ReferenceEquals(obj, p2))
+                else if (ReferenceEquals(obj, p2))
                     return obj.Equals(p1);
             }
 
-            if (p1 != null)
-                return p1.Equals(p2);
-            if (p2 != null)
-                return p2.Equals(p1);
-            return true;
+            if (p1 != null) return p1.Equals(p2);
+            else if (p2 != null) return p2.Equals(p1);
+            else return true;
         }
 
         private DynValue DispatchMetaOnMethod(Script script, object obj, string methodName)
         {
-            var desc = m_Members.GetOrDefault(methodName);
+            IMemberDescriptor desc = m_Members.GetOrDefault(methodName);
 
             if (desc != null)
             {
                 return desc.GetValue(script, obj);
             }
-            return null;
+            else
+                return null;
         }
 
         private DynValue TryDispatchToNumber(Script script, object obj)
         {
-            foreach (var t in NumericConversions.NumericTypesOrdered)
+            foreach (Type t in NumericConversions.NumericTypesOrdered)
             {
                 var name = t.GetConversionMethodName();
                 var v = DispatchMetaOnMethod(script, obj, name);
-                if (v != null)
-                    return v;
+                if (v != null) return v;
             }
             return null;
         }
+
 
         private DynValue TryDispatchToBool(Script script, object obj)
         {
             var name = typeof(bool).GetConversionMethodName();
             var v = DispatchMetaOnMethod(script, obj, name);
-            if (v != null)
-                return v;
+            if (v != null) return v;
             return DispatchMetaOnMethod(script, obj, "op_True");
         }
 
+        #endregion
+
         /// <summary>
         /// Determines whether the specified object is compatible with the specified type.
-        /// Unless a very specific behaviour is needed, the correct implementation is a
+        /// Unless a very specific behaviour is needed, the correct implementation is a 
         /// simple " return type.IsInstanceOfType(obj); "
         /// </summary>
         /// <param name="type">The type.</param>

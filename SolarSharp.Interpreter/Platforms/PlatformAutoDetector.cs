@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Linq;
-using System.Linq.Expressions;
-using SolarSharp.Interpreter.Interop;
 using SolarSharp.Interpreter.Loaders;
+using SolarSharp.Interpreter.Interop;
 
 namespace SolarSharp.Interpreter.Platforms
 {
@@ -11,37 +10,34 @@ namespace SolarSharp.Interpreter.Platforms
     /// </summary>
     public static class PlatformAutoDetector
     {
-        private static bool? m_IsRunningOnAOT;
+        private static bool? m_IsRunningOnAOT = null;
 
-        private static bool m_AutoDetectionsDone;
+        private static bool m_AutoDetectionsDone = false;
 
         /// <summary>
         /// Gets a value indicating whether this instance is running on mono.
         /// </summary>
         public static bool IsRunningOnMono { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether this instance is running on a CLR4 compatible implementation
         /// </summary>
         public static bool IsRunningOnClr4 { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether this instance is running on Unity-3D
         /// </summary>
         public static bool IsRunningOnUnity { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether this instance has been built as a Portable Class Library
         /// </summary>
         public static bool IsPortableFramework { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether this instance has been compiled natively in Unity AND is using IL2CPP
         /// </summary>
         public static bool IsUnityIL2CPP { get; private set; }
 
+
         /// <summary>
-        /// Gets a value indicating whether this instance is running a system using Ahead-Of-Time compilation
+        /// Gets a value indicating whether this instance is running a system using Ahead-Of-Time compilation 
         /// and not supporting JIT.
         /// </summary>
         public static bool IsRunningOnAOT
@@ -50,15 +46,15 @@ namespace SolarSharp.Interpreter.Platforms
             get
             {
 #if UNITY_WEBGL || UNITY_IOS || UNITY_TVOS || ENABLE_IL2CPP
-                return true;
+				return true;
 #else
 
                 if (!m_IsRunningOnAOT.HasValue)
                 {
                     try
                     {
-                        Expression e = Expression.Constant(5, typeof(int));
-                        var lambda = Expression.Lambda<Func<int>>(e);
+                        System.Linq.Expressions.Expression e = System.Linq.Expressions.Expression.Constant(5, typeof(int));
+                        var lambda = System.Linq.Expressions.Expression.Lambda<Func<int>>(e);
                         lambda.Compile();
                         m_IsRunningOnAOT = false;
                     }
@@ -81,15 +77,15 @@ namespace SolarSharp.Interpreter.Platforms
             IsPortableFramework = true;
 #endif
 #if ENABLE_DOTNET
-            IsRunningOnUnity = true;
-            IsUnityNative = true;
+			IsRunningOnUnity = true;
+			IsUnityNative = true;
 #endif
 #if UNITY_5 || UNITY_2017_1_OR_NEWER
             IsRunningOnUnity = true;
             IsUnityNative = true;
 #endif
 #if ENABLE_IL2CPP
-            IsUnityIL2CPP = true;
+					IsUnityIL2CPP = true;
 #endif
 
 #if !NETCOREAPP
@@ -99,18 +95,20 @@ namespace SolarSharp.Interpreter.Platforms
             m_AutoDetectionsDone = true;
         }
 
+
+
         internal static IPlatformAccessor GetDefaultPlatform()
         {
             AutoDetectPlatformFlags();
 
 #if PCL || ENABLE_DOTNET
-            return new LimitedPlatformAccessor();
+			return new LimitedPlatformAccessor();
 #else
             if (IsRunningOnUnity)
                 return new LimitedPlatformAccessor();
 
 #if DOTNET_CORE
-            return new DotNetCorePlatformAccessor();
+			return new DotNetCorePlatformAccessor();
 #else
             return new StandardPlatformAccessor();
 #endif
@@ -123,13 +121,16 @@ namespace SolarSharp.Interpreter.Platforms
 
             if (IsRunningOnUnity)
                 return new UnityAssetsScriptLoader();
+            else
+            {
 #if (DOTNET_CORE)
-            return new FileSystemScriptLoader();
+				return new FileSystemScriptLoader();
 #elif (PCL || ENABLE_DOTNET || NETFX_CORE)
-            return new InvalidScriptLoader("Portable Framework");
+				return new InvalidScriptLoader("Portable Framework");
 #else
-            return new FileSystemScriptLoader();
+                return new FileSystemScriptLoader();
 #endif
+            }
         }
     }
 }

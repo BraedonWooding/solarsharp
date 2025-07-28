@@ -9,9 +9,8 @@ namespace SolarSharp.Interpreter.Tree.Expressions
 {
     internal class TableConstructor : Expression
     {
-        private readonly List<Expression> m_PositionalValues = new List<Expression>();
-        private readonly List<KeyValuePair<Expression, Expression>> m_CtorArgs =
-            new List<KeyValuePair<Expression, Expression>>();
+        private readonly List<Expression> m_PositionalValues = new();
+        private readonly List<KeyValuePair<Expression, Expression>> m_CtorArgs = new();
 
         public TableConstructor(ScriptLoadingContext lcontext)
             : base(lcontext)
@@ -25,7 +24,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                 {
                     case TokenType.Name:
                         {
-                            var assign = lcontext.Lexer.PeekNext();
+                            Token assign = lcontext.Lexer.PeekNext();
 
                             if (assign.Type == TokenType.Op_Assignment)
                                 StructField(lcontext);
@@ -41,9 +40,9 @@ namespace SolarSharp.Interpreter.Tree.Expressions
                         break;
                 }
 
-                var curr = lcontext.Lexer.Current;
+                Token curr = lcontext.Lexer.Current;
 
-                if (curr.Type is TokenType.Comma or TokenType.SemiColon)
+                if (curr.Type == TokenType.Comma || curr.Type == TokenType.SemiColon)
                 {
                     lcontext.Lexer.Next();
                 }
@@ -60,44 +59,43 @@ namespace SolarSharp.Interpreter.Tree.Expressions
         {
             lcontext.Lexer.Next(); // skip '['
 
-            var key = Expr(lcontext);
+            Expression key = Expr(lcontext);
 
             CheckTokenType(lcontext, TokenType.Brk_Close_Square);
 
             CheckTokenType(lcontext, TokenType.Op_Assignment);
 
-            var value = Expr(lcontext);
+            Expression value = Expr(lcontext);
 
             m_CtorArgs.Add(new KeyValuePair<Expression, Expression>(key, value));
         }
 
         private void StructField(ScriptLoadingContext lcontext)
         {
-            Expression key = new LiteralExpression(
-                lcontext,
-                DynValue.NewString(lcontext.Lexer.Current.Text)
-            );
+            Expression key = new LiteralExpression(lcontext, DynValue.NewString(lcontext.Lexer.Current.Text));
             lcontext.Lexer.Next();
 
             CheckTokenType(lcontext, TokenType.Op_Assignment);
 
-            var value = Expr(lcontext);
+            Expression value = Expr(lcontext);
 
             m_CtorArgs.Add(new KeyValuePair<Expression, Expression>(key, value));
         }
 
+
         private void ArrayField(ScriptLoadingContext lcontext)
         {
-            var e = Expr(lcontext);
+            Expression e = Expr(lcontext);
             m_PositionalValues.Add(e);
         }
+
 
         public override void Compile(ByteCode bc)
         {
             // tuples could result in us writing more positional values so it's a hint
             bc.Emit_NewTable(m_PositionalValues.Count, m_CtorArgs.Count);
 
-            for (var i = 0; i < m_PositionalValues.Count; i++)
+            for (int i = 0; i < m_PositionalValues.Count; i++)
             {
                 m_PositionalValues[i].Compile(bc);
                 // note: +1 because lua tables start at 1 for positional indexes
@@ -115,9 +113,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions
         public override DynValue Eval(ScriptExecutionContext context)
         {
             // TODO: Not sure what eval is but we can probably safely remove it.
-            throw new DynamicExpressionException(
-                "Dynamic Expressions cannot define new non-prime tables."
-            );
+            throw new DynamicExpressionException("Dynamic Expressions cannot define new non-prime tables.");
 
             // DynValue tval = DynValue.NewPrimeTable();
             // Table t = tval.Table;

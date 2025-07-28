@@ -17,5 +17,6 @@ namespace SolarSharp.Interpreter.Execution
         {
             Script = s;
         }
+
     }
 }

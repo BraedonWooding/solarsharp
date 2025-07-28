@@ -1,11 +1,11 @@
-﻿using NUnit.Framework;
-using SolarSharp.Interpreter.DataTypes;
+﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Serialization.Json;
+using NUnit.Framework;
+
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [Category("VM.Integration")]
     public class JsonSerializationTests
     {
         private static void AssertTableValues(Table t)
@@ -25,7 +25,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(t.Get("slash").String, Is.EqualTo("a/b"));
             });
 
-            var o = t.Get("anObject").Table;
+            Table o = t.Get("anObject").Table;
 
             Assert.Multiple(() =>
             {
@@ -36,7 +36,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(o.Get("aString").String, Is.EqualTo("4"));
             });
 
-            var a = t.Get("anArray").Table;
+            Table a = t.Get("anArray").Table;
 
             Assert.Multiple(() =>
             {
@@ -56,16 +56,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 Assert.That(a.Get(3).Type, Is.EqualTo(DataType.Boolean));
             });
-            Assert.Multiple(() =>
-            {
-                Assert.That(a.Get(3).Boolean, Is.True);
+            Assert.That(a.Get(3).Boolean, Is.True);
 
-                Assert.That(a.Get(4).Type, Is.EqualTo(DataType.UserData));
-                Assert.That(JsonNull.IsJsonNull(a.Get(4)), Is.True);
+            Assert.That(a.Get(4).Type, Is.EqualTo(DataType.UserData));
+            Assert.That(JsonNull.IsJsonNull(a.Get(4)), Is.True);
 
-                Assert.That(a.Get(5).Type, Is.EqualTo(DataType.Table));
-            });
-            var s = a.Get(5).Table;
+            Assert.That(a.Get(5).Type, Is.EqualTo(DataType.Table));
+            Table s = a.Get(5).Table;
 
             Assert.Multiple(() =>
             {
@@ -80,10 +77,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
+
         [Test]
         public void JsonDeserialization()
         {
-            var json = @"{
+            string json = @"{
 				'aNumber' : 1,
 				'aString' : '2',
 				'anObject' : { 'aNumber' : 3, 'aString' : '4' },
@@ -93,14 +91,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				}
 			".Replace('\'', '\"');
 
-            var t = JsonTableConverter.JsonToTable(json);
+            Table t = JsonTableConverter.JsonToTable(json);
             AssertTableValues(t);
         }
 
         [Test]
         public void JsonSerialization()
         {
-            var json = @"{
+            string json = @"{
 				'aNumber' : 1,
 				'aString' : '2',
 				'anObject' : { 'aNumber' : 3, 'aString' : '4' },
@@ -110,14 +108,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				}
 			".Replace('\'', '\"');
 
-            var t1 = JsonTableConverter.JsonToTable(json);
+            Table t1 = JsonTableConverter.JsonToTable(json);
 
-            var json2 = t1.TableToJson();
+            string json2 = t1.TableToJson();
 
-            var t = JsonTableConverter.JsonToTable(json2);
+            Table t = JsonTableConverter.JsonToTable(json2);
 
             AssertTableValues(t);
         }
+
 
         [Test]
         public void JsonObjectSerialization()
@@ -126,17 +125,35 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             {
                 aNumber = 1,
                 aString = "2",
-                anObject = new { aNumber = 3, aString = "4" },
-                anArray = new object[] { 5, "6", true, null, new { aNumber = 7, aString = "8" } },
+                anObject = new
+                {
+                    aNumber = 3,
+                    aString = "4"
+                },
+                anArray = new object[]
+                {
+                    5,
+                    "6",
+                    true,
+                    null,
+                    new
+                    {
+                        aNumber = 7,
+                        aString = "8"
+                    }
+                },
                 aNegativeNumber = -9,
-                slash = "a/b",
+                slash = "a/b"
             };
 
-            var json = JsonTableConverter.ObjectToJson(o);
 
-            var t = JsonTableConverter.JsonToTable(json);
+            string json = JsonTableConverter.ObjectToJson(o);
+
+            Table t = JsonTableConverter.JsonToTable(json);
 
             AssertTableValues(t);
         }
+
+
     }
 }

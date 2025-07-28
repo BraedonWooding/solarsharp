@@ -15,5 +15,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
             StringBuilder = new StringBuilder();
             LuaState = l;
         }
+
+
     }
 }

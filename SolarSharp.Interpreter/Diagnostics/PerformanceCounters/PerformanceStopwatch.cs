@@ -9,15 +9,16 @@ namespace SolarSharp.Interpreter.Diagnostics.PerformanceCounters
     /// </summary>
     internal class PerformanceStopwatch : IDisposable, IPerformanceStopwatch
     {
-        private readonly Stopwatch m_Stopwatch = new Stopwatch();
-        private int m_Count;
-        private int m_Reentrant;
+        private readonly Stopwatch m_Stopwatch = new();
+        private int m_Count = 0;
+        private int m_Reentrant = 0;
         private readonly PerformanceCounter m_Counter;
 
         public PerformanceStopwatch(PerformanceCounter perfcounter)
         {
             m_Counter = perfcounter;
         }
+
 
         public IDisposable Start()
         {
@@ -44,13 +45,13 @@ namespace SolarSharp.Interpreter.Diagnostics.PerformanceCounters
 
         public PerformanceResult GetResult()
         {
-            return new PerformanceResult
+            return new PerformanceResult()
             {
                 Type = PerformanceCounterType.TimeMilliseconds,
                 Global = false,
                 Name = m_Counter.ToString(),
                 Instances = m_Count,
-                Counter = m_Stopwatch.ElapsedMilliseconds,
+                Counter = m_Stopwatch.ElapsedMilliseconds
             };
         }
     }

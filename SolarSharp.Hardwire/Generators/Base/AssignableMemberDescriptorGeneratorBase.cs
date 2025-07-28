@@ -1,6 +1,5 @@
 ﻿using System;
 using System.CodeDom;
-using System.Reflection;
 using SolarSharp.Interpreter;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
@@ -12,34 +11,24 @@ namespace SolarSharp.Hardwire.Generators.Base
     {
         public abstract string ManagedType { get; }
 
-        protected abstract CodeExpression GetMemberAccessExpression(
-            CodeExpression thisObj,
-            string name
-        );
+        protected abstract CodeExpression GetMemberAccessExpression(CodeExpression thisObj, string name);
 
         protected abstract string GetPrefix();
 
-        public CodeExpression[] Generate(
-            Table table,
-            HardwireCodeGenerationContext generator,
-            CodeTypeMemberCollection members
-        )
+
+        public CodeExpression[] Generate(Table table, HardwireCodeGenerationContext generator, CodeTypeMemberCollection members)
         {
-            var isStatic = table.Get("static").Boolean;
-            var memberType = table.Get("type").String;
-            var name = table.Get("name").String;
-            var decltype = table.Get("decltype").String;
-            var declvtype = table.Get("declvtype").Boolean;
-            var canWrite = table.Get("write").Boolean;
-            var canRead = table.Get("read").Boolean;
+            bool isStatic = table.Get("static").Boolean;
+            string memberType = table.Get("type").String;
+            string name = table.Get("name").String;
+            string decltype = table.Get("decltype").String;
+            bool declvtype = table.Get("declvtype").Boolean;
+            bool canWrite = table.Get("write").Boolean;
+            bool canRead = table.Get("read").Boolean;
 
             if (declvtype && canWrite)
             {
-                generator.Warning(
-                    "Member '{0}.{1}::Set' will be a no-op, as it's a member of a value type.",
-                    decltype,
-                    name
-                );
+                generator.Warning("Member '{0}.{1}::Set' will be a no-op, as it's a member of a value type.", decltype, name);
             }
 
             MemberDescriptorAccess access = 0;
@@ -50,39 +39,37 @@ namespace SolarSharp.Hardwire.Generators.Base
             if (canRead)
                 access = access | MemberDescriptorAccess.CanRead;
 
-            var className = GetPrefix() + "_" + Guid.NewGuid().ToString("N");
 
-            var classCode = new CodeTypeDeclaration(className)
+            string className = GetPrefix() + "_" + Guid.NewGuid().ToString("N");
+
+            CodeTypeDeclaration classCode = new(className)
             {
-                TypeAttributes = TypeAttributes.NestedPrivate | TypeAttributes.Sealed,
+                TypeAttributes = System.Reflection.TypeAttributes.NestedPrivate | System.Reflection.TypeAttributes.Sealed
             };
 
             classCode.BaseTypes.Add(typeof(HardwiredMemberDescriptor));
 
             // protected HardwiredMemberDescriptor(Type memberType, string name, bool isStatic, MemberDescriptorAccess access)
 
-            var ctor = new CodeConstructor { Attributes = MemberAttributes.Assembly };
+            CodeConstructor ctor = new()
+            {
+                Attributes = MemberAttributes.Assembly
+            };
             ctor.BaseConstructorArgs.Add(new CodeTypeOfExpression(memberType));
             ctor.BaseConstructorArgs.Add(new CodePrimitiveExpression(name));
             ctor.BaseConstructorArgs.Add(new CodePrimitiveExpression(isStatic));
-            ctor.BaseConstructorArgs.Add(
-                new CodeCastExpression(
-                    typeof(MemberDescriptorAccess),
-                    new CodePrimitiveExpression((int)access)
-                )
-            );
+            ctor.BaseConstructorArgs.Add(new CodeCastExpression(typeof(MemberDescriptorAccess), new CodePrimitiveExpression((int)access)));
             classCode.Members.Add(ctor);
 
             var thisExp = isStatic
                 ? new CodeTypeReferenceExpression(decltype)
-                : (CodeExpression)
-                    new CodeCastExpression(decltype, new CodeVariableReferenceExpression("obj"));
+                : (CodeExpression)new CodeCastExpression(decltype, new CodeVariableReferenceExpression("obj"));
 
             if (canRead)
             {
                 var memberExp = GetMemberAccessExpression(thisExp, name);
                 //	protected virtual object GetValueImpl(Script script, object obj)
-                var m = new CodeMemberMethod();
+                CodeMemberMethod m = new();
                 classCode.Members.Add(m);
                 m.Name = "GetValueImpl";
                 m.Attributes = MemberAttributes.Override | MemberAttributes.Family;
@@ -95,7 +82,7 @@ namespace SolarSharp.Hardwire.Generators.Base
             if (canWrite)
             {
                 //	protected virtual object GetValueImpl(Script script, object obj)
-                var m = new CodeMemberMethod();
+                CodeMemberMethod m = new();
                 classCode.Members.Add(m);
                 m.Name = "SetValueImpl";
                 m.Attributes = MemberAttributes.Override | MemberAttributes.Family;
@@ -103,10 +90,7 @@ namespace SolarSharp.Hardwire.Generators.Base
                 m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(object), "obj"));
                 m.Parameters.Add(new CodeParameterDeclarationExpression(typeof(object), "value"));
 
-                var valExp = new CodeCastExpression(
-                    memberType,
-                    new CodeVariableReferenceExpression("value")
-                );
+                var valExp = new CodeCastExpression(memberType, new CodeVariableReferenceExpression("value"));
 
                 if (isStatic)
                 {
@@ -115,14 +99,9 @@ namespace SolarSharp.Hardwire.Generators.Base
                 }
                 else
                 {
-                    m.Statements.Add(
-                        new CodeVariableDeclarationStatement(decltype, "tmp", thisExp)
-                    );
+                    m.Statements.Add(new CodeVariableDeclarationStatement(decltype, "tmp", thisExp));
 
-                    var memberExp = GetMemberAccessExpression(
-                        new CodeVariableReferenceExpression("tmp"),
-                        name
-                    );
+                    var memberExp = GetMemberAccessExpression(new CodeVariableReferenceExpression("tmp"), name);
 
                     m.Statements.Add(new CodeAssignStatement(memberExp, valExp));
                 }

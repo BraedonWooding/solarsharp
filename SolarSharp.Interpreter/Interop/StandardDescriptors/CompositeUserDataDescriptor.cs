@@ -8,13 +8,14 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
     /// <summary>
     /// A user data descriptor which aggregates multiple descriptors and tries dispatching members
     /// on them, in order.
-    ///
-    /// Used, for example, for objects implementing multiple interfaces but for which no descriptor is
+    /// 
+    /// Used, for example, for objects implementing multiple interfaces but for which no descriptor is 
     /// specifically registered.
     /// </summary>
     public class CompositeUserDataDescriptor : IUserDataDescriptor
     {
         private readonly List<IUserDataDescriptor> m_Descriptors;
+        private readonly Type m_Type;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CompositeUserDataDescriptor"/> class.
@@ -24,7 +25,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         public CompositeUserDataDescriptor(List<IUserDataDescriptor> descriptors, Type type)
         {
             m_Descriptors = descriptors;
-            Type = type;
+            m_Type = type;
         }
 
         /// <summary>
@@ -35,18 +36,22 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             get { return m_Descriptors; }
         }
 
+
         /// <summary>
         /// Gets the name of the descriptor (usually, the name of the type described).
         /// </summary>
         public string Name
         {
-            get { return "^" + Type.FullName; }
+            get { return "^" + m_Type.FullName; }
         }
 
         /// <summary>
         /// Gets the type this descriptor refers to
         /// </summary>
-        public Type Type { get; }
+        public Type Type
+        {
+            get { return m_Type; }
+        }
 
         /// <summary>
         /// Performs an "index" "get" operation.
@@ -58,9 +63,9 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <returns></returns>
         public DynValue Index(Script script, object obj, DynValue index, bool isNameIndex)
         {
-            foreach (var dd in m_Descriptors)
+            foreach (IUserDataDescriptor dd in m_Descriptors)
             {
-                var v = dd.Index(script, obj, index, isNameIndex);
+                DynValue v = dd.Index(script, obj, index, isNameIndex);
 
                 if (v != null)
                     return v;
@@ -77,15 +82,9 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <param name="value">The value to be set</param>
         /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
         /// <returns></returns>
-        public bool SetIndex(
-            Script script,
-            object obj,
-            DynValue index,
-            DynValue value,
-            bool isNameIndex
-        )
+        public bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isNameIndex)
         {
-            foreach (var dd in m_Descriptors)
+            foreach (IUserDataDescriptor dd in m_Descriptors)
             {
                 if (dd.SetIndex(script, obj, index, value, isNameIndex))
                     return true;
@@ -103,12 +102,13 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             return obj?.ToString();
         }
 
+
         /// <summary>
         /// Gets a "meta" operation on this userdata. If a descriptor does not support this functionality,
-        /// it should return "null" (not a nil).
+        /// it should return "null" (not a nil). 
         /// These standard metamethods can be supported (the return value should be a function accepting the
         /// classic parameters of the corresponding metamethod):
-        /// __add, __sub, __mul, __div, __div, __pow, __unm, __eq, __lt, __le, __lt, __len, __concat,
+        /// __add, __sub, __mul, __div, __div, __pow, __unm, __eq, __lt, __le, __lt, __len, __concat, 
         /// __pairs, __ipairs, __iterator, __call
         /// These standard metamethods are supported through other calls for efficiency:
         /// __index, __newindex, __tostring
@@ -119,9 +119,9 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <returns></returns>
         public DynValue MetaIndex(Script script, object obj, string metaname)
         {
-            foreach (var dd in m_Descriptors)
+            foreach (IUserDataDescriptor dd in m_Descriptors)
             {
-                var v = dd.MetaIndex(script, obj, metaname);
+                DynValue v = dd.MetaIndex(script, obj, metaname);
 
                 if (v != null)
                     return v;
@@ -129,9 +129,10 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             return null;
         }
 
+
         /// <summary>
         /// Determines whether the specified object is compatible with the specified type.
-        /// Unless a very specific behaviour is needed, the correct implementation is a
+        /// Unless a very specific behaviour is needed, the correct implementation is a 
         /// simple " return type.IsInstanceOfType(obj); "
         /// </summary>
         /// <param name="type">The type.</param>

@@ -8,15 +8,13 @@ namespace SolarSharp.Interpreter.Tree.Statements
     {
         private readonly FunctionCallExpression m_FunctionCallExpression;
 
-        public FunctionCallStatement(
-            ScriptLoadingContext lcontext,
-            FunctionCallExpression functionCallExpression
-        )
+        public FunctionCallStatement(ScriptLoadingContext lcontext, FunctionCallExpression functionCallExpression)
             : base(lcontext)
         {
             m_FunctionCallExpression = functionCallExpression;
             lcontext.Source.Refs.Add(m_FunctionCallExpression.SourceRef);
         }
+
 
         public override void Compile(ByteCode bc)
         {

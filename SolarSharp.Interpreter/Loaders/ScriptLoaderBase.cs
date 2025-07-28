@@ -1,6 +1,6 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System;
 using System.Linq;
-using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Loaders
 {
@@ -10,7 +10,7 @@ namespace SolarSharp.Interpreter.Loaders
     public abstract class ScriptLoaderBase : IScriptLoader
     {
         /// <summary>
-        /// Checks if a script file exists.
+        /// Checks if a script file exists. 
         /// </summary>
         /// <param name="name">The script filename.</param>
         /// <returns></returns>
@@ -29,6 +29,7 @@ namespace SolarSharp.Interpreter.Loaders
         /// </returns>
         public abstract object LoadFile(string file, Table globalContext);
 
+
         /// <summary>
         /// Resolves the name of a module on a set of paths.
         /// </summary>
@@ -42,9 +43,9 @@ namespace SolarSharp.Interpreter.Loaders
 
             modname = modname.Replace('.', '/');
 
-            foreach (var path in paths)
+            foreach (string path in paths)
             {
-                var file = path.Replace("?", modname);
+                string file = path.Replace("?", modname);
 
                 if (ScriptFileExists(file))
                     return file;
@@ -66,7 +67,7 @@ namespace SolarSharp.Interpreter.Loaders
         {
             if (!IgnoreLuaPathGlobal)
             {
-                var s = globalContext.Get("LUA_PATH");
+                DynValue s = globalContext.Get("LUA_PATH");
 
                 if (s.IsNotNil() && s.Type == DataType.String)
                     return ResolveModuleName(modname, UnpackStringPaths(s.String));
@@ -77,7 +78,7 @@ namespace SolarSharp.Interpreter.Loaders
 
         /// <summary>
         /// Gets or sets the modules paths used by the "require" function. If null, the default paths are used (using
-        /// environment variables etc.).
+        /// environment variables etc.). 
         /// </summary>
         public string[] ModulePaths { get; set; }
 
@@ -86,7 +87,7 @@ namespace SolarSharp.Interpreter.Loaders
         /// </summary>
         public static string[] UnpackStringPaths(string str)
         {
-            return str.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+            return str.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(s => s.Trim())
                 .Where(s => !string.IsNullOrEmpty(s))
                 .ToArray();
@@ -101,15 +102,13 @@ namespace SolarSharp.Interpreter.Loaders
 
             if (modulePaths == null)
             {
-                var env = Script.GlobalOptions.Platform.GetEnvironmentVariable("MOONSHARP_PATH");
-                if (!string.IsNullOrEmpty(env))
-                    modulePaths = UnpackStringPaths(env);
+                string env = Script.GlobalOptions.Platform.GetEnvironmentVariable("MOONSHARP_PATH");
+                if (!string.IsNullOrEmpty(env)) modulePaths = UnpackStringPaths(env);
 
                 if (modulePaths == null)
                 {
                     env = Script.GlobalOptions.Platform.GetEnvironmentVariable("LUA_PATH");
-                    if (!string.IsNullOrEmpty(env))
-                        modulePaths = UnpackStringPaths(env);
+                    if (!string.IsNullOrEmpty(env)) modulePaths = UnpackStringPaths(env);
                 }
 
                 modulePaths ??= UnpackStringPaths("?;?.lua");
@@ -117,6 +116,8 @@ namespace SolarSharp.Interpreter.Loaders
 
             return modulePaths;
         }
+
+
 
         /// <summary>
         /// Resolves a filename [applying paths, etc.]

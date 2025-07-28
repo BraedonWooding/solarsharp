@@ -1,5 +1,6 @@
 ﻿namespace SolarSharp.Interpreter.Interop
 {
+
     /// <summary>
     /// Helps identifying a reflection special name
     /// </summary>
@@ -60,7 +61,7 @@
         {
             if (name.Contains("."))
             {
-                var split = name.Split('.');
+                string[] split = name.Split('.');
                 name = split[^1];
             }
 
@@ -189,3 +190,4 @@
         }
     }
 }
+

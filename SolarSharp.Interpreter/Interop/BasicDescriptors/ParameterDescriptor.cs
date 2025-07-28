@@ -15,57 +15,44 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// Gets the name of the parameter
         /// </summary>
         public string Name { get; private set; }
-
         /// <summary>
         /// Gets the type of the parameter
         /// </summary>
         public Type Type { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether this instance has a default value.
         /// </summary>
         public bool HasDefaultValue { get; private set; }
-
         /// <summary>
         /// Gets the default value
         /// </summary>
         public object DefaultValue { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether this instance is an out parameter
         /// </summary>
         public bool IsOut { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether this instance is a "ref" parameter
         /// </summary>
         public bool IsRef { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether this instance is a variable arguments param
         /// </summary>
         public bool IsVarArgs { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether this instance has been restricted.
         /// </summary>
-        public bool HasBeenRestricted
-        {
-            get { return m_OriginalType != null; }
-        }
-
+        public bool HasBeenRestricted { get { return m_OriginalType != null; } }
         /// <summary>
         /// Gets the original type of the parameter before any restriction has been applied.
         /// </summary>
-        public Type OriginalType
-        {
-            get { return m_OriginalType ?? Type; }
-        }
+        public Type OriginalType { get { return m_OriginalType ?? Type; } }
+
 
         /// <summary>
         /// If the type got restricted, the original type before the restriction.
         /// </summary>
-        private Type m_OriginalType;
+        private Type m_OriginalType = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ParameterDescriptor" /> class.
@@ -77,15 +64,8 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="isOut">if set to <c>true</c>, is an out param.</param>
         /// <param name="isRef">if set to <c>true</c> is a ref param.</param>
         /// <param name="isVarArgs">if set to <c>true</c> is variable arguments param.</param>
-        public ParameterDescriptor(
-            string name,
-            Type type,
-            bool hasDefaultValue = false,
-            object defaultValue = null,
-            bool isOut = false,
-            bool isRef = false,
-            bool isVarArgs = false
-        )
+        public ParameterDescriptor(string name, Type type, bool hasDefaultValue = false, object defaultValue = null, bool isOut = false,
+            bool isRef = false, bool isVarArgs = false)
         {
             Name = name;
             Type = type;
@@ -97,7 +77,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ParameterDescriptor" /> class.
+        /// Initializes a new instance of the <see cref="ParameterDescriptor" /> class. 
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="type">The type.</param>
@@ -107,16 +87,8 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="isRef">if set to <c>true</c> is a ref param.</param>
         /// <param name="isVarArgs">if set to <c>true</c> is variable arguments param.</param>
         /// <param name="typeRestriction">The type restriction, or nll.</param>
-        public ParameterDescriptor(
-            string name,
-            Type type,
-            bool hasDefaultValue,
-            object defaultValue,
-            bool isOut,
-            bool isRef,
-            bool isVarArgs,
-            Type typeRestriction
-        )
+        public ParameterDescriptor(string name, Type type, bool hasDefaultValue, object defaultValue, bool isOut,
+            bool isRef, bool isVarArgs, Type typeRestriction)
         {
             Name = name;
             Type = type;
@@ -132,6 +104,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             }
         }
 
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ParameterDescriptor"/> class.
         /// </summary>
@@ -144,10 +117,9 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             DefaultValue = pi.DefaultValue;
             IsOut = pi.IsOut;
             IsRef = pi.ParameterType.IsByRef;
-            IsVarArgs =
-                pi.ParameterType.IsArray
-                && pi.GetCustomAttributes(typeof(ParamArrayAttribute), true).Any();
+            IsVarArgs = pi.ParameterType.IsArray && pi.GetCustomAttributes(typeof(ParamArrayAttribute), true).Any();
         }
+
 
         /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.
@@ -157,7 +129,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// </returns>
         public override string ToString()
         {
-            return $"{Type.Name} {Name}{(HasDefaultValue ? " = ..." : "")}";
+            return string.Format("{0} {1}{2}", Type.Name, Name, HasDefaultValue ? " = ..." : "");
         }
 
         /// <summary>
@@ -182,6 +154,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
             m_OriginalType = Type;
             Type = type;
         }
+
 
         /// <summary>
         /// Prepares the descriptor for hard-wiring.

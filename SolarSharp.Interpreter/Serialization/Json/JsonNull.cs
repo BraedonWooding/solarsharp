@@ -8,17 +8,14 @@ namespace SolarSharp.Interpreter.Serialization.Json
     /// </summary>
     public sealed class JsonNull
     {
-        public static bool isNull()
-        {
-            return true;
-        }
+        public static bool isNull() { return true; }
 
         [MoonSharpHidden]
         public static bool IsJsonNull(DynValue v)
         {
-            return v.Type == DataType.UserData
-                && v.UserData.Descriptor != null
-                && v.UserData.Descriptor.Type == typeof(JsonNull);
+            return v.Type == DataType.UserData &&
+                v.UserData.Descriptor != null &&
+                v.UserData.Descriptor.Type == typeof(JsonNull);
         }
 
         [MoonSharpHidden]

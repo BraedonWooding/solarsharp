@@ -1,6 +1,4 @@
-﻿#nullable enable
-
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,12 +9,12 @@ using System.Runtime.CompilerServices;
 namespace SolarSharp.Interpreter.DataTypes.Custom
 {
     /// <summary>
-    /// Used internally to control behaviour of insertion into a <see cref="Dictionary{TKey,TValue}"/> or <see cref="HashSet{T}"/>.
+    /// Used internally to control behavior of insertion into a <see cref="Dictionary{TKey, TValue}"/> or <see cref="HashSet{T}"/>.
     /// </summary>
-    internal enum Insertionbehaviour : byte
+    internal enum InsertionBehavior : byte
     {
         /// <summary>
-        /// The default insertion behaviour.
+        /// The default insertion behavior.
         /// </summary>
         None = 0,
 
@@ -28,18 +26,14 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
         /// <summary>
         /// Specifies that if an existing entry with the same key is encountered, an exception should be thrown.
         /// </summary>
-        ThrowOnExisting = 2,
+        ThrowOnExisting = 2
     }
 
     [DebuggerDisplay("Count = {Count}")]
-    internal class LuaDictionary<TKey, TValue>
-        : IDictionary<TKey, TValue>,
-            IDictionary,
-            IReadOnlyDictionary<TKey, TValue>
-        where TKey : notnull
+    internal class LuaDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDictionary, IReadOnlyDictionary<TKey, TValue> where TKey : notnull
     {
-        private int[]? _buckets;
-        private Entry[]? _entries;
+        private int[] _buckets;
+        private Entry[] _entries;
 #if TARGET_64BIT
         private ulong _fastModMultiplier;
 #endif
@@ -47,21 +41,18 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
         private int _freeList;
         private int _freeCount;
         private int _version;
-        private IEqualityComparer<TKey>? _comparer;
-        private KeyCollection? _keys;
-        private ValueCollection? _values;
+        private IEqualityComparer<TKey> _comparer;
+        private KeyCollection _keys;
+        private ValueCollection _values;
         private const int StartOfFreeList = -3;
 
-        public LuaDictionary()
-            : this(0, null) { }
+        public LuaDictionary() : this(0, null) { }
 
-        public LuaDictionary(int capacity)
-            : this(capacity, null) { }
+        public LuaDictionary(int capacity) : this(capacity, null) { }
 
-        public LuaDictionary(IEqualityComparer<TKey>? comparer)
-            : this(0, comparer) { }
+        public LuaDictionary(IEqualityComparer<TKey> comparer) : this(0, comparer) { }
 
-        public LuaDictionary(int capacity, IEqualityComparer<TKey>? comparer)
+        public LuaDictionary(int capacity, IEqualityComparer<TKey> comparer)
         {
             if (capacity < 0)
             {
@@ -84,24 +75,17 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             {
                 _comparer = comparer ?? EqualityComparer<TKey>.Default;
             }
-            else if (
-                comparer is not null
-                && // first check for null to avoid forcing default comparer instantiation unnecessarily
-                comparer != EqualityComparer<TKey>.Default
-            )
+            else if (comparer is not null && // first check for null to avoid forcing default comparer instantiation unnecessarily
+                     comparer != EqualityComparer<TKey>.Default)
             {
                 _comparer = comparer;
             }
         }
 
-        public LuaDictionary(IDictionary<TKey, TValue> dictionary)
-            : this(dictionary, null) { }
+        public LuaDictionary(IDictionary<TKey, TValue> dictionary) : this(dictionary, null) { }
 
-        public LuaDictionary(
-            IDictionary<TKey, TValue> dictionary,
-            IEqualityComparer<TKey>? comparer
-        )
-            : this(dictionary?.Count ?? 0, comparer)
+        public LuaDictionary(IDictionary<TKey, TValue> dictionary, IEqualityComparer<TKey> comparer) :
+            this(dictionary?.Count ?? 0, comparer)
         {
             if (dictionary == null)
             {
@@ -111,14 +95,10 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             AddRange(dictionary);
         }
 
-        public LuaDictionary(IEnumerable<KeyValuePair<TKey, TValue>> collection)
-            : this(collection, null) { }
+        public LuaDictionary(IEnumerable<KeyValuePair<TKey, TValue>> collection) : this(collection, null) { }
 
-        public LuaDictionary(
-            IEnumerable<KeyValuePair<TKey, TValue>> collection,
-            IEqualityComparer<TKey>? comparer
-        )
-            : this((collection as ICollection<KeyValuePair<TKey, TValue>>)?.Count ?? 0, comparer)
+        public LuaDictionary(IEnumerable<KeyValuePair<TKey, TValue>> collection, IEqualityComparer<TKey> comparer) :
+            this((collection as ICollection<KeyValuePair<TKey, TValue>>)?.Count ?? 0, comparer)
         {
             if (collection == null)
             {
@@ -133,10 +113,10 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             // It is likely that the passed-in enumerable is Dictionary<TKey,TValue>. When this is the case,
             // avoid the enumerator allocation and overhead by looping through the entries array directly.
             // We only do this when dictionary is Dictionary<TKey,TValue> and not a subclass, to maintain
-            // back-compat with subclasses that may have overridden the enumerator behaviour.
+            // back-compat with subclasses that may have overridden the enumerator behavior.
             if (enumerable.GetType() == typeof(LuaDictionary<TKey, TValue>))
             {
-                var source = (LuaDictionary<TKey, TValue>)enumerable;
+                LuaDictionary<TKey, TValue> source = (LuaDictionary<TKey, TValue>)enumerable;
 
                 if (source.Count == 0)
                 {
@@ -151,7 +131,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 Debug.Assert(_entries.Length >= source.Count);
                 Debug.Assert(_count == 0);
 
-                var oldEntries = source._entries;
+                Entry[] oldEntries = source._entries;
                 if (source._comparer == _comparer)
                 {
                     // If comparers are the same, we can copy _entries without rehashing.
@@ -160,8 +140,8 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
 
                 // Comparers differ need to rehash all the entries via Add
-                var count = source._count;
-                for (var i = 0; i < count; i++)
+                int count = source._count;
+                for (int i = 0; i < count; i++)
                 {
                     // Only copy if an entry
                     if (oldEntries[i].next >= -1)
@@ -186,7 +166,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             else
             {
                 // Fallback path for all other enumerables
-                foreach (var pair in enumerable)
+                foreach (KeyValuePair<TKey, TValue> pair in enumerable)
                 {
                     Add(pair.Key, pair.Value);
                 }
@@ -194,66 +174,39 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             }
 
             // We got a span. Add the elements to the dictionary.
-            foreach (var pair in span)
+            foreach (KeyValuePair<TKey, TValue> pair in span)
             {
                 Add(pair.Key, pair.Value);
             }
         }
 
         // NOTE: C# seems to use a different comparer for strings but I'm not going to touch that for now
-        public IEqualityComparer<TKey> Comparer
-        {
-            get { return _comparer ?? EqualityComparer<TKey>.Default; }
-        }
+        public IEqualityComparer<TKey> Comparer => _comparer ?? EqualityComparer<TKey>.Default;
 
-        public int Count
-        {
-            get { return _count - _freeCount; }
-        }
+        public int Count => _count - _freeCount;
 
         /// <summary>
         /// Gets the total numbers of elements the internal data structure can hold without resizing.
         /// </summary>
-        public int Capacity
-        {
-            get { return _entries?.Length ?? 0; }
-        }
+        public int Capacity => _entries?.Length ?? 0;
 
-        public KeyCollection Keys
-        {
-            get { return _keys ??= new KeyCollection(this); }
-        }
+        public KeyCollection Keys => _keys ??= new KeyCollection(this);
 
-        ICollection<TKey> IDictionary<TKey, TValue>.Keys
-        {
-            get { return Keys; }
-        }
+        ICollection<TKey> IDictionary<TKey, TValue>.Keys => Keys;
 
-        IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys
-        {
-            get { return Keys; }
-        }
+        IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => Keys;
 
-        public ValueCollection Values
-        {
-            get { return _values ??= new ValueCollection(this); }
-        }
+        public ValueCollection Values => _values ??= new ValueCollection(this);
 
-        ICollection<TValue> IDictionary<TKey, TValue>.Values
-        {
-            get { return Values; }
-        }
+        ICollection<TValue> IDictionary<TKey, TValue>.Values => Values;
 
-        IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values
-        {
-            get { return Values; }
-        }
+        IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => Values;
 
         public TValue this[TKey key]
         {
             get
             {
-                ref var value = ref FindValue(key);
+                ref TValue value = ref FindValue(key);
                 if (!Unsafe.IsNullRef(ref value))
                 {
                     return value;
@@ -263,29 +216,24 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             }
             set
             {
-                var modified = TryInsert(key, value, Insertionbehaviour.OverwriteExisting);
+                bool modified = TryInsert(key, value, InsertionBehavior.OverwriteExisting);
                 Debug.Assert(modified);
             }
         }
 
         public void Add(TKey key, TValue value)
         {
-            var modified = TryInsert(key, value, Insertionbehaviour.ThrowOnExisting);
+            bool modified = TryInsert(key, value, InsertionBehavior.ThrowOnExisting);
             Debug.Assert(modified); // If there was an existing key and the Add failed, an exception will already have been thrown.
         }
 
         void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> keyValuePair) =>
             Add(keyValuePair.Key, keyValuePair.Value);
 
-        bool ICollection<KeyValuePair<TKey, TValue>>.Contains(
-            KeyValuePair<TKey, TValue> keyValuePair
-        )
+        bool ICollection<KeyValuePair<TKey, TValue>>.Contains(KeyValuePair<TKey, TValue> keyValuePair)
         {
-            ref var value = ref FindValue(keyValuePair.Key);
-            if (
-                !Unsafe.IsNullRef(ref value)
-                && EqualityComparer<TValue>.Default.Equals(value, keyValuePair.Value)
-            )
+            ref TValue value = ref FindValue(keyValuePair.Key);
+            if (!Unsafe.IsNullRef(ref value) && EqualityComparer<TValue>.Default.Equals(value, keyValuePair.Value))
             {
                 return true;
             }
@@ -295,11 +243,8 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
         bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> keyValuePair)
         {
-            ref var value = ref FindValue(keyValuePair.Key);
-            if (
-                !Unsafe.IsNullRef(ref value)
-                && EqualityComparer<TValue>.Default.Equals(value, keyValuePair.Value)
-            )
+            ref TValue value = ref FindValue(keyValuePair.Key);
+            if (!Unsafe.IsNullRef(ref value) && EqualityComparer<TValue>.Default.Equals(value, keyValuePair.Value))
             {
                 Remove(keyValuePair.Key);
                 return true;
@@ -310,7 +255,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
         public void Clear()
         {
-            var count = _count;
+            int count = _count;
             if (count > 0)
             {
                 Debug.Assert(_buckets != null, "_buckets should be non-null");
@@ -325,16 +270,17 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             }
         }
 
-        public bool ContainsKey(TKey key) => !Unsafe.IsNullRef(ref FindValue(key));
+        public bool ContainsKey(TKey key) =>
+            !Unsafe.IsNullRef(ref FindValue(key));
 
         public bool ContainsValue(TValue value)
         {
-            var entries = _entries;
-            if (value is null)
+            Entry[] entries = _entries;
+            if (value == null)
             {
-                for (var i = 0; i < _count; i++)
+                for (int i = 0; i < _count; i++)
                 {
-                    if (entries![i].next >= -1 && entries[i].value is null)
+                    if (entries![i].next >= -1 && entries[i].value == null)
                     {
                         return true;
                     }
@@ -343,12 +289,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             else if (typeof(TValue).IsValueType)
             {
                 // ValueType: Devirtualize with EqualityComparer<TValue>.Default intrinsic
-                for (var i = 0; i < _count; i++)
+                for (int i = 0; i < _count; i++)
                 {
-                    if (
-                        entries![i].next >= -1
-                        && EqualityComparer<TValue>.Default.Equals(entries[i].value, value)
-                    )
+                    if (entries![i].next >= -1 && EqualityComparer<TValue>.Default.Equals(entries[i].value, value))
                     {
                         return true;
                     }
@@ -359,8 +302,8 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 // Object type: Shared Generic, EqualityComparer<TValue>.Default won't devirtualize
                 // https://github.com/dotnet/runtime/issues/10050
                 // So cache in a local rather than get EqualityComparer per loop iteration
-                var defaultComparer = EqualityComparer<TValue>.Default;
-                for (var i = 0; i < _count; i++)
+                EqualityComparer<TValue> defaultComparer = EqualityComparer<TValue>.Default;
+                for (int i = 0; i < _count; i++)
                 {
                     if (entries![i].next >= -1 && defaultComparer.Equals(entries[i].value, value))
                     {
@@ -389,28 +332,22 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 throw new ArgumentException(nameof(index));
             }
 
-            var count = _count;
-            var entries = _entries;
-            for (var i = 0; i < count; i++)
+            int count = _count;
+            Entry[] entries = _entries;
+            for (int i = 0; i < count; i++)
             {
                 if (entries![i].next >= -1)
                 {
-                    array[index++] = new KeyValuePair<TKey, TValue>(
-                        entries[i].key,
-                        entries[i].value
-                    );
+                    array[index++] = new KeyValuePair<TKey, TValue>(entries[i].key, entries[i].value);
                 }
             }
         }
 
         public Enumerator GetEnumerator() => new Enumerator(this, Enumerator.KeyValuePair);
 
-        IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<
-            KeyValuePair<TKey, TValue>
-        >.GetEnumerator() =>
-            Count == 0
-                ? Enumerable.Empty<KeyValuePair<TKey, TValue>>().GetEnumerator()
-                : GetEnumerator();
+        IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator() =>
+            Count == 0 ? Enumerable.Empty<KeyValuePair<TKey, TValue>>().GetEnumerator() :
+            GetEnumerator();
 
         internal ref TValue FindValue(TKey key)
         {
@@ -419,20 +356,17 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 throw new ArgumentNullException(nameof(key));
             }
 
-            ref var entry = ref Unsafe.NullRef<Entry>();
+            ref Entry entry = ref Unsafe.NullRef<Entry>();
             if (_buckets != null)
             {
                 Debug.Assert(_entries != null, "expected entries to be != null");
-                var comparer = _comparer;
-                if (
-                    typeof(TKey).IsValueType
-                    && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
-                    comparer == null
-                )
+                IEqualityComparer<TKey> comparer = _comparer;
+                if (typeof(TKey).IsValueType && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
+                    comparer == null)
                 {
-                    var hashCode = (uint)key.GetHashCode();
-                    var i = GetBucket(hashCode);
-                    var entries = _entries;
+                    uint hashCode = (uint)key.GetHashCode();
+                    int i = GetBucket(hashCode);
+                    Entry[] entries = _entries;
                     uint collisionCount = 0;
 
                     // ValueType: Devirtualize with EqualityComparer<TKey>.Default intrinsic
@@ -446,10 +380,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                         }
 
                         entry = ref entries[i];
-                        if (
-                            entry.hashCode == hashCode
-                            && EqualityComparer<TKey>.Default.Equals(entry.key, key)
-                        )
+                        if (entry.hashCode == hashCode && EqualityComparer<TKey>.Default.Equals(entry.key, key))
                         {
                             goto ReturnFound;
                         }
@@ -466,9 +397,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 else
                 {
                     Debug.Assert(comparer is not null);
-                    var hashCode = (uint)comparer.GetHashCode(key);
-                    var i = GetBucket(hashCode);
-                    var entries = _entries;
+                    uint hashCode = (uint)comparer.GetHashCode(key);
+                    int i = GetBucket(hashCode);
+                    Entry[] entries = _entries;
                     uint collisionCount = 0;
                     i--; // Value in _buckets is 1-based; subtract 1 from i. We do it here so it fuses with the following conditional.
                     do
@@ -498,22 +429,22 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
             goto ReturnNotFound;
 
-            ConcurrentOperation:
+        ConcurrentOperation:
             throw new InvalidOperationException("Concurrent operations not supported");
-            ReturnFound:
-            ref var value = ref entry.value;
-            Return:
+        ReturnFound:
+            ref TValue value = ref entry.value;
+        Return:
             return ref value;
-            ReturnNotFound:
+        ReturnNotFound:
             value = ref Unsafe.NullRef<TValue>();
             goto Return;
         }
 
         private int Initialize(int capacity)
         {
-            var size = HashHelpers.GetPrime(capacity);
-            var buckets = new int[size];
-            var entries = new Entry[size];
+            int size = HashHelpers.GetPrime(capacity);
+            int[] buckets = new int[size];
+            Entry[] entries = new Entry[size];
 
             // Assign member variables after both arrays allocated to guard against corruption from OOM if second fails
             _freeList = -1;
@@ -534,12 +465,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 return null;
             }
 
-            return new Enumerator(
-                this,
-                index.Value,
-                new KeyValuePair<TKey, TValue>(valRef.key, valRef.value),
-                Enumerator.KeyValuePair
-            );
+            return new Enumerator(this, index.Value, new KeyValuePair<TKey, TValue>(valRef.key, valRef.value), Enumerator.KeyValuePair);
         }
 
         public IEnumerator<TKey>? TryGetKeysEnumeratorFrom(TKey key)
@@ -564,7 +490,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             return new ValueCollection.Enumerator(this, index.Value, valRef.value);
         }
 
-        private bool TryInsert(TKey key, TValue value, Insertionbehaviour behaviour)
+        private bool TryInsert(TKey key, TValue value, InsertionBehavior behavior)
         {
             // NOTE: this method is mirrored in CollectionsMarshal.GetValueRefOrAddDefault below.
             // If you make any changes here, make sure to keep that version in sync as well.
@@ -580,42 +506,32 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             }
             Debug.Assert(_buckets != null);
 
-            var entries = _entries;
+            Entry[] entries = _entries;
             Debug.Assert(entries != null, "expected entries to be non-null");
 
-            var comparer = _comparer;
+            IEqualityComparer<TKey> comparer = _comparer;
             Debug.Assert(comparer is not null || typeof(TKey).IsValueType);
-            var hashCode = (uint)(
-                typeof(TKey).IsValueType && comparer == null
-                    ? key.GetHashCode()
-                    : comparer!.GetHashCode(key)
-            );
+            uint hashCode = (uint)(typeof(TKey).IsValueType && comparer == null ? key.GetHashCode() : comparer!.GetHashCode(key));
 
             uint collisionCount = 0;
-            ref var bucket = ref GetBucket(hashCode);
-            var i = bucket - 1; // Value in _buckets is 1-based
+            ref int bucket = ref GetBucket(hashCode);
+            int i = bucket - 1; // Value in _buckets is 1-based
 
-            if (
-                typeof(TKey).IsValueType
-                && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
-                comparer == null
-            )
+            if (typeof(TKey).IsValueType && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
+                comparer == null)
             {
                 // ValueType: Devirtualize with EqualityComparer<TKey>.Default intrinsic
                 while ((uint)i < (uint)entries.Length)
                 {
-                    if (
-                        entries[i].hashCode == hashCode
-                        && EqualityComparer<TKey>.Default.Equals(entries[i].key, key)
-                    )
+                    if (entries[i].hashCode == hashCode && EqualityComparer<TKey>.Default.Equals(entries[i].key, key))
                     {
-                        if (behaviour == Insertionbehaviour.OverwriteExisting)
+                        if (behavior == InsertionBehavior.OverwriteExisting)
                         {
                             entries[i].value = value;
                             return true;
                         }
 
-                        if (behaviour == Insertionbehaviour.ThrowOnExisting)
+                        if (behavior == InsertionBehavior.ThrowOnExisting)
                         {
                             throw new ArgumentException(nameof(key));
                         }
@@ -641,13 +557,13 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 {
                     if (entries[i].hashCode == hashCode && comparer.Equals(entries[i].key, key))
                     {
-                        if (behaviour == Insertionbehaviour.OverwriteExisting)
+                        if (behavior == InsertionBehavior.OverwriteExisting)
                         {
                             entries[i].value = value;
                             return true;
                         }
 
-                        if (behaviour == Insertionbehaviour.ThrowOnExisting)
+                        if (behavior == InsertionBehavior.ThrowOnExisting)
                         {
                             throw new ArgumentException(nameof(key));
                         }
@@ -671,16 +587,13 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             if (_freeCount > 0)
             {
                 index = _freeList;
-                Debug.Assert(
-                    StartOfFreeList - entries[_freeList].next >= -1,
-                    "shouldn't overflow because `next` cannot underflow"
-                );
+                Debug.Assert(StartOfFreeList - entries[_freeList].next >= -1, "shouldn't overflow because `next` cannot underflow");
                 _freeList = StartOfFreeList - entries[_freeList].next;
                 _freeCount--;
             }
             else
             {
-                var count = _count;
+                int count = _count;
                 if (count == entries.Length)
                 {
                     Resize();
@@ -691,7 +604,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 entries = _entries;
             }
 
-            ref var entry = ref entries![index];
+            ref Entry entry = ref entries![index];
             entry.hashCode = hashCode;
             entry.next = bucket - 1; // Value in _buckets is 1-based
             entry.key = key;
@@ -718,35 +631,25 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             }
             Debug.Assert(_buckets != null);
 
-            var entries = _entries;
+            Entry[] entries = _entries;
             Debug.Assert(entries != null, "expected entries to be non-null");
 
-            var comparer = _comparer;
+            IEqualityComparer<TKey> comparer = _comparer;
             Debug.Assert(comparer is not null || typeof(TKey).IsValueType);
-            var hashCode = (uint)(
-                typeof(TKey).IsValueType && comparer == null
-                    ? key.GetHashCode()
-                    : comparer!.GetHashCode(key)
-            );
+            uint hashCode = (uint)(typeof(TKey).IsValueType && comparer == null ? key.GetHashCode() : comparer!.GetHashCode(key));
 
             uint collisionCount = 0;
-            ref var bucket = ref GetBucket(hashCode);
-            var i = bucket - 1; // Value in _buckets is 1-based
-            var last = -1;
+            ref int bucket = ref GetBucket(hashCode);
+            int i = bucket - 1; // Value in _buckets is 1-based
+            int last = -1;
 
-            if (
-                typeof(TKey).IsValueType
-                && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
-                comparer == null
-            )
+            if (typeof(TKey).IsValueType && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
+                comparer == null)
             {
                 // ValueType: Devirtualize with EqualityComparer<TKey>.Default intrinsic
                 while ((uint)i < (uint)entries.Length)
                 {
-                    if (
-                        entries[i].hashCode == hashCode
-                        && EqualityComparer<TKey>.Default.Equals(entries[i].key, key)
-                    )
+                    if (entries[i].hashCode == hashCode && EqualityComparer<TKey>.Default.Equals(entries[i].key, key))
                     {
                         entries[i].value = value;
                         return true;
@@ -788,23 +691,19 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
             }
 
-            if (!setIfAbsent)
-                return false;
+            if (!setIfAbsent) return false;
 
             int index;
             if (_freeCount > 0)
             {
                 index = _freeList;
-                Debug.Assert(
-                    StartOfFreeList - entries[_freeList].next >= -1,
-                    "shouldn't overflow because `next` cannot underflow"
-                );
+                Debug.Assert(StartOfFreeList - entries[_freeList].next >= -1, "shouldn't overflow because `next` cannot underflow");
                 _freeList = StartOfFreeList - entries[_freeList].next;
                 _freeCount--;
             }
             else
             {
-                var count = _count;
+                int count = _count;
                 if (count == entries.Length)
                 {
                     Resize();
@@ -815,7 +714,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 entries = _entries;
             }
 
-            ref var entry = ref entries![index];
+            ref Entry entry = ref entries![index];
             entry.hashCode = hashCode;
             entry.next = bucket - 1; // Value in _buckets is 1-based
             entry.key = key;
@@ -841,34 +740,24 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             }
             Debug.Assert(_buckets != null);
 
-            var entries = _entries;
+            Entry[] entries = _entries;
             Debug.Assert(entries != null, "expected entries to be non-null");
 
-            var comparer = _comparer;
+            IEqualityComparer<TKey> comparer = _comparer;
             Debug.Assert(comparer is not null || typeof(TKey).IsValueType);
-            var hashCode = (uint)(
-                typeof(TKey).IsValueType && comparer == null
-                    ? key.GetHashCode()
-                    : comparer!.GetHashCode(key)
-            );
+            uint hashCode = (uint)(typeof(TKey).IsValueType && comparer == null ? key.GetHashCode() : comparer!.GetHashCode(key));
 
             uint collisionCount = 0;
-            ref var bucket = ref GetBucket(hashCode);
-            var i = bucket - 1; // Value in _buckets is 1-based
+            ref int bucket = ref GetBucket(hashCode);
+            int i = bucket - 1; // Value in _buckets is 1-based
 
-            if (
-                typeof(TKey).IsValueType
-                && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
-                comparer == null
-            )
+            if (typeof(TKey).IsValueType && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
+                comparer == null)
             {
                 // ValueType: Devirtualize with EqualityComparer<TKey>.Default intrinsic
                 while ((uint)i < (uint)entries.Length)
                 {
-                    if (
-                        entries[i].hashCode == hashCode
-                        && EqualityComparer<TKey>.Default.Equals(entries[i].key, key)
-                    )
+                    if (entries[i].hashCode == hashCode && EqualityComparer<TKey>.Default.Equals(entries[i].key, key))
                     {
                         indexIfExists = i;
                         return ref entries[i];
@@ -917,14 +806,14 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 collisionCount = 0;
                 while (i >= 0)
                 {
-                    if (entries[i].hashCode == hashCode && comparer!.Equals(entries[i].key, key))
+                    if (entries[i].hashCode == hashCode && comparer.Equals(entries[i].key, key))
                     {
                         indexIfExists = i;
                         return ref entries[i];
                     }
 
                     i = StartOfFreeList - entries[_freeCount].next;
-
+                    
                     // collision loops should be impossible outside of concurrent updates
                     collisionCount++;
                     if (collisionCount > (uint)entries.Length)
@@ -956,34 +845,24 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             }
             Debug.Assert(_buckets != null);
 
-            var entries = _entries;
+            Entry[] entries = _entries;
             Debug.Assert(entries != null, "expected entries to be non-null");
 
-            var comparer = _comparer;
+            IEqualityComparer<TKey> comparer = _comparer;
             Debug.Assert(comparer is not null || typeof(TKey).IsValueType);
-            var hashCode = (uint)(
-                typeof(TKey).IsValueType && comparer == null
-                    ? key.GetHashCode()
-                    : comparer!.GetHashCode(key)
-            );
+            uint hashCode = (uint)(typeof(TKey).IsValueType && comparer == null ? key.GetHashCode() : comparer!.GetHashCode(key));
 
             uint collisionCount = 0;
-            ref var bucket = ref GetBucket(hashCode);
-            var i = bucket - 1; // Value in _buckets is 1-based
+            ref int bucket = ref GetBucket(hashCode);
+            int i = bucket - 1; // Value in _buckets is 1-based
 
-            if (
-                typeof(TKey).IsValueType
-                && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
-                comparer == null
-            )
+            if (typeof(TKey).IsValueType && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
+                comparer == null)
             {
                 // ValueType: Devirtualize with EqualityComparer<TKey>.Default intrinsic
                 while ((uint)i < (uint)entries.Length)
                 {
-                    if (
-                        entries[i].hashCode == hashCode
-                        && EqualityComparer<TKey>.Default.Equals(entries[i].key, key)
-                    )
+                    if (entries[i].hashCode == hashCode && EqualityComparer<TKey>.Default.Equals(entries[i].key, key))
                     {
                         info = (i, true);
                         return ref entries[i];
@@ -1027,16 +906,13 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             if (_freeCount > 0)
             {
                 index = _freeList;
-                Debug.Assert(
-                    StartOfFreeList - entries[_freeList].next >= -1,
-                    "shouldn't overflow because `next` cannot underflow"
-                );
+                Debug.Assert(StartOfFreeList - entries[_freeList].next >= -1, "shouldn't overflow because `next` cannot underflow");
                 _freeList = StartOfFreeList - entries[_freeList].next;
                 _freeCount--;
             }
             else
             {
-                var count = _count;
+                int count = _count;
                 if (count == entries.Length)
                 {
                     Resize();
@@ -1047,7 +923,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 entries = _entries;
             }
 
-            ref var entry = ref entries![index];
+            ref Entry entry = ref entries![index];
             entry.hashCode = hashCode;
             entry.next = bucket - 1; // Value in _buckets is 1-based
             entry.key = key;
@@ -1065,9 +941,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             Debug.Assert(_entries != null, "_entries should be non-null");
             Debug.Assert(newSize >= _entries.Length);
 
-            var entries = new Entry[newSize];
+            Entry[] entries = new Entry[newSize];
 
-            var count = _count;
+            int count = _count;
             Array.Copy(_entries, entries, count);
 
             // Assign member variables after both arrays allocated to guard against corruption from OOM if second fails
@@ -1075,11 +951,11 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 #if TARGET_64BIT
             _fastModMultiplier = HashHelpers.GetFastModMultiplier((uint)newSize);
 #endif
-            for (var i = 0; i < count; i++)
+            for (int i = 0; i < count; i++)
             {
                 if (entries[i].next >= -1)
                 {
-                    ref var bucket = ref GetBucket(entries[i].hashCode);
+                    ref int bucket = ref GetBucket(entries[i].hashCode);
                     entries[i].next = bucket - 1; // Value in _buckets is 1-based
                     bucket = i + 1;
                 }
@@ -1104,30 +980,20 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 Debug.Assert(_entries != null, "entries should be non-null");
                 uint collisionCount = 0;
 
-                var comparer = _comparer;
+                IEqualityComparer<TKey> comparer = _comparer;
                 Debug.Assert(typeof(TKey).IsValueType || comparer is not null);
-                var hashCode = (uint)(
-                    typeof(TKey).IsValueType && comparer == null
-                        ? key.GetHashCode()
-                        : comparer!.GetHashCode(key)
-                );
+                uint hashCode = (uint)(typeof(TKey).IsValueType && comparer == null ? key.GetHashCode() : comparer!.GetHashCode(key));
 
-                ref var bucket = ref GetBucket(hashCode);
-                var entries = _entries;
-                var last = -1;
-                var i = bucket - 1; // Value in buckets is 1-based
+                ref int bucket = ref GetBucket(hashCode);
+                Entry[] entries = _entries;
+                int last = -1;
+                int i = bucket - 1; // Value in buckets is 1-based
                 while (i >= 0)
                 {
-                    ref var entry = ref entries[i];
+                    ref Entry entry = ref entries[i];
 
-                    if (
-                        entry.hashCode == hashCode
-                        && (
-                            typeof(TKey).IsValueType && comparer == null
-                                ? EqualityComparer<TKey>.Default.Equals(entry.key, key)
-                                : comparer!.Equals(entry.key, key)
-                        )
-                    )
+                    if (entry.hashCode == hashCode &&
+                        (typeof(TKey).IsValueType && comparer == null ? EqualityComparer<TKey>.Default.Equals(entry.key, key) : comparer!.Equals(entry.key, key)))
                     {
                         if (last < 0)
                         {
@@ -1138,10 +1004,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                             entries[last].next = entry.next;
                         }
 
-                        Debug.Assert(
-                            StartOfFreeList - _freeList < 0,
-                            "shouldn't underflow because max hashtable length is MaxPrimeArrayLength = 0x7FEFFFFD(2146435069) _freelist underflow threshold 2147483646"
-                        );
+                        Debug.Assert(StartOfFreeList - _freeList < 0, "shouldn't underflow because max hashtable length is MaxPrimeArrayLength = 0x7FEFFFFD(2146435069) _freelist underflow threshold 2147483646");
                         entry.next = StartOfFreeList - _freeList;
 
                         // we don't clear out entry.key for a few specific reasons;
@@ -1195,30 +1058,20 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 Debug.Assert(_entries != null, "entries should be non-null");
                 uint collisionCount = 0;
 
-                var comparer = _comparer;
+                IEqualityComparer<TKey> comparer = _comparer;
                 Debug.Assert(typeof(TKey).IsValueType || comparer is not null);
-                var hashCode = (uint)(
-                    typeof(TKey).IsValueType && comparer == null
-                        ? key.GetHashCode()
-                        : comparer!.GetHashCode(key)
-                );
+                uint hashCode = (uint)(typeof(TKey).IsValueType && comparer == null ? key.GetHashCode() : comparer!.GetHashCode(key));
 
-                ref var bucket = ref GetBucket(hashCode);
-                var entries = _entries;
-                var last = -1;
-                var i = bucket - 1; // Value in buckets is 1-based
+                ref int bucket = ref GetBucket(hashCode);
+                Entry[] entries = _entries;
+                int last = -1;
+                int i = bucket - 1; // Value in buckets is 1-based
                 while (i >= 0)
                 {
-                    ref var entry = ref entries[i];
+                    ref Entry entry = ref entries[i];
 
-                    if (
-                        entry.hashCode == hashCode
-                        && (
-                            typeof(TKey).IsValueType && comparer == null
-                                ? EqualityComparer<TKey>.Default.Equals(entry.key, key)
-                                : comparer!.Equals(entry.key, key)
-                        )
-                    )
+                    if (entry.hashCode == hashCode &&
+                        (typeof(TKey).IsValueType && comparer == null ? EqualityComparer<TKey>.Default.Equals(entry.key, key) : comparer!.Equals(entry.key, key)))
                     {
                         if (last < 0)
                         {
@@ -1231,10 +1084,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
                         value = entry.value;
 
-                        Debug.Assert(
-                            StartOfFreeList - _freeList < 0,
-                            "shouldn't underflow because max hashtable length is MaxPrimeArrayLength = 0x7FEFFFFD(2146435069) _freelist underflow threshold 2147483646"
-                        );
+                        Debug.Assert(StartOfFreeList - _freeList < 0, "shouldn't underflow because max hashtable length is MaxPrimeArrayLength = 0x7FEFFFFD(2146435069) _freelist underflow threshold 2147483646");
                         entry.next = StartOfFreeList - _freeList;
 
                         // we don't clear out entry.key for a few specific reasons;
@@ -1270,35 +1120,30 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
             }
 
-            value = default!;
+            value = default;
             return false;
         }
 
-        public bool TryGetValue(TKey key, out TValue value)
+        public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
         {
-            ref var valRef = ref FindValue(key);
+            ref TValue valRef = ref FindValue(key);
             if (!Unsafe.IsNullRef(ref valRef))
             {
                 value = valRef;
                 return true;
             }
 
-            value = default!;
+            value = default;
             return false;
         }
 
         public bool TryAdd(TKey key, TValue value) =>
-            TryInsert(key, value, Insertionbehaviour.None);
+            TryInsert(key, value, InsertionBehavior.None);
 
-        bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly
-        {
-            get { return false; }
-        }
+        bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly => false;
 
-        void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(
-            KeyValuePair<TKey, TValue>[] array,
-            int index
-        ) => CopyTo(array, index);
+        void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int index) =>
+            CopyTo(array, index);
 
         void ICollection.CopyTo(Array array, int index)
         {
@@ -1333,33 +1178,27 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             }
             else if (array is DictionaryEntry[] dictEntryArray)
             {
-                var entries = _entries;
-                for (var i = 0; i < _count; i++)
+                Entry[] entries = _entries;
+                for (int i = 0; i < _count; i++)
                 {
                     if (entries![i].next >= -1)
                     {
-                        dictEntryArray[index++] = new DictionaryEntry(
-                            entries[i].key,
-                            entries[i].value
-                        );
+                        dictEntryArray[index++] = new DictionaryEntry(entries[i].key, entries[i].value);
                     }
                 }
             }
             else
             {
-                var objects = array as object[] ?? throw new ArgumentException(nameof(array));
+                object[] objects = array as object[] ?? throw new ArgumentException(nameof(array));
                 try
                 {
-                    var count = _count;
-                    var entries = _entries;
-                    for (var i = 0; i < count; i++)
+                    int count = _count;
+                    Entry[] entries = _entries;
+                    for (int i = 0; i < count; i++)
                     {
                         if (entries![i].next >= -1)
                         {
-                            objects[index++] = new KeyValuePair<TKey, TValue>(
-                                entries[i].key,
-                                entries[i].value
-                            );
+                            objects[index++] = new KeyValuePair<TKey, TValue>(entries[i].key, entries[i].value);
                         }
                     }
                 }
@@ -1370,8 +1209,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator() =>
-            ((IEnumerable<KeyValuePair<TKey, TValue>>)this).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<KeyValuePair<TKey, TValue>>)this).GetEnumerator();
 
         /// <summary>
         /// Ensures that the dictionary can hold up to 'capacity' entries without any further expansion of its backing storage
@@ -1383,7 +1221,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 throw new ArgumentOutOfRangeException(nameof(capacity));
             }
 
-            var currentCapacity = _entries == null ? 0 : _entries.Length;
+            int currentCapacity = _entries == null ? 0 : _entries.Length;
             if (currentCapacity >= capacity)
             {
                 return currentCapacity;
@@ -1396,7 +1234,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 return Initialize(capacity);
             }
 
-            var newSize = HashHelpers.GetPrime(capacity);
+            int newSize = HashHelpers.GetPrime(capacity);
             Resize(newSize);
             return newSize;
         }
@@ -1430,15 +1268,15 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 throw new ArgumentOutOfRangeException(nameof(capacity));
             }
 
-            var newSize = HashHelpers.GetPrime(capacity);
-            var oldEntries = _entries;
-            var currentCapacity = oldEntries == null ? 0 : oldEntries.Length;
+            int newSize = HashHelpers.GetPrime(capacity);
+            Entry[] oldEntries = _entries;
+            int currentCapacity = oldEntries == null ? 0 : oldEntries.Length;
             if (newSize >= currentCapacity)
             {
                 return;
             }
 
-            var oldCount = _count;
+            int oldCount = _count;
             _version++;
             Initialize(newSize);
 
@@ -1451,16 +1289,16 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
         {
             Debug.Assert(_entries is not null);
 
-            var newEntries = _entries;
-            var newCount = 0;
-            for (var i = 0; i < count; i++)
+            Entry[] newEntries = _entries;
+            int newCount = 0;
+            for (int i = 0; i < count; i++)
             {
-                var hashCode = entries[i].hashCode;
+                uint hashCode = entries[i].hashCode;
                 if (entries[i].next >= -1)
                 {
-                    ref var entry = ref newEntries[newCount];
+                    ref Entry entry = ref newEntries[newCount];
                     entry = entries[i];
-                    ref var bucket = ref GetBucket(hashCode);
+                    ref int bucket = ref GetBucket(hashCode);
                     entry.next = bucket - 1; // Value in _buckets is 1-based
                     bucket = newCount + 1;
                     newCount++;
@@ -1471,43 +1309,25 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             _freeCount = 0;
         }
 
-        bool ICollection.IsSynchronized
-        {
-            get { return false; }
-        }
+        bool ICollection.IsSynchronized => false;
 
-        object ICollection.SyncRoot
-        {
-            get { return this; }
-        }
+        object ICollection.SyncRoot => this;
 
-        bool IDictionary.IsFixedSize
-        {
-            get { return false; }
-        }
+        bool IDictionary.IsFixedSize => false;
 
-        bool IDictionary.IsReadOnly
-        {
-            get { return false; }
-        }
+        bool IDictionary.IsReadOnly => false;
 
-        ICollection IDictionary.Keys
-        {
-            get { return Keys; }
-        }
+        ICollection IDictionary.Keys => Keys;
 
-        ICollection IDictionary.Values
-        {
-            get { return Values; }
-        }
+        ICollection IDictionary.Values => Values;
 
-        object? IDictionary.this[object key]
+        object IDictionary.this[object key]
         {
             get
             {
                 if (IsCompatibleKey(key))
                 {
-                    ref var value = ref FindValue((TKey)key);
+                    ref TValue value = ref FindValue((TKey)key);
                     if (!Unsafe.IsNullRef(ref value))
                     {
                         return value;
@@ -1523,12 +1343,11 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     throw new ArgumentNullException(nameof(key));
                 }
 
-                if (!(default(TValue) == null) && value == null)
-                    throw new ArgumentNullException(nameof(value));
+                if (!(default(TValue) == null) && value == null) throw new ArgumentNullException(nameof(value));
 
                 try
                 {
-                    var tempKey = (TKey)key;
+                    TKey tempKey = (TKey)key;
                     try
                     {
                         this[tempKey] = (TValue)value!;
@@ -1560,12 +1379,11 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             {
                 throw new ArgumentNullException(nameof(key));
             }
-            if (!(default(TValue) == null) && value == null)
-                throw new ArgumentNullException(nameof(value));
+            if (!(default(TValue) == null) && value == null) throw new ArgumentNullException(nameof(value));
 
             try
             {
-                var tempKey = (TKey)key;
+                TKey tempKey = (TKey)key;
 
                 try
                 {
@@ -1592,8 +1410,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             return false;
         }
 
-        IDictionaryEnumerator IDictionary.GetEnumerator() =>
-            new Enumerator(this, Enumerator.DictEntry);
+        IDictionaryEnumerator IDictionary.GetEnumerator() => new Enumerator(this, Enumerator.DictEntry);
 
         void IDictionary.Remove(object key)
         {
@@ -1606,11 +1423,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ref int GetBucket(uint hashCode)
         {
-            var buckets = _buckets!;
+            int[] buckets = _buckets!;
 #if TARGET_64BIT
-            return ref buckets[
-                HashHelpers.FastMod(hashCode, (uint)buckets.Length, _fastModMultiplier)
-            ];
+            return ref buckets[HashHelpers.FastMod(hashCode, (uint)buckets.Length, _fastModMultiplier)];
 #else
             return ref buckets[hashCode % buckets.Length];
 #endif
@@ -1619,14 +1434,13 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
         public struct Entry
         {
             public uint hashCode;
-
             /// <summary>
             /// 0-based index of next entry in chain: -1 means end of chain
             /// also encodes whether this entry _itself_ is part of the free list by changing sign and subtracting 3,
             /// so -2 means end of free list, -3 means index 0 but on free list, -4 means index 1 but on free list, etc.
             /// </summary>
             public int next;
-            public TKey key; // Key of entry
+            public TKey key;     // Key of entry
             public TValue value; // Value of entry
         }
 
@@ -1636,7 +1450,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             private readonly int _version;
             private int _index;
             private KeyValuePair<TKey, TValue> _current;
-            private readonly int _getEnumeratorRetType; // What should Enumerator.Current return?
+            private readonly int _getEnumeratorRetType;  // What should Enumerator.Current return?
 
             internal const int DictEntry = 1;
             internal const int KeyValuePair = 2;
@@ -1650,12 +1464,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 _current = default;
             }
 
-            internal Enumerator(
-                LuaDictionary<TKey, TValue> dictionary,
-                int index,
-                KeyValuePair<TKey, TValue> current,
-                int getEnumeratorRetType
-            )
+            internal Enumerator(LuaDictionary<TKey, TValue> dictionary, int index, KeyValuePair<TKey, TValue> current, int getEnumeratorRetType)
             {
                 _dictionary = dictionary;
                 _version = dictionary._version;
@@ -1675,7 +1484,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 // dictionary.count+1 could be negative if dictionary.count is int.MaxValue
                 while ((uint)_index < (uint)_dictionary._count)
                 {
-                    ref var entry = ref _dictionary._entries![_index++];
+                    ref Entry entry = ref _dictionary._entries![_index++];
 
                     if (entry.next >= -1)
                     {
@@ -1689,14 +1498,11 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 return false;
             }
 
-            public KeyValuePair<TKey, TValue> Current
-            {
-                get { return _current; }
-            }
+            public KeyValuePair<TKey, TValue> Current => _current;
 
             public void Dispose() { }
 
-            object? IEnumerator.Current
+            object IEnumerator.Current
             {
                 get
                 {
@@ -1760,16 +1566,13 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                         throw new InvalidOperationException();
                     }
 
-                    return _current.Value!;
+                    return _current.Value;
                 }
             }
         }
 
         [DebuggerDisplay("Count = {Count}")]
-        public sealed class KeyCollection
-            : ICollection<TKey>,
-                ICollection,
-                IReadOnlyCollection<TKey>
+        public sealed class KeyCollection : ICollection<TKey>, ICollection, IReadOnlyCollection<TKey>
         {
             private readonly LuaDictionary<TKey, TValue> _dictionary;
 
@@ -1802,30 +1605,26 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     throw new ArgumentException(nameof(index));
                 }
 
-                var count = _dictionary._count;
-                var entries = _dictionary._entries;
-                for (var i = 0; i < count; i++)
+                int count = _dictionary._count;
+                Entry[] entries = _dictionary._entries;
+                for (int i = 0; i < count; i++)
                 {
-                    if (entries![i].next >= -1)
-                        array[index++] = entries[i].key;
+                    if (entries![i].next >= -1) array[index++] = entries[i].key;
                 }
             }
 
-            public int Count
-            {
-                get { return _dictionary.Count; }
-            }
+            public int Count => _dictionary.Count;
 
-            bool ICollection<TKey>.IsReadOnly
-            {
-                get { return true; }
-            }
+            bool ICollection<TKey>.IsReadOnly => true;
 
-            void ICollection<TKey>.Add(TKey item) => throw new NotSupportedException();
+            void ICollection<TKey>.Add(TKey item) =>
+                throw new NotSupportedException();
 
-            void ICollection<TKey>.Clear() => throw new NotSupportedException();
+            void ICollection<TKey>.Clear() =>
+                throw new NotSupportedException();
 
-            public bool Contains(TKey item) => _dictionary.ContainsKey(item);
+            public bool Contains(TKey item) =>
+                _dictionary.ContainsKey(item);
 
             bool ICollection<TKey>.Remove(TKey item) => throw new NotSupportedException();
 
@@ -1866,20 +1665,19 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
                 else
                 {
-                    var objects = array as object[];
+                    object[] objects = array as object[];
                     if (objects == null)
                     {
                         throw new ArgumentException(nameof(array));
                     }
 
-                    var count = _dictionary._count;
-                    var entries = _dictionary._entries;
+                    int count = _dictionary._count;
+                    Entry[] entries = _dictionary._entries;
                     try
                     {
-                        for (var i = 0; i < count; i++)
+                        for (int i = 0; i < count; i++)
                         {
-                            if (entries![i].next >= -1)
-                                objects[index++] = entries[i].key;
+                            if (entries![i].next >= -1) objects[index++] = entries[i].key;
                         }
                     }
                     catch (ArrayTypeMismatchException)
@@ -1889,15 +1687,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
             }
 
-            bool ICollection.IsSynchronized
-            {
-                get { return false; }
-            }
+            bool ICollection.IsSynchronized => false;
 
-            object ICollection.SyncRoot
-            {
-                get { return ((ICollection)_dictionary).SyncRoot; }
-            }
+            object ICollection.SyncRoot => ((ICollection)_dictionary).SyncRoot;
 
             public struct Enumerator : IEnumerator<TKey>, IEnumerator
             {
@@ -1914,11 +1706,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     _currentKey = default;
                 }
 
-                internal Enumerator(
-                    LuaDictionary<TKey, TValue> dictionary,
-                    int index,
-                    TKey currentKey
-                )
+                internal Enumerator(LuaDictionary<TKey, TValue> dictionary, int index, TKey currentKey)
                 {
                     _dictionary = dictionary;
                     _version = dictionary._version;
@@ -1937,7 +1725,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
                     while ((uint)_index < (uint)_dictionary._count)
                     {
-                        ref var entry = ref _dictionary._entries![_index++];
+                        ref Entry entry = ref _dictionary._entries![_index++];
 
                         if (entry.next >= -1)
                         {
@@ -1951,12 +1739,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     return false;
                 }
 
-                public TKey Current
-                {
-                    get { return _currentKey!; }
-                }
+                public TKey Current => _currentKey!;
 
-                object? IEnumerator.Current
+                object IEnumerator.Current
                 {
                     get
                     {
@@ -1983,10 +1768,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
         }
 
         [DebuggerDisplay("Count = {Count}")]
-        public sealed class ValueCollection
-            : ICollection<TValue>,
-                ICollection,
-                IReadOnlyCollection<TValue>
+        public sealed class ValueCollection : ICollection<TValue>, ICollection, IReadOnlyCollection<TValue>
         {
             private readonly LuaDictionary<TKey, TValue> _dictionary;
 
@@ -2014,30 +1796,25 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     throw new ArgumentException(nameof(index));
                 }
 
-                var count = _dictionary._count;
-                var entries = _dictionary._entries;
-                for (var i = 0; i < count; i++)
+                int count = _dictionary._count;
+                Entry[] entries = _dictionary._entries;
+                for (int i = 0; i < count; i++)
                 {
-                    if (entries![i].next >= -1)
-                        array[index++] = entries[i].value;
+                    if (entries![i].next >= -1) array[index++] = entries[i].value;
                 }
             }
 
-            public int Count
-            {
-                get { return _dictionary.Count; }
-            }
+            public int Count => _dictionary.Count;
 
-            bool ICollection<TValue>.IsReadOnly
-            {
-                get { return true; }
-            }
+            bool ICollection<TValue>.IsReadOnly => true;
 
-            void ICollection<TValue>.Add(TValue item) => throw new NotSupportedException();
+            void ICollection<TValue>.Add(TValue item) =>
+                throw new NotSupportedException();
 
             bool ICollection<TValue>.Remove(TValue item) => throw new NotSupportedException();
 
-            void ICollection<TValue>.Clear() => throw new NotSupportedException();
+            void ICollection<TValue>.Clear() =>
+                throw new NotSupportedException();
 
             bool ICollection<TValue>.Contains(TValue item) => _dictionary.ContainsValue(item);
 
@@ -2078,20 +1855,19 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
                 else
                 {
-                    var objects = array as object[];
+                    object[] objects = array as object[];
                     if (objects == null)
                     {
                         throw new ArgumentException(nameof(array));
                     }
 
-                    var count = _dictionary._count;
-                    var entries = _dictionary._entries;
+                    int count = _dictionary._count;
+                    Entry[] entries = _dictionary._entries;
                     try
                     {
-                        for (var i = 0; i < count; i++)
+                        for (int i = 0; i < count; i++)
                         {
-                            if (entries![i].next >= -1)
-                                objects[index++] = entries[i].value!;
+                            if (entries![i].next >= -1) objects[index++] = entries[i].value!;
                         }
                     }
                     catch (ArrayTypeMismatchException)
@@ -2101,15 +1877,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
             }
 
-            bool ICollection.IsSynchronized
-            {
-                get { return false; }
-            }
+            bool ICollection.IsSynchronized => false;
 
-            object ICollection.SyncRoot
-            {
-                get { return ((ICollection)_dictionary).SyncRoot; }
-            }
+            object ICollection.SyncRoot => ((ICollection)_dictionary).SyncRoot;
 
             public struct Enumerator : IEnumerator<TValue>, IEnumerator
             {
@@ -2126,11 +1896,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     _currentValue = default;
                 }
 
-                internal Enumerator(
-                    LuaDictionary<TKey, TValue> dictionary,
-                    int index,
-                    TValue currentValue
-                )
+                internal Enumerator(LuaDictionary<TKey, TValue> dictionary, int index, TValue currentValue)
                 {
                     _dictionary = dictionary;
                     _version = dictionary._version;
@@ -2149,7 +1915,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
                     while ((uint)_index < (uint)_dictionary._count)
                     {
-                        ref var entry = ref _dictionary._entries![_index++];
+                        ref Entry entry = ref _dictionary._entries![_index++];
 
                         if (entry.next >= -1)
                         {
@@ -2162,12 +1928,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     return false;
                 }
 
-                public TValue Current
-                {
-                    get { return _currentValue!; }
-                }
+                public TValue Current => _currentValue!;
 
-                object? IEnumerator.Current
+                object IEnumerator.Current
                 {
                     get
                     {

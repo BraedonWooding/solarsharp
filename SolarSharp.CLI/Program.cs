@@ -1,517 +1,214 @@
-using System;
-using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Hosting;
-using System.CommandLine.Parsing;
-using System.IO;
-using System.IO.Abstractions;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using SolarSharp.CLI.Services;
+﻿using System;
+using System.Text;
 using SolarSharp.Interpreter;
-using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.REPL;
+using SolarSharp.Commands;
+using SolarSharp.Commands.Implementations;
 
-namespace SolarSharp.CLI
+namespace SolarSharp
 {
-    /// <summary>
-    /// Entry point for the SolarSharp CLI application.
-    /// Provides a modern command-line interface using System.CommandLine.
-    /// </summary>
-    public class Program
+    internal class Program
     {
-        /// <summary>
-        /// Main entry point for the application.
-        /// </summary>
-        /// <param name="args">Command-line arguments.</param>
-        /// <returns>Exit code (0 for success, non-zero for failure).</returns>
-        public static async Task<int> Main(string[] args)
+        [STAThread]
+        private static void Main(string[] args)
         {
-            var fileSystem = new FileSystem();
+            CommandManager.Initialize();
 
-            // Support backward compatibility: if first arg is a .lua file, run it
-            if (
-                args.Length > 0
-                && args[0].EndsWith(".lua", StringComparison.OrdinalIgnoreCase)
-                && fileSystem.File.Exists(args[0])
-            )
+            Script.DefaultOptions.ScriptLoader = new ReplInterpreterScriptLoader();
+
+            Script script = new(CoreModules.Preset_Complete);
+
+            script.Globals["makestatic"] = (Func<string, DynValue>)MakeStatic;
+
+            if (CheckArgs(args, new ShellContext(script)))
+                return;
+
+            Banner();
+
+            ReplInterpreter interpreter = new(script)
             {
-                // Transform "solarsharp script.lua [options]" to "solarsharp run script.lua [options]"
-                var newArgs = new string[args.Length + 1];
-                newArgs[0] = "run";
-                Array.Copy(args, 0, newArgs, 1, args.Length);
-                args = newArgs;
-            }
-            // If no args or only options (starting with -), default to REPL
-            else if (args.Length == 0 || (args.Length > 0 && args[0].StartsWith("-")))
-            {
-                // Check if any args are subcommands
-                var subcommands = new[] { "repl", "run", "compile", "hardwire" };
-                var hasSubcommand = args.Any(arg => subcommands.Contains(arg));
-
-                if (!hasSubcommand)
-                {
-                    // Transform to "solarsharp repl [options]"
-                    var newArgs = new string[args.Length + 1];
-                    newArgs[0] = "repl";
-                    Array.Copy(args, 0, newArgs, 1, args.Length);
-                    args = newArgs;
-                }
-            }
-
-            var rootCommand = BuildRootCommand();
-
-            var parser = new CommandLineBuilder(rootCommand)
-                .UseHost(
-                    _ => Host.CreateDefaultBuilder(),
-                    host =>
-                    {
-                        host.ConfigureServices(
-                            (context, services) =>
-                            {
-                                ConfigureServices(services);
-                            }
-                        );
-                    }
-                )
-                .UseDefaults()
-                .Build();
-
-            return await parser.InvokeAsync(args);
-        }
-
-        /// <summary>
-        /// Builds the root command with all subcommands and options.
-        /// </summary>
-        /// <returns>The configured root command.</returns>
-        private static RootCommand BuildRootCommand()
-        {
-            var rootCommand = new RootCommand("SolarSharp - A secure Lua interpreter for .NET")
-            {
-                Name = "solarsharp",
+                HandleDynamicExprs = true,
+                HandleClassicExprsSyntax = true
             };
 
-            // Global options
-            var verbosityOption = new Option<LogLevel>(
-                new[] { "--verbosity", "-v" },
-                getDefaultValue: () => LogLevel.Information,
-                description: "Set the verbosity level"
-            );
 
-            rootCommand.AddGlobalOption(verbosityOption);
-
-            // Add subcommands
-            rootCommand.AddCommand(BuildReplCommand());
-            rootCommand.AddCommand(BuildRunCommand());
-            rootCommand.AddCommand(BuildCompileCommand());
-            rootCommand.AddCommand(BuildHardwireCommand());
-
-            // Default behaviour when no subcommand is specified
-            rootCommand.SetHandler(() => { });
-
-            return rootCommand;
+            while (true)
+            {
+                InterpreterLoop(interpreter, new ShellContext(script));
+            }
         }
 
-        /// <summary>
-        /// Builds the REPL (Read-Eval-Print Loop) command.
-        /// </summary>
-        /// <returns>The configured REPL command.</returns>
-        private static Command BuildReplCommand()
+        private static DynValue MakeStatic(string type)
         {
-            var replCommand = new Command("repl", "Start an interactive Lua REPL session");
+            Type tt = Type.GetType(type);
+            if (tt == null)
+                Console.WriteLine("Type '{0}' not found.", type);
+            else
+                return UserData.CreateStatic(tt);
 
-            var policyOption = new Option<string>(
-                new[] { "--policy", "-p" },
-                getDefaultValue: () => "desktop",
-                description: $"Example policy: {string.Join(", ", Examples.GetAvailablePolicyNames())}"
-            ).FromAmong(Examples.GetAvailablePolicyNames());
-
-            var manifestOption = new Option<FileInfo>(
-                new[] { "--manifest", "-m" },
-                description: "Path to a security manifest file"
-            );
-
-            var timeoutOption = new Option<int?>(
-                new[] { "--timeout", "-t" },
-                description: "Execution timeout in milliseconds (-1 for no timeout)"
-            );
-
-            var memoryOption = new Option<int?>(
-                new[] { "--memory", "-M" },
-                description: "Memory limit in MB"
-            );
-
-            replCommand.AddOption(policyOption);
-            replCommand.AddOption(manifestOption);
-            replCommand.AddOption(timeoutOption);
-            replCommand.AddOption(memoryOption);
-
-            replCommand.SetHandler(async context =>
-            {
-                var host = context.BindingContext.GetService<IHost>();
-                var logger = host.Services.GetRequiredService<ILogger<ReplService>>();
-                var replService = host.Services.GetRequiredService<IReplService>();
-
-                var policyName = context.ParseResult.GetValueForOption(policyOption);
-                var manifestFile = context.ParseResult.GetValueForOption(manifestOption);
-                var timeout = context.ParseResult.GetValueForOption(timeoutOption);
-                var memory = context.ParseResult.GetValueForOption(memoryOption);
-
-                var options = new ReplOptions
-                {
-                    PolicyName = policyName,
-                    ManifestPath = manifestFile?.FullName,
-                    TimeoutMs = timeout,
-                    MemoryMb = memory,
-                };
-
-                await replService.RunAsync(options, context.GetCancellationToken());
-            });
-
-            return replCommand;
+            return DynValue.Nil;
         }
 
-        /// <summary>
-        /// Builds the run command for executing Lua scripts.
-        /// </summary>
-        /// <returns>The configured run command.</returns>
-        private static Command BuildRunCommand()
+        private static void InterpreterLoop(ReplInterpreter interpreter, ShellContext shellContext)
         {
-            var runCommand = new Command("run", "Execute a Lua script file");
+            Console.Write(interpreter.ClassicPrompt + " ");
 
-            var scriptArgument = new Argument<FileInfo>(
-                "script",
-                description: "Path to the Lua script file to execute"
-            );
+            string s = Console.ReadLine();
 
-            var policyOption = new Option<string>(
-                new[] { "--policy", "-p" },
-                getDefaultValue: () => "desktop",
-                description: $"Example policy: {string.Join(", ", Examples.GetAvailablePolicyNames())}"
-            ).FromAmong(Examples.GetAvailablePolicyNames());
-
-            var manifestOption = new Option<FileInfo>(
-                new[] { "--manifest", "-m" },
-                description: "Path to a security manifest file"
-            );
-
-            var argsOption = new Option<string[]>(
-                new[] { "--args", "-a" },
-                description: "Arguments to pass to the script"
-            );
-
-            runCommand.AddArgument(scriptArgument);
-            runCommand.AddOption(policyOption);
-            runCommand.AddOption(manifestOption);
-            runCommand.AddOption(argsOption);
-
-            runCommand.SetHandler(async context =>
+            if (!interpreter.HasPendingCommand && s.StartsWith("!"))
             {
-                var host = context.BindingContext.GetService<IHost>();
-                var scriptService = host.Services.GetRequiredService<IScriptService>();
-                var logger = host.Services.GetRequiredService<ILogger<ScriptService>>();
+                ExecuteCommand(shellContext, s.Substring(1));
+                return;
+            }
 
-                var scriptFile = context.ParseResult.GetValueForArgument(scriptArgument);
-                var policyName = context.ParseResult.GetValueForOption(policyOption);
-                var manifestFile = context.ParseResult.GetValueForOption(manifestOption);
-                var scriptArgs =
-                    context.ParseResult.GetValueForOption(argsOption) ?? Array.Empty<string>();
+            try
+            {
+                DynValue result = interpreter.Evaluate(s);
 
-                try
+                if (result != null && result.Type != DataType.Void)
+                    Console.WriteLine("{0}", result);
+            }
+            catch (InterpreterException ex)
+            {
+                Console.WriteLine("{0}", ex.DecoratedMessage ?? ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("{0}", ex.Message);
+            }
+        }
+
+        private static void Banner()
+        {
+            Console.WriteLine(Script.GetBanner("Console"));
+            Console.WriteLine();
+            Console.WriteLine("Type Lua code to execute it or type !help to see help on commands.\n");
+            Console.WriteLine("Welcome.\n");
+        }
+
+
+        private static bool CheckArgs(string[] args, ShellContext shellContext)
+        {
+            if (args.Length == 0)
+                return false;
+
+            if (args.Length == 1 && args[0].Length > 0 && args[0][0] != '-')
+            {
+                Script script = new();
+                script.DoFile(args[0]);
+            }
+
+            if (args[0] == "-H" || args[0] == "--help" || args[0] == "/?" || args[0] == "-?")
+            {
+                ShowCmdLineHelpBig();
+            }
+            else if (args[0] == "-X")
+            {
+                if (args.Length == 2)
                 {
-                    var result = await scriptService.RunScriptAsync(
-                        scriptFile.FullName,
-                        policyName,
-                        manifestFile?.FullName,
-                        scriptArgs,
-                        context.GetCancellationToken()
-                    );
+                    ExecuteCommand(shellContext, args[1]);
+                }
+                else
+                {
+                    Console.WriteLine("Wrong syntax.");
+                    ShowCmdLineHelp();
+                }
+            }
+            else if (args[0] == "-W")
+            {
+                bool internals = false;
+                string dumpfile = null;
+                string destfile = null;
+                string classname = null;
+                string namespacename = null;
+                bool useVb = false;
+                bool fail = true;
 
-                    if (result.Success)
+                for (int i = 1; i < args.Length; i++)
+                {
+                    if (args[i] == "--internals")
+                        internals = true;
+                    else if (args[i] == "--vb")
+                        useVb = true;
+                    else if (args[i].StartsWith("--class:"))
+                        classname = args[i].Substring("--class:".Length);
+                    else if (args[i].StartsWith("--namespace:"))
+                        namespacename = args[i].Substring("--namespace:".Length);
+                    else if (dumpfile == null)
+                        dumpfile = args[i];
+                    else if (destfile == null)
                     {
-                        if (result.ReturnValue != null)
-                        {
-                            Console.WriteLine(result.ReturnValue);
-                        }
+                        destfile = args[i];
+                        fail = false;
                     }
-                    else
-                    {
-                        logger.LogError("Script execution failed: {Error}", result.ErrorMessage);
-                        context.ExitCode = 1;
-                    }
+                    else fail = true;
                 }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Unexpected error running script");
-                    context.ExitCode = 1;
-                }
-            });
 
-            return runCommand;
+                if (fail)
+                {
+                    Console.WriteLine("Wrong syntax.");
+                    ShowCmdLineHelp();
+                }
+                else
+                {
+                    HardWireCommand.Generate(useVb ? "vb" : "cs", dumpfile, destfile, internals, classname, namespacename);
+                }
+            }
+
+            return true;
         }
 
-        /// <summary>
-        /// Builds the compile command for compiling Lua scripts to bytecode.
-        /// </summary>
-        /// <returns>The configured compile command.</returns>
-        private static Command BuildCompileCommand()
+        private static void ShowCmdLineHelpBig()
         {
-            var compileCommand = new Command("compile", "Compile a Lua script to bytecode");
-
-            var inputArgument = new Argument<FileInfo>(
-                "input",
-                description: "Input Lua script file"
-            );
-
-            var outputOption = new Option<FileInfo>(
-                new[] { "--output", "-o" },
-                description: "Output bytecode file"
-            );
-
-            compileCommand.AddArgument(inputArgument);
-            compileCommand.AddOption(outputOption);
-
-            compileCommand.SetHandler(async context =>
-            {
-                var host = context.BindingContext.GetService<IHost>();
-                var compileService = host.Services.GetRequiredService<ICompileService>();
-                var logger = host.Services.GetRequiredService<ILogger<CompileService>>();
-
-                var inputFile = context.ParseResult.GetValueForArgument(inputArgument);
-                var outputFile = context.ParseResult.GetValueForOption(outputOption);
-
-                if (outputFile == null)
-                {
-                    var fileSystem = host.Services.GetRequiredService<IFileSystem>();
-                    var outputPath = fileSystem.Path.ChangeExtension(inputFile.FullName, ".luac");
-                    outputFile = new FileInfo(outputPath);
-                }
-
-                try
-                {
-                    await compileService.CompileAsync(
-                        inputFile.FullName,
-                        outputFile.FullName,
-                        context.GetCancellationToken()
-                    );
-
-                    logger.LogInformation(
-                        "Successfully compiled {Input} to {Output}",
-                        inputFile.Name,
-                        outputFile.Name
-                    );
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to compile script");
-                    context.ExitCode = 1;
-                }
-            });
-
-            return compileCommand;
+            Console.WriteLine("usage: moonsharp [-H | --help | -X \"command\" | -W <dumpfile> <destfile> [--internals] [--vb] [--class:<name>] [--namespace:<name>] | <script>]");
+            Console.WriteLine();
+            Console.WriteLine("-H : shows this help");
+            Console.WriteLine("-X : executes the specified command");
+            Console.WriteLine("-W : creates hardwire descriptors");
+            Console.WriteLine();
         }
 
-        /// <summary>
-        /// Builds the hardwire command for generating C# code from Lua bytecode.
-        /// </summary>
-        /// <returns>The configured hardwire command.</returns>
-        private static Command BuildHardwireCommand()
+        private static void ShowCmdLineHelp()
         {
-            var hardwireCommand = new Command(
-                "hardwire",
-                "Generate C# code from compiled Lua bytecode"
-            );
-
-            var inputArgument = new Argument<FileInfo>("input", description: "Input bytecode file");
-
-            var outputArgument = new Argument<FileInfo>("output", description: "Output C# file");
-
-            var namespaceOption = new Option<string>(
-                new[] { "--namespace", "-n" },
-                getDefaultValue: () => "SolarSharp.Generated",
-                description: "C# namespace for generated code"
-            );
-
-            var classOption = new Option<string>(
-                new[] { "--class", "-c" },
-                getDefaultValue: () => "GeneratedScript",
-                description: "C# class name for generated code"
-            );
-
-            var languageOption = new Option<string>(
-                new[] { "--language", "-l" },
-                getDefaultValue: () => "cs",
-                description: "Output language: cs (C#) or vb (VB.NET)"
-            ).FromAmong("cs", "vb");
-
-            var internalsOption = new Option<bool>(
-                new[] { "--internals", "-i" },
-                getDefaultValue: () => false,
-                description: "Include internal SolarSharp types"
-            );
-
-            hardwireCommand.AddArgument(inputArgument);
-            hardwireCommand.AddArgument(outputArgument);
-            hardwireCommand.AddOption(namespaceOption);
-            hardwireCommand.AddOption(classOption);
-            hardwireCommand.AddOption(languageOption);
-            hardwireCommand.AddOption(internalsOption);
-
-            hardwireCommand.SetHandler(async context =>
-            {
-                var host = context.BindingContext.GetService<IHost>();
-                var hardwireService = host.Services.GetRequiredService<IHardwireService>();
-                var logger = host.Services.GetRequiredService<ILogger<HardwireService>>();
-
-                var inputFile = context.ParseResult.GetValueForArgument(inputArgument);
-                var outputFile = context.ParseResult.GetValueForArgument(outputArgument);
-                var ns = context.ParseResult.GetValueForOption(namespaceOption);
-                var className = context.ParseResult.GetValueForOption(classOption);
-                var language = context.ParseResult.GetValueForOption(languageOption);
-                var internals = context.ParseResult.GetValueForOption(internalsOption);
-
-                try
-                {
-                    await hardwireService.GenerateAsync(
-                        inputFile.FullName,
-                        outputFile.FullName,
-                        ns,
-                        className,
-                        language,
-                        internals,
-                        context.GetCancellationToken()
-                    );
-
-                    logger.LogInformation(
-                        "Successfully generated {Language} code to {Output}",
-                        language.ToUpperInvariant(),
-                        outputFile.Name
-                    );
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to generate code");
-                    context.ExitCode = 1;
-                }
-            });
-
-            return hardwireCommand;
+            Console.WriteLine("usage: moonsharp [-H | --help | -X \"command\" | -W <dumpfile> <destfile> [--internals] [--vb] | <script>]");
         }
 
-        /// <summary>
-        /// Configures dependency injection services.
-        /// </summary>
-        /// <param name="services">The service collection to configure.</param>
-        private static void ConfigureServices(IServiceCollection services)
+        private static void ExecuteCommand(ShellContext shellContext, string cmdline)
         {
-            // File system abstraction
-            services.AddSingleton<IFileSystem, FileSystem>();
+            StringBuilder cmd = new();
+            StringBuilder args = new();
+            StringBuilder dest = cmd;
 
-            // Core services
-            services.AddSingleton<ISecurityPolicyFactory>(provider => new SecurityPolicyFactory(
-                provider.GetRequiredService<ILogger<SecurityPolicyFactory>>(),
-                provider.GetRequiredService<IFileSystem>()
-            ));
-            services.AddSingleton<IScriptFactory, ScriptFactory>();
-
-            // Command services
-            services.AddTransient<IReplService, ReplService>();
-            services.AddTransient<IScriptService, ScriptService>();
-            services.AddTransient<ICompileService, CompileService>();
-            services.AddTransient<IHardwireService, HardwireService>();
-
-            // Logging
-            services.AddLogging(builder =>
+            for (int i = 0; i < cmdline.Length; i++)
             {
-                builder.AddConsole();
-                builder.SetMinimumLevel(LogLevel.Information);
-            });
+                if (dest == cmd && cmdline[i] == ' ')
+                {
+                    dest = args;
+                    continue;
+                }
+
+                dest.Append(cmdline[i]);
+            }
+
+            string scmd = cmd.ToString().Trim();
+            string sargs = args.ToString().Trim();
+
+            ICommand C = CommandManager.Find(scmd);
+
+            if (C == null)
+                Console.WriteLine("Invalid command '{0}'.", scmd);
+            else
+                C.Execute(shellContext, sargs);
         }
-    }
 
-    /// <summary>
-    /// Options for the REPL service.
-    /// </summary>
-    public class ReplOptions
-    {
-        public string PolicyName { get; set; } = "desktop";
-        public string ManifestPath { get; set; }
-        public int? TimeoutMs { get; set; }
-        public int? MemoryMb { get; set; }
-    }
 
-    /// <summary>
-    /// Service interface for REPL functionality.
-    /// </summary>
-    public interface IReplService
-    {
-        Task RunAsync(ReplOptions options, CancellationToken cancellationToken);
-    }
 
-    /// <summary>
-    /// Service interface for script execution.
-    /// </summary>
-    public interface IScriptService
-    {
-        Task<ScriptResult> RunScriptAsync(
-            string scriptPath,
-            string policyName,
-            string manifestPath,
-            string[] args,
-            CancellationToken cancellationToken
-        );
-    }
 
-    /// <summary>
-    /// Result of script execution.
-    /// </summary>
-    public class ScriptResult
-    {
-        public bool Success { get; set; }
-        public string ReturnValue { get; set; }
-        public string ErrorMessage { get; set; }
-    }
 
-    /// <summary>
-    /// Service interface for script compilation.
-    /// </summary>
-    public interface ICompileService
-    {
-        Task CompileAsync(string inputPath, string outputPath, CancellationToken cancellationToken);
-    }
 
-    /// <summary>
-    /// Service interface for hardwire code generation.
-    /// </summary>
-    public interface IHardwireService
-    {
-        Task GenerateAsync(
-            string inputPath,
-            string outputPath,
-            string namespaceName,
-            string className,
-            string language,
-            bool includeInternals,
-            CancellationToken cancellationToken
-        );
-    }
 
-    /// <summary>
-    /// Factory for creating security policies.
-    /// </summary>
-    public interface ISecurityPolicyFactory
-    {
-        SecurityPolicy Create(string policyName, string manifestPath = null);
-    }
-
-    /// <summary>
-    /// Factory for creating Script instances.
-    /// </summary>
-    public interface IScriptFactory
-    {
-        Script Create(SecurityPolicy policy);
     }
 }

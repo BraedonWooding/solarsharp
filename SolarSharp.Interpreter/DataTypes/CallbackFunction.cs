@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Interop;
 using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
@@ -9,7 +8,7 @@ using SolarSharp.Interpreter.Options;
 namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
-    /// This class wraps a CLR function
+    /// This class wraps a CLR function 
     /// </summary>
     public sealed class CallbackFunction : RefIdObject
     {
@@ -26,21 +25,14 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <value>
         /// The call back.
         /// </value>
-        public Func<ScriptExecutionContext, CallbackArguments, DynValue> ClrCallback
-        {
-            get;
-            private set;
-        }
+        public Func<ScriptExecutionContext, CallbackArguments, DynValue> ClrCallback { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CallbackFunction" /> class.
         /// </summary>
         /// <param name="callBack">The callback function to be called.</param>
         /// <param name="name">The callback name, used in stacktraces, debugger, etc..</param>
-        public CallbackFunction(
-            Func<ScriptExecutionContext, CallbackArguments, DynValue> callBack,
-            string name = null
-        )
+        public CallbackFunction(Func<ScriptExecutionContext, CallbackArguments, DynValue> callBack, string name = null)
         {
             ClrCallback = callBack;
             Name = name;
@@ -53,11 +45,7 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="args">The arguments.</param>
         /// <param name="isMethodCall">if set to <c>true</c> this is a method call.</param>
         /// <returns></returns>
-        public DynValue Invoke(
-            ScriptExecutionContext executionContext,
-            IList<DynValue> args,
-            bool isMethodCall = false
-        )
+        public DynValue Invoke(ScriptExecutionContext executionContext, IList<DynValue> args, bool isMethodCall = false)
         {
             if (isMethodCall)
             {
@@ -84,9 +72,7 @@ namespace SolarSharp.Interpreter.DataTypes
             get { return m_DefaultAccessMode; }
             set
             {
-                if (
-                    value is InteropAccessMode.Default or InteropAccessMode.HideMembers or InteropAccessMode.BackgroundOptimized
-                )
+                if (value == InteropAccessMode.Default || value == InteropAccessMode.HideMembers || value == InteropAccessMode.BackgroundOptimized)
                     throw new ArgumentException("DefaultAccessMode");
 
                 m_DefaultAccessMode = value;
@@ -100,25 +86,19 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="del">The delegate.</param>
         /// <param name="accessMode">The access mode.</param>
         /// <returns></returns>
-        public static CallbackFunction FromDelegate(
-            Script script,
-            Delegate del,
-            InteropAccessMode accessMode = InteropAccessMode.Default
-        )
+        public static CallbackFunction FromDelegate(Script script, Delegate del, InteropAccessMode accessMode = InteropAccessMode.Default)
         {
             if (accessMode == InteropAccessMode.Default)
                 accessMode = m_DefaultAccessMode;
 
 #if NETFX_CORE
-            MethodMemberDescriptor descr = new MethodMemberDescriptor(
-                del.GetMethodInfo(),
-                accessMode
-            );
+			MethodMemberDescriptor descr = new MethodMemberDescriptor(del.GetMethodInfo(), accessMode);
 #else
-            var descr = new MethodMemberDescriptor(del.Method, accessMode);
+            MethodMemberDescriptor descr = new(del.Method, accessMode);
 #endif
             return descr.GetCallbackFunction(script, del.Target);
         }
+
 
         /// <summary>
         /// Creates a CallbackFunction from a MethodInfo relative to a function.
@@ -129,32 +109,24 @@ namespace SolarSharp.Interpreter.DataTypes
         /// <param name="accessMode">The access mode.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">The method is not static.</exception>
-        public static CallbackFunction FromMethodInfo(
-            Script script,
-            MethodInfo mi,
-            object obj = null,
-            InteropAccessMode accessMode = InteropAccessMode.Default
-        )
+        public static CallbackFunction FromMethodInfo(Script script, System.Reflection.MethodInfo mi, object obj = null, InteropAccessMode accessMode = InteropAccessMode.Default)
         {
             if (accessMode == InteropAccessMode.Default)
                 accessMode = m_DefaultAccessMode;
 
-            var descr = new MethodMemberDescriptor(mi, accessMode);
+            MethodMemberDescriptor descr = new(mi, accessMode);
             return descr.GetCallbackFunction(script, obj);
         }
 
         /// <summary>
         /// Checks the callback signature of a method is compatible for callbacks
         /// </summary>
-        public static bool CheckCallbackSignature(MethodInfo mi, bool requirePublicVisibility)
+        public static bool CheckCallbackSignature(System.Reflection.MethodInfo mi, bool requirePublicVisibility)
         {
-            var pi = mi.GetParameters();
+            System.Reflection.ParameterInfo[] pi = mi.GetParameters();
 
-            return pi.Length == 2
-                && pi[0].ParameterType == typeof(ScriptExecutionContext)
-                && pi[1].ParameterType == typeof(CallbackArguments)
-                && mi.ReturnType == typeof(DynValue)
-                && (requirePublicVisibility || mi.IsPublic);
+            return pi.Length == 2 && pi[0].ParameterType == typeof(ScriptExecutionContext)
+                && pi[1].ParameterType == typeof(CallbackArguments) && mi.ReturnType == typeof(DynValue) && (requirePublicVisibility || mi.IsPublic);
         }
     }
 }

@@ -11,17 +11,18 @@ namespace SolarSharp.Interpreter.Execution.VM
     internal sealed partial class Processor
     {
         private const int STACK_SIZE = 131072;
-        private const int RESOURCE_CHECK_INTERVAL = 1000; // Check resources every 1000 instructions
         private readonly ByteCode m_RootChunk;
         private readonly FastStack<DynValue> m_ValueStack;
         private readonly FastStack<CallStackItem> m_ExecutionStack;
         private readonly List<Processor> m_CoroutinesStack;
         private readonly Table m_GlobalTable;
         private readonly Script m_Script;
-        private readonly Processor m_Parent;
+        private readonly Processor m_Parent = null;
+        private CoroutineState m_State;
         private bool m_CanYield = true;
         private int m_SavedInstructionPtr = -1;
         private readonly DebugContext m_Debug;
+
 
         public Processor(Script script, Table globalContext, ByteCode byteCode)
         {
@@ -33,7 +34,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             m_RootChunk = byteCode;
             m_GlobalTable = globalContext;
             m_Script = script;
-            State = CoroutineState.Main;
+            m_State = CoroutineState.Main;
             DynValue.NewCoroutine(new Coroutine(this)); // creates an associated coroutine for the main processor
         }
 
@@ -46,7 +47,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             m_GlobalTable = parentProcessor.m_GlobalTable;
             m_Script = parentProcessor.m_Script;
             m_Parent = parentProcessor;
-            State = CoroutineState.NotStarted;
+            m_State = CoroutineState.NotStarted;
         }
 
         //Takes the value and execution stack from recycleProcessor
@@ -60,40 +61,27 @@ namespace SolarSharp.Interpreter.Execution.VM
             m_GlobalTable = parentProcessor.m_GlobalTable;
             m_Script = parentProcessor.m_Script;
             m_Parent = parentProcessor;
-            State = CoroutineState.NotStarted;
+            m_State = CoroutineState.NotStarted;
         }
 
         public DynValue Call(DynValue function, DynValue[] args)
         {
-            var coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : m_CoroutinesStack;
+            List<Processor> coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : m_CoroutinesStack;
 
             if (coroutinesStack.Count > 0 && coroutinesStack[^1] != this)
                 return coroutinesStack[^1].Call(function, args);
 
             EnterProcessor();
 
-            // Start resource monitoring if we have a resource controller
-            var resourceController = m_Script.ResourceController();
-            if (resourceController != null && m_Parent == null) // Only start for main processor
-            {
-                resourceController.StartExecution();
-            }
-
             try
             {
-                var stopwatch = m_Script.PerformanceStats.StartStopwatch(
-                    PerformanceCounter.Execution
-                );
+                var stopwatch = m_Script.PerformanceStats.StartStopwatch(PerformanceCounter.Execution);
 
                 m_CanYield = false;
 
                 try
                 {
-                    var entrypoint = PushClrToScriptStackFrame(
-                        CallStackItemFlags.CallEntryPoint,
-                        function,
-                        args
-                    );
+                    int entrypoint = PushClrToScriptStackFrame(CallStackItemFlags.CallEntryPoint, function, args);
                     return Processing_Loop(entrypoint);
                 }
                 finally
@@ -101,12 +89,6 @@ namespace SolarSharp.Interpreter.Execution.VM
                     m_CanYield = true;
 
                     stopwatch?.Dispose();
-
-                    // Stop resource monitoring
-                    if (resourceController != null && m_Parent == null)
-                    {
-                        resourceController.StopExecution();
-                    }
                 }
             }
             finally
@@ -117,41 +99,35 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         // pushes all what's required to perform a clr-to-script function call. function can be null if it's already
         // at vstack top.
-        private int PushClrToScriptStackFrame(
-            CallStackItemFlags flags,
-            DynValue function,
-            DynValue[] args
-        )
+        private int PushClrToScriptStackFrame(CallStackItemFlags flags, DynValue function, DynValue[] args)
         {
             if (function == null)
                 function = m_ValueStack.Peek();
             else
-                m_ValueStack.Push(function); // func val
+                m_ValueStack.Push(function);  // func val
 
             args = Internal_AdjustTuple(args);
 
-            for (var i = 0; i < args.Length; i++)
+            for (int i = 0; i < args.Length; i++)
                 m_ValueStack.Push(args[i]);
 
-            m_ValueStack.Push(DynValue.NewNumber(args.Length)); // func args count
+            m_ValueStack.Push(DynValue.NewNumber(args.Length));  // func args count
 
-            m_ExecutionStack.Push(
-                new CallStackItem
-                {
-                    BasePointer = m_ValueStack.Count,
-                    Debug_EntryPoint = function.Function.EntryPointByteCodeLocation,
-                    ReturnAddress = -1,
-                    ClosureScope = function.Function.ClosureContext,
-                    CallingSourceRef = SourceRef.GetClrLocation(),
-                    Flags = flags,
-                }
-            );
+            m_ExecutionStack.Push(new CallStackItem()
+            {
+                BasePointer = m_ValueStack.Count,
+                Debug_EntryPoint = function.Function.EntryPointByteCodeLocation,
+                ReturnAddress = -1,
+                ClosureScope = function.Function.ClosureContext,
+                CallingSourceRef = SourceRef.GetClrLocation(),
+                Flags = flags
+            });
 
             return function.Function.EntryPointByteCodeLocation;
         }
 
         private int m_OwningThreadID = -1;
-        private int m_ExecutionNesting;
+        private int m_ExecutionNesting = 0;
 
         private void LeaveProcessor()
         {
@@ -160,10 +136,8 @@ namespace SolarSharp.Interpreter.Execution.VM
 
             m_Parent?.m_CoroutinesStack.RemoveAt(m_Parent.m_CoroutinesStack.Count - 1);
 
-            if (
-                m_ExecutionNesting == 0
-                && m_Debug is { DebuggerEnabled: true, DebuggerAttached: not null }
-            )
+            if (m_ExecutionNesting == 0 && m_Debug != null && m_Debug.DebuggerEnabled
+                && m_Debug.DebuggerAttached != null)
             {
                 m_Debug.DebuggerAttached.SignalExecutionEnded();
             }
@@ -172,7 +146,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         private int GetThreadId()
         {
 #if ENABLE_DOTNET || NETFX_CORE
-            return 1;
+				return 1;
 #else
             return Thread.CurrentThread.ManagedThreadId;
 #endif
@@ -180,16 +154,11 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         private void EnterProcessor()
         {
-            var threadID = GetThreadId();
+            int threadID = GetThreadId();
 
-            if (
-                m_OwningThreadID >= 0
-                && m_OwningThreadID != threadID
-                && m_Script.Options.CheckThreadAccess
-            )
+            if (m_OwningThreadID >= 0 && m_OwningThreadID != threadID && m_Script.Options.CheckThreadAccess)
             {
-                var msg =
-                    $"Cannot enter the same MoonSharp processor from two different threads : {m_OwningThreadID} and {threadID}";
+                string msg = string.Format("Cannot enter the same MoonSharp processor from two different threads : {0} and {1}", m_OwningThreadID, threadID);
                 throw new InvalidOperationException(msg);
             }
 
@@ -203,25 +172,6 @@ namespace SolarSharp.Interpreter.Execution.VM
         internal SourceRef GetCoroutineSuspendedLocation()
         {
             return GetCurrentSourceRef(m_SavedInstructionPtr);
-        }
-
-        private void CheckResourceLimits()
-        {
-            var resourceController = m_Script.ResourceController();
-            // Check all resource limits
-            resourceController?.CheckResourceLimits();
-        }
-
-        internal void IncrementCallDepth()
-        {
-            var resourceController = m_Script.ResourceController();
-            resourceController?.EnterFunction();
-        }
-
-        internal void DecrementCallDepth()
-        {
-            var resourceController = m_Script.ResourceController();
-            resourceController?.ExitFunction();
         }
     }
 }

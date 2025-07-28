@@ -1,7 +1,6 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
-using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
 {
@@ -10,6 +9,8 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
     /// </summary>
     public class DynValueMemberDescriptor : IMemberDescriptor, IWireableDescriptor
     {
+        private readonly DynValue m_Value;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DynValueMemberDescriptor" /> class.
         /// </summary>
@@ -17,11 +18,11 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="serializedTableValue">A string containing a table whose first member is the dynvalue to be deserialized (convoluted...).</param>
         protected DynValueMemberDescriptor(string name, string serializedTableValue)
         {
-            var s = new Script(Examples.IsolatedBasePolicySet);
+            Script s = new();
             var exp = s.CreateDynamicExpression(serializedTableValue);
-            var val = exp.Evaluate();
+            DynValue val = exp.Evaluate(null);
 
-            Value = val.Table.Get(1);
+            m_Value = val.Table.Get(1);
             Name = name;
             MemberAccess = MemberDescriptorAccess.CanRead;
         }
@@ -33,9 +34,10 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         protected DynValueMemberDescriptor(string name)
         {
             MemberAccess = MemberDescriptorAccess.CanRead;
-            Value = null;
+            m_Value = null;
             Name = name;
         }
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DynValueMemberDescriptor"/> class.
@@ -44,37 +46,38 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="value">The value.</param>
         public DynValueMemberDescriptor(string name, DynValue value)
         {
-            Value = value;
+            m_Value = value;
             Name = name;
 
-            MemberAccess =
-                value.Type == DataType.ClrFunction
-                    ? MemberDescriptorAccess.CanRead | MemberDescriptorAccess.CanExecute
-                    : MemberDescriptorAccess.CanRead;
+            MemberAccess = value.Type == DataType.ClrFunction
+                ? MemberDescriptorAccess.CanRead | MemberDescriptorAccess.CanExecute
+                : MemberDescriptorAccess.CanRead;
         }
 
         /// <summary>
         /// Gets a value indicating whether the described member is static.
         /// </summary>
-        public bool IsStatic
-        {
-            get { return true; }
-        }
-
+        public bool IsStatic { get { return true; } }
         /// <summary>
         /// Gets the name of the member
         /// </summary>
         public string Name { get; private set; }
-
         /// <summary>
         /// Gets the types of access supported by this member
         /// </summary>
         public MemberDescriptorAccess MemberAccess { get; private set; }
 
+
         /// <summary>
         /// Gets the value wrapped by this descriptor
         /// </summary>
-        public virtual DynValue Value { get; }
+        public virtual DynValue Value
+        {
+            get
+            {
+                return m_Value;
+            }
+        }
 
         /// <summary>
         /// Gets the value of this member as a <see cref="DynValue" /> to be exposed to scripts.
@@ -122,39 +125,30 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
                     t.Set("value", Value);
                     break;
                 case DataType.Table:
-                    // Since OwnerScript was removed, all tables are now considered "prime"
-                    t.Set("value", Value);
+                    if (Value.Table.OwnerScript == null)
+                    {
+                        t.Set("value", Value);
+                    }
+                    else
+                    {
+                        t.Set("error", DynValue.NewString("Wiring of non-prime table value members not supported."));
+                    }
+
                     break;
                 case DataType.UserData:
                     if (Value.UserData.Object == null)
                     {
                         t.Set("type", DynValue.NewString("userdata"));
-                        t.Set(
-                            "staticType",
-                            DynValue.NewString(Value.UserData.Descriptor.Type.FullName)
-                        );
-                        t.Set(
-                            "visibility",
-                            DynValue.NewString(Value.UserData.Descriptor.Type.GetClrVisibility())
-                        );
+                        t.Set("staticType", DynValue.NewString(Value.UserData.Descriptor.Type.FullName));
+                        t.Set("visibility", DynValue.NewString(Value.UserData.Descriptor.Type.GetClrVisibility()));
                     }
                     else
                     {
-                        t.Set(
-                            "error",
-                            DynValue.NewString(
-                                "Wiring of non-static userdata value members not supported."
-                            )
-                        );
+                        t.Set("error", DynValue.NewString("Wiring of non-static userdata value members not supported."));
                     }
                     break;
                 default:
-                    t.Set(
-                        "error",
-                        DynValue.NewString(
-                            $"Wiring of '{Value.Type.ToErrorTypeString()}' value members not supported."
-                        )
-                    );
+                    t.Set("error", DynValue.NewString(string.Format("Wiring of '{0}' value members not supported.", Value.Type.ToErrorTypeString())));
                     break;
             }
         }

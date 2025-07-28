@@ -1,6 +1,6 @@
-﻿using System;
-using SolarSharp.Interpreter.DataTypes;
+﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Execution;
+using System;
 
 namespace SolarSharp.Interpreter.Interop.BasicDescriptors
 {
@@ -19,12 +19,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// <param name="context">The context.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        DynValue Execute(
-            Script script,
-            object obj,
-            ScriptExecutionContext context,
-            CallbackArguments args
-        );
+        DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args);
 
         /// <summary>
         /// Gets the type which this extension method extends, null if this is not an extension method.
@@ -41,7 +36,6 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// null is returned.
         /// </summary>
         Type VarArgsArrayType { get; }
-
         /// <summary>
         /// Gets a value indicating the type of the elements of the ParamArray parameter of a var-args function. If the function is not var-args,
         /// null is returned.
@@ -53,4 +47,5 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// </summary>
         string SortDiscriminant { get; }
     }
+
 }

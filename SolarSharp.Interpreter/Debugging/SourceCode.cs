@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -7,28 +8,24 @@ namespace SolarSharp.Interpreter.Debugging
     /// <summary>
     /// Class representing the source code of a given script
     /// </summary>
-    public class SourceCode
+    public class SourceCode : IScriptPrivateResource
     {
         /// <summary>
         /// Gets the name of the source code
         /// </summary>
         public string Name { get; private set; }
-
         /// <summary>
         /// Gets the source code as a string
         /// </summary>
         public string Code { get; private set; }
-
         /// <summary>
         /// Gets the source code lines.
         /// </summary>
         public string[] Lines { get; private set; }
-
         /// <summary>
         /// Gets the script owning this resource.
         /// </summary>
         public Script OwnerScript { get; private set; }
-
         /// <summary>
         /// Gets the source identifier inside a script
         /// </summary>
@@ -40,12 +37,12 @@ namespace SolarSharp.Interpreter.Debugging
         {
             Refs = new List<SourceRef>();
 
-            var lines = new List<string>();
+            List<string> lines = new();
 
             Name = name;
             Code = code;
 
-            lines.Add($"-- Begin of chunk : {name} ");
+            lines.Add(string.Format("-- Begin of chunk : {0} ", name));
 
             lines.AddRange(Code.Split('\n'));
 
@@ -64,23 +61,23 @@ namespace SolarSharp.Interpreter.Debugging
         {
             if (sourceCodeRef.FromLine == sourceCodeRef.ToLine)
             {
-                var from = AdjustStrIndex(Lines[sourceCodeRef.FromLine], sourceCodeRef.FromChar);
-                var to = AdjustStrIndex(Lines[sourceCodeRef.FromLine], sourceCodeRef.ToChar);
+                int from = AdjustStrIndex(Lines[sourceCodeRef.FromLine], sourceCodeRef.FromChar);
+                int to = AdjustStrIndex(Lines[sourceCodeRef.FromLine], sourceCodeRef.ToChar);
                 return Lines[sourceCodeRef.FromLine][from..to];
             }
 
-            var sb = new StringBuilder();
+            StringBuilder sb = new();
 
-            for (var i = sourceCodeRef.FromLine; i <= sourceCodeRef.ToLine; i++)
+            for (int i = sourceCodeRef.FromLine; i <= sourceCodeRef.ToLine; i++)
             {
                 if (i == sourceCodeRef.FromLine)
                 {
-                    var from = AdjustStrIndex(Lines[i], sourceCodeRef.FromChar);
+                    int from = AdjustStrIndex(Lines[i], sourceCodeRef.FromChar);
                     sb.Append(Lines[i][from..]);
                 }
                 else if (i == sourceCodeRef.ToLine)
                 {
-                    var to = AdjustStrIndex(Lines[i], sourceCodeRef.ToChar);
+                    int to = AdjustStrIndex(Lines[i], sourceCodeRef.ToChar);
                     sb.Append(Lines[i][..(to + 1)]);
                 }
                 else

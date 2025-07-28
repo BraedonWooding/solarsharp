@@ -1,14 +1,11 @@
-﻿using NUnit.Framework;
-using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Errors;
+﻿using SolarSharp.Interpreter.DataTypes;
+using NUnit.Framework;
 using SolarSharp.Interpreter.Interop.Attributes;
-using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Errors;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [NonParallelizable] // Uses global UserData registration
-    [Category("VM.Integration")]
     public class UserDataNestedTypesTests
     {
         public class SomeType
@@ -47,6 +44,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     return "Ciao from SomeNestedTypePrivate2";
                 }
             }
+
         }
 
         public struct VSomeType
@@ -75,32 +73,34 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     return "Ciao from SomeNestedTypePrivate2";
                 }
             }
+
         }
 
         [Test]
         public void Interop_NestedTypes_Public_Enum()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
 
             UserData.RegisterType<SomeType>();
 
             S.Globals.Set("o", UserData.CreateStatic<SomeType>());
 
-            var res = S.DoString("return o:Get()");
+            DynValue res = S.DoString("return o:Get()");
 
             Assert.That(res.Type, Is.EqualTo(DataType.UserData));
         }
 
+
         [Test]
         public void Interop_NestedTypes_Public_Ref()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
 
             UserData.RegisterType<SomeType>();
 
             S.Globals.Set("o", UserData.CreateStatic<SomeType>());
 
-            var res = S.DoString("return o.SomeNestedType:Get()");
+            DynValue res = S.DoString("return o.SomeNestedType:Get()");
 
             Assert.Multiple(() =>
             {
@@ -109,16 +109,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
+
         [Test]
         public void Interop_NestedTypes_Private_Ref()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
 
             UserData.RegisterType<SomeType>();
 
             S.Globals.Set("o", UserData.CreateStatic<SomeType>());
 
-            var res = S.DoString("return o.SomeNestedTypePrivate:Get()");
+            DynValue res = S.DoString("return o.SomeNestedTypePrivate:Get()");
 
             Assert.Multiple(() =>
             {
@@ -130,27 +131,25 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_NestedTypes_Private_Ref_2()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
 
             UserData.RegisterType<SomeType>();
 
             S.Globals.Set("o", UserData.CreateStatic<SomeType>());
 
-            Assert.Throws<ScriptRuntimeException>(() =>
-                S.DoString("return o.SomeNestedTypePrivate2:Get()")
-            );
+            Assert.Throws<ScriptRuntimeException>(() => S.DoString("return o.SomeNestedTypePrivate2:Get()"));
         }
 
         [Test]
         public void Interop_NestedTypes_Public_Val()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
 
             UserData.RegisterType<VSomeType>();
 
             S.Globals.Set("o", UserData.CreateStatic<VSomeType>());
 
-            var res = S.DoString("return o.SomeNestedType:Get()");
+            DynValue res = S.DoString("return o.SomeNestedType:Get()");
 
             Assert.Multiple(() =>
             {
@@ -162,13 +161,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_NestedTypes_Private_Val()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
 
             UserData.RegisterType<VSomeType>();
 
             S.Globals.Set("o", UserData.CreateStatic<VSomeType>());
 
-            var res = S.DoString("return o.SomeNestedTypePrivate:Get()");
+            DynValue res = S.DoString("return o.SomeNestedTypePrivate:Get()");
 
             Assert.Multiple(() =>
             {
@@ -180,15 +179,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_NestedTypes_Private_Val_2()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
 
             UserData.RegisterType<VSomeType>();
 
             S.Globals.Set("o", UserData.CreateStatic<VSomeType>());
 
-            Assert.Throws<ScriptRuntimeException>(() =>
-                S.DoString("return o.SomeNestedTypePrivate2:Get()")
-            );
+            Assert.Throws<ScriptRuntimeException>(() => S.DoString("return o.SomeNestedTypePrivate2:Get()"));
         }
     }
 }

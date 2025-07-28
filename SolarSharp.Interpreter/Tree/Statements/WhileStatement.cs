@@ -11,13 +11,12 @@ namespace SolarSharp.Interpreter.Tree.Statements
         private readonly Expression m_Condition;
         private readonly Statement m_Block;
         private readonly RuntimeScopeBlock m_StackFrame;
-        private readonly SourceRef m_Start,
-            m_End;
+        private readonly SourceRef m_Start, m_End;
 
         public WhileStatement(ScriptLoadingContext lcontext)
             : base(lcontext)
         {
-            var whileTk = CheckTokenType(lcontext, TokenType.While);
+            Token whileTk = CheckTokenType(lcontext, TokenType.While);
 
             m_Condition = Expression.Expr(lcontext);
 
@@ -36,15 +35,19 @@ namespace SolarSharp.Interpreter.Tree.Statements
             lcontext.Source.Refs.Add(m_End);
         }
 
+
         public override void Compile(ByteCode bc)
         {
-            var L = new Loop { Scope = m_StackFrame };
+            Loop L = new()
+            {
+                Scope = m_StackFrame
+            };
 
             bc.LoopTracker.Loops.Push(L);
 
             bc.PushSourceRef(m_Start);
 
-            var start = bc.GetJumpPointForNextInstruction();
+            int start = bc.GetJumpPointForNextInstruction();
 
             m_Condition.Compile(bc);
             var jumpend = bc.Emit_Jump(OpCode.Jf, -1);
@@ -62,14 +65,15 @@ namespace SolarSharp.Interpreter.Tree.Statements
 
             bc.LoopTracker.Loops.Pop();
 
-            var exitpoint = bc.GetJumpPointForNextInstruction();
+            int exitpoint = bc.GetJumpPointForNextInstruction();
 
-            foreach (var i in L.BreakJumps)
+            foreach (Instruction i in L.BreakJumps)
                 i.NumVal = exitpoint;
 
             jumpend.NumVal = exitpoint;
 
             bc.PopSourceRef();
         }
+
     }
 }

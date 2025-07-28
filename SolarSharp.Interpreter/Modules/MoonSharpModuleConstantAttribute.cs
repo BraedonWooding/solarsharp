@@ -4,10 +4,10 @@ namespace SolarSharp.Interpreter.Modules
 {
     /// <summary>
     /// In a module type, mark fields with this attribute to have them exposed as a module constant.
-    ///
-    /// See <see cref="SolarSharpModuleAttribute"/> for more information about modules.
+    /// 
+    /// See <see cref="MoonSharpModuleAttribute"/> for more information about modules.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Field)]
+    [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
     public sealed class MoonSharpModuleConstantAttribute : Attribute
     {
         /// <summary>

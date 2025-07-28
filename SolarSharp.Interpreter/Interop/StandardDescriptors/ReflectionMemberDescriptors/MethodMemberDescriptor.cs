@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -17,30 +18,26 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
     /// <summary>
     /// Class providing easier marshalling of CLR functions
     /// </summary>
-    public class MethodMemberDescriptor
-        : FunctionMemberDescriptorBase,
-            IOptimizableDescriptor,
-            IWireableDescriptor
+    public class MethodMemberDescriptor : FunctionMemberDescriptorBase, IOptimizableDescriptor, IWireableDescriptor
     {
         /// <summary>
         /// Gets the method information (can be a MethodInfo or ConstructorInfo)
         /// </summary>
         public MethodBase MethodInfo { get; private set; }
-
         /// <summary>
         /// Gets the access mode used for interop
         /// </summary>
         public InteropAccessMode AccessMode { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether the described method is a constructor
         /// </summary>
         public bool IsConstructor { get; private set; }
 
-        private Func<object, object[], object> m_OptimizedFunc;
-        private Action<object, object[]> m_OptimizedAction;
-        private readonly bool m_IsAction;
-        private readonly bool m_IsArrayCtor;
+
+        private Func<object, object[], object> m_OptimizedFunc = null;
+        private Action<object, object[]> m_OptimizedAction = null;
+        private readonly bool m_IsAction = false;
+        private readonly bool m_IsArrayCtor = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MethodMemberDescriptor"/> class.
@@ -48,45 +45,38 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="methodBase">The MethodBase (MethodInfo or ConstructorInfo) got through reflection.</param>
         /// <param name="accessMode">The interop access mode.</param>
         /// <exception cref="ArgumentException">Invalid accessMode</exception>
-        public MethodMemberDescriptor(
-            MethodBase methodBase,
-            InteropAccessMode accessMode = InteropAccessMode.Default
-        )
+        public MethodMemberDescriptor(MethodBase methodBase, InteropAccessMode accessMode = InteropAccessMode.Default)
         {
             CheckMethodIsCompatible(methodBase, true);
 
             IsConstructor = methodBase is ConstructorInfo;
             MethodInfo = methodBase;
 
-            var isStatic = methodBase.IsStatic || IsConstructor;
+            bool isStatic = methodBase.IsStatic || IsConstructor;
 
-            m_IsAction = IsConstructor
-                ? false
-                : ((MethodInfo)methodBase).ReturnType == typeof(void);
+            m_IsAction = IsConstructor ? false : ((MethodInfo)methodBase).ReturnType == typeof(void);
 
-            var reflectionParams = methodBase.GetParameters();
+            ParameterInfo[] reflectionParams = methodBase.GetParameters();
             ParameterDescriptor[] parameters;
 
             if (MethodInfo.DeclaringType.IsArray)
             {
                 m_IsArrayCtor = true;
 
-                var rank = MethodInfo.DeclaringType.GetArrayRank();
+                int rank = MethodInfo.DeclaringType.GetArrayRank();
 
                 parameters = new ParameterDescriptor[rank];
 
-                for (var i = 0; i < rank; i++)
-                    parameters[i] = new ParameterDescriptor("idx" + i, typeof(int));
+                for (int i = 0; i < rank; i++)
+                    parameters[i] = new ParameterDescriptor("idx" + i.ToString(), typeof(int));
             }
             else
             {
                 parameters = reflectionParams.Select(pi => new ParameterDescriptor(pi)).ToArray();
             }
 
-            var isExtensionMethod =
-                methodBase.IsStatic
-                && parameters.Length > 0
-                && methodBase.GetCustomAttributes(typeof(ExtensionAttribute), false).Any();
+
+            bool isExtensionMethod = methodBase.IsStatic && parameters.Length > 0 && methodBase.GetCustomAttributes(typeof(ExtensionAttribute), false).Any();
 
             Initialize(methodBase.Name, isStatic, parameters, isExtensionMethod);
 
@@ -110,7 +100,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         }
 
         /// <summary>
-        /// Tries to create a new MethodMemberDescriptor, returning
+        /// Tries to create a new MethodMemberDescriptor, returning 
         /// <c>null</c> in case the method is not
         /// visible to script code.
         /// </summary>
@@ -120,18 +110,12 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <returns>
         /// A new MethodMemberDescriptor or null.
         /// </returns>
-        public static MethodMemberDescriptor TryCreateIfVisible(
-            MethodBase methodBase,
-            InteropAccessMode accessMode,
-            bool forceVisibility = false
-        )
+        public static MethodMemberDescriptor TryCreateIfVisible(MethodBase methodBase, InteropAccessMode accessMode, bool forceVisibility = false)
         {
             if (!CheckMethodIsCompatible(methodBase, false))
                 return null;
 
-            if (
-                forceVisibility || (methodBase.GetVisibilityFromAttributes() ?? methodBase.IsPublic)
-            )
+            if (forceVisibility || (methodBase.GetVisibilityFromAttributes() ?? methodBase.IsPublic))
                 return new MethodMemberDescriptor(methodBase, accessMode);
 
             return null;
@@ -153,37 +137,29 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         {
             if (methodBase.ContainsGenericParameters)
             {
-                if (throwException)
-                    throw new ArgumentException(
-                        "Method cannot contain unresolved generic parameters"
-                    );
+                if (throwException) throw new ArgumentException("Method cannot contain unresolved generic parameters");
                 return false;
             }
 
             if (methodBase.GetParameters().Any(p => p.ParameterType.IsPointer))
             {
-                if (throwException)
-                    throw new ArgumentException("Method cannot contain pointer parameters");
+                if (throwException) throw new ArgumentException("Method cannot contain pointer parameters");
                 return false;
             }
 
-            var mi = methodBase as MethodInfo;
+            MethodInfo mi = methodBase as MethodInfo;
 
             if (mi != null)
             {
                 if (mi.ReturnType.IsPointer)
                 {
-                    if (throwException)
-                        throw new ArgumentException("Method cannot have a pointer return type");
+                    if (throwException) throw new ArgumentException("Method cannot have a pointer return type");
                     return false;
                 }
 
                 if (Framework.Do.IsGenericTypeDefinition(mi.ReturnType))
                 {
-                    if (throwException)
-                        throw new ArgumentException(
-                            "Method cannot have an unresolved generic return type"
-                        );
+                    if (throwException) throw new ArgumentException("Method cannot have an unresolved generic return type");
                     return false;
                 }
             }
@@ -199,23 +175,15 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="context">The context.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        public override DynValue Execute(
-            Script script,
-            object obj,
-            ScriptExecutionContext context,
-            CallbackArguments args
-        )
+        public override DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
         {
             this.CheckAccess(MemberDescriptorAccess.CanExecute, obj);
 
-            if (
-                AccessMode == InteropAccessMode.LazyOptimized
-                && m_OptimizedFunc == null
-                && m_OptimizedAction == null
-            )
+            if (AccessMode == InteropAccessMode.LazyOptimized &&
+                m_OptimizedFunc == null && m_OptimizedAction == null)
                 ((IOptimizableDescriptor)this).Optimize();
 
-            var pars = base.BuildArgumentList(script, obj, context, args, out var outParams);
+            object[] pars = base.BuildArgumentList(script, obj, context, args, out List<int> outParams);
             object retv = null;
 
             if (m_OptimizedFunc != null)
@@ -234,9 +202,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             }
             else
             {
-                retv = IsConstructor
-                    ? ((ConstructorInfo)MethodInfo).Invoke(pars)
-                    : MethodInfo.Invoke(obj, pars);
+                retv = IsConstructor ? ((ConstructorInfo)MethodInfo).Invoke(pars) : MethodInfo.Invoke(obj, pars);
             }
 
             return BuildReturnValue(script, outParams, pars, retv);
@@ -248,39 +214,38 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <exception cref="InternalErrorException">Out/Ref params cannot be precompiled.</exception>
         void IOptimizableDescriptor.Optimize()
         {
-            var parameters = Parameters;
+            ParameterDescriptor[] parameters = Parameters;
 
             if (AccessMode == InteropAccessMode.Reflection)
                 return;
 
-            var methodInfo = MethodInfo as MethodInfo;
+            MethodInfo methodInfo = MethodInfo as MethodInfo;
 
             if (methodInfo == null)
                 return;
 
-            using (
-                PerformanceStatistics.StartGlobalStopwatch(PerformanceCounter.AdaptersCompilation)
-            )
+            using (PerformanceStatistics.StartGlobalStopwatch(PerformanceCounter.AdaptersCompilation))
             {
                 var ep = Expression.Parameter(typeof(object[]), "pars");
                 var objinst = Expression.Parameter(typeof(object), "instance");
                 var inst = Expression.Convert(objinst, MethodInfo.DeclaringType);
 
-                var args = new Expression[parameters.Length];
+                Expression[] args = new Expression[parameters.Length];
 
-                for (var i = 0; i < parameters.Length; i++)
+                for (int i = 0; i < parameters.Length; i++)
                 {
                     if (parameters[i].OriginalType.IsByRef)
                     {
                         throw new InternalErrorException("Out/Ref params cannot be precompiled.");
                     }
-                    var x = Expression.ArrayIndex(ep, Expression.Constant(i));
-                    args[i] = Expression.Convert(x, parameters[i].OriginalType);
+                    else
+                    {
+                        var x = Expression.ArrayIndex(ep, Expression.Constant(i));
+                        args[i] = Expression.Convert(x, parameters[i].OriginalType);
+                    }
                 }
 
-                var fn = IsStatic
-                    ? Expression.Call(methodInfo, args)
-                    : (Expression)Expression.Call(inst, methodInfo, args);
+                Expression fn = IsStatic ? Expression.Call(methodInfo, args) : (Expression)Expression.Call(inst, methodInfo, args);
                 if (m_IsAction)
                 {
                     var lambda = Expression.Lambda<Action<object, object[]>>(fn, objinst, ep);
@@ -289,15 +254,12 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 else
                 {
                     var fnc = Expression.Convert(fn, typeof(object));
-                    var lambda = Expression.Lambda<Func<object, object[], object>>(
-                        fnc,
-                        objinst,
-                        ep
-                    );
+                    var lambda = Expression.Lambda<Func<object, object[], object>>(fnc, objinst, ep);
                     Interlocked.Exchange(ref m_OptimizedFunc, lambda.Compile());
                 }
             }
         }
+
 
         /// <summary>
         /// Prepares the descriptor for hard-wiring.
@@ -313,19 +275,13 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             t.Set("visibility", DynValue.NewString(MethodInfo.GetClrVisibility()));
 
             if (IsConstructor)
-                t.Set(
-                    "ret",
-                    DynValue.NewString(((ConstructorInfo)MethodInfo).DeclaringType.FullName)
-                );
+                t.Set("ret", DynValue.NewString(((ConstructorInfo)MethodInfo).DeclaringType.FullName));
             else
                 t.Set("ret", DynValue.NewString(((MethodInfo)MethodInfo).ReturnType.FullName));
 
             if (m_IsArrayCtor)
             {
-                t.Set(
-                    "arraytype",
-                    DynValue.NewString(MethodInfo.DeclaringType.GetElementType().FullName)
-                );
+                t.Set("arraytype", DynValue.NewString(MethodInfo.DeclaringType.GetElementType().FullName));
             }
 
             t.Set("decltype", DynValue.NewString(MethodInfo.DeclaringType.FullName));
@@ -336,11 +292,11 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
 
             t.Set("params", pars);
 
-            var i = 0;
+            int i = 0;
 
             foreach (var p in Parameters)
             {
-                var pt = DynValue.NewPrimeTable();
+                DynValue pt = DynValue.NewPrimeTable();
                 pars.Table.Set(++i, pt);
                 p.PrepareForWiring(pt.Table);
             }

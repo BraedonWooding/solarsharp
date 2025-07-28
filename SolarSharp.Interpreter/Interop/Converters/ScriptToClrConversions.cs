@@ -37,10 +37,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// </summary>
         internal static object DynValueToObject(DynValue value)
         {
-            var converter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(
-                value.Type,
-                typeof(object)
-            );
+            var converter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, typeof(object));
             if (converter != null)
             {
                 var v = converter(value);
@@ -68,9 +65,10 @@ namespace SolarSharp.Interpreter.Interop.Converters
                 case DataType.UserData:
                     if (value.UserData.Object != null)
                         return value.UserData.Object;
-                    if (value.UserData.Descriptor != null)
+                    else if (value.UserData.Descriptor != null)
                         return value.UserData.Descriptor.Type;
-                    return null;
+                    else
+                        return null;
                 case DataType.ClrFunction:
                     return value.Callback;
                 default:
@@ -81,25 +79,16 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// <summary>
         /// Converts a DynValue to a CLR object of a specific type
         /// </summary>
-        internal static object DynValueToObjectOfType(
-            DynValue value,
-            Type desiredType,
-            object defaultValue,
-            bool isOptional
-        )
+        internal static object DynValueToObjectOfType(DynValue value, Type desiredType, object defaultValue, bool isOptional)
         {
             if (desiredType.IsByRef)
                 desiredType = desiredType.GetElementType();
 
-            var converter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(
-                value.Type,
-                desiredType
-            );
+            var converter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, desiredType);
             if (converter != null)
             {
                 var v = converter(value);
-                if (v != null)
-                    return v;
+                if (v != null) return v;
             }
 
             if (desiredType == typeof(DynValue))
@@ -108,10 +97,10 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (desiredType == typeof(object))
                 return DynValueToObject(value);
 
-            var stringSubType = StringConversions.GetStringSubtype(desiredType);
+            StringConversions.StringSubtype stringSubType = StringConversions.GetStringSubtype(desiredType);
             string str = null;
 
-            var nt = Nullable.GetUnderlyingType(desiredType);
+            Type nt = Nullable.GetUnderlyingType(desiredType);
             Type nullableType = null;
 
             if (nt != null)
@@ -125,7 +114,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
                 case DataType.Void:
                     if (isOptional)
                         return defaultValue;
-                    if (!Framework.Do.IsValueType(desiredType) || nullableType != null)
+                    else if (!Framework.Do.IsValueType(desiredType) || nullableType != null)
                         return null;
                     break;
                 case DataType.Nil:
@@ -150,13 +139,13 @@ namespace SolarSharp.Interpreter.Interop.Converters
                     break;
                 case DataType.Number:
                     if (Framework.Do.IsEnum(desiredType))
-                    { // number to enum conv
-                        var underType = Enum.GetUnderlyingType(desiredType);
+                    {   // number to enum conv
+                        Type underType = Enum.GetUnderlyingType(desiredType);
                         return NumericConversions.DoubleToType(underType, value.Number);
                     }
                     if (NumericConversions.NumericTypes.Contains(desiredType))
                     {
-                        var d = NumericConversions.DoubleToType(desiredType, value.Number);
+                        object d = NumericConversions.DoubleToType(desiredType, value.Number);
                         if (d.GetType() == desiredType)
                             return d;
                         break;
@@ -169,19 +158,12 @@ namespace SolarSharp.Interpreter.Interop.Converters
                         str = value.String;
                     break;
                 case DataType.Function:
-                    if (desiredType == typeof(Closure))
-                        return value.Function;
-                    if (desiredType == typeof(ScriptFunctionDelegate))
-                        return value.Function.GetDelegate();
+                    if (desiredType == typeof(Closure)) return value.Function;
+                    else if (desiredType == typeof(ScriptFunctionDelegate)) return value.Function.GetDelegate();
                     break;
                 case DataType.ClrFunction:
-                    if (desiredType == typeof(CallbackFunction))
-                        return value.Callback;
-                    if (
-                        desiredType
-                        == typeof(Func<ScriptExecutionContext, CallbackArguments, DynValue>)
-                    )
-                        return value.Callback.ClrCallback;
+                    if (desiredType == typeof(CallbackFunction)) return value.Callback;
+                    else if (desiredType == typeof(Func<ScriptExecutionContext, CallbackArguments, DynValue>)) return value.Callback.ClrCallback;
                     break;
                 case DataType.UserData:
                     if (value.UserData.Object != null)
@@ -197,14 +179,14 @@ namespace SolarSharp.Interpreter.Interop.Converters
                     }
                     break;
                 case DataType.Table:
-                    if (
-                        desiredType == typeof(Table)
-                        || Framework.Do.IsAssignableFrom(desiredType, typeof(Table))
-                    )
+                    if (desiredType == typeof(Table) || Framework.Do.IsAssignableFrom(desiredType, typeof(Table)))
                         return value.Table;
-                    var o = TableConversions.ConvertTableToType(value.Table, desiredType);
-                    if (o != null)
-                        return o;
+                    else
+                    {
+                        object o = TableConversions.ConvertTableToType(value.Table, desiredType);
+                        if (o != null)
+                            return o;
+                    }
                     break;
                 case DataType.Tuple:
                     break;
@@ -221,20 +203,12 @@ namespace SolarSharp.Interpreter.Interop.Converters
         /// Implementation must follow that of DynValueToObjectOfType.. it's not very DRY in that sense.
         /// However here we are in perf-sensitive path.. TODO : double-check the gain and see if a DRY impl is better.
         /// </summary>
-        internal static int DynValueToObjectOfTypeWeight(
-            DynValue value,
-            Type desiredType,
-            bool isOptional
-        )
+        internal static int DynValueToObjectOfTypeWeight(DynValue value, Type desiredType, bool isOptional)
         {
             if (desiredType.IsByRef)
                 desiredType = desiredType.GetElementType();
 
-            var customConverter =
-                Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(
-                    value.Type,
-                    desiredType
-                );
+            var customConverter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, desiredType);
             if (customConverter != null)
                 return WEIGHT_CUSTOM_CONVERTER_MATCH;
 
@@ -244,9 +218,9 @@ namespace SolarSharp.Interpreter.Interop.Converters
             if (desiredType == typeof(object))
                 return WEIGHT_EXACT_MATCH;
 
-            var stringSubType = StringConversions.GetStringSubtype(desiredType);
+            StringConversions.StringSubtype stringSubType = StringConversions.GetStringSubtype(desiredType);
 
-            var nt = Nullable.GetUnderlyingType(desiredType);
+            Type nt = Nullable.GetUnderlyingType(desiredType);
             Type nullableType = null;
 
             if (nt != null)
@@ -260,7 +234,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
                 case DataType.Void:
                     if (isOptional)
                         return WEIGHT_VOID_WITH_DEFAULT;
-                    if (!Framework.Do.IsValueType(desiredType) || nullableType != null)
+                    else if (!Framework.Do.IsValueType(desiredType) || nullableType != null)
                         return WEIGHT_VOID_WITHOUT_DEFAULT;
                     break;
                 case DataType.Nil:
@@ -285,7 +259,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
                     break;
                 case DataType.Number:
                     if (Framework.Do.IsEnum(desiredType))
-                    { // number to enum conv
+                    {   // number to enum conv
                         return WEIGHT_NUMBER_TO_ENUM;
                     }
                     if (NumericConversions.NumericTypes.Contains(desiredType))
@@ -296,25 +270,18 @@ namespace SolarSharp.Interpreter.Interop.Converters
                 case DataType.String:
                     if (stringSubType == StringConversions.StringSubtype.String)
                         return WEIGHT_EXACT_MATCH;
-                    if (stringSubType == StringConversions.StringSubtype.StringBuilder)
+                    else if (stringSubType == StringConversions.StringSubtype.StringBuilder)
                         return WEIGHT_STRING_TO_STRINGBUILDER;
-                    if (stringSubType == StringConversions.StringSubtype.Char)
+                    else if (stringSubType == StringConversions.StringSubtype.Char)
                         return WEIGHT_STRING_TO_CHAR;
                     break;
                 case DataType.Function:
-                    if (desiredType == typeof(Closure))
-                        return WEIGHT_EXACT_MATCH;
-                    if (desiredType == typeof(ScriptFunctionDelegate))
-                        return WEIGHT_EXACT_MATCH;
+                    if (desiredType == typeof(Closure)) return WEIGHT_EXACT_MATCH;
+                    else if (desiredType == typeof(ScriptFunctionDelegate)) return WEIGHT_EXACT_MATCH;
                     break;
                 case DataType.ClrFunction:
-                    if (desiredType == typeof(CallbackFunction))
-                        return WEIGHT_EXACT_MATCH;
-                    if (
-                        desiredType
-                        == typeof(Func<ScriptExecutionContext, CallbackArguments, DynValue>)
-                    )
-                        return WEIGHT_EXACT_MATCH;
+                    if (desiredType == typeof(CallbackFunction)) return WEIGHT_EXACT_MATCH;
+                    else if (desiredType == typeof(Func<ScriptExecutionContext, CallbackArguments, DynValue>)) return WEIGHT_EXACT_MATCH;
                     break;
                 case DataType.UserData:
                     if (value.UserData.Object != null)
@@ -330,12 +297,9 @@ namespace SolarSharp.Interpreter.Interop.Converters
                     }
                     break;
                 case DataType.Table:
-                    if (
-                        desiredType == typeof(Table)
-                        || Framework.Do.IsAssignableFrom(desiredType, typeof(Table))
-                    )
+                    if (desiredType == typeof(Table) || Framework.Do.IsAssignableFrom(desiredType, typeof(Table)))
                         return WEIGHT_EXACT_MATCH;
-                    if (TableConversions.CanConvertTableToType(value.Table, desiredType))
+                    else if (TableConversions.CanConvertTableToType(value.Table, desiredType))
                         return WEIGHT_TABLE_CONVERSION;
                     break;
                 case DataType.Tuple:
@@ -349,7 +313,12 @@ namespace SolarSharp.Interpreter.Interop.Converters
         {
             if (desiredType == typeof(double) || desiredType == typeof(decimal))
                 return WEIGHT_EXACT_MATCH;
-            return WEIGHT_NUMBER_DOWNCAST;
+            else
+                return WEIGHT_NUMBER_DOWNCAST;
         }
+
+
+
+
     }
 }

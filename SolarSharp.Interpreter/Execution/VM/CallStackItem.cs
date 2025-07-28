@@ -23,4 +23,5 @@ namespace SolarSharp.Interpreter.Execution.VM
 
         public CallStackItemFlags Flags;
     }
+
 }

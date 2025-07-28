@@ -5,7 +5,7 @@ namespace SolarSharp.Interpreter.Interop.Attributes
     /// <summary>
     /// Lists a userdata member not to be exposed to scripts referencing it by name.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = true, AllowMultiple = true)]
     public sealed class MoonSharpHideMemberAttribute : Attribute
     {
         /// <summary>

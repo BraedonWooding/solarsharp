@@ -8,7 +8,7 @@
 
         public override string ToString()
         {
-            return $"ScopeBlock : {From} -> {To} --> {ToInclusive}";
+            return string.Format("ScopeBlock : {0} -> {1} --> {2}", From, To, ToInclusive);
         }
     }
 }

@@ -13,7 +13,7 @@ namespace SolarSharp.Interpreter.Execution
         Value = 0x8,
         NumVal = 0x10,
         NumVal2 = 0x20,
-        NumValAsCodeAddress = 0x8010,
+        NumValAsCodeAddress = 0x8010
     }
 
     internal static class InstructionFieldUsage_Extensions
@@ -68,15 +68,10 @@ namespace SolarSharp.Interpreter.Execution
                 case OpCode.IndexSet:
                 case OpCode.IndexSetN:
                 case OpCode.IndexSetL:
-                    return InstructionFieldUsage.Symbol
-                        | InstructionFieldUsage.Value
-                        | InstructionFieldUsage.NumVal
-                        | InstructionFieldUsage.NumVal2;
+                    return InstructionFieldUsage.Symbol | InstructionFieldUsage.Value | InstructionFieldUsage.NumVal | InstructionFieldUsage.NumVal2;
                 case OpCode.StoreLcl:
                 case OpCode.StoreUpv:
-                    return InstructionFieldUsage.Symbol
-                        | InstructionFieldUsage.NumVal
-                        | InstructionFieldUsage.NumVal2;
+                    return InstructionFieldUsage.Symbol | InstructionFieldUsage.NumVal | InstructionFieldUsage.NumVal2;
                 case OpCode.Index:
                 case OpCode.IndexL:
                 case OpCode.IndexN:
@@ -85,12 +80,9 @@ namespace SolarSharp.Interpreter.Execution
                 case OpCode.Args:
                     return InstructionFieldUsage.SymbolList;
                 case OpCode.BeginFn:
-                    return InstructionFieldUsage.SymbolList
-                        | InstructionFieldUsage.NumVal
-                        | InstructionFieldUsage.NumVal2;
+                    return InstructionFieldUsage.SymbolList | InstructionFieldUsage.NumVal | InstructionFieldUsage.NumVal2;
                 case OpCode.Closure:
-                    return InstructionFieldUsage.SymbolList
-                        | InstructionFieldUsage.NumValAsCodeAddress;
+                    return InstructionFieldUsage.SymbolList | InstructionFieldUsage.NumValAsCodeAddress;
                 case OpCode.Nop:
                 case OpCode.Debug:
                 case OpCode.Invalid:
@@ -99,15 +91,25 @@ namespace SolarSharp.Interpreter.Execution
                 case OpCode.ThisCall:
                     return InstructionFieldUsage.NumVal | InstructionFieldUsage.Name;
                 case OpCode.Meta:
-                    return InstructionFieldUsage.NumVal
-                        | InstructionFieldUsage.NumVal2
-                        | InstructionFieldUsage.Value
-                        | InstructionFieldUsage.Name;
+                    return InstructionFieldUsage.NumVal | InstructionFieldUsage.NumVal2 | InstructionFieldUsage.Value | InstructionFieldUsage.Name;
                 default:
-                    throw new NotImplementedException(
-                        $"InstructionFieldUsage for instruction {(int)op}"
-                    );
+                    throw new NotImplementedException(string.Format("InstructionFieldUsage for instruction {0}", (int)op));
             }
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

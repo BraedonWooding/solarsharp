@@ -4,7 +4,12 @@ namespace Benchmark.Implementations
 {
     public class NLuaImplementation : AImplementation
     {
-        private readonly Lua state = new Lua();
+        private readonly Lua state;
+
+        public NLuaImplementation()
+        {
+            state = new Lua();
+        }
 
         public override object Run(string file)
         {

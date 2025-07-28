@@ -17,21 +17,19 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// Gets the underlying type of the enum.
         /// </summary>
         public Type UnderlyingType { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether underlying type of the enum is unsigned.
         /// </summary>
         public bool IsUnsigned { get; private set; }
-
         /// <summary>
         /// Gets a value indicating whether this instance describes a flags enumeration.
         /// </summary>
         public bool IsFlags { get; private set; }
 
-        private Func<object, ulong> m_EnumToULong;
-        private Func<ulong, object> m_ULongToEnum;
-        private Func<object, long> m_EnumToLong;
-        private Func<long, object> m_LongToEnum;
+        private Func<object, ulong> m_EnumToULong = null;
+        private Func<ulong, object> m_ULongToEnum = null;
+        private Func<object, long> m_EnumToLong = null;
+        private Func<long, object> m_LongToEnum = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StandardEnumUserDataDescriptor"/> class.
@@ -39,24 +37,15 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// <param name="enumType">Type of the enum.</param>
         /// <param name="friendlyName">Name of the friendly.</param>
         /// <exception cref="ArgumentException">enumType must be an enum!</exception>
-        public StandardEnumUserDataDescriptor(
-            Type enumType,
-            string friendlyName = null,
-            string[] names = null,
-            object[] values = null,
-            Type underlyingType = null
-        )
+        public StandardEnumUserDataDescriptor(Type enumType, string friendlyName = null,
+            string[] names = null, object[] values = null, Type underlyingType = null)
             : base(enumType, friendlyName)
         {
             if (!Framework.Do.IsEnum(enumType))
                 throw new ArgumentException("enumType must be an enum!");
 
             UnderlyingType = underlyingType ?? Enum.GetUnderlyingType(enumType);
-            IsUnsigned =
-                UnderlyingType == typeof(byte)
-                || UnderlyingType == typeof(ushort)
-                || UnderlyingType == typeof(uint)
-                || UnderlyingType == typeof(ulong);
+            IsUnsigned = UnderlyingType == typeof(byte) || UnderlyingType == typeof(ushort) || UnderlyingType == typeof(uint) || UnderlyingType == typeof(ulong);
 
             names ??= Enum.GetNames(Type);
             values ??= Enum.GetValues(Type).OfType<object>().ToArray();
@@ -69,18 +58,19 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         /// </summary>
         private void FillMemberList(string[] names, object[] values)
         {
-            for (var i = 0; i < names.Length; i++)
+
+            for (int i = 0; i < names.Length; i++)
             {
-                var name = names[i];
-                var value = values.GetValue(i);
-                var cvalue = UserData.Create(value, this);
+                string name = names[i];
+                object value = values.GetValue(i);
+                DynValue cvalue = UserData.Create(value, this);
 
                 AddDynValue(name, cvalue);
             }
 
             var attrs = Framework.Do.GetCustomAttributes(Type, typeof(FlagsAttribute), true);
 
-            if (attrs is { Length: > 0 })
+            if (attrs != null && attrs.Length > 0)
             {
                 IsFlags = true;
 
@@ -92,6 +82,8 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
                 AddEnumMethod("hasAny", DynValue.NewCallback(Callback_HasAny));
             }
         }
+
+
 
         /// <summary>
         /// Adds an enum method to the object
@@ -107,6 +99,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
                 AddDynValue("__" + name, dynValue);
         }
 
+
         /// <summary>
         /// Gets the value of the enum as a long
         /// </summary>
@@ -117,14 +110,8 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             if (dv.Type == DataType.Number)
                 return (long)dv.Number;
 
-            if (
-                dv.Type != DataType.UserData
-                || dv.UserData.Descriptor != this
-                || dv.UserData.Object == null
-            )
-                throw new ScriptRuntimeException(
-                    "Enum userdata or number expected, or enum is not of the correct type."
-                );
+            if (dv.Type != DataType.UserData || dv.UserData.Descriptor != this || dv.UserData.Object == null)
+                throw new ScriptRuntimeException("Enum userdata or number expected, or enum is not of the correct type.");
 
             return m_EnumToLong(dv.UserData.Object);
         }
@@ -139,14 +126,8 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
             if (dv.Type == DataType.Number)
                 return (ulong)dv.Number;
 
-            if (
-                dv.Type != DataType.UserData
-                || dv.UserData.Descriptor != this
-                || dv.UserData.Object == null
-            )
-                throw new ScriptRuntimeException(
-                    "Enum userdata or number expected, or enum is not of the correct type."
-                );
+            if (dv.Type != DataType.UserData || dv.UserData.Descriptor != this || dv.UserData.Object == null)
+                throw new ScriptRuntimeException("Enum userdata or number expected, or enum is not of the correct type.");
 
             return m_EnumToULong(dv.UserData.Object);
         }
@@ -196,11 +177,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
                     m_EnumToLong = o => (long)o;
                     m_LongToEnum = o => o;
                 }
-                else
-                    throw new ScriptRuntimeException(
-                        "Unexpected enum underlying type : {0}",
-                        UnderlyingType.FullName
-                    );
+                else throw new ScriptRuntimeException("Unexpected enum underlying type : {0}", UnderlyingType.FullName);
             }
         }
 
@@ -231,101 +208,57 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
                     m_EnumToULong = o => (ulong)o;
                     m_ULongToEnum = o => o;
                 }
-                else
-                    throw new ScriptRuntimeException(
-                        "Unexpected enum underlying type : {0}",
-                        UnderlyingType.FullName
-                    );
+                else throw new ScriptRuntimeException("Unexpected enum underlying type : {0}", UnderlyingType.FullName);
             }
         }
 
-        private DynValue PerformBinaryOperationS(
-            string funcName,
-            ScriptExecutionContext _,
-            CallbackArguments args,
-            Func<long, long, DynValue> operation
-        )
+        private DynValue PerformBinaryOperationS(string funcName, ScriptExecutionContext _, CallbackArguments args, Func<long, long, DynValue> operation)
         {
             if (args.Count != 2)
                 throw new ScriptRuntimeException("Enum.{0} expects two arguments", funcName);
 
-            var v1 = GetValueSigned(args[0]);
-            var v2 = GetValueSigned(args[1]);
+            long v1 = GetValueSigned(args[0]);
+            long v2 = GetValueSigned(args[1]);
             return operation(v1, v2);
         }
 
-        private DynValue PerformBinaryOperationU(
-            string funcName,
-            ScriptExecutionContext _,
-            CallbackArguments args,
-            Func<ulong, ulong, DynValue> operation
-        )
+        private DynValue PerformBinaryOperationU(string funcName, ScriptExecutionContext _, CallbackArguments args, Func<ulong, ulong, DynValue> operation)
         {
             if (args.Count != 2)
                 throw new ScriptRuntimeException("Enum.{0} expects two arguments", funcName);
 
-            var v1 = GetValueUnsigned(args[0]);
-            var v2 = GetValueUnsigned(args[1]);
+            ulong v1 = GetValueUnsigned(args[0]);
+            ulong v2 = GetValueUnsigned(args[1]);
             return operation(v1, v2);
         }
 
-        private DynValue PerformBinaryOperationS(
-            string funcName,
-            ScriptExecutionContext ctx,
-            CallbackArguments args,
-            Func<long, long, long> operation
-        )
+        private DynValue PerformBinaryOperationS(string funcName, ScriptExecutionContext ctx, CallbackArguments args, Func<long, long, long> operation)
         {
-            return PerformBinaryOperationS(
-                funcName,
-                ctx,
-                args,
-                (v1, v2) => CreateValueSigned(operation(v1, v2))
-            );
+            return PerformBinaryOperationS(funcName, ctx, args, (v1, v2) => CreateValueSigned(operation(v1, v2)));
         }
 
-        private DynValue PerformBinaryOperationU(
-            string funcName,
-            ScriptExecutionContext ctx,
-            CallbackArguments args,
-            Func<ulong, ulong, ulong> operation
-        )
+        private DynValue PerformBinaryOperationU(string funcName, ScriptExecutionContext ctx, CallbackArguments args, Func<ulong, ulong, ulong> operation)
         {
-            return PerformBinaryOperationU(
-                funcName,
-                ctx,
-                args,
-                (v1, v2) => CreateValueUnsigned(operation(v1, v2))
-            );
+            return PerformBinaryOperationU(funcName, ctx, args, (v1, v2) => CreateValueUnsigned(operation(v1, v2)));
         }
 
-        private DynValue PerformUnaryOperationS(
-            string funcName,
-            ScriptExecutionContext _,
-            CallbackArguments args,
-            Func<long, long> operation
-        )
+        private DynValue PerformUnaryOperationS(string funcName, ScriptExecutionContext _, CallbackArguments args, Func<long, long> operation)
         {
             if (args.Count != 1)
                 throw new ScriptRuntimeException("Enum.{0} expects one argument.", funcName);
 
-            var v1 = GetValueSigned(args[0]);
-            var r = operation(v1);
+            long v1 = GetValueSigned(args[0]);
+            long r = operation(v1);
             return CreateValueSigned(r);
         }
 
-        private DynValue PerformUnaryOperationU(
-            string funcName,
-            ScriptExecutionContext _,
-            CallbackArguments args,
-            Func<ulong, ulong> operation
-        )
+        private DynValue PerformUnaryOperationU(string funcName, ScriptExecutionContext _, CallbackArguments args, Func<ulong, ulong> operation)
         {
             if (args.Count != 1)
                 throw new ScriptRuntimeException("Enum.{0} expects one argument.", funcName);
 
-            var v1 = GetValueUnsigned(args[0]);
-            var r = operation(v1);
+            ulong v1 = GetValueUnsigned(args[0]);
+            ulong r = operation(v1);
             return CreateValueUnsigned(r);
         }
 
@@ -333,62 +266,48 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         {
             if (IsUnsigned)
                 return PerformBinaryOperationU("or", ctx, args, (v1, v2) => v1 | v2);
-            return PerformBinaryOperationS("or", ctx, args, (v1, v2) => v1 | v2);
+            else
+                return PerformBinaryOperationS("or", ctx, args, (v1, v2) => v1 | v2);
         }
 
         internal DynValue Callback_And(ScriptExecutionContext ctx, CallbackArguments args)
         {
             if (IsUnsigned)
                 return PerformBinaryOperationU("and", ctx, args, (v1, v2) => v1 & v2);
-            return PerformBinaryOperationS("and", ctx, args, (v1, v2) => v1 & v2);
+            else
+                return PerformBinaryOperationS("and", ctx, args, (v1, v2) => v1 & v2);
         }
 
         internal DynValue Callback_Xor(ScriptExecutionContext ctx, CallbackArguments args)
         {
             if (IsUnsigned)
                 return PerformBinaryOperationU("xor", ctx, args, (v1, v2) => v1 ^ v2);
-            return PerformBinaryOperationS("xor", ctx, args, (v1, v2) => v1 ^ v2);
+            else
+                return PerformBinaryOperationS("xor", ctx, args, (v1, v2) => v1 ^ v2);
         }
 
         internal DynValue Callback_BwNot(ScriptExecutionContext ctx, CallbackArguments args)
         {
             if (IsUnsigned)
                 return PerformUnaryOperationU("not", ctx, args, v1 => ~v1);
-            return PerformUnaryOperationS("not", ctx, args, v1 => ~v1);
+            else
+                return PerformUnaryOperationS("not", ctx, args, v1 => ~v1);
         }
 
         internal DynValue Callback_HasAll(ScriptExecutionContext ctx, CallbackArguments args)
         {
             if (IsUnsigned)
-                return PerformBinaryOperationU(
-                    "hasAll",
-                    ctx,
-                    args,
-                    (v1, v2) => DynValue.NewBoolean((v1 & v2) == v2)
-                );
-            return PerformBinaryOperationS(
-                "hasAll",
-                ctx,
-                args,
-                (v1, v2) => DynValue.NewBoolean((v1 & v2) == v2)
-            );
+                return PerformBinaryOperationU("hasAll", ctx, args, (v1, v2) => DynValue.NewBoolean((v1 & v2) == v2));
+            else
+                return PerformBinaryOperationS("hasAll", ctx, args, (v1, v2) => DynValue.NewBoolean((v1 & v2) == v2));
         }
 
         internal DynValue Callback_HasAny(ScriptExecutionContext ctx, CallbackArguments args)
         {
             if (IsUnsigned)
-                return PerformBinaryOperationU(
-                    "hasAny",
-                    ctx,
-                    args,
-                    (v1, v2) => DynValue.NewBoolean((v1 & v2) != 0)
-                );
-            return PerformBinaryOperationS(
-                "hasAny",
-                ctx,
-                args,
-                (v1, v2) => DynValue.NewBoolean((v1 & v2) != 0)
-            );
+                return PerformBinaryOperationU("hasAny", ctx, args, (v1, v2) => DynValue.NewBoolean((v1 & v2) != 0));
+            else
+                return PerformBinaryOperationS("hasAny", ctx, args, (v1, v2) => DynValue.NewBoolean((v1 & v2) != 0));
         }
 
         /// <summary>
@@ -406,7 +325,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         }
 
         /// <summary>
-        /// Gets a "meta" operation on this userdata.
+        /// Gets a "meta" operation on this userdata. 
         /// In this specific case, only the concat operator is supported, only on flags enums and it implements the
         /// 'or' operator.
         /// </summary>

@@ -9,12 +9,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptor
     {
         public Type MemberType { get; private set; }
 
-        protected HardwiredMemberDescriptor(
-            Type memberType,
-            string name,
-            bool isStatic,
-            MemberDescriptorAccess access
-        )
+        protected HardwiredMemberDescriptor(Type memberType, string name, bool isStatic, MemberDescriptorAccess access)
         {
             IsStatic = isStatic;
             Name = name;
@@ -28,32 +23,30 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptor
 
         public MemberDescriptorAccess MemberAccess { get; private set; }
 
+
         public DynValue GetValue(Script script, object obj)
         {
             this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
-            var result = GetValueImpl(script, obj);
+            object result = GetValueImpl(script, obj);
             return ClrToScriptConversions.ObjectToDynValue(script, result);
         }
 
         public void SetValue(Script script, object obj, DynValue value)
         {
             this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
-            var v = ScriptToClrConversions.DynValueToObjectOfType(value, MemberType, null, false);
+            object v = ScriptToClrConversions.DynValueToObjectOfType(value, MemberType, null, false);
             SetValueImpl(script, obj, v);
         }
 
+
         protected virtual object GetValueImpl(Script script, object obj)
         {
-            throw new InvalidOperationException(
-                "GetValue on write-only hardwired descriptor " + Name
-            );
+            throw new InvalidOperationException("GetValue on write-only hardwired descriptor " + Name);
         }
 
         protected virtual void SetValueImpl(Script script, object obj, object value)
         {
-            throw new InvalidOperationException(
-                "SetValue on read-only hardwired descriptor " + Name
-            );
+            throw new InvalidOperationException("SetValue on read-only hardwired descriptor " + Name);
         }
     }
 }

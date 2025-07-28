@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace SolarSharp.Interpreter.DataStructs
@@ -11,6 +10,8 @@ namespace SolarSharp.Interpreter.DataStructs
     internal class Slice<T> : IEnumerable<T>, IList<T>
     {
         private readonly IList<T> m_SourceList;
+        private readonly int m_From, m_Length;
+        private readonly bool m_Reversed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Slice{T}"/> class.
@@ -22,9 +23,9 @@ namespace SolarSharp.Interpreter.DataStructs
         public Slice(IList<T> list, int from, int length, bool reversed)
         {
             m_SourceList = list;
-            From = from;
-            Count = length;
-            Reversed = reversed;
+            m_From = from;
+            m_Length = length;
+            m_Reversed = reversed;
         }
 
         /// <summary>
@@ -34,20 +35,32 @@ namespace SolarSharp.Interpreter.DataStructs
         /// <returns></returns>
         public T this[int index]
         {
-            get { return m_SourceList[CalcRealIndex(index)]; }
-            set { m_SourceList[CalcRealIndex(index)] = value; }
+            get
+            {
+                return m_SourceList[CalcRealIndex(index)];
+            }
+            set
+            {
+                m_SourceList[CalcRealIndex(index)] = value;
+            }
         }
 
         /// <summary>
         /// Gets the index from which the slice starts
         /// </summary>
-        public int From { get; }
+        public int From
+        {
+            get { return m_From; }
+        }
 
         /// <summary>
         /// Gets the number of elements contained in the <see cref="T:System.Collections.Generic.ICollection`1" />.
         /// </summary>
         /// <returns>The number of elements contained in the <see cref="T:System.Collections.Generic.ICollection`1" />.</returns>
-        public int Count { get; }
+        public int Count
+        {
+            get { return m_Length; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="Slice{T}"/> operates in a reversed direction.
@@ -55,21 +68,27 @@ namespace SolarSharp.Interpreter.DataStructs
         /// <value>
         ///   <c>true</c> if this <see cref="Slice{T}"/> operates in a reversed direction; otherwise, <c>false</c>.
         /// </value>
-        public bool Reversed { get; }
+        public bool Reversed
+        {
+            get { return m_Reversed; }
+        }
 
         /// <summary>
         /// Calculates the real index in the underlying collection
         /// </summary>
         private int CalcRealIndex(int index)
         {
-            if (index < 0 || index >= Count)
+            if (index < 0 || index >= m_Length)
                 throw new ArgumentOutOfRangeException("index");
 
-            if (Reversed)
+            if (m_Reversed)
             {
-                return From + Count - index - 1;
+                return m_From + m_Length - index - 1;
             }
-            return From + index;
+            else
+            {
+                return m_From + index;
+            }
         }
 
         /// <summary>
@@ -80,7 +99,7 @@ namespace SolarSharp.Interpreter.DataStructs
         /// </returns>
         public IEnumerator<T> GetEnumerator()
         {
-            for (var i = 0; i < Count; i++)
+            for (int i = 0; i < m_Length; i++)
                 yield return m_SourceList[CalcRealIndex(i)];
         }
 
@@ -90,9 +109,9 @@ namespace SolarSharp.Interpreter.DataStructs
         /// <returns>
         /// An <see cref="T:System.Collections.IEnumerator" /> object that can be used to iterate through the collection.
         /// </returns>
-        IEnumerator IEnumerable.GetEnumerator()
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            for (var i = 0; i < Count; i++)
+            for (int i = 0; i < m_Length; i++)
                 yield return m_SourceList[CalcRealIndex(i)];
         }
 
@@ -101,9 +120,9 @@ namespace SolarSharp.Interpreter.DataStructs
         /// </summary>
         public T[] ToArray()
         {
-            var array = new T[Count];
+            T[] array = new T[m_Length];
 
-            for (var i = 0; i < Count; i++)
+            for (int i = 0; i < m_Length; i++)
                 array[i] = m_SourceList[CalcRealIndex(i)];
 
             return array;
@@ -114,13 +133,14 @@ namespace SolarSharp.Interpreter.DataStructs
         /// </summary>
         public List<T> ToList()
         {
-            var list = new List<T>(Count);
+            List<T> list = new(m_Length);
 
-            for (var i = 0; i < Count; i++)
+            for (int i = 0; i < m_Length; i++)
                 list.Add(m_SourceList[CalcRealIndex(i)]);
 
             return list;
         }
+
 
         /// <summary>
         /// Determines the index of a specific item in the <see cref="T:System.Collections.Generic.IList`1" />.
@@ -131,7 +151,7 @@ namespace SolarSharp.Interpreter.DataStructs
         /// </returns>
         public int IndexOf(T item)
         {
-            for (var i = 0; i < Count; i++)
+            for (int i = 0; i < Count; i++)
             {
                 if (this[i].Equals(item))
                     return i;
@@ -198,7 +218,7 @@ namespace SolarSharp.Interpreter.DataStructs
         /// <param name="arrayIndex">Index of the array.</param>
         public void CopyTo(T[] array, int arrayIndex)
         {
-            for (var i = 0; i < Count; i++)
+            for (int i = 0; i < Count; i++)
                 array[i + arrayIndex] = this[i];
         }
 

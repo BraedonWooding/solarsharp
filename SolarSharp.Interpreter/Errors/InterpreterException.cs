@@ -17,21 +17,30 @@ namespace SolarSharp.Interpreter.Errors
         /// </summary>
         /// <param name="ex">The ex.</param>
         protected InterpreterException(Exception ex, string message)
-            : base(message, ex) { }
+            : base(message, ex)
+        {
+
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InterpreterException"/> class.
         /// </summary>
         /// <param name="ex">The ex.</param>
         protected InterpreterException(Exception ex)
-            : base(ex.Message, ex) { }
+            : base(ex.Message, ex)
+        {
+
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InterpreterException"/> class.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
         protected InterpreterException(string message)
-            : base(message) { }
+            : base(message)
+        {
+
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InterpreterException"/> class.
@@ -39,7 +48,10 @@ namespace SolarSharp.Interpreter.Errors
         /// <param name="format">The format.</param>
         /// <param name="args">The arguments.</param>
         protected InterpreterException(string format, params object[] args)
-            : base(string.Format(format, args)) { }
+            : base(string.Format(format, args))
+        {
+
+        }
 
         /// <summary>
         /// Gets the instruction pointer of the execution (if it makes sense)
@@ -56,10 +68,12 @@ namespace SolarSharp.Interpreter.Errors
         /// </summary>
         public string DecoratedMessage { get; internal set; }
 
+
         /// <summary>
         /// Gets or sets a value indicating whether the message should not be decorated
         /// </summary>
         public bool DoNotDecorateMessage { get; set; }
+
 
         internal void DecorateMessage(Script script, SourceRef sref, int ip = -1)
         {
@@ -68,21 +82,27 @@ namespace SolarSharp.Interpreter.Errors
                 if (DoNotDecorateMessage)
                 {
                     DecoratedMessage = Message;
+                    return;
                 }
                 else
                 {
-                    DecoratedMessage =
-                        sref != null
-                            ? $"{sref.FormatLocation(script)}: {Message}"
-                            : $"bytecode:{ip}: {Message}";
+                    DecoratedMessage = sref != null
+                        ? string.Format("{0}: {1}", sref.FormatLocation(script), Message)
+                        : string.Format("bytecode:{0}: {1}", ip, Message);
                 }
             }
         }
 
+
         /// <summary>
-        /// Rethrows this instance if
+        /// Rethrows this instance if 
         /// </summary>
         /// <returns></returns>
-        public virtual void Rethrow() { }
+        public virtual void Rethrow()
+        {
+        }
+
+
+
     }
 }

@@ -1,6 +1,6 @@
-﻿using System;
-using SolarSharp.Interpreter.DataTypes;
+﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
+using System;
 
 namespace SolarSharp.Interpreter.Execution.VM
 {
@@ -12,7 +12,7 @@ namespace SolarSharp.Interpreter.Execution.VM
         public DynValue Coroutine_Create(Closure closure)
         {
             // create a processor instance
-            var P = new Processor(this);
+            Processor P = new(this);
 
             // Put the closure as first value on the stack, for future reference
             P.m_ValueStack.Push(DynValue.NewClosure(closure));
@@ -28,7 +28,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             m_ExecutionStack.ClearUsed();
 
             // Create a new processor instance, recycling this one
-            var P = new Processor(mainProcessor, this);
+            Processor P = new(mainProcessor, this);
 
             // Put the closure as first value on the stack, for future reference
             P.m_ValueStack.Push(DynValue.NewClosure(closure));
@@ -37,88 +37,60 @@ namespace SolarSharp.Interpreter.Execution.VM
             return DynValue.NewCoroutine(new Coroutine(P));
         }
 
-        public CoroutineState State { get; private set; }
+        public CoroutineState State { get { return m_State; } }
         public Coroutine AssociatedCoroutine { get; set; }
 
         public DynValue Coroutine_Resume(DynValue[] args)
         {
             EnterProcessor();
 
-            // Start resource monitoring if we have a resource controller
-            var resourceController = m_Script.ResourceController();
-            if (resourceController != null && m_Parent == null) // Only start for main processor
-            {
-                resourceController.StartExecution();
-            }
-
             try
             {
-                var entrypoint = 0;
+                int entrypoint = 0;
 
-                if (State != CoroutineState.NotStarted && State != CoroutineState.Suspended)
-                    throw ScriptRuntimeException.CannotResumeNotSuspended(State);
+                if (m_State != CoroutineState.NotStarted && m_State != CoroutineState.Suspended)
+                    throw ScriptRuntimeException.CannotResumeNotSuspended(m_State);
 
-                if (State == CoroutineState.NotStarted)
+                if (m_State == CoroutineState.NotStarted)
                 {
-                    // Increment call depth when starting coroutine
-                    IncrementCallDepth();
-
                     // TODO: I feel like this should just be m_SavedInstructionPtr = PushClr...
                     //       then we just get rid of the argument to this function
-                    entrypoint = PushClrToScriptStackFrame(
-                        CallStackItemFlags.ResumeEntryPoint,
-                        null,
-                        args
-                    );
+                    entrypoint = PushClrToScriptStackFrame(CallStackItemFlags.ResumeEntryPoint, null, args);
                 }
-                else if (State == CoroutineState.Suspended)
+                else if (m_State == CoroutineState.Suspended)
                 {
-                    // Increment call depth when resuming coroutine
-                    IncrementCallDepth();
-
                     m_ValueStack.Push(DynValue.NewTuple(args));
                     entrypoint = m_SavedInstructionPtr;
                 }
 
-                State = CoroutineState.Running;
-                var retVal = Processing_Loop(entrypoint);
+                m_State = CoroutineState.Running;
+                DynValue retVal = Processing_Loop(entrypoint);
 
                 if (retVal.Type == DataType.YieldRequest)
                 {
-                    // Decrement call depth when yielding
-                    DecrementCallDepth();
-
-                    State = CoroutineState.Suspended;
+                    m_State = CoroutineState.Suspended;
                     return DynValue.NewTuple(retVal.YieldRequest.ReturnValues);
                 }
                 else
                 {
-                    // Decrement call depth when coroutine completes
-                    DecrementCallDepth();
-
-                    State = CoroutineState.Dead;
+                    m_State = CoroutineState.Dead;
                     return retVal;
                 }
             }
             catch (Exception)
             {
-                // Decrement call depth on exception
-                DecrementCallDepth();
-
                 // Unhandled exception - move to dead
-                State = CoroutineState.Dead;
+                m_State = CoroutineState.Dead;
                 throw;
             }
             finally
             {
-                // Stop resource monitoring
-                if (resourceController != null && m_Parent == null)
-                {
-                    resourceController.StopExecution();
-                }
-
                 LeaveProcessor();
             }
         }
+
+
+
     }
+
 }

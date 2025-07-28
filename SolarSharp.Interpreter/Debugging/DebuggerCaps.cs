@@ -12,15 +12,13 @@ namespace SolarSharp.Interpreter.Debugging
         /// Flag set if the debugger can debug source code
         /// </summary>
         CanDebugSourceCode = 0x1,
-
         /// <summary>
         /// Flag set if the can debug VM bytecode
         /// </summary>
         CanDebugByteCode = 0x2,
-
         /// <summary>
         /// Flag set if the debugger uses breakpoints based on lines instead of tokens
         /// </summary>
-        HasLineBasedBreakpoints = 0x4,
+        HasLineBasedBreakpoints = 0x4
     }
 }

@@ -8,13 +8,13 @@ namespace SolarSharp.Interpreter.Execution.VM
         private class DebugContext
         {
             public bool DebuggerEnabled = true;
-            public IDebugger DebuggerAttached;
+            public IDebugger DebuggerAttached = null;
             public DebuggerAction.ActionType DebuggerCurrentAction = DebuggerAction.ActionType.None;
             public int DebuggerCurrentActionTarget = -1;
-            public SourceRef LastHlRef;
+            public SourceRef LastHlRef = null;
             public int ExStackDepthAtStep = -1;
-            public List<SourceRef> BreakPoints = new List<SourceRef>();
-            public bool LineBasedBreakPoints;
+            public List<SourceRef> BreakPoints = new();
+            public bool LineBasedBreakPoints = false;
         }
     }
 }

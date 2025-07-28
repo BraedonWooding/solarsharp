@@ -11,12 +11,8 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
     /// </summary>
     public class ObjectCallbackMemberDescriptor : FunctionMemberDescriptorBase
     {
-        private readonly Func<
-            object,
-            ScriptExecutionContext,
-            CallbackArguments,
-            object
-        > m_CallbackFunc;
+        private readonly Func<object, ScriptExecutionContext, CallbackArguments, object> m_CallbackFunc;
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ObjectCallbackMemberDescriptor"/> class.
@@ -24,7 +20,9 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// </summary>
         /// <param name="funcName">Name of the function.</param>
         public ObjectCallbackMemberDescriptor(string funcName)
-            : this(funcName, (o, c, a) => DynValue.Void, new ParameterDescriptor[0]) { }
+            : this(funcName, (o, c, a) => DynValue.Void, new ParameterDescriptor[0])
+        { }
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ObjectCallbackMemberDescriptor"/> class.
@@ -34,11 +32,10 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// </summary>
         /// <param name="funcName">Name of the function.</param>
         /// <param name="callBack">The callback function.</param>
-        public ObjectCallbackMemberDescriptor(
-            string funcName,
-            Func<object, ScriptExecutionContext, CallbackArguments, object> callBack
-        )
-            : this(funcName, callBack, new ParameterDescriptor[0]) { }
+        public ObjectCallbackMemberDescriptor(string funcName, Func<object, ScriptExecutionContext, CallbackArguments, object> callBack)
+            : this(funcName, callBack, new ParameterDescriptor[0])
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ObjectCallbackMemberDescriptor"/> class.
@@ -47,11 +44,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="funcName">Name of the function.</param>
         /// <param name="callBack">The call back.</param>
         /// <param name="parameters">The parameters.</param>
-        public ObjectCallbackMemberDescriptor(
-            string funcName,
-            Func<object, ScriptExecutionContext, CallbackArguments, object> callBack,
-            ParameterDescriptor[] parameters
-        )
+        public ObjectCallbackMemberDescriptor(string funcName, Func<object, ScriptExecutionContext, CallbackArguments, object> callBack, ParameterDescriptor[] parameters)
         {
             m_CallbackFunc = callBack;
             Initialize(funcName, false, parameters, false);
@@ -65,19 +58,17 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         /// <param name="context">The context.</param>
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
-        public override DynValue Execute(
-            Script script,
-            object obj,
-            ScriptExecutionContext context,
-            CallbackArguments args
-        )
+        public override DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
         {
             if (m_CallbackFunc != null)
             {
-                var retv = m_CallbackFunc(obj, context, args);
+                object retv = m_CallbackFunc(obj, context, args);
                 return ClrToScriptConversions.ObjectToDynValue(script, retv);
             }
-            return DynValue.Void;
+            else
+            {
+                return DynValue.Void;
+            }
         }
     }
 }

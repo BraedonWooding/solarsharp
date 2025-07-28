@@ -15,13 +15,11 @@ namespace SolarSharp.Interpreter.Interop.RegistrationPolicies
         /// <param name="newDescriptor">The new descriptor, or null if this is a deregistration.</param>
         /// <param name="oldDescriptor">The old descriptor, or null if no descriptor was previously registered for this type.</param>
         /// <returns></returns>
-        public IUserDataDescriptor HandleRegistration(
-            IUserDataDescriptor newDescriptor,
-            IUserDataDescriptor oldDescriptor
-        )
+        public IUserDataDescriptor HandleRegistration(IUserDataDescriptor newDescriptor, IUserDataDescriptor oldDescriptor)
         {
             return oldDescriptor ?? newDescriptor;
         }
+
 
         /// <summary>
         /// Allows type automatic registration for the specified type.

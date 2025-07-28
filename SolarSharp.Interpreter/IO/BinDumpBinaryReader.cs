@@ -9,51 +9,53 @@ namespace SolarSharp.Interpreter.IO
     /// </summary>
     public class BinDumpBinaryReader : BinaryReader
     {
-        public BinDumpBinaryReader(Stream s)
-            : base(s) { }
+        public BinDumpBinaryReader(Stream s) : base(s) { }
+        public BinDumpBinaryReader(Stream s, Encoding e) : base(s, e) { }
 
-        public BinDumpBinaryReader(Stream s, Encoding e)
-            : base(s, e) { }
-
-        private readonly List<string> m_Strings = new List<string>();
+        private readonly List<string> m_Strings = new();
 
         public override int ReadInt32()
         {
-            var b = base.ReadSByte();
+            sbyte b = base.ReadSByte();
 
             if (b == 0x7F)
                 return base.ReadInt16();
-            if (b == 0x7E)
+            else if (b == 0x7E)
                 return base.ReadInt32();
-            return b;
+            else
+                return b;
         }
 
         public override uint ReadUInt32()
         {
-            var b = base.ReadByte();
+            byte b = base.ReadByte();
 
             if (b == 0x7F)
                 return base.ReadUInt16();
-            if (b == 0x7E)
+            else if (b == 0x7E)
                 return base.ReadUInt32();
-            return b;
+            else
+                return b;
         }
 
         public override string ReadString()
         {
-            var pos = ReadInt32();
+            int pos = ReadInt32();
 
             if (pos < m_Strings.Count)
             {
                 return m_Strings[pos];
             }
-            if (pos == m_Strings.Count)
+            else if (pos == m_Strings.Count)
             {
-                var str = base.ReadString();
+                string str = base.ReadString();
                 m_Strings.Add(str);
                 return str;
             }
-            throw new IOException("string map failure");
+            else
+            {
+                throw new IOException("string map failure");
+            }
         }
     }
 }

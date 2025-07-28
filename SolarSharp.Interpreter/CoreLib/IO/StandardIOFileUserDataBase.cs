@@ -25,5 +25,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
             f.Initialize(stream, null, new StreamWriter(stream));
             return f;
         }
+
     }
+
 }

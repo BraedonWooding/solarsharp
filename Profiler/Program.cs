@@ -1,12 +1,10 @@
 ﻿// This is just a simple playground for profiling
-
 using Benchmark;
 using Benchmark.Implementations;
 
 var file = new LuaFile("./Tests/empty_test.lua");
 
 var impl = new SolarSharpImplementation();
-
 //impl.Run(file.Contents);
 
 //impl.script.Globals.Set("A", (DynValue.NewCallback((ctx, arg) =>

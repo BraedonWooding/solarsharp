@@ -1,6 +1,6 @@
 ﻿#if DOTNET_CORE || (!(PCL || ENABLE_DOTNET || NETFX_CORE))
-using System.IO.Abstractions;
 using SolarSharp.Interpreter.DataTypes;
+using System.IO;
 
 namespace SolarSharp.Interpreter.Loaders
 {
@@ -9,17 +9,6 @@ namespace SolarSharp.Interpreter.Loaders
     /// </summary>
     public class FileSystemScriptLoader : ScriptLoaderBase
     {
-        private readonly IFileSystem _fileSystem;
-
-        /// <summary>
-        /// Initializes a new instance of the FileSystemScriptLoader class
-        /// </summary>
-        /// <param name="fileSystem">The file system abstraction to use</param>
-        public FileSystemScriptLoader(IFileSystem fileSystem = null)
-        {
-            _fileSystem = fileSystem ?? new FileSystem();
-        }
-
         /// <summary>
         /// Checks if a script file exists.
         /// </summary>
@@ -27,7 +16,7 @@ namespace SolarSharp.Interpreter.Loaders
         /// <returns></returns>
         public override bool ScriptFileExists(string name)
         {
-            return _fileSystem.File.Exists(name);
+            return File.Exists(name);
         }
 
         /// <summary>
@@ -43,7 +32,7 @@ namespace SolarSharp.Interpreter.Loaders
         /// </returns>
         public override object LoadFile(string file, Table globalContext)
         {
-            return _fileSystem.File.OpenRead(file);
+            return new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         }
     }
 }

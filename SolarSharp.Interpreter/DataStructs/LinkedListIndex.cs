@@ -12,7 +12,7 @@ namespace SolarSharp.Interpreter.DataStructs
     internal class LinkedListIndex<TKey, TValue>
     {
         private readonly LinkedList<TValue> m_LinkedList;
-        private Dictionary<TKey, LinkedListNode<TValue>> m_Map;
+        private Dictionary<TKey, LinkedListNode<TValue>> m_Map = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LinkedListIndex{TKey, TValue}"/> class.
@@ -29,10 +29,11 @@ namespace SolarSharp.Interpreter.DataStructs
         /// <param name="key">The key.</param>
         public LinkedListNode<TValue> Find(TKey key)
         {
+
             if (m_Map == null)
                 return null;
 
-            if (m_Map.TryGetValue(key, out var node))
+            if (m_Map.TryGetValue(key, out LinkedListNode<TValue> node))
                 return node;
 
             return null;
@@ -46,16 +47,19 @@ namespace SolarSharp.Interpreter.DataStructs
         /// <returns>The previous value of the element</returns>
         public TValue Set(TKey key, TValue value)
         {
-            var node = Find(key);
+            LinkedListNode<TValue> node = Find(key);
 
             if (node == null)
             {
                 Add(key, value);
                 return default;
             }
-            var val = node.Value;
-            node.Value = value;
-            return val;
+            else
+            {
+                TValue val = node.Value;
+                node.Value = value;
+                return val;
+            }
         }
 
         /// <summary>
@@ -78,7 +82,7 @@ namespace SolarSharp.Interpreter.DataStructs
         /// <param name="key">The key.</param>
         public bool Remove(TKey key)
         {
-            var node = Find(key);
+            LinkedListNode<TValue> node = Find(key);
 
             if (node != null)
             {
@@ -88,6 +92,7 @@ namespace SolarSharp.Interpreter.DataStructs
 
             return false;
         }
+
 
         /// <summary>
         /// Determines whether the index contains the specified key.

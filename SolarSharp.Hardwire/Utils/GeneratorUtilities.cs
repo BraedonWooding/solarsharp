@@ -1,4 +1,10 @@
 ﻿namespace SolarSharp.Hardwire.Utils
 {
-    public class GeneratorUtilities { }
+    public class GeneratorUtilities
+    {
+
+
+
+
+    }
 }

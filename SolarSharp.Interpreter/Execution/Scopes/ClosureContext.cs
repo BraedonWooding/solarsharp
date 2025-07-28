@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using SolarSharp.Interpreter.DataTypes;
+using System.Collections.Generic;
 using System.Linq;
-using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Execution.Scopes
 {
@@ -24,5 +24,6 @@ namespace SolarSharp.Interpreter.Execution.Scopes
         {
             Symbols = new string[0];
         }
+
     }
 }

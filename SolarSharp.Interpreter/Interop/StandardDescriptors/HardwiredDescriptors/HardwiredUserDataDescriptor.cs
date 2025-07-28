@@ -5,7 +5,11 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.HardwiredDescriptor
 {
     public abstract class HardwiredUserDataDescriptor : DispatchingUserDataDescriptor
     {
-        protected HardwiredUserDataDescriptor(Type T)
-            : base(T, "::hardwired::" + T.Name) { }
+        protected HardwiredUserDataDescriptor(Type T) :
+            base(T, "::hardwired::" + T.Name)
+        {
+
+        }
+
     }
 }

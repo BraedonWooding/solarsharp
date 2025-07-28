@@ -22,6 +22,7 @@ namespace SolarSharp.Interpreter.REPL
             m_History = new string[historySize];
         }
 
+
         /// <summary>
         /// Evaluate a REPL command.
         /// This method returns the result of the computation, or null if more input is needed for having valid code.
@@ -46,8 +47,7 @@ namespace SolarSharp.Interpreter.REPL
         {
             m_Navi = m_Navi == -1 ? m_Last : (m_Navi - 1 + m_History.Length) % m_History.Length;
 
-            if (m_Navi >= 0)
-                return m_History[m_Navi];
+            if (m_Navi >= 0) return m_History[m_Navi];
             return null;
         }
 
@@ -58,11 +58,14 @@ namespace SolarSharp.Interpreter.REPL
         {
             if (m_Navi == -1)
                 return null;
-            m_Navi = (m_Navi + 1) % m_History.Length;
+            else
+                m_Navi = (m_Navi + 1) % m_History.Length;
 
-            if (m_Navi >= 0)
-                return m_History[m_Navi];
+            if (m_Navi >= 0) return m_History[m_Navi];
             return null;
         }
+
+
+
     }
 }

@@ -1,31 +1,16 @@
 ﻿using System;
-using SolarSharp.Interpreter.Debugging;
 
 namespace SolarSharp.Interpreter.Tree.Lexer
 {
     internal class Token
     {
         public readonly int SourceId;
-        public readonly int FromCol,
-            ToCol,
-            FromLine,
-            ToLine,
-            PrevCol,
-            PrevLine;
+        public readonly int FromCol, ToCol, FromLine, ToLine, PrevCol, PrevLine;
         public readonly TokenType Type;
 
         public string Text { get; set; }
 
-        public Token(
-            TokenType type,
-            int sourceId,
-            int fromLine,
-            int fromCol,
-            int toLine,
-            int toCol,
-            int prevLine,
-            int prevCol
-        )
+        public Token(TokenType type, int sourceId, int fromLine, int fromCol, int toLine, int toCol, int prevLine, int prevCol)
         {
             Type = type;
 
@@ -38,17 +23,16 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             PrevLine = prevLine;
         }
 
+
         public override string ToString()
         {
-            var tokenTypeString = (Type + "                                                      ")[
-                ..16
-            ];
+            string tokenTypeString = (Type.ToString() + "                                                      ")[..16];
 
-            var location = $"{FromLine}:{FromCol}-{ToLine}:{ToCol}";
+            string location = string.Format("{0}:{1}-{2}:{3}", FromLine, FromCol, ToLine, ToCol);
 
             location = (location + "                                                      ")[..10];
 
-            return $"{tokenTypeString}  - {location} - '{Text ?? ""}'";
+            return string.Format("{0}  - {1} - '{2}'", tokenTypeString, location, Text ?? "");
         }
 
         public static TokenType? GetReservedTokenType(string reservedWord)
@@ -108,12 +92,14 @@ namespace SolarSharp.Interpreter.Tree.Lexer
         {
             if (Type == TokenType.Number)
                 return LexerUtils.ParseNumber(this);
-            if (Type == TokenType.Number_Hex)
+            else if (Type == TokenType.Number_Hex)
                 return LexerUtils.ParseHexInteger(this);
-            if (Type == TokenType.Number_HexFloat)
+            else if (Type == TokenType.Number_HexFloat)
                 return LexerUtils.ParseHexFloat(this);
-            throw new NotSupportedException("GetNumberValue is supported only on numeric tokens");
+            else
+                throw new NotSupportedException("GetNumberValue is supported only on numeric tokens");
         }
+
 
         public bool IsEndOfBlock()
         {
@@ -132,7 +118,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         public bool IsUnaryOperator()
         {
-            return Type is TokenType.Op_MinusOrSub or TokenType.Not or TokenType.Op_Len;
+            return Type == TokenType.Op_MinusOrSub || Type == TokenType.Not || Type == TokenType.Op_Len;
         }
 
         public bool IsBinaryOperator()
@@ -160,19 +146,20 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             }
         }
 
-        internal SourceRef GetSourceRef(bool isStepStop = true)
+
+        internal Debugging.SourceRef GetSourceRef(bool isStepStop = true)
         {
-            return new SourceRef(SourceId, FromCol, ToCol, FromLine, ToLine, isStepStop);
+            return new Debugging.SourceRef(SourceId, FromCol, ToCol, FromLine, ToLine, isStepStop);
         }
 
-        internal SourceRef GetSourceRef(Token to, bool isStepStop = true)
+        internal Debugging.SourceRef GetSourceRef(Token to, bool isStepStop = true)
         {
-            return new SourceRef(SourceId, FromCol, to.ToCol, FromLine, to.ToLine, isStepStop);
+            return new Debugging.SourceRef(SourceId, FromCol, to.ToCol, FromLine, to.ToLine, isStepStop);
         }
 
-        internal SourceRef GetSourceRefUpTo(Token to, bool isStepStop = true)
+        internal Debugging.SourceRef GetSourceRefUpTo(Token to, bool isStepStop = true)
         {
-            return new SourceRef(SourceId, FromCol, to.PrevCol, FromLine, to.PrevLine, isStepStop);
+            return new Debugging.SourceRef(SourceId, FromCol, to.PrevCol, FromLine, to.PrevLine, isStepStop);
         }
     }
 }

@@ -1,17 +1,16 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using SolarSharp.Interpreter.Interop.StandardDescriptors;
 using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop.Attributes;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using SolarSharp.Interpreter.Interop.ProxyObjects;
 using SolarSharp.Interpreter.Interop.RegistrationPolicies;
-using SolarSharp.Interpreter.Interop.StandardDescriptors;
 
 namespace SolarSharp.Interpreter.Interop.UserDataRegistries
 {
@@ -20,11 +19,9 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
     /// </summary>
     internal static class TypeDescriptorRegistry
     {
-        private static readonly object s_Lock = new object();
-        private static readonly Dictionary<Type, IUserDataDescriptor> s_TypeRegistry =
-            new Dictionary<Type, IUserDataDescriptor>();
-        private static readonly Dictionary<Type, IUserDataDescriptor> s_TypeRegistryHistory =
-            new Dictionary<Type, IUserDataDescriptor>();
+        private static readonly object s_Lock = new();
+        private static readonly Dictionary<Type, IUserDataDescriptor> s_TypeRegistry = new();
+        private static readonly Dictionary<Type, IUserDataDescriptor> s_TypeRegistryHistory = new();
         private static InteropAccessMode s_DefaultAccessMode;
 
         /// <summary>
@@ -32,17 +29,12 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
         /// </summary>
         /// <param name="asm">The assembly.</param>
         /// <param name="includeExtensionTypes">if set to <c>true</c> extension types are registered to the appropriate registry.</param>
-        internal static void RegisterAssembly(
-            Assembly asm = null,
-            bool includeExtensionTypes = false
-        )
+        internal static void RegisterAssembly(Assembly asm = null, bool includeExtensionTypes = false)
         {
             if (asm == null)
             {
 #if NETFX_CORE || DOTNET_CORE
-                throw new NotSupportedException(
-                    "Assembly.GetCallingAssembly is not supported on target framework."
-                );
+					throw new NotSupportedException("Assembly.GetCallingAssembly is not supported on target framework.");
 #else
                 asm = Assembly.GetCallingAssembly();
 #endif
@@ -50,15 +42,10 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
 
             if (includeExtensionTypes)
             {
-                var extensionTypes =
-                    from t in asm.SafeGetTypes()
-                    let attributes = Framework.Do.GetCustomAttributes(
-                        t,
-                        typeof(ExtensionAttribute),
-                        true
-                    )
-                    where attributes is { Length: > 0 }
-                    select new { Attributes = attributes, DataType = t };
+                var extensionTypes = from t in asm.SafeGetTypes()
+                                     let attributes = Framework.Do.GetCustomAttributes(t, typeof(ExtensionAttribute), true)
+                                     where attributes != null && attributes.Length > 0
+                                     select new { Attributes = attributes, DataType = t };
 
                 foreach (var extType in extensionTypes)
                 {
@@ -66,24 +53,21 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
                 }
             }
 
-            var userDataTypes =
-                from t in asm.SafeGetTypes()
-                let attributes = Framework.Do.GetCustomAttributes(
-                    t,
-                    typeof(MoonSharpUserDataAttribute),
-                    true
-                )
-                where attributes is { Length: > 0 }
-                select new { Attributes = attributes, DataType = t };
+
+            var userDataTypes = from t in asm.SafeGetTypes()
+                                let attributes = Framework.Do.GetCustomAttributes(t, typeof(MoonSharpUserDataAttribute), true)
+                                where attributes != null && attributes.Length > 0
+                                select new { Attributes = attributes, DataType = t };
 
             foreach (var userDataType in userDataTypes)
             {
-                UserData.RegisterType(
-                    userDataType.DataType,
-                    userDataType.Attributes.OfType<MoonSharpUserDataAttribute>().First().AccessMode
-                );
+                UserData.RegisterType(userDataType.DataType, userDataType.Attributes
+                    .OfType<MoonSharpUserDataAttribute>()
+                    .First()
+                    .AccessMode);
             }
         }
+
 
         /// <summary>
         /// Determines whether the specified type is registered. Note that this should be used only to check if a descriptor
@@ -97,6 +81,7 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
             lock (s_Lock)
                 return s_TypeRegistry.ContainsKey(type);
         }
+
 
         /// <summary>
         /// Unregisters a type.
@@ -142,25 +127,12 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
         /// <param name="accessMode">The access mode.</param>
         /// <param name="friendlyName">Name of the friendly.</param>
         /// <returns></returns>
-        internal static IUserDataDescriptor RegisterProxyType_Impl(
-            IProxyFactory proxyFactory,
-            InteropAccessMode accessMode,
-            string friendlyName
-        )
+        internal static IUserDataDescriptor RegisterProxyType_Impl(IProxyFactory proxyFactory, InteropAccessMode accessMode, string friendlyName)
         {
-            var proxyDescriptor = RegisterType_Impl(
-                proxyFactory.ProxyType,
-                accessMode,
-                friendlyName,
-                null
-            );
-            return RegisterType_Impl(
-                proxyFactory.TargetType,
-                accessMode,
-                friendlyName,
-                new ProxyUserDataDescriptor(proxyFactory, proxyDescriptor, friendlyName)
-            );
+            IUserDataDescriptor proxyDescriptor = RegisterType_Impl(proxyFactory.ProxyType, accessMode, friendlyName, null);
+            return RegisterType_Impl(proxyFactory.TargetType, accessMode, friendlyName, new ProxyUserDataDescriptor(proxyFactory, proxyDescriptor, friendlyName));
         }
+
 
         /// <summary>
         /// Registers a type
@@ -170,18 +142,13 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
         /// <param name="friendlyName">Friendly name of the descriptor.</param>
         /// <param name="descriptor">The descriptor, or null to use a default one.</param>
         /// <returns></returns>
-        internal static IUserDataDescriptor RegisterType_Impl(
-            Type type,
-            InteropAccessMode accessMode,
-            string friendlyName,
-            IUserDataDescriptor descriptor
-        )
+        internal static IUserDataDescriptor RegisterType_Impl(Type type, InteropAccessMode accessMode, string friendlyName, IUserDataDescriptor descriptor)
         {
             accessMode = ResolveDefaultAccessModeForType(accessMode, type);
 
             lock (s_Lock)
             {
-                s_TypeRegistry.TryGetValue(type, out var oldDescriptor);
+                s_TypeRegistry.TryGetValue(type, out IUserDataDescriptor oldDescriptor);
 
                 if (descriptor == null)
                 {
@@ -190,46 +157,46 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
 
                     if (Framework.Do.GetInterfaces(type).Any(ii => ii == typeof(IUserDataType)))
                     {
-                        var audd = new AutoDescribingUserDataDescriptor(type, friendlyName);
+                        AutoDescribingUserDataDescriptor audd = new(type, friendlyName);
                         return PerformRegistration(type, audd, oldDescriptor);
                     }
-                    if (Framework.Do.IsGenericTypeDefinition(type))
+                    else if (Framework.Do.IsGenericTypeDefinition(type))
                     {
-                        var typeGen = new StandardGenericsUserDataDescriptor(type, accessMode);
+                        StandardGenericsUserDataDescriptor typeGen = new(type, accessMode);
                         return PerformRegistration(type, typeGen, oldDescriptor);
                     }
-                    if (Framework.Do.IsEnum(type))
+                    else if (Framework.Do.IsEnum(type))
                     {
                         var enumDescr = new StandardEnumUserDataDescriptor(type, friendlyName);
                         return PerformRegistration(type, enumDescr, oldDescriptor);
                     }
-                    var udd = new StandardUserDataDescriptor(type, accessMode, friendlyName);
-
-                    if (accessMode == InteropAccessMode.BackgroundOptimized)
+                    else
                     {
-#if NETFX_CORE
-                        System.Threading.Tasks.Task.Run(() =>
-                            ((IOptimizableDescriptor)udd).Optimize()
-                        );
-#else
-                        ThreadPool.QueueUserWorkItem(o => ((IOptimizableDescriptor)udd).Optimize());
-#endif
-                    }
+                        StandardUserDataDescriptor udd = new(type, accessMode, friendlyName);
 
-                    return PerformRegistration(type, udd, oldDescriptor);
+                        if (accessMode == InteropAccessMode.BackgroundOptimized)
+                        {
+#if NETFX_CORE
+							System.Threading.Tasks.Task.Run(() => ((IOptimizableDescriptor)udd).Optimize());
+#else
+                            ThreadPool.QueueUserWorkItem(o => ((IOptimizableDescriptor)udd).Optimize());
+#endif
+                        }
+
+                        return PerformRegistration(type, udd, oldDescriptor);
+                    }
                 }
-                PerformRegistration(type, descriptor, oldDescriptor);
-                return descriptor;
+                else
+                {
+                    PerformRegistration(type, descriptor, oldDescriptor);
+                    return descriptor;
+                }
             }
         }
 
-        private static IUserDataDescriptor PerformRegistration(
-            Type type,
-            IUserDataDescriptor newDescriptor,
-            IUserDataDescriptor oldDescriptor
-        )
+        private static IUserDataDescriptor PerformRegistration(Type type, IUserDataDescriptor newDescriptor, IUserDataDescriptor oldDescriptor)
         {
-            var result = RegistrationPolicy.HandleRegistration(newDescriptor, oldDescriptor);
+            IUserDataDescriptor result = RegistrationPolicy.HandleRegistration(newDescriptor, oldDescriptor);
 
             if (result != oldDescriptor)
             {
@@ -253,27 +220,25 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
         /// <param name="accessMode">The access mode.</param>
         /// <param name="type">The type.</param>
         /// <returns></returns>
-        internal static InteropAccessMode ResolveDefaultAccessModeForType(
-            InteropAccessMode accessMode,
-            Type type
-        )
+        internal static InteropAccessMode ResolveDefaultAccessModeForType(InteropAccessMode accessMode, Type type)
         {
             if (accessMode == InteropAccessMode.Default)
             {
-                var attr = Framework
-                    .Do.GetCustomAttributes(type, true)
-                    .OfType<MoonSharpUserDataAttribute>()
+                MoonSharpUserDataAttribute attr = Framework.Do.GetCustomAttributes(type, true).OfType<MoonSharpUserDataAttribute>()
                     .SingleOrDefault();
 
                 if (attr != null)
                     accessMode = attr.AccessMode;
             }
 
+
             if (accessMode == InteropAccessMode.Default)
                 accessMode = s_DefaultAccessMode;
 
             return accessMode;
         }
+
+
 
         /// <summary>
         /// Gets the best possible type descriptor for a specified CLR type.
@@ -301,14 +266,15 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
                 }
 
                 // search for the base object descriptors
-                for (var t = type; t != null; t = Framework.Do.GetBaseType(t))
+                for (Type t = type; t != null; t = Framework.Do.GetBaseType(t))
                 {
-                    if (s_TypeRegistry.TryGetValue(t, out var u))
+
+                    if (s_TypeRegistry.TryGetValue(t, out IUserDataDescriptor u))
                     {
                         typeDescriptor = u;
                         break;
                     }
-                    if (Framework.Do.IsGenericType(t))
+                    else if (Framework.Do.IsGenericType(t))
                     {
                         if (s_TypeRegistry.TryGetValue(t.GetGenericTypeDefinition(), out u))
                         {
@@ -321,42 +287,36 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
                 if (typeDescriptor is IGeneratorUserDataDescriptor)
                     typeDescriptor = ((IGeneratorUserDataDescriptor)typeDescriptor).Generate(type);
 
+
                 // we should not search interfaces (for example, it's just for statics..), no need to look further
                 if (!searchInterfaces)
                     return typeDescriptor;
 
-                var descriptors = new List<IUserDataDescriptor>();
+                List<IUserDataDescriptor> descriptors = new();
 
                 if (typeDescriptor != null)
                     descriptors.Add(typeDescriptor);
 
+
                 if (searchInterfaces)
                 {
-                    foreach (var interfaceType in Framework.Do.GetInterfaces(type))
+                    foreach (Type interfaceType in Framework.Do.GetInterfaces(type))
                     {
-                        if (s_TypeRegistry.TryGetValue(interfaceType, out var interfaceDescriptor))
+
+                        if (s_TypeRegistry.TryGetValue(interfaceType, out IUserDataDescriptor interfaceDescriptor))
                         {
                             if (interfaceDescriptor is IGeneratorUserDataDescriptor)
-                                interfaceDescriptor = (
-                                    (IGeneratorUserDataDescriptor)interfaceDescriptor
-                                ).Generate(type);
+                                interfaceDescriptor = ((IGeneratorUserDataDescriptor)interfaceDescriptor).Generate(type);
 
                             if (interfaceDescriptor != null)
                                 descriptors.Add(interfaceDescriptor);
                         }
                         else if (Framework.Do.IsGenericType(interfaceType))
                         {
-                            if (
-                                s_TypeRegistry.TryGetValue(
-                                    interfaceType.GetGenericTypeDefinition(),
-                                    out interfaceDescriptor
-                                )
-                            )
+                            if (s_TypeRegistry.TryGetValue(interfaceType.GetGenericTypeDefinition(), out interfaceDescriptor))
                             {
                                 if (interfaceDescriptor is IGeneratorUserDataDescriptor)
-                                    interfaceDescriptor = (
-                                        (IGeneratorUserDataDescriptor)interfaceDescriptor
-                                    ).Generate(type);
+                                    interfaceDescriptor = ((IGeneratorUserDataDescriptor)interfaceDescriptor).Generate(type);
 
                                 if (interfaceDescriptor != null)
                                     descriptors.Add(interfaceDescriptor);
@@ -367,9 +327,10 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
 
                 if (descriptors.Count == 1)
                     return descriptors[0];
-                if (descriptors.Count == 0)
+                else if (descriptors.Count == 0)
                     return null;
-                return new CompositeUserDataDescriptor(descriptors, type);
+                else
+                    return new CompositeUserDataDescriptor(descriptors, type);
             }
         }
 
@@ -377,6 +338,7 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
         {
             throw new NotImplementedException();
         }
+
 
         /// <summary>
         /// Determines whether the specified type is blacklisted.
@@ -388,10 +350,7 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
         /// <returns></returns>
         public static bool IsTypeBlacklisted(Type t)
         {
-            if (
-                Framework.Do.IsValueType(t)
-                && Framework.Do.GetInterfaces(t).Contains(typeof(IEnumerator))
-            )
+            if (Framework.Do.IsValueType(t) && Framework.Do.GetInterfaces(t).Contains(typeof(System.Collections.IEnumerator)))
                 return true;
 
             return false;
@@ -405,11 +364,7 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
         /// </value>
         public static IEnumerable<KeyValuePair<Type, IUserDataDescriptor>> RegisteredTypes
         {
-            get
-            {
-                lock (s_Lock)
-                    return s_TypeRegistry.ToArray();
-            }
+            get { lock (s_Lock) return s_TypeRegistry.ToArray(); }
         }
 
         /// <summary>
@@ -420,16 +375,15 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
         /// </value>
         public static IEnumerable<KeyValuePair<Type, IUserDataDescriptor>> RegisteredTypesHistory
         {
-            get
-            {
-                lock (s_Lock)
-                    return s_TypeRegistryHistory.ToArray();
-            }
+            get { lock (s_Lock) return s_TypeRegistryHistory.ToArray(); }
         }
+
 
         /// <summary>
         /// Gets or sets the registration policy.
         /// </summary>
         internal static IRegistrationPolicy RegistrationPolicy { get; set; }
+
+
     }
 }

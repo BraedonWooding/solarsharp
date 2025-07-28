@@ -1,4 +1,6 @@
 ﻿namespace SolarSharp.Interpreter.CodeAnalysis
 {
-    internal class AstNode { }
+    internal class AstNode
+    {
+    }
 }

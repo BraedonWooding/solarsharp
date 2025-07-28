@@ -1,8 +1,7 @@
-﻿using System;
+﻿using SolarSharp.Interpreter.Modules;
+using System;
 using System.IO;
-using System.IO.Abstractions;
 using System.Text;
-using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Platforms
 {
@@ -11,11 +10,6 @@ namespace SolarSharp.Interpreter.Platforms
     /// </summary>
     public abstract class PlatformAccessorBase : IPlatformAccessor
     {
-        /// <summary>
-        /// Gets the file system abstraction used by this platform accessor
-        /// </summary>
-        public abstract IFileSystem FileSystem { get; }
-
         /// <summary>
         /// Gets the platform name prefix
         /// </summary>
@@ -47,7 +41,7 @@ namespace SolarSharp.Interpreter.Platforms
             }
 
 #if DOTNET_CORE
-            suffix += ".netcore";
+			suffix += ".netcore";
 #endif
 
             if (PlatformAutoDetector.IsRunningOnAOT)
@@ -61,11 +55,11 @@ namespace SolarSharp.Interpreter.Platforms
         private string GetUnityRuntimeName()
         {
 #if ENABLE_MONO
-            return "mono";
+	return "mono";
 #elif ENABLE_IL2CPP
-            return "il2cpp";
+	return "il2cpp";
 #elif ENABLE_DOTNET
-            return "dotnet";
+	return "dotnet";
 #else
             return "unknown";
 #endif
@@ -74,51 +68,51 @@ namespace SolarSharp.Interpreter.Platforms
         private string GetUnityPlatformName()
         {
 #if UNITY_STANDALONE_OSX
-            return "OSX";
+			return "OSX";
 #elif UNITY_STANDALONE_WIN
-            return "WIN";
+			return "WIN";
 #elif UNITY_STANDALONE_LINUX
-            return "LINUX";
+			return "LINUX";
 #elif UNITY_STANDALONE
-            return "STANDALONE";
+			return "STANDALONE";
 #elif UNITY_WII
-            return "WII";
+			return "WII";
 #elif UNITY_IOS
-            return "IOS";
+			return "IOS";
 #elif UNITY_IPHONE
-            return "IPHONE";
+			return "IPHONE";
 #elif UNITY_ANDROID
-            return "ANDROID";
+			return "ANDROID";
 #elif UNITY_PS3
-            return "PS3";
+			return "PS3";
 #elif UNITY_PS4
-            return "PS4";
+			return "PS4";
 #elif UNITY_SAMSUNGTV
-            return "SAMSUNGTV";
+			return "SAMSUNGTV";
 #elif UNITY_XBOX360
-            return "XBOX360";
+			return "XBOX360";
 #elif UNITY_XBOXONE
-            return "XBOXONE";
+			return "XBOXONE";
 #elif UNITY_TIZEN
-            return "TIZEN";
+			return "TIZEN";
 #elif UNITY_TVOS
-            return "TVOS";
+			return "TVOS";
 #elif UNITY_WP_8_1
-            return "WP_8_1";
+			return "WP_8_1";
 #elif UNITY_WSA_10_0
-            return "WSA_10_0";
+			return "WSA_10_0";
 #elif UNITY_WSA_8_1
-            return "WSA_8_1";
+			return "WSA_8_1";
 #elif UNITY_WSA
-            return "WSA";
+			return "WSA";
 #elif UNITY_WINRT_10_0
-            return "WINRT_10_0";
+			return "WINRT_10_0";
 #elif UNITY_WINRT_8_1
-            return "WINRT_8_1";
+			return "WINRT_8_1";
 #elif UNITY_WINRT
-            return "WINRT";
+			return "WINRT";
 #elif UNITY_WEBGL
-            return "WEBGL";
+			return "WEBGL";
 #else
             return "UNKNOWNHW";
 #endif
@@ -133,7 +127,7 @@ namespace SolarSharp.Interpreter.Platforms
         /// <summary>
         /// DEPRECATED.
         /// This is kept for backward compatibility, see the overload taking a prompt as an input parameter.
-        ///
+        /// 
         /// Default handler for interactive line input calls. Can be customized in ScriptOptions.
         /// If an inheriting class whants to give a meaningful implementation, this method MUST be overridden.
         /// </summary>
@@ -157,7 +151,7 @@ namespace SolarSharp.Interpreter.Platforms
         }
 
         /// <summary>
-        /// A function used to open files in the 'io' module.
+        /// A function used to open files in the 'io' module. 
         /// Can have an invalid implementation if 'io' module is filtered out.
         /// It should return a correctly initialized Stream for the given file and access
         /// </summary>
@@ -166,12 +160,8 @@ namespace SolarSharp.Interpreter.Platforms
         /// <param name="encoding">The encoding.</param>
         /// <param name="mode">The mode (as per Lua usage - e.g. 'w+', 'rb', etc.).</param>
         /// <returns></returns>
-        public abstract Stream IO_OpenFile(
-            Script script,
-            string filename,
-            Encoding encoding,
-            string mode
-        );
+        public abstract Stream IO_OpenFile(Script script, string filename, Encoding encoding, string mode);
+
 
         /// <summary>
         /// Gets a standard stream (stdin, stdout, stderr).
@@ -180,6 +170,7 @@ namespace SolarSharp.Interpreter.Platforms
         /// <returns></returns>
         public abstract Stream IO_GetStandardStream(StandardFileType type);
 
+
         /// <summary>
         /// Gets a temporary filename. Used in 'io' and 'os' modules.
         /// Can have an invalid implementation if 'io' and 'os' modules are filtered out.
@@ -187,12 +178,14 @@ namespace SolarSharp.Interpreter.Platforms
         /// <returns></returns>
         public abstract string IO_OS_GetTempFilename();
 
+
         /// <summary>
         /// Exits the process, returning the specified exit code.
         /// Can have an invalid implementation if the 'os' module is filtered out.
         /// </summary>
         /// <param name="exitCode">The exit code.</param>
         public abstract void OS_ExitFast(int exitCode);
+
 
         /// <summary>
         /// Checks if a file exists. Used by the 'os' module.
@@ -204,12 +197,14 @@ namespace SolarSharp.Interpreter.Platforms
         /// </returns>
         public abstract bool OS_FileExists(string file);
 
+
         /// <summary>
         /// Deletes the specified file. Used by the 'os' module.
         /// Can have an invalid implementation if the 'os' module is filtered out.
         /// </summary>
         /// <param name="file">The file.</param>
         public abstract void OS_FileDelete(string file);
+
 
         /// <summary>
         /// Moves the specified file. Used by the 'os' module.
@@ -219,6 +214,7 @@ namespace SolarSharp.Interpreter.Platforms
         /// <param name="dst">The DST.</param>
         public abstract void OS_FileMove(string src, string dst);
 
+
         /// <summary>
         /// Executes the specified command line, returning the child process exit code and blocking in the meantime.
         /// Can have an invalid implementation if the 'os' module is filtered out.
@@ -226,6 +222,7 @@ namespace SolarSharp.Interpreter.Platforms
         /// <param name="cmdline">The cmdline.</param>
         /// <returns></returns>
         public abstract int OS_Execute(string cmdline);
+
 
         /// <summary>
         /// Filters the CoreModules enumeration to exclude non-supported operations

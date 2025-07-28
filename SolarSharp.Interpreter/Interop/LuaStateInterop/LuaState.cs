@@ -1,14 +1,14 @@
 ﻿// Disable warnings about XML documentation
 #pragma warning disable 1591
 
-using System.Collections.Generic;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Execution;
+using System.Collections.Generic;
 
 namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 {
     /// <summary>
-    ///
+    /// 
     /// </summary>
     public class LuaState
     {
@@ -17,16 +17,12 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
         public ScriptExecutionContext ExecutionContext { get; private set; }
         public string FunctionName { get; private set; }
 
-        internal LuaState(
-            ScriptExecutionContext executionContext,
-            CallbackArguments args,
-            string functionName
-        )
+        internal LuaState(ScriptExecutionContext executionContext, CallbackArguments args, string functionName)
         {
             ExecutionContext = executionContext;
             m_Stack = new List<DynValue>(16);
 
-            for (var i = 0; i < args.Count; i++)
+            for (int i = 0; i < args.Count; i++)
                 m_Stack.Add(args[i]);
 
             FunctionName = functionName;
@@ -67,27 +63,33 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
 
         public DynValue[] GetTopArray(int num)
         {
-            var rets = new DynValue[num];
+            DynValue[] rets = new DynValue[num];
 
-            for (var i = 0; i < num; i++)
+            for (int i = 0; i < num; i++)
                 rets[num - i - 1] = Top(i);
 
             return rets;
         }
 
+
         public DynValue GetReturnValue(int retvals)
         {
             if (retvals == 0)
                 return DynValue.Nil;
-            if (retvals == 1)
+            else if (retvals == 1)
                 return Top();
-            var rets = GetTopArray(retvals);
-            return DynValue.NewTupleNested(rets);
+            else
+            {
+                DynValue[] rets = GetTopArray(retvals);
+                return DynValue.NewTupleNested(rets);
+            }
         }
+
+
 
         public void Discard(int nargs)
         {
-            for (var i = 0; i < nargs; i++)
+            for (int i = 0; i < nargs; i++)
                 m_Stack.RemoveAt(m_Stack.Count - 1);
         }
     }

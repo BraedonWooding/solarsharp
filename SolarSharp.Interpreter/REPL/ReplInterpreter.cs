@@ -1,6 +1,6 @@
-﻿using System;
-using SolarSharp.Interpreter.DataTypes;
+﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
+using System;
 
 namespace SolarSharp.Interpreter.REPL
 {
@@ -22,40 +22,31 @@ namespace SolarSharp.Interpreter.REPL
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this instances handle inputs starting with a "?" as a
+        /// Gets or sets a value indicating whether this instances handle inputs starting with a "?" as a 
         /// dynamic expression to evaluate instead of script code (likely invalid)
         /// </summary>
         public bool HandleDynamicExprs { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this instances handle inputs starting with a "=" as a
+        /// Gets or sets a value indicating whether this instances handle inputs starting with a "=" as a 
         /// non-dynamic expression to evaluate (just like the Lua interpreter does by default).
         /// </summary>
         public bool HandleClassicExprsSyntax { get; set; }
 
         /// <summary>
-        /// Gets a value indicating whether this instance has a pending command
+        /// Gets a value indicating whether this instance has a pending command 
         /// </summary>
-        public virtual bool HasPendingCommand
-        {
-            get { return m_CurrentCommand.Length > 0; }
-        }
+        public virtual bool HasPendingCommand { get { return m_CurrentCommand.Length > 0; } }
 
         /// <summary>
         /// Gets the current pending command.
         /// </summary>
-        public virtual string CurrentPendingCommand
-        {
-            get { return m_CurrentCommand; }
-        }
+        public virtual string CurrentPendingCommand { get { return m_CurrentCommand; } }
 
         /// <summary>
         /// Gets the classic prompt (">" or ">>") given the current state of the interpreter
         /// </summary>
-        public virtual string ClassicPrompt
-        {
-            get { return HasPendingCommand ? ">>" : ">"; }
-        }
+        public virtual string ClassicPrompt { get { return HasPendingCommand ? ">>" : ">"; } }
 
         /// <summary>
         /// Evaluate a REPL command.
@@ -66,9 +57,9 @@ namespace SolarSharp.Interpreter.REPL
         /// <returns>This method returns the result of the computation, or null if more input is needed for a computation.</returns>
         public virtual DynValue Evaluate(string input)
         {
-            var isFirstLine = !HasPendingCommand;
+            bool isFirstLine = !HasPendingCommand;
 
-            var forced = input == "";
+            bool forced = input == "";
 
             m_CurrentCommand += input;
 
@@ -109,7 +100,10 @@ namespace SolarSharp.Interpreter.REPL
                     ex.Rethrow();
                     throw;
                 }
-                return null;
+                else
+                {
+                    return null;
+                }
             }
             catch (ScriptRuntimeException sre)
             {

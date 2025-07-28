@@ -14,14 +14,15 @@ namespace SolarSharp.Interpreter.Execution.Scopes
 
         internal RuntimeScopeBlock ScopeBlock { get; private set; }
 
-        private readonly Dictionary<string, SymbolRef> m_DefinedNames =
-            new Dictionary<string, SymbolRef>();
+        private readonly Dictionary<string, SymbolRef> m_DefinedNames = new();
+
+
 
         internal void Rename(string name)
         {
-            var sref = m_DefinedNames[name];
+            SymbolRef sref = m_DefinedNames[name];
             m_DefinedNames.Remove(name);
-            m_DefinedNames.Add($"@{name}_{Guid.NewGuid().ToString("N")}", sref);
+            m_DefinedNames.Add(string.Format("@{0}_{1}", name, Guid.NewGuid().ToString("N")), sref);
         }
 
         internal BuildTimeScopeBlock(BuildTimeScopeBlock parent)
@@ -31,9 +32,10 @@ namespace SolarSharp.Interpreter.Execution.Scopes
             ScopeBlock = new RuntimeScopeBlock();
         }
 
+
         internal BuildTimeScopeBlock AddChild()
         {
-            var block = new BuildTimeScopeBlock(this);
+            BuildTimeScopeBlock block = new(this);
             ChildNodes.Add(block);
             return block;
         }
@@ -45,7 +47,7 @@ namespace SolarSharp.Interpreter.Execution.Scopes
 
         internal SymbolRef Define(string name)
         {
-            var l = SymbolRef.Local(name, -1);
+            SymbolRef l = SymbolRef.Local(name, -1);
             m_DefinedNames.Add(name, l);
             m_LastDefinedName = name;
             return l;
@@ -53,12 +55,12 @@ namespace SolarSharp.Interpreter.Execution.Scopes
 
         internal int ResolveLRefs(BuildTimeScopeFrame buildTimeScopeFrame)
         {
-            var firstVal = -1;
-            var lastVal = -1;
+            int firstVal = -1;
+            int lastVal = -1;
 
-            foreach (var lref in m_DefinedNames.Values)
+            foreach (SymbolRef lref in m_DefinedNames.Values)
             {
-                var pos = buildTimeScopeFrame.AllocVar(lref);
+                int pos = buildTimeScopeFrame.AllocVar(lref);
 
                 if (firstVal < 0)
                     firstVal = pos;
@@ -74,10 +76,7 @@ namespace SolarSharp.Interpreter.Execution.Scopes
 
             foreach (var child in ChildNodes)
             {
-                ScopeBlock.ToInclusive = Math.Max(
-                    ScopeBlock.ToInclusive,
-                    child.ResolveLRefs(buildTimeScopeFrame)
-                );
+                ScopeBlock.ToInclusive = Math.Max(ScopeBlock.ToInclusive, child.ResolveLRefs(buildTimeScopeFrame));
             }
 
             if (m_LocalLabels != null)
@@ -97,15 +96,13 @@ namespace SolarSharp.Interpreter.Execution.Scopes
 
             if (m_LocalLabels.ContainsKey(label.Label))
             {
-                throw new SyntaxErrorException(
-                    label.NameToken,
-                    "label '{0}' already defined on line {1}",
-                    label.Label,
-                    m_LocalLabels[label.Label].SourceRef.FromLine
-                );
+                throw new SyntaxErrorException(label.NameToken, "label '{0}' already defined on line {1}", label.Label, m_LocalLabels[label.Label].SourceRef.FromLine);
             }
-            m_LocalLabels.Add(label.Label, label);
-            label.SetDefinedVars(m_DefinedNames.Count, m_LastDefinedName);
+            else
+            {
+                m_LocalLabels.Add(label.Label, label);
+                label.SetDefinedVars(m_DefinedNames.Count, m_LastDefinedName);
+            }
         }
 
         internal void RegisterGoto(GotoStatement gotostat)
@@ -121,33 +118,24 @@ namespace SolarSharp.Interpreter.Execution.Scopes
             if (m_PendingGotos == null)
                 return;
 
-            foreach (var gotostat in m_PendingGotos)
+            foreach (GotoStatement gotostat in m_PendingGotos)
             {
-                if (
-                    m_LocalLabels != null
-                    && m_LocalLabels.TryGetValue(gotostat.Label, out var label)
-                )
+
+                if (m_LocalLabels != null && m_LocalLabels.TryGetValue(gotostat.Label, out LabelStatement label))
                 {
                     if (label.DefinedVarsCount > gotostat.DefinedVarsCount)
-                        throw new SyntaxErrorException(
-                            gotostat.GotoToken,
-                            "<goto {0}> at line {1} jumps into the scope of local '{2}'",
-                            gotostat.Label,
+                        throw new SyntaxErrorException(gotostat.GotoToken,
+                            "<goto {0}> at line {1} jumps into the scope of local '{2}'", gotostat.Label,
                             gotostat.GotoToken.FromLine,
-                            label.LastDefinedVarName
-                        );
+                            label.LastDefinedVarName);
 
                     label.RegisterGoto(gotostat);
                 }
                 else
                 {
                     if (Parent == null)
-                        throw new SyntaxErrorException(
-                            gotostat.GotoToken,
-                            "no visible label '{0}' for <goto> at line {1}",
-                            gotostat.Label,
-                            gotostat.GotoToken.FromLine
-                        );
+                        throw new SyntaxErrorException(gotostat.GotoToken, "no visible label '{0}' for <goto> at line {1}", gotostat.Label,
+                            gotostat.GotoToken.FromLine);
 
                     Parent.RegisterGoto(gotostat);
                 }

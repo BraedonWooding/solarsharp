@@ -9,13 +9,10 @@ namespace SolarSharp.Interpreter.Diagnostics
     /// </summary>
     public class PerformanceStatistics
     {
-        private IPerformanceStopwatch[] m_Stopwatches = new IPerformanceStopwatch[
-            (int)PerformanceCounter.LastValue
-        ];
-        private static IPerformanceStopwatch[] m_GlobalStopwatches = new IPerformanceStopwatch[
-            (int)PerformanceCounter.LastValue
-        ];
-        private bool m_Enabled;
+        private IPerformanceStopwatch[] m_Stopwatches = new IPerformanceStopwatch[(int)PerformanceCounter.LastValue];
+        private static IPerformanceStopwatch[] m_GlobalStopwatches = new IPerformanceStopwatch[(int)PerformanceCounter.LastValue];
+        private bool m_Enabled = false;
+
 
         /// <summary>
         /// Gets or sets a value indicating whether this collection of performance stats is enabled.
@@ -31,25 +28,21 @@ namespace SolarSharp.Interpreter.Diagnostics
                 if (value && !m_Enabled)
                 {
                     if (m_GlobalStopwatches[(int)PerformanceCounter.AdaptersCompilation] == null)
-                        m_GlobalStopwatches[(int)PerformanceCounter.AdaptersCompilation] =
-                            new GlobalPerformanceStopwatch(PerformanceCounter.AdaptersCompilation);
+                        m_GlobalStopwatches[(int)PerformanceCounter.AdaptersCompilation] = new GlobalPerformanceStopwatch(PerformanceCounter.AdaptersCompilation);
 
-                    for (var i = 0; i < (int)PerformanceCounter.LastValue; i++)
-                        m_Stopwatches[i] =
-                            m_GlobalStopwatches[i]
-                            ?? new PerformanceStopwatch((PerformanceCounter)i);
+                    for (int i = 0; i < (int)PerformanceCounter.LastValue; i++)
+                        m_Stopwatches[i] = m_GlobalStopwatches[i] ?? new PerformanceStopwatch((PerformanceCounter)i);
                 }
                 else if (!value && m_Enabled)
                 {
                     m_Stopwatches = new IPerformanceStopwatch[(int)PerformanceCounter.LastValue];
-                    m_GlobalStopwatches = new IPerformanceStopwatch[
-                        (int)PerformanceCounter.LastValue
-                    ];
+                    m_GlobalStopwatches = new IPerformanceStopwatch[(int)PerformanceCounter.LastValue];
                 }
 
                 m_Enabled = value;
             }
         }
+
 
         /// <summary>
         /// Gets the result of the specified performance counter .
@@ -88,9 +81,9 @@ namespace SolarSharp.Interpreter.Diagnostics
         /// <returns></returns>
         public string GetPerformanceLog()
         {
-            var sb = new StringBuilder();
+            StringBuilder sb = new();
 
-            for (var i = 0; i < (int)PerformanceCounter.LastValue; i++)
+            for (int i = 0; i < (int)PerformanceCounter.LastValue; i++)
             {
                 var res = GetPerformanceCounterResult((PerformanceCounter)i);
                 if (res != null)

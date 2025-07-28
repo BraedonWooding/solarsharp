@@ -10,10 +10,8 @@ namespace SolarSharp.Interpreter.Tree.Lexer
     {
         public static double ParseNumber(Token T)
         {
-            var txt = T.Text;
-            if (
-                !double.TryParse(txt, NumberStyles.Float, CultureInfo.InvariantCulture, out var res)
-            )
+            string txt = T.Text;
+            if (!double.TryParse(txt, NumberStyles.Float, CultureInfo.InvariantCulture, out double res))
                 throw new SyntaxErrorException(T, "malformed number near '{0}'", txt);
 
             return res;
@@ -21,21 +19,11 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         public static double ParseHexInteger(Token T)
         {
-            var txt = T.Text;
+            string txt = T.Text;
             if (txt.Length < 2 || txt[0] != '0' && char.ToUpper(txt[1]) != 'X')
-                throw new InternalErrorException(
-                    "hex numbers must start with '0x' near '{0}'.",
-                    txt
-                );
+                throw new InternalErrorException("hex numbers must start with '0x' near '{0}'.", txt);
 
-            if (
-                !ulong.TryParse(
-                    txt[2..],
-                    NumberStyles.HexNumber,
-                    CultureInfo.InvariantCulture,
-                    out var res
-                )
-            )
+            if (!ulong.TryParse(txt[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong res))
                 throw new SyntaxErrorException(T, "malformed number near '{0}'", txt);
 
             return res;
@@ -45,13 +33,13 @@ namespace SolarSharp.Interpreter.Tree.Lexer
         {
             digits = 0;
 
-            for (var i = 0; i < s.Length; i++)
+            for (int i = 0; i < s.Length; i++)
             {
-                var c = s[i];
+                char c = s[i];
 
                 if (CharIsHexDigit(c))
                 {
-                    var v = HexDigit2Value(c);
+                    int v = HexDigit2Value(c);
                     d *= 16.0;
                     d += v;
                     ++digits;
@@ -67,22 +55,19 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
         public static double ParseHexFloat(Token T)
         {
-            var s = T.Text;
+            string s = T.Text;
 
             try
             {
                 if (s.Length < 2 || s[0] != '0' && char.ToUpper(s[1]) != 'X')
-                    throw new InternalErrorException(
-                        "hex float must start with '0x' near '{0}'",
-                        s
-                    );
+                    throw new InternalErrorException("hex float must start with '0x' near '{0}'", s);
 
                 s = s[2..];
 
-                var value = 0.0;
-                var exp = 0;
+                double value = 0.0;
+                int exp = 0;
 
-                s = ReadHexProgressive(s, ref value, out var dummy);
+                s = ReadHexProgressive(s, ref value, out int dummy);
 
                 if (s.Length > 0 && s[0] == '.')
                 {
@@ -99,12 +84,12 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
                     s = s[(s[1] == '+' ? 2 : 1)..];
 
-                    var exp1 = int.Parse(s, CultureInfo.InvariantCulture);
+                    int exp1 = int.Parse(s, CultureInfo.InvariantCulture);
 
                     exp += exp1;
                 }
 
-                var result = value * Math.Pow(2, exp);
+                double result = value * Math.Pow(2, exp);
                 return result;
             }
             catch (FormatException)
@@ -113,37 +98,29 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             }
         }
 
+
         public static int HexDigit2Value(char c)
         {
-            if (c is >= '0' and <= '9')
+            if (c >= '0' && c <= '9')
                 return c - '0';
-            if (c is >= 'A' and <= 'F')
+            else if (c >= 'A' && c <= 'F')
                 return 10 + (c - 'A');
-            if (c is >= 'a' and <= 'f')
+            else if (c >= 'a' && c <= 'f')
                 return 10 + (c - 'a');
-            throw new InternalErrorException("invalid hex digit near '{0}'", c);
+            else
+                throw new InternalErrorException("invalid hex digit near '{0}'", c);
         }
 
         public static bool CharIsDigit(char c)
         {
-            return c is >= '0' and <= '9';
+            return c >= '0' && c <= '9';
         }
 
         public static bool CharIsHexDigit(char c)
         {
-            return CharIsDigit(c)
-                || c == 'a'
-                || c == 'b'
-                || c == 'c'
-                || c == 'd'
-                || c == 'e'
-                || c == 'f'
-                || c == 'A'
-                || c == 'B'
-                || c == 'C'
-                || c == 'D'
-                || c == 'E'
-                || c == 'F';
+            return CharIsDigit(c) ||
+                c == 'a' || c == 'b' || c == 'c' || c == 'd' || c == 'e' || c == 'f' ||
+                c == 'A' || c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F';
         }
 
         public static string AdjustLuaLongString(string str)
@@ -161,123 +138,42 @@ namespace SolarSharp.Interpreter.Tree.Lexer
             if (!Framework.Do.StringContainsChar(str, '\\'))
                 return str;
 
-            var sb = new StringBuilder();
+            StringBuilder sb = new();
 
-            var escape = false;
-            var hex = false;
-            var unicode_state = 0;
-            var hexprefix = "";
-            var val = "";
-            var zmode = false;
+            bool escape = false;
+            bool hex = false;
+            int unicode_state = 0;
+            string hexprefix = "";
+            string val = "";
+            bool zmode = false;
 
-            foreach (var c in str)
+            foreach (char c in str)
             {
-                redo:
+            redo:
                 if (escape)
                 {
                     if (val.Length == 0 && !hex && unicode_state == 0)
                     {
-                        if (c == 'a')
-                        {
-                            sb.Append('\a');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == '\r') { } // this makes \\r\n -> \\n
-                        else if (c == '\n')
-                        {
-                            sb.Append('\n');
-                            escape = false;
-                        }
-                        else if (c == 'b')
-                        {
-                            sb.Append('\b');
-                            escape = false;
-                        }
-                        else if (c == 'f')
-                        {
-                            sb.Append('\f');
-                            escape = false;
-                        }
-                        else if (c == 'n')
-                        {
-                            sb.Append('\n');
-                            escape = false;
-                        }
-                        else if (c == 'r')
-                        {
-                            sb.Append('\r');
-                            escape = false;
-                        }
-                        else if (c == 't')
-                        {
-                            sb.Append('\t');
-                            escape = false;
-                        }
-                        else if (c == 'v')
-                        {
-                            sb.Append('\v');
-                            escape = false;
-                        }
-                        else if (c == '\\')
-                        {
-                            sb.Append('\\');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == '"')
-                        {
-                            sb.Append('\"');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == '\'')
-                        {
-                            sb.Append('\'');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == '[')
-                        {
-                            sb.Append('[');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == ']')
-                        {
-                            sb.Append(']');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == '/')
-                        {
-                            sb.Append('/');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == 'x')
-                        {
-                            hex = true;
-                        }
-                        else if (c == 'u')
-                        {
-                            unicode_state = 1;
-                        }
-                        else if (c == 'z')
-                        {
-                            zmode = true;
-                            escape = false;
-                        }
-                        else if (CharIsDigit(c))
-                        {
-                            val += c;
-                        }
-                        else
-                            throw new SyntaxErrorException(
-                                token,
-                                "invalid escape sequence near '\\{0}'",
-                                c
-                            );
+                        if (c == 'a') { sb.Append('\a'); escape = false; zmode = false; }
+                        else if (c == '\r') { }  // this makes \\r\n -> \\n
+                        else if (c == '\n') { sb.Append('\n'); escape = false; }
+                        else if (c == 'b') { sb.Append('\b'); escape = false; }
+                        else if (c == 'f') { sb.Append('\f'); escape = false; }
+                        else if (c == 'n') { sb.Append('\n'); escape = false; }
+                        else if (c == 'r') { sb.Append('\r'); escape = false; }
+                        else if (c == 't') { sb.Append('\t'); escape = false; }
+                        else if (c == 'v') { sb.Append('\v'); escape = false; }
+                        else if (c == '\\') { sb.Append('\\'); escape = false; zmode = false; }
+                        else if (c == '"') { sb.Append('\"'); escape = false; zmode = false; }
+                        else if (c == '\'') { sb.Append('\''); escape = false; zmode = false; }
+                        else if (c == '[') { sb.Append('['); escape = false; zmode = false; }
+                        else if (c == ']') { sb.Append(']'); escape = false; zmode = false; }
+                        else if (c == '/') { sb.Append('/'); escape = false; zmode = false; }
+                        else if (c == 'x') { hex = true; }
+                        else if (c == 'u') { unicode_state = 1; }
+                        else if (c == 'z') { zmode = true; escape = false; }
+                        else if (CharIsDigit(c)) { val += c; }
+                        else throw new SyntaxErrorException(token, "invalid escape sequence near '\\{0}'", c);
                     }
                     else
                     {
@@ -292,11 +188,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                         {
                             if (c == '}')
                             {
-                                var i = int.Parse(
-                                    val,
-                                    NumberStyles.HexNumber,
-                                    CultureInfo.InvariantCulture
-                                );
+                                int i = int.Parse(val, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
                                 sb.Append(ConvertUtf32ToChar(i));
                                 unicode_state = 0;
                                 val = string.Empty;
@@ -304,10 +196,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                             }
                             else if (val.Length >= 8)
                             {
-                                throw new SyntaxErrorException(
-                                    token,
-                                    "'}' missing, or unicode code point too large after '\\u'"
-                                );
+                                throw new SyntaxErrorException(token, "'}' missing, or unicode code point too large after '\\u'");
                             }
                             else
                             {
@@ -321,11 +210,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                                 val += c;
                                 if (val.Length == 2)
                                 {
-                                    var i = int.Parse(
-                                        val,
-                                        NumberStyles.HexNumber,
-                                        CultureInfo.InvariantCulture
-                                    );
+                                    int i = int.Parse(val, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
                                     sb.Append(ConvertUtf32ToChar(i));
                                     zmode = false;
                                     escape = false;
@@ -333,13 +218,7 @@ namespace SolarSharp.Interpreter.Tree.Lexer
                             }
                             else
                             {
-                                throw new SyntaxErrorException(
-                                    token,
-                                    "hexadecimal digit expected near '\\{0}{1}{2}'",
-                                    hexprefix,
-                                    val,
-                                    c
-                                );
+                                throw new SyntaxErrorException(token, "hexadecimal digit expected near '\\{0}{1}{2}'", hexprefix, val, c);
                             }
                         }
                         else if (val.Length > 0)
@@ -351,14 +230,10 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
                             if (val.Length == 3 || !CharIsDigit(c))
                             {
-                                var i = int.Parse(val, CultureInfo.InvariantCulture);
+                                int i = int.Parse(val, CultureInfo.InvariantCulture);
 
                                 if (i > 255)
-                                    throw new SyntaxErrorException(
-                                        token,
-                                        "decimal escape too large near '\\{0}'",
-                                        val
-                                    );
+                                    throw new SyntaxErrorException(token, "decimal escape too large near '\\{0}'", val);
 
                                 sb.Append(ConvertUtf32ToChar(i));
 
@@ -392,18 +267,14 @@ namespace SolarSharp.Interpreter.Tree.Lexer
 
             if (escape && !hex && val.Length > 0)
             {
-                var i = int.Parse(val, CultureInfo.InvariantCulture);
+                int i = int.Parse(val, CultureInfo.InvariantCulture);
                 sb.Append(ConvertUtf32ToChar(i));
                 escape = false;
             }
 
             if (escape)
             {
-                throw new SyntaxErrorException(
-                    token,
-                    "unfinished string near '\"{0}\"'",
-                    sb.ToString()
-                );
+                throw new SyntaxErrorException(token, "unfinished string near '\"{0}\"'", sb.ToString());
             }
 
             return sb.ToString();
@@ -412,10 +283,11 @@ namespace SolarSharp.Interpreter.Tree.Lexer
         private static string ConvertUtf32ToChar(int i)
         {
 #if PCL || ENABLE_DOTNET
-            return ((char)i).ToString();
+			return ((char)i).ToString();
 #else
             return char.ConvertFromUtf32(i);
 #endif
         }
+
     }
 }

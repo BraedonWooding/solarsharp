@@ -21,7 +21,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
             : base(lcontext)
         {
             GotoToken = CheckTokenType(lcontext, TokenType.Goto);
-            var name = CheckTokenType(lcontext, TokenType.Name);
+            Token name = CheckTokenType(lcontext, TokenType.Name);
 
             SourceRef = GotoToken.GetSourceRef(name);
 
@@ -41,6 +41,7 @@ namespace SolarSharp.Interpreter.Tree.Statements
             LastDefinedVarName = lastDefinedVarsName;
         }
 
+
         internal void SetAddress(int labelAddress)
         {
             m_LabelAddress = labelAddress;
@@ -48,5 +49,6 @@ namespace SolarSharp.Interpreter.Tree.Statements
             if (m_Jump != null)
                 m_Jump.NumVal = labelAddress;
         }
+
     }
 }

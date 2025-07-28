@@ -20,28 +20,18 @@ namespace SolarSharp.Hardwire.Utils
         {
             CodeExpression ename = new CodePrimitiveExpression(tpar.Get("name").String);
             CodeExpression etype = new CodeTypeOfExpression(tpar.Get("origtype").String);
-            CodeExpression hasDefaultValue = new CodePrimitiveExpression(
-                tpar.Get("default").Boolean
-            );
-            var defaultValue = tpar.Get("default").Boolean
-                ? new CodeObjectCreateExpression(typeof(DefaultValue))
-                : (CodeExpression)new CodePrimitiveExpression(null);
+            CodeExpression hasDefaultValue = new CodePrimitiveExpression(tpar.Get("default").Boolean);
+            CodeExpression defaultValue = tpar.Get("default").Boolean ? new CodeObjectCreateExpression(typeof(DefaultValue)) :
+                (CodeExpression)new CodePrimitiveExpression(null);
             CodeExpression isOut = new CodePrimitiveExpression(tpar.Get("out").Boolean);
             CodeExpression isRef = new CodePrimitiveExpression(tpar.Get("ref").Boolean);
             CodeExpression isVarArg = new CodePrimitiveExpression(tpar.Get("varargs").Boolean);
-            var restrictType = tpar.Get("restricted").Boolean
-                ? new CodeTypeOfExpression(tpar.Get("type").String)
-                : (CodeExpression)new CodePrimitiveExpression(null);
+            CodeExpression restrictType = tpar.Get("restricted").Boolean ? new CodeTypeOfExpression(tpar.Get("type").String) :
+                (CodeExpression)new CodePrimitiveExpression(null);
 
-            Expression = new CodeObjectCreateExpression(
-                typeof(ParameterDescriptor),
-                ename,
-                etype,
-                hasDefaultValue,
-                defaultValue,
-                isOut,
-                isRef,
-                isVarArg
+            Expression = new CodeObjectCreateExpression(typeof(ParameterDescriptor), new CodeExpression[] {
+                    ename, etype, hasDefaultValue, defaultValue, isOut, isRef,
+                    isVarArg }
             );
 
             ParamType = tpar.Get("origtype").String;
@@ -52,15 +42,16 @@ namespace SolarSharp.Hardwire.Utils
 
         public static List<HardwireParameterDescriptor> LoadDescriptorsFromTable(Table t)
         {
-            var list = new List<HardwireParameterDescriptor>();
+            List<HardwireParameterDescriptor> list = new();
 
-            for (var i = 1; i <= t.Length; i++)
+            for (int i = 1; i <= t.Length; i++)
             {
                 list.Add(new HardwireParameterDescriptor(t.Get(i).Table));
             }
 
             return list;
         }
+
 
         public void SetTempVar(string varName)
         {

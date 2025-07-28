@@ -15,16 +15,12 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
     /// <summary>
     /// Class providing easier marshalling of overloaded CLR functions
     /// </summary>
-    public class OverloadedMethodMemberDescriptor
-        : IOptimizableDescriptor,
-            IMemberDescriptor,
-            IWireableDescriptor
+    public class OverloadedMethodMemberDescriptor : IOptimizableDescriptor, IMemberDescriptor, IWireableDescriptor
     {
         /// <summary>
         /// Comparer class for IOverloadableMemberDescriptor
         /// </summary>
-        private class OverloadableMemberDescriptorComparer
-            : IComparer<IOverloadableMemberDescriptor>
+        private class OverloadableMemberDescriptorComparer : IComparer<IOverloadableMemberDescriptor>
         {
             public int Compare(IOverloadableMemberDescriptor x, IOverloadableMemberDescriptor y)
             {
@@ -43,19 +39,18 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             public int HitIndexAtLastHit;
         }
 
-        private readonly List<IOverloadableMemberDescriptor> m_Overloads =
-            new List<IOverloadableMemberDescriptor>();
-        private List<IOverloadableMemberDescriptor> m_ExtOverloads =
-            new List<IOverloadableMemberDescriptor>();
+        private readonly List<IOverloadableMemberDescriptor> m_Overloads = new();
+        private List<IOverloadableMemberDescriptor> m_ExtOverloads = new();
         private bool m_Unsorted = true;
         private OverloadCacheItem[] m_Cache = new OverloadCacheItem[CACHE_SIZE];
-        private int m_CacheHits;
-        private int m_ExtensionMethodVersion;
+        private int m_CacheHits = 0;
+        private int m_ExtensionMethodVersion = 0;
 
         /// <summary>
         /// Gets or sets a value indicating whether this instance ignores extension methods.
         /// </summary>
         public bool IgnoreExtensionMethods { get; set; }
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OverloadedMethodMemberDescriptor"/> class.
@@ -72,11 +67,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="name">The name.</param>
         /// <param name="declaringType">The declaring type.</param>
         /// <param name="descriptor">The descriptor of the first overloaded method.</param>
-        public OverloadedMethodMemberDescriptor(
-            string name,
-            Type declaringType,
-            IOverloadableMemberDescriptor descriptor
-        )
+        public OverloadedMethodMemberDescriptor(string name, Type declaringType, IOverloadableMemberDescriptor descriptor)
             : this(name, declaringType)
         {
             m_Overloads.Add(descriptor);
@@ -88,11 +79,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="name">The name.</param>
         /// <param name="declaringType">The declaring type.</param>
         /// <param name="descriptors">The descriptors of the overloaded methods.</param>
-        public OverloadedMethodMemberDescriptor(
-            string name,
-            Type declaringType,
-            IEnumerable<IOverloadableMemberDescriptor> descriptors
-        )
+        public OverloadedMethodMemberDescriptor(string name, Type declaringType, IEnumerable<IOverloadableMemberDescriptor> descriptors)
             : this(name, declaringType)
         {
             m_Overloads.AddRange(descriptors);
@@ -103,24 +90,31 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// </summary>
         /// <param name="version">The version.</param>
         /// <param name="extMethods">The ext methods.</param>
-        internal void SetExtensionMethodsSnapshot(
-            int version,
-            List<IOverloadableMemberDescriptor> extMethods
-        )
+        internal void SetExtensionMethodsSnapshot(int version, List<IOverloadableMemberDescriptor> extMethods)
         {
             m_ExtOverloads = extMethods;
             m_ExtensionMethodVersion = version;
         }
 
-        /// <summary>
-        /// Gets the name of the first described overload
-        /// </summary>
-        public string Name { get; private set; }
+
 
         /// <summary>
         /// Gets the name of the first described overload
         /// </summary>
-        public Type DeclaringType { get; private set; }
+        public string Name
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Gets the name of the first described overload
+        /// </summary>
+        public Type DeclaringType
+        {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// Adds an overload.
@@ -152,17 +146,9 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="args">The arguments.</param>
         /// <returns></returns>
         /// <exception cref="ScriptRuntimeException">function call doesn't match any overload</exception>
-        private DynValue PerformOverloadedCall(
-            Script script,
-            object obj,
-            ScriptExecutionContext context,
-            CallbackArguments args
-        )
+        private DynValue PerformOverloadedCall(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
         {
-            var extMethodCacheNotExpired =
-                IgnoreExtensionMethods
-                || obj == null
-                || m_ExtensionMethodVersion == UserData.GetExtensionMethodsChangeVersion();
+            bool extMethodCacheNotExpired = IgnoreExtensionMethods || obj == null || m_ExtensionMethodVersion == UserData.GetExtensionMethodsChangeVersion();
 
             // common case, let's optimize for it
             if (m_Overloads.Count == 1 && m_ExtOverloads.Count == 0 && extMethodCacheNotExpired)
@@ -176,18 +162,12 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
 
             if (extMethodCacheNotExpired)
             {
-                for (var i = 0; i < m_Cache.Length; i++)
+                for (int i = 0; i < m_Cache.Length; i++)
                 {
                     if (m_Cache[i] != null && CheckMatch(obj != null, args, m_Cache[i]))
                     {
 #if DEBUG_OVERLOAD_RESOLVER
-                        System.Diagnostics.Debug.WriteLine(
-                            string.Format(
-                                "[OVERLOAD] : CACHED! slot {0}, hits: {1}",
-                                i,
-                                m_CacheHits
-                            )
-                        );
+						System.Diagnostics.Debug.WriteLine(string.Format("[OVERLOAD] : CACHED! slot {0}, hits: {1}", i, m_CacheHits));
 #endif
                         return m_Cache[i].Method.Execute(script, obj, context, args);
                     }
@@ -195,14 +175,14 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             }
 
             // resolve on overloads first
-            var maxScore = 0;
+            int maxScore = 0;
             IOverloadableMemberDescriptor bestOverload = null;
 
-            for (var i = 0; i < m_Overloads.Count; i++)
+            for (int i = 0; i < m_Overloads.Count; i++)
             {
                 if (obj != null || m_Overloads[i].IsStatic)
                 {
-                    var score = CalcScoreForOverload(context, args, m_Overloads[i], false);
+                    int score = CalcScoreForOverload(context, args, m_Overloads[i], false);
 
                     if (score > maxScore)
                     {
@@ -220,9 +200,9 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                     m_ExtOverloads = UserData.GetExtensionMethodsByNameAndType(Name, DeclaringType);
                 }
 
-                for (var i = 0; i < m_ExtOverloads.Count; i++)
+                for (int i = 0; i < m_ExtOverloads.Count; i++)
                 {
-                    var score = CalcScoreForOverload(context, args, m_ExtOverloads[i], true);
+                    int score = CalcScoreForOverload(context, args, m_ExtOverloads[i], true);
 
                     if (score > maxScore)
                     {
@@ -232,36 +212,29 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 }
             }
 
+
             if (bestOverload != null)
             {
                 Cache(obj != null, args, bestOverload);
                 return bestOverload.Execute(script, obj, context, args);
             }
 
-            throw new ScriptRuntimeException("function call doesn't match any overload");
+            throw new ScriptRuntimeException($"function call doesn't match any overload");
         }
 
-        private void Cache(
-            bool hasObject,
-            CallbackArguments args,
-            IOverloadableMemberDescriptor bestOverload
-        )
+        private void Cache(bool hasObject, CallbackArguments args, IOverloadableMemberDescriptor bestOverload)
         {
-            var lowestHits = int.MaxValue;
+            int lowestHits = int.MaxValue;
             OverloadCacheItem found = null;
-            for (var i = 0; i < m_Cache.Length; i++)
+            for (int i = 0; i < m_Cache.Length; i++)
             {
                 if (m_Cache[i] == null)
                 {
-                    found = new OverloadCacheItem
-                    {
-                        ArgsDataType = new List<DataType>(),
-                        ArgsUserDataType = new List<Type>(),
-                    };
+                    found = new OverloadCacheItem() { ArgsDataType = new List<DataType>(), ArgsUserDataType = new List<Type>() };
                     m_Cache[i] = found;
                     break;
                 }
-                if (m_Cache[i].HitIndexAtLastHit < lowestHits)
+                else if (m_Cache[i].HitIndexAtLastHit < lowestHits)
                 {
                     lowestHits = m_Cache[i].HitIndexAtLastHit;
                     found = m_Cache[i];
@@ -272,11 +245,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             {
                 // overflow..
                 m_Cache = new OverloadCacheItem[CACHE_SIZE];
-                found = new OverloadCacheItem
-                {
-                    ArgsDataType = new List<DataType>(),
-                    ArgsUserDataType = new List<Type>(),
-                };
+                found = new OverloadCacheItem() { ArgsDataType = new List<DataType>(), ArgsUserDataType = new List<Type>() };
                 m_Cache[0] = found;
                 m_CacheHits = 0;
             }
@@ -286,7 +255,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             found.ArgsDataType.Clear();
             found.HasObject = hasObject;
 
-            for (var i = 0; i < args.Count; i++)
+            for (int i = 0; i < args.Count; i++)
             {
                 found.ArgsDataType.Add(args[i].Type);
 
@@ -301,11 +270,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             }
         }
 
-        private bool CheckMatch(
-            bool hasObject,
-            CallbackArguments args,
-            OverloadCacheItem overloadCacheItem
-        )
+        private bool CheckMatch(bool hasObject, CallbackArguments args, OverloadCacheItem overloadCacheItem)
         {
             if (overloadCacheItem.HasObject && !hasObject)
                 return false;
@@ -313,7 +278,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             if (args.Count != overloadCacheItem.ArgsDataType.Count)
                 return false;
 
-            for (var i = 0; i < args.Count; i++)
+            for (int i = 0; i < args.Count; i++)
             {
                 if (args[i].Type != overloadCacheItem.ArgsDataType[i])
                     return false;
@@ -337,19 +302,14 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="method">The method.</param>
         /// <param name="isExtMethod">if set to <c>true</c>, is an extension method.</param>
         /// <returns></returns>
-        private int CalcScoreForOverload(
-            ScriptExecutionContext context,
-            CallbackArguments args,
-            IOverloadableMemberDescriptor method,
-            bool isExtMethod
-        )
+        private int CalcScoreForOverload(ScriptExecutionContext context, CallbackArguments args, IOverloadableMemberDescriptor method, bool isExtMethod)
         {
-            var totalScore = ScriptToClrConversions.WEIGHT_EXACT_MATCH;
-            var argsBase = args.IsMethodCall ? 1 : 0;
-            var argsCnt = argsBase;
-            var varArgsUsed = false;
+            int totalScore = ScriptToClrConversions.WEIGHT_EXACT_MATCH;
+            int argsBase = args.IsMethodCall ? 1 : 0;
+            int argsCnt = argsBase;
+            bool varArgsUsed = false;
 
-            for (var i = 0; i < method.Parameters.Length; i++)
+            for (int i = 0; i < method.Parameters.Length; i++)
             {
                 if (isExtMethod && i == 0)
                     continue;
@@ -357,27 +317,22 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 if (method.Parameters[i].IsOut)
                     continue;
 
-                var parameterType = method.Parameters[i].Type;
+                Type parameterType = method.Parameters[i].Type;
 
-                if (
-                    parameterType == typeof(Script)
-                    || parameterType == typeof(ScriptExecutionContext)
-                    || parameterType == typeof(CallbackArguments)
-                )
+                if (parameterType == typeof(Script) || parameterType == typeof(ScriptExecutionContext) || parameterType == typeof(CallbackArguments))
                     continue;
 
                 if (i == method.Parameters.Length - 1 && method.VarArgsArrayType != null)
                 {
-                    var varargCnt = 0;
+                    int varargCnt = 0;
                     DynValue firstArg = null;
-                    var scoreBeforeVargars = totalScore;
+                    int scoreBeforeVargars = totalScore;
 
                     // update score for varargs
                     while (true)
                     {
                         var arg = args.RawGet(argsCnt, false);
-                        if (arg == null)
-                            break;
+                        if (arg == null) break;
 
                         firstArg ??= arg;
 
@@ -385,12 +340,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
 
                         varargCnt += 1;
 
-                        var score = CalcScoreForSingleArgument(
-                            method.Parameters[i],
-                            method.VarArgsElementType,
-                            arg,
-                            isOptional: false
-                        );
+                        int score = CalcScoreForSingleArgument(method.Parameters[i], method.VarArgsElementType, arg, isOptional: false);
                         totalScore = Math.Min(totalScore, score);
                     }
 
@@ -399,12 +349,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                     {
                         if (firstArg.Type == DataType.UserData && firstArg.UserData.Object != null)
                         {
-                            if (
-                                Framework.Do.IsAssignableFrom(
-                                    method.VarArgsArrayType,
-                                    firstArg.UserData.Object.GetType()
-                                )
-                            )
+                            if (Framework.Do.IsAssignableFrom(method.VarArgsArrayType, firstArg.UserData.Object.GetType()))
                             {
                                 totalScore = scoreBeforeVargars;
                                 continue;
@@ -414,10 +359,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
 
                     // apply varargs penalty to score
                     if (varargCnt == 0)
-                        totalScore = Math.Min(
-                            totalScore,
-                            ScriptToClrConversions.WEIGHT_VARARGS_EMPTY
-                        );
+                        totalScore = Math.Min(totalScore, ScriptToClrConversions.WEIGHT_VARARGS_EMPTY);
 
                     varArgsUsed = true;
                 }
@@ -425,12 +367,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 {
                     var arg = args.RawGet(argsCnt, false) ?? DynValue.Void;
 
-                    var score = CalcScoreForSingleArgument(
-                        method.Parameters[i],
-                        parameterType,
-                        arg,
-                        method.Parameters[i].HasDefaultValue
-                    );
+                    int score = CalcScoreForSingleArgument(method.Parameters[i], parameterType, arg, method.Parameters[i].HasDefaultValue);
 
                     totalScore = Math.Min(totalScore, score);
 
@@ -453,37 +390,21 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                 else
                 {
                     totalScore *= 1000;
-                    totalScore -=
-                        ScriptToClrConversions.WEIGHT_EXTRA_PARAMS_MALUS
-                        * (args.Count - argsBase - method.Parameters.Length);
+                    totalScore -= ScriptToClrConversions.WEIGHT_EXTRA_PARAMS_MALUS * (args.Count - argsBase - method.Parameters.Length);
                     totalScore = Math.Max(1, totalScore);
                 }
             }
 
 #if DEBUG_OVERLOAD_RESOLVER
-            System.Diagnostics.Debug.WriteLine(
-                string.Format(
-                    "[OVERLOAD] : Score {0} for method {1}",
-                    totalScore,
-                    method.SortDiscriminant
-                )
-            );
+			System.Diagnostics.Debug.WriteLine(string.Format("[OVERLOAD] : Score {0} for method {1}", totalScore, method.SortDiscriminant));
 #endif
             return totalScore;
         }
 
-        private static int CalcScoreForSingleArgument(
-            ParameterDescriptor desc,
-            Type parameterType,
-            DynValue arg,
-            bool isOptional
-        )
+        private static int CalcScoreForSingleArgument(ParameterDescriptor desc, Type parameterType, DynValue arg, bool isOptional)
         {
-            var score = ScriptToClrConversions.DynValueToObjectOfTypeWeight(
-                arg,
-                parameterType,
-                isOptional
-            );
+            int score = ScriptToClrConversions.DynValueToObjectOfTypeWeight(arg,
+                parameterType, isOptional);
 
             if (parameterType.IsByRef || desc.IsOut || desc.IsRef)
                 score = Math.Max(0, score + ScriptToClrConversions.WEIGHT_BYREF_BONUSMALUS);
@@ -497,10 +418,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// <param name="script">The script for which the callback must be generated.</param>
         /// <param name="obj">The object (null for static).</param>
         /// <returns></returns>
-        public Func<ScriptExecutionContext, CallbackArguments, DynValue> GetCallback(
-            Script script,
-            object obj
-        )
+        public Func<ScriptExecutionContext, CallbackArguments, DynValue> GetCallback(Script script, object obj)
         {
             return (context, args) => PerformOverloadedCall(script, obj, context, args);
         }
@@ -574,27 +492,22 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             t.Set("class", DynValue.NewString(GetType().FullName));
             t.Set("name", DynValue.NewString(Name));
             t.Set("decltype", DynValue.NewString(DeclaringType.FullName));
-            var mst = DynValue.NewPrimeTable();
+            DynValue mst = DynValue.NewPrimeTable();
             t.Set("overloads", mst);
 
-            var i = 0;
+            int i = 0;
 
             foreach (var m in m_Overloads)
             {
                 if (m is IWireableDescriptor sd)
                 {
-                    var mt = DynValue.NewPrimeTable();
+                    DynValue mt = DynValue.NewPrimeTable();
                     mst.Table.Set(++i, mt);
                     sd.PrepareForWiring(mt.Table);
                 }
                 else
                 {
-                    mst.Table.Set(
-                        ++i,
-                        DynValue.NewString(
-                            $"unsupported - {m.GetType().FullName} is not serializable"
-                        )
-                    );
+                    mst.Table.Set(++i, DynValue.NewString(string.Format("unsupported - {0} is not serializable", m.GetType().FullName)));
                 }
             }
         }
