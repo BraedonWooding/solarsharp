@@ -24,7 +24,8 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
         // p_1, p_2, ..., p_i, ..., it finds p_n such that p_n-1 < 2x < p_n.
         // Doubling is important for preserving the asymptotic complexity of the
         // hashtable operations such as add.  Having a prime guarantees that double
-        // hashing does not lead to infinite loops.  IE, your hash function will be
+        // hashing does not lead to infinite loops.  IE, your hash function will be    <PropertyGroup>
+
         // h1(key) + i*h2(key), 0 <= i < size.  h2 and the size must be relatively prime.
         // We prefer the low computation costs of higher prime numbers over the increased
         // memory allocation of a fixed prime number i.e. when right sizing a HashSet.

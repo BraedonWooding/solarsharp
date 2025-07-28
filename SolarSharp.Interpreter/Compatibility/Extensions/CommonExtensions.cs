@@ -41,20 +41,6 @@ namespace System.Linq
     }
 }
 
-namespace System.IO.Abstractions
-{
-    internal static class IFile_AsyncExtensions
-    {
-#pragma warning disable IDE0060 // Remove unused parameter, cancellation token is part of the parameters.
-        public static Task<string> ReadAllTextAsync(this IFile file, string path, CancellationToken cancellationToken = default)
-#pragma warning restore IDE0060 // Remove unused parameter
-        {
-            // Note: this could be implemented more efficiently using a FileStream, but this is fine.
-            return Task.FromResult(File.ReadAllText(path));
-        }
-    }
-}
-
 internal static class KvpExtensions
 {
     public static void Deconstruct<TKey, TValue>(
