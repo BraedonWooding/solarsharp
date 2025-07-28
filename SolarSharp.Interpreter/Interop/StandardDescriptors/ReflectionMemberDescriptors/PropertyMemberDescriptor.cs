@@ -14,8 +14,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
     /// <summary>
     /// Class providing easier marshalling of CLR properties
     /// </summary>
-    public class PropertyMemberDescriptor : IMemberDescriptor, IOptimizableDescriptor,
-        IWireableDescriptor
+    public class PropertyMemberDescriptor : IMemberDescriptor, IOptimizableDescriptor
     {
         /// <summary>
         /// Gets the PropertyInfo got by reflection
@@ -289,24 +288,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         {
             OptimizeGetter();
             OptimizeSetter();
-        }
-
-        /// <summary>
-        /// Prepares the descriptor for hard-wiring.
-        /// The descriptor fills the passed table with all the needed data for hardwire generators to generate the appropriate code.
-        /// </summary>
-        /// <param name="t">The table to be filled</param>
-        public void PrepareForWiring(Table t)
-        {
-            t.Set("class", DynValue.NewString(GetType().FullName));
-            t.Set("visibility", DynValue.NewString(PropertyInfo.GetClrVisibility()));
-            t.Set("name", DynValue.NewString(Name));
-            t.Set("static", DynValue.NewBoolean(IsStatic));
-            t.Set("read", DynValue.NewBoolean(CanRead));
-            t.Set("write", DynValue.NewBoolean(CanWrite));
-            t.Set("decltype", DynValue.NewString(PropertyInfo.DeclaringType.FullName));
-            t.Set("declvtype", DynValue.NewBoolean(Framework.Do.IsValueType(PropertyInfo.DeclaringType)));
-            t.Set("type", DynValue.NewString(PropertyInfo.PropertyType.FullName));
         }
     }
 }

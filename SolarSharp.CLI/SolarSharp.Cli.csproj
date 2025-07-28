@@ -5,7 +5,7 @@
     <RootNamespace>SolarSharp</RootNamespace>
     <AssemblyName>SolarSharp</AssemblyName>
     <Copyright>2024</Copyright>
-    <Authors>Marco Mastropaolo, Braedon Wooding, MoonSharp Contributors</Authors>
+    <Authors>Braedon Wooding, Marco Mastropaolo and other MoonSharp Contributors</Authors>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\SolarSharp.Interpreter\SolarSharp.Interpreter.csproj" />

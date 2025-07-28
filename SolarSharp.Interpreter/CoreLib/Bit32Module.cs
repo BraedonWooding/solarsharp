@@ -9,7 +9,7 @@ namespace SolarSharp.Interpreter.CoreLib
     /// <summary>
     /// Class implementing bit32 Lua functions 
     /// </summary>
-    [MoonSharpModule(Namespace = "bit32")]
+    [SolarSharpModule(Namespace = "bit32")]
     public class Bit32Module
     {
         private static readonly uint[] MASKS = new uint[] {
@@ -61,7 +61,7 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue extract(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "extract", DataType.Number);
@@ -80,7 +80,7 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue replace(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "replace", DataType.Number);
@@ -116,7 +116,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 throw new ScriptRuntimeException("bad argument #{1} to '{0}' (width must be positive)", func, argPos + 1);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue arshift(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "arshift", DataType.Number);
@@ -134,7 +134,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewNumber(v);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue rshift(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "rshift", DataType.Number);
@@ -152,7 +152,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewNumber(v);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue lshift(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "lshift", DataType.Number);
@@ -170,25 +170,25 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewNumber(v);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue band(ScriptExecutionContext _, CallbackArguments args)
         {
             return DynValue.NewNumber(Bitwise("band", args, (x, y) => x & y));
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue btest(ScriptExecutionContext _, CallbackArguments args)
         {
             return DynValue.NewBoolean(0 != Bitwise("btest", args, (x, y) => x & y));
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue bor(ScriptExecutionContext _, CallbackArguments args)
         {
             return DynValue.NewNumber(Bitwise("bor", args, (x, y) => x | y));
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue bnot(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "bnot", DataType.Number);
@@ -196,13 +196,13 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewNumber(~v);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue bxor(ScriptExecutionContext _, CallbackArguments args)
         {
             return DynValue.NewNumber(Bitwise("bxor", args, (x, y) => x ^ y));
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue lrotate(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "lrotate", DataType.Number);
@@ -217,7 +217,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewNumber(v);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue rrotate(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v_v = args.AsType(0, "rrotate", DataType.Number);

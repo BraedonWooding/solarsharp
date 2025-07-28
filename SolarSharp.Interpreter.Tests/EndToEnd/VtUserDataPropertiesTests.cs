@@ -26,11 +26,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             public readonly int GetWoIntProp2() { return WoIntProp2; }
 
 
-            [MoonSharpVisible(false)]
+            [SolarSharpVisible(false)]
             internal int AccessOverrProp
             {
                 get;
-                [MoonSharpVisible(true)]
+                [SolarSharpVisible(true)]
                 set;
             }
 

@@ -9,10 +9,10 @@ namespace SolarSharp.Interpreter.CoreLib
     /// <summary>
     /// Class implementing error handling Lua functions (pcall and xpcall)
     /// </summary>
-    [MoonSharpModule]
+    [SolarSharpModule]
     public class ErrorHandlingModule
     {
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue pcall(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             return SetErrorHandlerStrategy("pcall", executionContext, args, null);
@@ -105,7 +105,7 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue xpcall(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             List<DynValue> a = new();

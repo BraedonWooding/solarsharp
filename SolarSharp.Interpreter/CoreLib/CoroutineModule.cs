@@ -9,10 +9,10 @@ namespace SolarSharp.Interpreter.CoreLib
     /// <summary>
     /// Class implementing coroutine Lua functions 
     /// </summary>
-    [MoonSharpModule(Namespace = "coroutine")]
+    [SolarSharpModule(Namespace = "coroutine")]
     public class CoroutineModule
     {
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue create(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             if (args[0].Type != DataType.Function && args[0].Type != DataType.ClrFunction)
@@ -21,7 +21,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return executionContext.GetScript().CreateCoroutine(args[0]);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue wrap(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             if (args[0].Type != DataType.Function && args[0].Type != DataType.ClrFunction)
@@ -32,7 +32,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return c;
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue resume(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue handle = args.AsType(0, "resume", DataType.Thread);
@@ -77,20 +77,20 @@ namespace SolarSharp.Interpreter.CoreLib
             }
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue yield(ScriptExecutionContext _, CallbackArguments args)
         {
             return DynValue.NewYieldReq(args.GetArray());
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue running(ScriptExecutionContext executionContext, CallbackArguments _)
         {
             Coroutine C = executionContext.GetCallingCoroutine();
             return DynValue.NewTuple(DynValue.NewCoroutine(C), DynValue.NewBoolean(C.State == CoroutineState.Main));
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue status(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue handle = args.AsType(0, "status", DataType.Thread);

@@ -14,7 +14,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
     /// <summary>
     /// Class providing easier marshalling of CLR fields
     /// </summary>
-    public class FieldMemberDescriptor : IMemberDescriptor, IOptimizableDescriptor, IWireableDescriptor
+    public class FieldMemberDescriptor : IMemberDescriptor, IOptimizableDescriptor
     {
         /// <summary>
         /// Gets the FieldInfo got by reflection
@@ -200,27 +200,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         {
             if (m_OptimizedGetter == null)
                 OptimizeGetter();
-        }
-
-        /// <summary>
-        /// Prepares the descriptor for hard-wiring.
-        /// The descriptor fills the passed table with all the needed data for hardwire generators to generate the appropriate code.
-        /// </summary>
-        /// <param name="t">The table to be filled</param>
-        public void PrepareForWiring(Table t)
-        {
-            t.Set("class", DynValue.NewString(GetType().FullName));
-            t.Set("visibility", DynValue.NewString(FieldInfo.GetClrVisibility()));
-
-            t.Set("name", DynValue.NewString(Name));
-            t.Set("static", DynValue.NewBoolean(IsStatic));
-            t.Set("const", DynValue.NewBoolean(IsConst));
-            t.Set("readonly", DynValue.NewBoolean(IsReadonly));
-            t.Set("decltype", DynValue.NewString(FieldInfo.DeclaringType.FullName));
-            t.Set("declvtype", DynValue.NewBoolean(Framework.Do.IsValueType(FieldInfo.DeclaringType)));
-            t.Set("type", DynValue.NewString(FieldInfo.FieldType.FullName));
-            t.Set("read", DynValue.NewBoolean(true));
-            t.Set("write", DynValue.NewBoolean(!(IsConst || IsReadonly)));
         }
     }
 }

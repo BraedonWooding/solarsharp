@@ -466,7 +466,7 @@ namespace SolarSharp.Interpreter.Interop.BasicDescriptors
         /// it should return "null" (not a nil). 
         /// See <see cref="IUserDataDescriptor.MetaIndex" /> for further details.
         /// 
-        /// If a method exists marked with <see cref="MoonSharpUserDataMetamethodAttribute" /> for the specific
+        /// If a method exists marked with <see cref="SolarSharpUserDataMetamethodAttribute" /> for the specific
         /// metamethod requested, that method is returned.
         /// 
         /// If the above fails, the following dispatching occur:

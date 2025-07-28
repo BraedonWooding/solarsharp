@@ -6,7 +6,7 @@ namespace SolarSharp.Interpreter.Interop.Attributes
     /// Lists a userdata member not to be exposed to scripts referencing it by name.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = true, AllowMultiple = true)]
-    public sealed class MoonSharpHideMemberAttribute : Attribute
+    public sealed class SolarSharpHideMemberAttribute : Attribute
     {
         /// <summary>
         /// Gets the name of the member to be hidden.
@@ -14,10 +14,10 @@ namespace SolarSharp.Interpreter.Interop.Attributes
         public string MemberName { get; private set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MoonSharpHideMemberAttribute"/> class.
+        /// Initializes a new instance of the <see cref="SolarSharpHideMemberAttribute"/> class.
         /// </summary>
         /// <param name="memberName">Name of the member to hide.</param>
-        public MoonSharpHideMemberAttribute(string memberName)
+        public SolarSharpHideMemberAttribute(string memberName)
         {
             MemberName = memberName;
         }

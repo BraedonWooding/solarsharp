@@ -31,8 +31,7 @@ namespace SolarSharp.Interpreter.Tests
         /// <param name="str">The string.</param>
         public void Print(string str)
         {
-            // System.Diagnostics.Debug.WriteLine(str);
-
+            TestContext.Out.WriteLine(str);
             Assert.That(str.Trim(), Does.Not.StartWith("not ok"), string.Format("TAP fail ({0}) : {1}", m_File, str));
         }
 
@@ -61,8 +60,5 @@ namespace SolarSharp.Interpreter.Tests
             TapRunner t = new(filename);
             t.Run();
         }
-
-
-
     }
 }

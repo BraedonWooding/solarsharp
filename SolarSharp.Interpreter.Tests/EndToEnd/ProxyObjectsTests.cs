@@ -10,10 +10,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     {
         public class Proxy
         {
-            [MoonSharpVisible(false)]
+            [SolarSharpVisible(false)]
             public Random random;
 
-            [MoonSharpVisible(false)]
+            [SolarSharpVisible(false)]
             public Proxy(Random r)
             {
                 random = r;

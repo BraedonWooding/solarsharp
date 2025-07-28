@@ -13,7 +13,7 @@ namespace SolarSharp.Interpreter.Interop
 {
     /// <summary>
     /// Utility class which may be used to set properties on an object of type T, from values contained in a Lua table.
-    /// Properties must be decorated with the <see cref="MoonSharpPropertyAttribute"/>.
+    /// Properties must be decorated with the <see cref="SolarSharpPropertyAttribute"/>.
     /// This is a generic version of <see cref="PropertyTableAssigner"/>.
     /// </summary>
     /// <typeparam name="T">The type of the object.</typeparam>
@@ -95,7 +95,7 @@ namespace SolarSharp.Interpreter.Interop
 
     /// <summary>
     /// Utility class which may be used to set properties on an object from values contained in a Lua table.
-    /// Properties must be decorated with the <see cref="MoonSharpPropertyAttribute"/>.
+    /// Properties must be decorated with the <see cref="SolarSharpPropertyAttribute"/>.
     /// See <see cref="PropertyTableAssigner{T}"/> for a generic compile time type-safe version.
     /// </summary>
     public class PropertyTableAssigner : IPropertyTableAssigner
@@ -126,13 +126,13 @@ namespace SolarSharp.Interpreter.Interop
 
             foreach (PropertyInfo pi in Framework.Do.GetProperties(m_Type))
             {
-                foreach (MoonSharpPropertyAttribute attr in pi.GetCustomAttributes(true).OfType<MoonSharpPropertyAttribute>())
+                foreach (SolarSharpPropertyAttribute attr in pi.GetCustomAttributes(true).OfType<SolarSharpPropertyAttribute>())
                 {
                     string name = attr.Name ?? pi.Name;
 
                     if (m_PropertyMap.ContainsKey(name))
                     {
-                        throw new ArgumentException(string.Format("Type {0} has two definitions for MoonSharp property {1}", m_Type.FullName, name));
+                        throw new ArgumentException(string.Format("Type {0} has two definitions for SolarSharp property {1}", m_Type.FullName, name));
                     }
                     else
                     {

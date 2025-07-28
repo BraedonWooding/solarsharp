@@ -4,7 +4,7 @@ using System;
 namespace SolarSharp.Interpreter.Interop
 {
     /// <summary>
-    /// Interface used by MoonSharp to access objects of a given type from scripts.
+    /// Interface used by SolarSharp to access objects of a given type from scripts.
     /// </summary>
     public interface IUserDataDescriptor
     {

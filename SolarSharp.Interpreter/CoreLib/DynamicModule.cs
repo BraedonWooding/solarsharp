@@ -7,9 +7,9 @@ using SolarSharp.Interpreter.Modules;
 namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
-    /// Class implementing dynamic expression evaluations at runtime (a MoonSharp addition).
+    /// Class implementing dynamic expression evaluations at runtime (a SolarSharp addition).
     /// </summary>
-    [MoonSharpModule(Namespace = "dynamic")]
+    [SolarSharpModule(Namespace = "dynamic")]
     public class DynamicModule
     {
         private class DynamicExprWrapper
@@ -18,13 +18,13 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 #pragma warning disable IDE0060 // Remove unused parameter
-        public static void MoonSharpInit(Table globalTable, Table stringTable)
+        public static void SolarSharpInit(Table globalTable, Table stringTable)
 #pragma warning restore IDE0060 // Remove unused parameter
         {
             UserData.RegisterType<DynamicExprWrapper>(InteropAccessMode.HideMembers);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue eval(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             try
@@ -54,7 +54,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue prepare(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             try

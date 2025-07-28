@@ -10,7 +10,7 @@ using System.Text;
 namespace SolarSharp.Interpreter.DataTypes
 {
     /// <summary>
-    /// A class representing a value in a Lua/MoonSharp script.
+    /// A class representing a value in a Lua/SolarSharp script.
     /// </summary>
     public sealed class DynValue
     {
@@ -238,7 +238,7 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Creates a new request for a tail call. This is the preferred way to execute Lua/MoonSharp code from a callback,
+        /// Creates a new request for a tail call. This is the preferred way to execute Lua/SolarSharp code from a callback,
         /// although it's not always possible to use it. When a function (callback or script closure) returns a
         /// TailCallRequest, the bytecode processor immediately executes the function contained in the request.
         /// By executing script in this way, a callback function ensures it's not on the stack anymore and thus a number
@@ -261,7 +261,7 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Creates a new request for a tail call. This is the preferred way to execute Lua/MoonSharp code from a callback,
+        /// Creates a new request for a tail call. This is the preferred way to execute Lua/SolarSharp code from a callback,
         /// although it's not always possible to use it. When a function (callback or script closure) returns a
         /// TailCallRequest, the bytecode processor immediately executes the function contained in the request.
         /// By executing script in this way, a callback function ensures it's not on the stack anymore and thus a number
@@ -785,7 +785,7 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Converts this MoonSharp DynValue to a CLR object.
+        /// Converts this SolarSharp DynValue to a CLR object.
         /// </summary>
         public object ToObject()
         {
@@ -793,7 +793,7 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Converts this MoonSharp DynValue to a CLR object of the specified type.
+        /// Converts this SolarSharp DynValue to a CLR object of the specified type.
         /// </summary>
         public object ToObject(Type desiredType)
         {
@@ -802,7 +802,7 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
         /// <summary>
-        /// Converts this MoonSharp DynValue to a CLR object of the specified type.
+        /// Converts this SolarSharp DynValue to a CLR object of the specified type.
         /// </summary>
         public T ToObject<T>()
         {
@@ -816,7 +816,7 @@ namespace SolarSharp.Interpreter.DataTypes
         }
 
 		/// <summary>
-		/// Converts this MoonSharp DynValue to a CLR object, marked as dynamic
+		/// Converts this SolarSharp DynValue to a CLR object, marked as dynamic
 		/// </summary>
 		public dynamic ToDynamic()
 		{

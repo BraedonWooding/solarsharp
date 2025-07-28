@@ -6,10 +6,10 @@ using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.CoreLib
 {
-    [MoonSharpModule(Namespace = "json")]
+    [SolarSharpModule(Namespace = "json")]
     public class JsonModule
     {
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue parse(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             try
@@ -24,7 +24,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue serialize(ScriptExecutionContext _, CallbackArguments args)
         {
             try
@@ -39,14 +39,14 @@ namespace SolarSharp.Interpreter.CoreLib
             }
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue isnull(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue vs = args[0];
             return DynValue.NewBoolean(JsonNull.IsJsonNull(vs) || vs.IsNil());
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
 #pragma warning disable IDE0060 // Remove unused parameter
         public static DynValue @null(ScriptExecutionContext _, CallbackArguments _args)
 #pragma warning restore IDE0060 // Remove unused parameter

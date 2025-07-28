@@ -6,7 +6,6 @@ using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.REPL;
 using SolarSharp.Commands;
-using SolarSharp.Commands.Implementations;
 
 namespace SolarSharp
 {
@@ -117,53 +116,13 @@ namespace SolarSharp
                     ShowCmdLineHelp();
                 }
             }
-            else if (args[0] == "-W")
-            {
-                bool internals = false;
-                string dumpfile = null;
-                string destfile = null;
-                string classname = null;
-                string namespacename = null;
-                bool useVb = false;
-                bool fail = true;
-
-                for (int i = 1; i < args.Length; i++)
-                {
-                    if (args[i] == "--internals")
-                        internals = true;
-                    else if (args[i] == "--vb")
-                        useVb = true;
-                    else if (args[i].StartsWith("--class:"))
-                        classname = args[i].Substring("--class:".Length);
-                    else if (args[i].StartsWith("--namespace:"))
-                        namespacename = args[i].Substring("--namespace:".Length);
-                    else if (dumpfile == null)
-                        dumpfile = args[i];
-                    else if (destfile == null)
-                    {
-                        destfile = args[i];
-                        fail = false;
-                    }
-                    else fail = true;
-                }
-
-                if (fail)
-                {
-                    Console.WriteLine("Wrong syntax.");
-                    ShowCmdLineHelp();
-                }
-                else
-                {
-                    HardWireCommand.Generate(useVb ? "vb" : "cs", dumpfile, destfile, internals, classname, namespacename);
-                }
-            }
 
             return true;
         }
 
         private static void ShowCmdLineHelpBig()
         {
-            Console.WriteLine("usage: moonsharp [-H | --help | -X \"command\" | -W <dumpfile> <destfile> [--internals] [--vb] [--class:<name>] [--namespace:<name>] | <script>]");
+            Console.WriteLine("usage: solarsharp [-H | --help | -X \"command\" | -W <dumpfile> <destfile> [--internals] [--vb] [--class:<name>] [--namespace:<name>] | <script>]");
             Console.WriteLine();
             Console.WriteLine("-H : shows this help");
             Console.WriteLine("-X : executes the specified command");
@@ -173,7 +132,7 @@ namespace SolarSharp
 
         private static void ShowCmdLineHelp()
         {
-            Console.WriteLine("usage: moonsharp [-H | --help | -X \"command\" | -W <dumpfile> <destfile> [--internals] [--vb] | <script>]");
+            Console.WriteLine("usage: solarsharp [-H | --help | -X \"command\" | -W <dumpfile> <destfile> [--internals] [--vb] | <script>]");
         }
 
         private static void ExecuteCommand(ShellContext shellContext, string cmdline)

@@ -7,7 +7,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
     /// <summary>
     /// Class providing a simple descriptor for constant DynValues in userdata
     /// </summary>
-    public class DynValueMemberDescriptor : IMemberDescriptor, IWireableDescriptor
+    public class DynValueMemberDescriptor : IMemberDescriptor
     {
         private readonly DynValue m_Value;
 
@@ -102,55 +102,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
         public void SetValue(Script script, object obj, DynValue value)
         {
             throw new ScriptRuntimeException("userdata '{0}' cannot be written to.", Name);
-        }
-
-        /// <summary>
-        /// Prepares the descriptor for hard-wiring.
-        /// The descriptor fills the passed table with all the needed data for hardwire generators to generate the appropriate code.
-        /// </summary>
-        /// <param name="t">The table to be filled</param>
-        public void PrepareForWiring(Table t)
-        {
-            t.Set("class", DynValue.NewString(GetType().FullName));
-            t.Set("name", DynValue.NewString(Name));
-
-            switch (Value.Type)
-            {
-                case DataType.Nil:
-                case DataType.Void:
-                case DataType.Boolean:
-                case DataType.Number:
-                case DataType.String:
-                case DataType.Tuple:
-                    t.Set("value", Value);
-                    break;
-                case DataType.Table:
-                    if (Value.Table.OwnerScript == null)
-                    {
-                        t.Set("value", Value);
-                    }
-                    else
-                    {
-                        t.Set("error", DynValue.NewString("Wiring of non-prime table value members not supported."));
-                    }
-
-                    break;
-                case DataType.UserData:
-                    if (Value.UserData.Object == null)
-                    {
-                        t.Set("type", DynValue.NewString("userdata"));
-                        t.Set("staticType", DynValue.NewString(Value.UserData.Descriptor.Type.FullName));
-                        t.Set("visibility", DynValue.NewString(Value.UserData.Descriptor.Type.GetClrVisibility()));
-                    }
-                    else
-                    {
-                        t.Set("error", DynValue.NewString("Wiring of non-static userdata value members not supported."));
-                    }
-                    break;
-                default:
-                    t.Set("error", DynValue.NewString(string.Format("Wiring of '{0}' value members not supported.", Value.Type.ToErrorTypeString())));
-                    break;
-            }
         }
     }
 }

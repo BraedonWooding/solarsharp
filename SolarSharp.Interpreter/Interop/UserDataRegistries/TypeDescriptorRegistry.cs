@@ -25,7 +25,7 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
         private static InteropAccessMode s_DefaultAccessMode;
 
         /// <summary>
-        /// Registers all types marked with a MoonSharpUserDataAttribute that ar contained in an assembly.
+        /// Registers all types marked with a SolarSharpUserDataAttribute that ar contained in an assembly.
         /// </summary>
         /// <param name="asm">The assembly.</param>
         /// <param name="includeExtensionTypes">if set to <c>true</c> extension types are registered to the appropriate registry.</param>
@@ -55,14 +55,14 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
 
 
             var userDataTypes = from t in asm.SafeGetTypes()
-                                let attributes = Framework.Do.GetCustomAttributes(t, typeof(MoonSharpUserDataAttribute), true)
+                                let attributes = Framework.Do.GetCustomAttributes(t, typeof(SolarSharpUserDataAttribute), true)
                                 where attributes != null && attributes.Length > 0
                                 select new { Attributes = attributes, DataType = t };
 
             foreach (var userDataType in userDataTypes)
             {
                 UserData.RegisterType(userDataType.DataType, userDataType.Attributes
-                    .OfType<MoonSharpUserDataAttribute>()
+                    .OfType<SolarSharpUserDataAttribute>()
                     .First()
                     .AccessMode);
             }
@@ -132,7 +132,6 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
             IUserDataDescriptor proxyDescriptor = RegisterType_Impl(proxyFactory.ProxyType, accessMode, friendlyName, null);
             return RegisterType_Impl(proxyFactory.TargetType, accessMode, friendlyName, new ProxyUserDataDescriptor(proxyFactory, proxyDescriptor, friendlyName));
         }
-
 
         /// <summary>
         /// Registers a type
@@ -224,7 +223,7 @@ namespace SolarSharp.Interpreter.Interop.UserDataRegistries
         {
             if (accessMode == InteropAccessMode.Default)
             {
-                MoonSharpUserDataAttribute attr = Framework.Do.GetCustomAttributes(type, true).OfType<MoonSharpUserDataAttribute>()
+                SolarSharpUserDataAttribute attr = Framework.Do.GetCustomAttributes(type, true).OfType<SolarSharpUserDataAttribute>()
                     .SingleOrDefault();
 
                 if (attr != null)

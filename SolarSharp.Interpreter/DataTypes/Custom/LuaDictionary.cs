@@ -41,7 +41,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
         private int _freeList;
         private int _freeCount;
         private int _version;
-        private IEqualityComparer<TKey> _comparer;
+        private readonly IEqualityComparer<TKey> _comparer;
         private KeyCollection _keys;
         private ValueCollection _values;
         private const int StartOfFreeList = -3;
@@ -329,7 +329,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
             if (array.Length - index < Count)
             {
-                throw new ArgumentException(nameof(index));
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
 
             int count = _count;
@@ -343,7 +343,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             }
         }
 
-        public Enumerator GetEnumerator() => new Enumerator(this, Enumerator.KeyValuePair);
+        public Enumerator GetEnumerator() => new(this, Enumerator.KeyValuePair);
 
         IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator() =>
             Count == 0 ? Enumerable.Empty<KeyValuePair<TKey, TValue>>().GetEnumerator() :
@@ -533,7 +533,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
                         if (behavior == InsertionBehavior.ThrowOnExisting)
                         {
-                            throw new ArgumentException(nameof(key));
+                            throw new ArgumentException("Key is existing", nameof(key));
                         }
 
                         return false;
@@ -565,7 +565,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
                         if (behavior == InsertionBehavior.ThrowOnExisting)
                         {
-                            throw new ArgumentException(nameof(key));
+                            throw new ArgumentException("Key is existing", nameof(key));
                         }
 
                         return false;
@@ -1154,12 +1154,12 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
             if (array.Rank != 1)
             {
-                throw new ArgumentException(nameof(array));
+                throw new ArgumentException("Multidimensional arrays are not supported.", nameof(array));
             }
 
             if (array.GetLowerBound(0) != 0)
             {
-                throw new ArgumentException(nameof(array));
+                throw new ArgumentException("Array has bad offset", nameof(array));
             }
 
             if ((uint)index > (uint)array.Length)
@@ -1169,7 +1169,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
             if (array.Length - index < Count)
             {
-                throw new ArgumentException(nameof(index));
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
 
             if (array is KeyValuePair<TKey, TValue>[] pairs)
@@ -1189,7 +1189,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
             }
             else
             {
-                object[] objects = array as object[] ?? throw new ArgumentException(nameof(array));
+                object[] objects = array as object[] ?? throw new ArgumentException("array type mismatch", nameof(array));
                 try
                 {
                     int count = _count;
@@ -1204,7 +1204,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
                 catch (ArrayTypeMismatchException)
                 {
-                    throw new ArgumentException(nameof(array));
+                    throw new ArgumentException("array type mismatch", nameof(array));
                 }
             }
         }
@@ -1352,14 +1352,14 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     {
                         this[tempKey] = (TValue)value!;
                     }
-                    catch (InvalidCastException)
+                    catch (InvalidCastException ex)
                     {
-                        throw new ArgumentException(nameof(value));
+                        throw new ArgumentException("Invalid cast", nameof(value), ex);
                     }
                 }
-                catch (InvalidCastException)
+                catch (InvalidCastException ex)
                 {
-                    throw new ArgumentException(nameof(key));
+                    throw new ArgumentException("Invalid cast", nameof(key), ex);
                 }
             }
         }
@@ -1389,14 +1389,14 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 {
                     Add(tempKey, (TValue)value!);
                 }
-                catch (InvalidCastException)
+                catch (InvalidCastException ex)
                 {
-                    throw new ArgumentException(nameof(value));
+                    throw new ArgumentException("Invalid cast", nameof(value), ex);
                 }
             }
-            catch (InvalidCastException)
+            catch (InvalidCastException ex)
             {
-                throw new ArgumentException(nameof(key));
+                throw new ArgumentException("Invalid cast", nameof(key), ex);
             }
         }
 
@@ -1498,11 +1498,11 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 return false;
             }
 
-            public KeyValuePair<TKey, TValue> Current => _current;
+            public readonly KeyValuePair<TKey, TValue> Current => _current;
 
-            public void Dispose() { }
+            public readonly void Dispose() { }
 
-            object IEnumerator.Current
+            readonly object IEnumerator.Current
             {
                 get
                 {
@@ -1531,7 +1531,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 _current = default;
             }
 
-            DictionaryEntry IDictionaryEnumerator.Entry
+            readonly DictionaryEntry IDictionaryEnumerator.Entry
             {
                 get
                 {
@@ -1544,7 +1544,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
             }
 
-            object IDictionaryEnumerator.Key
+            readonly object IDictionaryEnumerator.Key
             {
                 get
                 {
@@ -1557,7 +1557,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
             }
 
-            object IDictionaryEnumerator.Value
+            readonly object IDictionaryEnumerator.Value
             {
                 get
                 {
@@ -1572,21 +1572,11 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
         }
 
         [DebuggerDisplay("Count = {Count}")]
-        public sealed class KeyCollection : ICollection<TKey>, ICollection, IReadOnlyCollection<TKey>
+        public sealed class KeyCollection(LuaDictionary<TKey, TValue> dictionary) : ICollection<TKey>, ICollection, IReadOnlyCollection<TKey>
         {
-            private readonly LuaDictionary<TKey, TValue> _dictionary;
+            private readonly LuaDictionary<TKey, TValue> _dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
-            public KeyCollection(LuaDictionary<TKey, TValue> dictionary)
-            {
-                if (dictionary == null)
-                {
-                    throw new ArgumentNullException(nameof(dictionary));
-                }
-
-                _dictionary = dictionary;
-            }
-
-            public Enumerator GetEnumerator() => new Enumerator(_dictionary);
+            public Enumerator GetEnumerator() => new(_dictionary);
 
             public void CopyTo(TKey[] array, int index)
             {
@@ -1602,7 +1592,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
                 if (array.Length - index < _dictionary.Count)
                 {
-                    throw new ArgumentException(nameof(index));
+                    throw new ArgumentOutOfRangeException(nameof(index));
                 }
 
                 int count = _dictionary._count;
@@ -1641,12 +1631,12 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
                 if (array.Rank != 1)
                 {
-                    throw new ArgumentException(nameof(index));
+                    throw new ArgumentException("Multidimensional arrays are not supported.", nameof(array));
                 }
 
                 if (array.GetLowerBound(0) != 0)
                 {
-                    throw new ArgumentException(nameof(index));
+                    throw new ArgumentException("Array has bad offset", nameof(array));
                 }
 
                 if ((uint)index > (uint)array.Length)
@@ -1656,7 +1646,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
                 if (array.Length - index < _dictionary.Count)
                 {
-                    throw new ArgumentException(nameof(index));
+                    throw new ArgumentOutOfRangeException(nameof(index));
                 }
 
                 if (array is TKey[] keys)
@@ -1665,10 +1655,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
                 else
                 {
-                    object[] objects = array as object[];
-                    if (objects == null)
+                    if (array is not object[] objects)
                     {
-                        throw new ArgumentException(nameof(array));
+                        throw new ArgumentException("array type mismatch", nameof(array));
                     }
 
                     int count = _dictionary._count;
@@ -1682,7 +1671,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     }
                     catch (ArrayTypeMismatchException)
                     {
-                        throw new ArgumentException(nameof(array));
+                        throw new ArgumentException("array type mismatch", nameof(array));
                     }
                 }
             }
@@ -1714,7 +1703,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     _currentKey = currentKey;
                 }
 
-                public void Dispose() { }
+                public readonly void Dispose() { }
 
                 public bool MoveNext()
                 {
@@ -1739,9 +1728,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     return false;
                 }
 
-                public TKey Current => _currentKey!;
+                public readonly TKey Current => _currentKey!;
 
-                object IEnumerator.Current
+                readonly object IEnumerator.Current
                 {
                     get
                     {
@@ -1768,16 +1757,11 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
         }
 
         [DebuggerDisplay("Count = {Count}")]
-        public sealed class ValueCollection : ICollection<TValue>, ICollection, IReadOnlyCollection<TValue>
+        public sealed class ValueCollection(LuaDictionary<TKey, TValue> dictionary) : ICollection<TValue>, ICollection, IReadOnlyCollection<TValue>
         {
-            private readonly LuaDictionary<TKey, TValue> _dictionary;
+            private readonly LuaDictionary<TKey, TValue> _dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
-            public ValueCollection(LuaDictionary<TKey, TValue> dictionary)
-            {
-                _dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
-            }
-
-            public Enumerator GetEnumerator() => new Enumerator(_dictionary);
+            public Enumerator GetEnumerator() => new(_dictionary);
 
             public void CopyTo(TValue[] array, int index)
             {
@@ -1793,7 +1777,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
                 if (array.Length - index < _dictionary.Count)
                 {
-                    throw new ArgumentException(nameof(index));
+                    throw new ArgumentOutOfRangeException(nameof(index));
                 }
 
                 int count = _dictionary._count;
@@ -1831,12 +1815,12 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
                 if (array.Rank != 1)
                 {
-                    throw new ArgumentException(nameof(index));
+                    throw new ArgumentException("Multidimensional arrays are not supported.", nameof(array));
                 }
 
                 if (array.GetLowerBound(0) != 0)
                 {
-                    throw new ArgumentException(nameof(index));
+                    throw new ArgumentException("Array has bad offset", nameof(array));
                 }
 
                 if ((uint)index > (uint)array.Length)
@@ -1846,7 +1830,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
 
                 if (array.Length - index < _dictionary.Count)
                 {
-                    throw new ArgumentException(nameof(index));
+                    throw new ArgumentOutOfRangeException(nameof(index));
                 }
 
                 if (array is TValue[] values)
@@ -1855,10 +1839,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                 }
                 else
                 {
-                    object[] objects = array as object[];
-                    if (objects == null)
+                    if (array is not object[] objects)
                     {
-                        throw new ArgumentException(nameof(array));
+                        throw new ArgumentException("array type mismatch", nameof(array));
                     }
 
                     int count = _dictionary._count;
@@ -1872,7 +1855,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     }
                     catch (ArrayTypeMismatchException)
                     {
-                        throw new ArgumentException(nameof(array));
+                        throw new ArgumentException("array type mismatch", nameof(array));
                     }
                 }
             }
@@ -1904,7 +1887,7 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     _currentValue = currentValue;
                 }
 
-                public void Dispose() { }
+                public readonly void Dispose() { }
 
                 public bool MoveNext()
                 {
@@ -1928,9 +1911,9 @@ namespace SolarSharp.Interpreter.DataTypes.Custom
                     return false;
                 }
 
-                public TValue Current => _currentValue!;
+                public readonly TValue Current => _currentValue!;
 
-                object IEnumerator.Current
+                readonly object IEnumerator.Current
                 {
                     get
                     {

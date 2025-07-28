@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace SolarSharp.Interpreter.Interop
 {
     /// <summary>
-    /// A collection of custom converters between MoonSharp types and CLR types.
+    /// A collection of custom converters between SolarSharp types and CLR types.
     /// If a converter function is not specified or returns null, the standard conversion path applies.
     /// </summary>
     public class CustomConvertersCollection

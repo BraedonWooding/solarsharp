@@ -2,6 +2,8 @@
     <Sdk Name="DotNet.ReproducibleBuilds.Isolated" Version="1.2.25" />
     <PropertyGroup>
         <LangVersion>latest</LangVersion>
+        <Nullable>annotations</Nullable>
+        <NoWarn>CA1512,CA1510</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <!-- Reproducible Builds -->

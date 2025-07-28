@@ -408,7 +408,7 @@ namespace SolarSharp.Interpreter.Errors
         /// </returns>
         public static ScriptRuntimeException UserDataArgumentTypeMismatch(DataType t, Type clrType)
         {
-            return new ScriptRuntimeException("cannot find a conversion from a MoonSharp {0} to a clr {1}", t.ToString().ToLowerInvariant(), clrType.FullName);
+            return new ScriptRuntimeException("cannot find a conversion from a SolarSharp {0} to a clr {1}", t.ToString().ToLowerInvariant(), clrType.FullName);
         }
 
         /// <summary>

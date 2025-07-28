@@ -11,7 +11,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
     internal static class ClrToScriptConversions
     {
         /// <summary>
-        /// Tries to convert a CLR object to a MoonSharp value, using "trivial" logic.
+        /// Tries to convert a CLR object to a SolarSharp value, using "trivial" logic.
         /// Skips on custom conversions, etc.
         /// Does NOT throw on failure.
         /// </summary>
@@ -42,7 +42,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
 
 
         /// <summary>
-        /// Tries to convert a CLR object to a MoonSharp value, using "simple" logic.
+        /// Tries to convert a CLR object to a SolarSharp value, using "simple" logic.
         /// Does NOT throw on failure.
         /// </summary>
         internal static DynValue TryObjectToSimpleDynValue(Script script, object obj)
@@ -102,7 +102,7 @@ namespace SolarSharp.Interpreter.Interop.Converters
 
 
         /// <summary>
-        /// Tries to convert a CLR object to a MoonSharp value, using more in-depth analysis
+        /// Tries to convert a CLR object to a SolarSharp value, using more in-depth analysis
         /// </summary>
         internal static DynValue ObjectToDynValue(Script script, object obj)
         {

@@ -9,7 +9,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
     /// <summary>
     /// Member descriptor for indexer of array types
     /// </summary>
-    public class ArrayMemberDescriptor : ObjectCallbackMemberDescriptor, IWireableDescriptor
+    public class ArrayMemberDescriptor : ObjectCallbackMemberDescriptor
     {
         private readonly bool m_IsSetter;
 
@@ -41,34 +41,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
             m_IsSetter = isSetter;
         }
 
-        /// <summary>
-        /// Prepares the descriptor for hard-wiring.
-        /// The descriptor fills the passed table with all the needed data for hardwire generators to generate the appropriate code.
-        /// </summary>
-        /// <param name="t">The table to be filled</param>
-        public void PrepareForWiring(Table t)
-        {
-            t.Set("class", DynValue.NewString(GetType().FullName));
-            t.Set("name", DynValue.NewString(Name));
-            t.Set("setter", DynValue.NewBoolean(m_IsSetter));
-
-            if (Parameters != null)
-            {
-                var pars = DynValue.NewPrimeTable();
-
-                t.Set("params", pars);
-
-                int i = 0;
-
-                foreach (var p in Parameters)
-                {
-                    DynValue pt = DynValue.NewPrimeTable();
-                    pars.Table.Set(++i, pt);
-                    p.PrepareForWiring(pt.Table);
-                }
-            }
-        }
-
         private static int[] BuildArrayIndices(CallbackArguments args, int count)
         {
             int[] indices = new int[count];
@@ -94,7 +66,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
             return DynValue.Void;
         }
 
-
         private static object ArrayIndexerGet(object arrayObj, ScriptExecutionContext ctx, CallbackArguments args)
         {
             Array array = (Array)arrayObj;
@@ -102,6 +73,5 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
 
             return array.GetValue(indices);
         }
-
     }
 }

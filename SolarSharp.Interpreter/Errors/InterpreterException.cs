@@ -5,7 +5,7 @@ using SolarSharp.Interpreter.Debugging;
 namespace SolarSharp.Interpreter.Errors
 {
     /// <summary>
-    /// Base type of all exceptions thrown in MoonSharp
+    /// Base type of all exceptions thrown in SolarSharp
     /// </summary>
 #if !(PCL || ((!UNITY_EDITOR) && (ENABLE_DOTNET)) || NETFX_CORE)
     [Serializable]

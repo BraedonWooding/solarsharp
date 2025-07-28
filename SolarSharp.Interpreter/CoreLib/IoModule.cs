@@ -17,10 +17,10 @@ namespace SolarSharp.Interpreter.CoreLib
     /// <summary>
     /// Class implementing io Lua functions. Proper support requires a compatible IPlatformAccessor
     /// </summary>
-    [MoonSharpModule(Namespace = "io")]
+    [SolarSharpModule(Namespace = "io")]
     public class IoModule
     {
-        public static void MoonSharpInit(Table globalTable, Table ioTable)
+        public static void SolarSharpInit(Table globalTable, Table ioTable)
         {
             UserData.RegisterType<FileUserDataBase>(InteropAccessMode.Default, "file");
 
@@ -102,14 +102,14 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue close(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             FileUserDataBase outp = args.AsUserData<FileUserDataBase>(0, "close", true) ?? GetDefaultFile(executionContext, StandardFileType.StdOut);
             return outp.close(executionContext, args);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue flush(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             FileUserDataBase outp = args.AsUserData<FileUserDataBase>(0, "close", true) ?? GetDefaultFile(executionContext, StandardFileType.StdOut);
@@ -118,13 +118,13 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue input(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             return HandleDefaultStreamSetter(executionContext, args, StandardFileType.StdIn);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue output(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             return HandleDefaultStreamSetter(executionContext, args, StandardFileType.StdOut);
@@ -159,7 +159,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return new UTF8Encoding(false);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue lines(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             string filename = args.AsType(0, "lines", DataType.String, false).String;
@@ -188,7 +188,7 @@ namespace SolarSharp.Interpreter.CoreLib
             }
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue open(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             string filename = args.AsType(0, "open", DataType.String, false).String;
@@ -252,7 +252,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 return ex.Message;
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue type(ScriptExecutionContext _, CallbackArguments args)
         {
             if (args[0].Type != DataType.UserData)
@@ -266,21 +266,21 @@ namespace SolarSharp.Interpreter.CoreLib
                 return DynValue.NewString("closed file");
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue read(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             FileUserDataBase file = GetDefaultFile(executionContext, StandardFileType.StdIn);
             return file.read(executionContext, args);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue write(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             FileUserDataBase file = GetDefaultFile(executionContext, StandardFileType.StdOut);
             return file.write(executionContext, args);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue tmpfile(ScriptExecutionContext executionContext, CallbackArguments _)
         {
             string tmpfilename = Script.GlobalOptions.Platform.IO_OS_GetTempFilename();

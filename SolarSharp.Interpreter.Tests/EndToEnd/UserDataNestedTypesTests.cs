@@ -28,7 +28,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 }
             }
 
-            [MoonSharpUserData]
+            [SolarSharpUserData]
             private class SomeNestedTypePrivate
             {
                 public static string Get()
@@ -57,7 +57,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 }
             }
 
-            [MoonSharpUserData]
+            [SolarSharpUserData]
             private struct SomeNestedTypePrivate
             {
                 public static string Get()

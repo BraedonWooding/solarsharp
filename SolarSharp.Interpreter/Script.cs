@@ -19,13 +19,13 @@ using SolarSharp.Interpreter.Tree.Fast_Interface;
 namespace SolarSharp.Interpreter
 {
     /// <summary>
-    /// This class implements a MoonSharp scripting session. Multiple Script objects can coexist in the same program but cannot share
+    /// This class implements a SolarSharp scripting session. Multiple Script objects can coexist in the same program but cannot share
     /// data among themselves unless some mechanism is put in place.
     /// </summary>
     public class Script : IScriptPrivateResource
     {
         /// <summary>
-        /// The version of the MoonSharp engine
+        /// The version of the SolarSharp engine
         /// </summary>
         public const string VERSION = "2.0.0.0";
 
@@ -112,7 +112,7 @@ namespace SolarSharp.Interpreter
         }
 
         /// <summary>
-        /// Loads a string containing a Lua/MoonSharp function.
+        /// Loads a string containing a Lua/SolarSharp function.
         /// </summary>
         /// <param name="code">The code.</param>
         /// <param name="globalTable">The global table to bind to this chunk.</param>
@@ -150,7 +150,7 @@ namespace SolarSharp.Interpreter
 
 
         /// <summary>
-        /// Loads a string containing a Lua/MoonSharp script.
+        /// Loads a string containing a Lua/SolarSharp script.
         /// </summary>
         /// <param name="code">The code.</param>
         /// <param name="globalTable">The global table to bind to this chunk.</param>
@@ -187,7 +187,7 @@ namespace SolarSharp.Interpreter
         }
 
         /// <summary>
-        /// Loads a Lua/MoonSharp script from a System.IO.Stream. NOTE: This will *NOT* close the stream!
+        /// Loads a Lua/SolarSharp script from a System.IO.Stream. NOTE: This will *NOT* close the stream!
         /// </summary>
         /// <param name="stream">The stream containing code.</param>
         /// <param name="globalTable">The global table to bind to this chunk.</param>
@@ -262,7 +262,7 @@ namespace SolarSharp.Interpreter
 
 
         /// <summary>
-        /// Loads a string containing a Lua/MoonSharp script.
+        /// Loads a string containing a Lua/SolarSharp script.
         /// </summary>
         /// <param name="filename">The code.</param>
         /// <param name="globalContext">The global table to bind to this chunk.</param>
@@ -291,7 +291,7 @@ namespace SolarSharp.Interpreter
 
 
         /// <summary>
-        /// Loads and executes a string containing a Lua/MoonSharp script.
+        /// Loads and executes a string containing a Lua/SolarSharp script.
         /// </summary>
         /// <param name="code">The code.</param>
         /// <param name="globalContext">The global context.</param>
@@ -307,7 +307,7 @@ namespace SolarSharp.Interpreter
 
 
         /// <summary>
-        /// Loads and executes a stream containing a Lua/MoonSharp script.
+        /// Loads and executes a stream containing a Lua/SolarSharp script.
         /// </summary>
         /// <param name="stream">The stream.</param>
         /// <param name="globalContext">The global context.</param>
@@ -323,7 +323,7 @@ namespace SolarSharp.Interpreter
 
 
         /// <summary>
-        /// Loads and executes a file containing a Lua/MoonSharp script.
+        /// Loads and executes a file containing a Lua/SolarSharp script.
         /// </summary>
         /// <param name="filename">The filename.</param>
         /// <param name="globalContext">The global context.</param>
@@ -352,7 +352,7 @@ namespace SolarSharp.Interpreter
         /// <summary>
         /// Runs the specified code with all possible defaults for quick experimenting.
         /// </summary>
-        /// <param name="code">The Lua/MoonSharp code.</param>
+        /// <param name="code">The Lua/SolarSharp code.</param>
         /// A DynValue containing the result of the processing of the executed script.
         public static DynValue RunString(string code)
         {
@@ -401,7 +401,7 @@ namespace SolarSharp.Interpreter
         /// <summary>
         /// Calls the specified function.
         /// </summary>
-        /// <param name="function">The Lua/MoonSharp function to be called</param>
+        /// <param name="function">The Lua/SolarSharp function to be called</param>
         /// <returns>
         /// The return value(s) of the function call.
         /// </returns>
@@ -414,7 +414,7 @@ namespace SolarSharp.Interpreter
         /// <summary>
         /// Calls the specified function.
         /// </summary>
-        /// <param name="function">The Lua/MoonSharp function to be called</param>
+        /// <param name="function">The Lua/SolarSharp function to be called</param>
         /// <param name="args">The arguments to pass to the function.</param>
         /// <returns>
         /// The return value(s) of the function call.
@@ -455,7 +455,7 @@ namespace SolarSharp.Interpreter
         /// <summary>
         /// Calls the specified function.
         /// </summary>
-        /// <param name="function">The Lua/MoonSharp function to be called</param>
+        /// <param name="function">The Lua/SolarSharp function to be called</param>
         /// <param name="args">The arguments to pass to the function.</param>
         /// <returns>
         /// The return value(s) of the function call.
@@ -474,7 +474,7 @@ namespace SolarSharp.Interpreter
         /// <summary>
         /// Calls the specified function.
         /// </summary>
-        /// <param name="function">The Lua/MoonSharp function to be called</param>
+        /// <param name="function">The Lua/SolarSharp function to be called</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
         public DynValue Call(object function)
@@ -485,7 +485,7 @@ namespace SolarSharp.Interpreter
         /// <summary>
         /// Calls the specified function.
         /// </summary>
-        /// <param name="function">The Lua/MoonSharp function to be called </param>
+        /// <param name="function">The Lua/SolarSharp function to be called </param>
         /// <param name="args">The arguments to pass to the function.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
@@ -655,7 +655,7 @@ namespace SolarSharp.Interpreter
 
 
         /// <summary>
-        /// Warms up the parser/lexer structures so that MoonSharp operations start faster.
+        /// Warms up the parser/lexer structures so that SolarSharp operations start faster.
         /// </summary>
         public static void WarmUp()
         {
@@ -699,7 +699,7 @@ namespace SolarSharp.Interpreter
         }
 
         /// <summary>
-        /// MoonSharp (like Lua itself) provides a registry, a predefined table that can be used by any CLR code to 
+        /// SolarSharp (like Lua itself) provides a registry, a predefined table that can be used by any CLR code to 
         /// store whatever Lua values it needs to store. 
         /// Any CLR code can store data into this table, but it should take care to choose keys 
         /// that are different from those used by other libraries, to avoid collisions. 
@@ -720,7 +720,7 @@ namespace SolarSharp.Interpreter
             subproduct = subproduct != null ? subproduct + " " : "";
 
             StringBuilder sb = new();
-            sb.AppendLine(string.Format("MoonSharp {0}{1} [{2}]", subproduct, VERSION, GlobalOptions.Platform.GetPlatformName()));
+            sb.AppendLine(string.Format("SolarSharp {0}{1} [{2}]", subproduct, VERSION, GlobalOptions.Platform.GetPlatformName()));
             sb.AppendLine("Copyright (C) 2014-2016 Marco Mastropaolo");
             sb.AppendLine("http://www.SolarSharp.org");
             return sb.ToString();

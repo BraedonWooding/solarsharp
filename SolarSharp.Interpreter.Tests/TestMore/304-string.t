@@ -55,7 +55,7 @@ error_like(function () string.char(0, 'bad') end,
 
 		   
 --[[		   
-MoonSharp intentional : 
+SolarSharp intentional : 
 
 1) unicode chars supported!
 2) plan has upvalues, and by Lua spec it shouldn't be supported!

@@ -12,12 +12,12 @@ namespace SolarSharp.Interpreter.CoreLib
     /// <summary>
     /// Class implementing string Lua functions 
     /// </summary>
-    [MoonSharpModule(Namespace = "string")]
+    [SolarSharpModule(Namespace = "string")]
     public class StringModule
     {
-        public const string BASE64_DUMP_HEADER = "MoonSharp_dump_b64::";
+        public const string BASE64_DUMP_HEADER = "SolarSharp_dump_b64::";
 
-        public static void MoonSharpInit(Table globalTable, Table stringTable)
+        public static void SolarSharpInit(Table globalTable, Table stringTable)
         {
             Table stringMetatable = new(globalTable.OwnerScript);
             stringMetatable.Set("__index", DynValue.NewTable(stringTable));
@@ -25,7 +25,7 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue dump(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue fn = args.AsType(0, "dump", DataType.Function, false);
@@ -49,7 +49,7 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue @char(ScriptExecutionContext _, CallbackArguments args)
         {
             StringBuilder sb = new(args.Count);
@@ -80,7 +80,7 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue @byte(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue vs = args.AsType(0, "byte", DataType.String, false);
@@ -91,7 +91,7 @@ namespace SolarSharp.Interpreter.CoreLib
                 i => Unicode2Ascii(i));
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue unicode(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue vs = args.AsType(0, "unicode", DataType.String, false);
@@ -143,7 +143,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return s.Length - i;
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue len(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue vs = args.AsType(0, "len", DataType.String, false);
@@ -152,26 +152,26 @@ namespace SolarSharp.Interpreter.CoreLib
 
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue match(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             return executionContext.EmulateClassicCall(args, "match", KopiLua_StringLib.str_match);
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue gmatch(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             return executionContext.EmulateClassicCall(args, "gmatch", KopiLua_StringLib.str_gmatch);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue gsub(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             return executionContext.EmulateClassicCall(args, "gsub", KopiLua_StringLib.str_gsub);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue find(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             return executionContext.EmulateClassicCall(args, "find",
@@ -179,21 +179,21 @@ namespace SolarSharp.Interpreter.CoreLib
         }
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue lower(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s = args.AsType(0, "lower", DataType.String, false);
             return DynValue.NewString(arg_s.String.ToLower());
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue upper(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s = args.AsType(0, "upper", DataType.String, false);
             return DynValue.NewString(arg_s.String.ToUpper());
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue rep(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s = args.AsType(0, "rep", DataType.String, false);
@@ -221,7 +221,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewString(result.ToString());
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue format(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             return executionContext.EmulateClassicCall(args, "format", KopiLua_StringLib.str_format);
@@ -229,7 +229,7 @@ namespace SolarSharp.Interpreter.CoreLib
 
 
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue reverse(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s = args.AsType(0, "reverse", DataType.String, false);
@@ -245,7 +245,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewString(new string(elements));
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue sub(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s = args.AsType(0, "sub", DataType.String, false);
@@ -258,7 +258,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewString(s);
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue startsWith(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s1 = args.AsType(0, "startsWith", DataType.String, true);
@@ -270,7 +270,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewBoolean(arg_s1.String.StartsWith(arg_s2.String));
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue endsWith(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s1 = args.AsType(0, "endsWith", DataType.String, true);
@@ -282,7 +282,7 @@ namespace SolarSharp.Interpreter.CoreLib
             return DynValue.NewBoolean(arg_s1.String.EndsWith(arg_s2.String));
         }
 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue contains(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue arg_s1 = args.AsType(0, "contains", DataType.String, true);

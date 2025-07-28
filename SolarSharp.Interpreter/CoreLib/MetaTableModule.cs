@@ -8,7 +8,7 @@ namespace SolarSharp.Interpreter.CoreLib
     /// <summary>
     /// Class implementing metatable related Lua functions (xxxmetatable and rawxxx).
     /// </summary>
-    [MoonSharpModule]
+    [SolarSharpModule]
     public class MetaTableModule
     {
         // setmetatable (table, metatable)
@@ -17,7 +17,7 @@ namespace SolarSharp.Interpreter.CoreLib
         // types from Lua, only from C.) If metatable is nil, removes the metatable of the given table. 
         // If the original metatable has a "__metatable" field, raises an error ("cannot change a protected metatable").
         // This function returns table. 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue setmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue table = args.AsType(0, "setmetatable", DataType.Table);
@@ -38,7 +38,7 @@ namespace SolarSharp.Interpreter.CoreLib
         // -------------------------------------------------------------------------------------------------------------------
         // If object does not have a metatable, returns nil. Otherwise, if the object's metatable 
         // has a "__metatable" field, returns the associated value. Otherwise, returns the metatable of the given object. 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue getmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
         {
             DynValue obj = args[0];
@@ -66,7 +66,7 @@ namespace SolarSharp.Interpreter.CoreLib
         // rawget (table, index)
         // -------------------------------------------------------------------------------------------------------------------
         // Gets the real value of table[index], without invoking any metamethod. table must be a table; index may be any value.
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue rawget(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue table = args.AsType(0, "rawget", DataType.Table);
@@ -80,7 +80,7 @@ namespace SolarSharp.Interpreter.CoreLib
         // Sets the real value of table[index] to value, without invoking any metamethod. table must be a table, 
         // index any value different from nil and NaN, and value any Lua value.
         // This function returns table. 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue rawset(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue table = args.AsType(0, "rawset", DataType.Table);
@@ -94,7 +94,7 @@ namespace SolarSharp.Interpreter.CoreLib
         // rawequal (v1, v2)
         // -------------------------------------------------------------------------------------------------------------------
         // Checks whether v1 is equal to v2, without invoking any metamethod. Returns a boolean. 
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue rawequal(ScriptExecutionContext _, CallbackArguments args)
         {
             DynValue v1 = args[0];
@@ -106,7 +106,7 @@ namespace SolarSharp.Interpreter.CoreLib
         //rawlen (v)
         // -------------------------------------------------------------------------------------------------------------------
         //Returns the length of the object v, which must be a table or a string, without invoking any metamethod. Returns an integer number.	
-        [MoonSharpModuleMethod]
+        [SolarSharpModuleMethod]
         public static DynValue rawlen(ScriptExecutionContext _, CallbackArguments args)
         {
             if (args[0].Type != DataType.String && args[0].Type != DataType.Table)

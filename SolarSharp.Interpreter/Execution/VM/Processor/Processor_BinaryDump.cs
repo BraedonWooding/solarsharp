@@ -95,7 +95,7 @@ namespace SolarSharp.Interpreter.Execution.VM
             ulong headerMark = br.ReadUInt64();
 
             if (headerMark != DUMP_CHUNK_MAGIC)
-                throw new ArgumentException("Not a MoonSharp chunk");
+                throw new ArgumentException("Not a SolarSharp chunk");
 
             int version = br.ReadInt32();
 

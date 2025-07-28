@@ -14,7 +14,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
     /// <summary>
     /// Standard descriptor for userdata types.
     /// </summary>
-    public class StandardUserDataDescriptor : DispatchingUserDataDescriptor, IWireableDescriptor
+    public class StandardUserDataDescriptor : DispatchingUserDataDescriptor
     {
         /// <summary>
         /// Gets the interop access mode this descriptor uses for members access
@@ -50,8 +50,8 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
         private void FillMemberList()
         {
             HashSet<string> membersToIgnore = new(
-                Framework.Do.GetCustomAttributes(Type, typeof(MoonSharpHideMemberAttribute), true)
-                    .OfType<MoonSharpHideMemberAttribute>()
+                Framework.Do.GetCustomAttributes(Type, typeof(SolarSharpHideMemberAttribute), true)
+                    .OfType<SolarSharpHideMemberAttribute>()
                     .Select(a => a.MemberName)
                 );
 
@@ -140,7 +140,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
 
                 if (!Framework.Do.IsGenericTypeDefinition(nestedType))
                 {
-                    if (Framework.Do.IsNestedPublic(nestedType) || Framework.Do.GetCustomAttributes(nestedType, typeof(MoonSharpUserDataAttribute), true).Length > 0)
+                    if (Framework.Do.IsNestedPublic(nestedType) || Framework.Do.GetCustomAttributes(nestedType, typeof(SolarSharpUserDataAttribute), true).Length > 0)
                     {
                         var descr = UserData.RegisterType(nestedType, AccessMode);
 
@@ -171,47 +171,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors
                 {
                     AddMember(SPECIALNAME_INDEXER_SET, new ArrayMemberDescriptor(SPECIALNAME_INDEXER_SET, true));
                     AddMember(SPECIALNAME_INDEXER_GET, new ArrayMemberDescriptor(SPECIALNAME_INDEXER_GET, false));
-                }
-            }
-        }
-
-
-
-
-        public void PrepareForWiring(Table t)
-        {
-            if (AccessMode == InteropAccessMode.HideMembers || Framework.Do.GetAssembly(Type) == Framework.Do.GetAssembly(GetType()))
-            {
-                t.Set("skip", DynValue.NewBoolean(true));
-            }
-            else
-            {
-                t.Set("visibility", DynValue.NewString(Type.GetClrVisibility()));
-
-                t.Set("class", DynValue.NewString(GetType().FullName));
-                DynValue tm = DynValue.NewPrimeTable();
-                t.Set("members", tm);
-                DynValue tmm = DynValue.NewPrimeTable();
-                t.Set("metamembers", tmm);
-
-                Serialize(tm.Table, Members);
-                Serialize(tmm.Table, MetaMembers);
-            }
-        }
-
-        private void Serialize(Table t, IEnumerable<KeyValuePair<string, IMemberDescriptor>> members)
-        {
-            foreach (var pair in members)
-            {
-                if (pair.Value is IWireableDescriptor sd)
-                {
-                    DynValue mt = DynValue.NewPrimeTable();
-                    t.Set(pair.Key, mt);
-                    sd.PrepareForWiring(mt.Table);
-                }
-                else
-                {
-                    t.Set(pair.Key, DynValue.NewString("unsupported member type : " + pair.Value.GetType().FullName));
                 }
             }
         }

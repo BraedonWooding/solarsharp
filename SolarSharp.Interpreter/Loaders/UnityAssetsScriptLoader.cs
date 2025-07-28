@@ -11,8 +11,8 @@ namespace SolarSharp.Interpreter.Loaders
     /// A script loader which can load scripts from assets in Unity3D.
     /// Scripts should be saved as .txt files in a subdirectory of Assets/Resources.
     /// 
-    /// When MoonSharp is activated on Unity3D and the default script loader is used,
-    /// scripts should be saved as .txt files in Assets/Resources/MoonSharp/Scripts.
+    /// When SolarSharp is activated on Unity3D and the default script loader is used,
+    /// scripts should be saved as .txt files in Assets/Resources/SolarSharp/Scripts.
     /// </summary>
     public class UnityAssetsScriptLoader : ScriptLoaderBase
     {
@@ -21,14 +21,14 @@ namespace SolarSharp.Interpreter.Loaders
         /// <summary>
         /// The default path where scripts are meant to be stored (if not changed)
         /// </summary>
-        public const string DEFAULT_PATH = "MoonSharp/Scripts";
+        public const string DEFAULT_PATH = "SolarSharp/Scripts";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UnityAssetsScriptLoader"/> class.
         /// </summary>
         /// <param name="assetsPath">The path, relative to Assets/Resources. For example
         /// if your scripts are stored under Assets/Resources/Scripts, you should
-        /// pass the value "Scripts". If null, "MoonSharp/Scripts" is used. </param>
+        /// pass the value "Scripts". If null, "SolarSharp/Scripts" is used. </param>
         public UnityAssetsScriptLoader(string assetsPath = null)
         {
             assetsPath ??= DEFAULT_PATH;

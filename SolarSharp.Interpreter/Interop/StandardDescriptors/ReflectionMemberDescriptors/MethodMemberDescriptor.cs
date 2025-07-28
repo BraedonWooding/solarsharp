@@ -18,7 +18,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
     /// <summary>
     /// Class providing easier marshalling of CLR functions
     /// </summary>
-    public class MethodMemberDescriptor : FunctionMemberDescriptorBase, IOptimizableDescriptor, IWireableDescriptor
+    public class MethodMemberDescriptor : FunctionMemberDescriptorBase, IOptimizableDescriptor
     {
         /// <summary>
         /// Gets the method information (can be a MethodInfo or ConstructorInfo)
@@ -33,11 +33,9 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
         /// </summary>
         public bool IsConstructor { get; private set; }
 
-
         private Func<object, object[], object> m_OptimizedFunc = null;
         private Action<object, object[]> m_OptimizedAction = null;
         private readonly bool m_IsAction = false;
-        private readonly bool m_IsArrayCtor = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MethodMemberDescriptor"/> class.
@@ -54,15 +52,13 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
 
             bool isStatic = methodBase.IsStatic || IsConstructor;
 
-            m_IsAction = IsConstructor ? false : ((MethodInfo)methodBase).ReturnType == typeof(void);
+            m_IsAction = !IsConstructor && ((MethodInfo)methodBase).ReturnType == typeof(void);
 
             ParameterInfo[] reflectionParams = methodBase.GetParameters();
             ParameterDescriptor[] parameters;
 
             if (MethodInfo.DeclaringType.IsArray)
             {
-                m_IsArrayCtor = true;
-
                 int rank = MethodInfo.DeclaringType.GetArrayRank();
 
                 parameters = new ParameterDescriptor[rank];
@@ -72,11 +68,11 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
             }
             else
             {
-                parameters = reflectionParams.Select(pi => new ParameterDescriptor(pi)).ToArray();
+                parameters = [.. reflectionParams.Select(pi => new ParameterDescriptor(pi))];
             }
 
 
-            bool isExtensionMethod = methodBase.IsStatic && parameters.Length > 0 && methodBase.GetCustomAttributes(typeof(ExtensionAttribute), false).Any();
+            bool isExtensionMethod = methodBase.IsStatic && parameters.Length > 0 && methodBase.GetCustomAttributes(typeof(ExtensionAttribute), false).Length != 0;
 
             Initialize(methodBase.Name, isStatic, parameters, isExtensionMethod);
 
@@ -257,48 +253,6 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDes
                     var lambda = Expression.Lambda<Func<object, object[], object>>(fnc, objinst, ep);
                     Interlocked.Exchange(ref m_OptimizedFunc, lambda.Compile());
                 }
-            }
-        }
-
-
-        /// <summary>
-        /// Prepares the descriptor for hard-wiring.
-        /// The descriptor fills the passed table with all the needed data for hardwire generators to generate the appropriate code.
-        /// </summary>
-        /// <param name="t">The table to be filled</param>
-        public void PrepareForWiring(Table t)
-        {
-            t.Set("class", DynValue.NewString(GetType().FullName));
-            t.Set("name", DynValue.NewString(Name));
-            t.Set("ctor", DynValue.NewBoolean(IsConstructor));
-            t.Set("special", DynValue.NewBoolean(MethodInfo.IsSpecialName));
-            t.Set("visibility", DynValue.NewString(MethodInfo.GetClrVisibility()));
-
-            if (IsConstructor)
-                t.Set("ret", DynValue.NewString(((ConstructorInfo)MethodInfo).DeclaringType.FullName));
-            else
-                t.Set("ret", DynValue.NewString(((MethodInfo)MethodInfo).ReturnType.FullName));
-
-            if (m_IsArrayCtor)
-            {
-                t.Set("arraytype", DynValue.NewString(MethodInfo.DeclaringType.GetElementType().FullName));
-            }
-
-            t.Set("decltype", DynValue.NewString(MethodInfo.DeclaringType.FullName));
-            t.Set("static", DynValue.NewBoolean(IsStatic));
-            t.Set("extension", DynValue.NewBoolean(ExtensionMethodType != null));
-
-            var pars = DynValue.NewPrimeTable();
-
-            t.Set("params", pars);
-
-            int i = 0;
-
-            foreach (var p in Parameters)
-            {
-                DynValue pt = DynValue.NewPrimeTable();
-                pars.Table.Set(++i, pt);
-                p.PrepareForWiring(pt.Table);
             }
         }
     }

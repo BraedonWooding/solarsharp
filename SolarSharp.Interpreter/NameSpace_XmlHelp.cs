@@ -3,7 +3,7 @@
 namespace SolarSharp.Interpreter
 {
     /// <summary>
-    /// Namespace containing all the most commonly used classes for MoonSharp operation.
+    /// Namespace containing all the most commonly used classes for SolarSharp operation.
     /// When in doubt, refer to <see cref="Script" /> and <see cref="DynValue" /> classes as starting points.
     /// </summary>
     internal static class NamespaceDoc { }
@@ -12,7 +12,7 @@ namespace SolarSharp.Interpreter
 namespace SolarSharp.Interpreter.CoreLib
 {
     /// <summary>
-    /// Namespace containing the implementation of the Lua standard library, as MoonSharp modules.
+    /// Namespace containing the implementation of the Lua standard library, as SolarSharp modules.
     /// There's seldom the need to access these classes directly.
     /// </summary>
     internal static class NamespaceDoc { }

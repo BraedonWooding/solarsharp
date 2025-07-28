@@ -23,11 +23,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             public int WoIntProp { set { IntProp = value; } }
             public int WoIntProp2 { internal get; set; }
 
-            [MoonSharpVisible(false)]
+            [SolarSharpVisible(false)]
             internal int AccessOverrProp
             {
                 get;
-                [MoonSharpVisible(true)]
+                [SolarSharpVisible(true)]
                 set;
             }
 

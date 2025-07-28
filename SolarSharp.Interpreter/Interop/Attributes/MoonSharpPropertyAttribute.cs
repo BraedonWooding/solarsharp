@@ -7,7 +7,7 @@ namespace SolarSharp.Interpreter.Interop.Attributes
     /// Marks a property as a configruation property
     /// </summary>
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = true)]
-    public sealed class MoonSharpPropertyAttribute : Attribute
+    public sealed class SolarSharpPropertyAttribute : Attribute
     {
         /// <summary>
         /// The metamethod name (like '__div', '__ipairs', etc.)
@@ -16,18 +16,18 @@ namespace SolarSharp.Interpreter.Interop.Attributes
 
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MoonSharpPropertyAttribute"/> class.
+        /// Initializes a new instance of the <see cref="SolarSharpPropertyAttribute"/> class.
         /// </summary>
-        public MoonSharpPropertyAttribute()
+        public SolarSharpPropertyAttribute()
         {
 
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MoonSharpPropertyAttribute"/> class.
+        /// Initializes a new instance of the <see cref="SolarSharpPropertyAttribute"/> class.
         /// </summary>
         /// <param name="name">The name for this property</param>
-        public MoonSharpPropertyAttribute(string name)
+        public SolarSharpPropertyAttribute(string name)
         {
             Name = name;
         }
