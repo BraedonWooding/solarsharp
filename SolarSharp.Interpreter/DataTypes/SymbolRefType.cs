@@ -1,25 +1,27 @@
-﻿namespace SolarSharp.Interpreter.DataTypes
+﻿namespace SolarSharp.Interpreter.DataTypes;
+
+/// <summary>
+///     Enumeration of the types of SymbolRef
+/// </summary>
+public enum SymbolRefType
 {
     /// <summary>
-    /// Enumeration of the types of SymbolRef
+    ///     The symbol ref of a local variable
     /// </summary>
-    public enum SymbolRefType
-    {
-        /// <summary>
-        /// The symbol ref of a local variable
-        /// </summary>
-        Local,
-        /// <summary>
-        /// The symbol ref of an upvalue variable
-        /// </summary>
-        Upvalue,
-        /// <summary>
-        /// The symbol ref of a global variable
-        /// </summary>
-        Global,
-        /// <summary>
-        /// The symbol ref of the global environment
-        /// </summary>
-        DefaultEnv,
-    }
+    Local,
+
+    /// <summary>
+    ///     The symbol ref of an upvalue variable
+    /// </summary>
+    Upvalue,
+
+    /// <summary>
+    ///     The symbol ref of a global variable
+    /// </summary>
+    Global,
+
+    /// <summary>
+    ///     The symbol ref of the global environment
+    /// </summary>
+    DefaultEnv
 }

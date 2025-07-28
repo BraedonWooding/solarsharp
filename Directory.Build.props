@@ -1,5 +1,5 @@
 <Project>
-    <Sdk Name="DotNet.ReproducibleBuilds.Isolated" Version="1.2.25" />
+    <Sdk Name="DotNet.ReproducibleBuilds.Isolated" Version="1.2.25"/>
     <PropertyGroup>
         <LangVersion>latest</LangVersion>
         <Nullable>annotations</Nullable>
@@ -7,6 +7,6 @@
     </PropertyGroup>
     <ItemGroup>
         <!-- Reproducible Builds -->
-        <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.25" PrivateAssets="All" />
+        <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.25" PrivateAssets="All"/>
     </ItemGroup>
 </Project>

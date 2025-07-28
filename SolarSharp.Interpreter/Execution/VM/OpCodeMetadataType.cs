@@ -1,8 +1,7 @@
-﻿namespace SolarSharp.Interpreter.Execution.VM
+﻿namespace SolarSharp.Interpreter.Execution.VM;
+
+public enum OpCodeMetadataType
 {
-    public enum OpCodeMetadataType
-    {
-        ChunkEntrypoint,
-        FunctionEntrypoint,
-    }
+    ChunkEntrypoint,
+    FunctionEntrypoint
 }

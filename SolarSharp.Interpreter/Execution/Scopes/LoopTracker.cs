@@ -1,17 +1,15 @@
 ﻿using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.Execution.VM;
 
-namespace SolarSharp.Interpreter.Execution.Scopes
+namespace SolarSharp.Interpreter.Execution.Scopes;
+
+internal interface ILoop
 {
-    internal interface ILoop
-    {
-        void CompileBreak(ByteCode bc);
-        bool IsBoundary();
-    }
+    void CompileBreak(ByteCode bc);
+    bool IsBoundary();
+}
 
-
-    internal class LoopTracker
-    {
-        public FastStack<ILoop> Loops = new(16384);
-    }
+internal class LoopTracker
+{
+    public FastStack<ILoop> Loops = new(16384);
 }

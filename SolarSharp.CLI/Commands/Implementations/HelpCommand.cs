@@ -1,51 +1,46 @@
-﻿using SolarSharp;
-using System;
+﻿using System;
 
-namespace SolarSharp.Commands.Implementations
+namespace SolarSharp.Commands.Implementations;
+
+internal class HelpCommand : ICommand
 {
-    internal class HelpCommand : ICommand
+    public string Name => "help";
+
+    public void DisplayShortHelp()
     {
-        public string Name
-        {
-            get { return "help"; }
-        }
+        Console.WriteLine("help [command] - gets the list of possible commands or help about the specified command");
+    }
 
-        public void DisplayShortHelp()
-        {
-            Console.WriteLine("help [command] - gets the list of possible commands or help about the specified command");
-        }
+    public void DisplayLongHelp()
+    {
+        DisplayShortHelp();
+    }
 
-        public void DisplayLongHelp()
+    public void Execute(ShellContext context, string arguments)
+    {
+        if (arguments.Length > 0)
         {
-            DisplayShortHelp();
-        }
-
-        public void Execute(ShellContext context, string arguments)
-        {
-            if (arguments.Length > 0)
-            {
-                var cmd = CommandManager.Find(arguments);
-                if (cmd != null)
-                    cmd.DisplayLongHelp();
-                else
-                    Console.WriteLine("Command '{0}' not found.", arguments);
-            }
+            var cmd = CommandManager.Find(arguments);
+            if (cmd != null)
+                cmd.DisplayLongHelp();
             else
+                Console.WriteLine("Command '{0}' not found.", arguments);
+        }
+        else
+        {
+            Console.WriteLine("Type Lua code to execute Lua code (multilines are accepted)");
+            Console.WriteLine("or type one of the following commands to execute them.");
+            Console.WriteLine("");
+            Console.WriteLine("Commands:");
+            Console.WriteLine("");
+
+            foreach (var cmd in CommandManager.GetCommands())
             {
-                Console.WriteLine("Type Lua code to execute Lua code (multilines are accepted)");
-                Console.WriteLine("or type one of the following commands to execute them.");
-                Console.WriteLine("");
-                Console.WriteLine("Commands:");
-                Console.WriteLine("");
-
-                foreach (var cmd in CommandManager.GetCommands())
-                {
-                    Console.Write("  !");
-                    cmd.DisplayShortHelp();
-                }
-
-                Console.WriteLine("");
+                Console.Write("  !");
+                cmd.DisplayShortHelp();
             }
+
+            Console.WriteLine("");
         }
     }
 }

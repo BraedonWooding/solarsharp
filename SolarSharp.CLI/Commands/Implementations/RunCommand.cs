@@ -1,36 +1,26 @@
-﻿using SolarSharp;
-using SolarSharp.Commands;
-using System;
+﻿using System;
 
-namespace SolarSharp.Commands.Implementations
+namespace SolarSharp.Commands.Implementations;
+
+internal class RunCommand : ICommand
 {
-    internal class RunCommand : ICommand
+    public string Name => "run";
+
+    public void DisplayShortHelp()
     {
-        public string Name
-        {
-            get { return "run"; }
-        }
+        Console.WriteLine("run <filename> - Executes the specified Lua script");
+    }
 
-        public void DisplayShortHelp()
-        {
-            Console.WriteLine("run <filename> - Executes the specified Lua script");
-        }
+    public void DisplayLongHelp()
+    {
+        Console.WriteLine("run <filename> - Executes the specified Lua script.");
+    }
 
-        public void DisplayLongHelp()
-        {
-            Console.WriteLine("run <filename> - Executes the specified Lua script.");
-        }
-
-        public void Execute(ShellContext context, string arguments)
-        {
-            if (arguments.Length == 0)
-            {
-                Console.WriteLine("Syntax : !run <file>");
-            }
-            else
-            {
-                context.Script.DoFile(arguments);
-            }
-        }
+    public void Execute(ShellContext context, string arguments)
+    {
+        if (arguments.Length == 0)
+            Console.WriteLine("Syntax : !run <file>");
+        else
+            context.Script.DoFile(arguments);
     }
 }

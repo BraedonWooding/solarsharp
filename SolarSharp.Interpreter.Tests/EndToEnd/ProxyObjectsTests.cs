@@ -1,6 +1,6 @@
 ﻿using System;
-using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop.Attributes;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
@@ -10,8 +10,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     {
         public class Proxy
         {
-            [SolarSharpVisible(false)]
-            public Random random;
+            [SolarSharpVisible(false)] public Random random;
 
             [SolarSharpVisible(false)]
             public Proxy(Random r)
@@ -19,7 +18,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 random = r;
             }
 
-            public int GetValue() { return 3; }
+            public int GetValue()
+            {
+                return 3;
+            }
         }
 
         [Test]
@@ -30,7 +32,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Script S = new();
 
             S.Globals["R"] = new Random();
-            S.Globals["func"] = (Action<Random>)(r => { Assert.That(r, Is.Not.Null); Assert.That(r, Is.Not.EqualTo(null)); });
+            S.Globals["func"] = (Action<Random>)(r =>
+            {
+                Assert.That(r, Is.Not.Null);
+                Assert.That(r, Is.Not.EqualTo(null));
+            });
 
             S.DoString(@"
 				x = R.GetValue();
@@ -39,7 +45,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(S.Globals.Get("x").Number, Is.EqualTo(3.0));
         }
-
-
     }
 }

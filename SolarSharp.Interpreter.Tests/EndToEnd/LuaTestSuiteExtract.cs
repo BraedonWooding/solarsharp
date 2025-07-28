@@ -1,42 +1,40 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using SolarSharp.Interpreter.DataTypes;
 using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
-    /// <summary>
-    /// Selected tests extracted from Lua test suite
-    /// </summary>
-    [TestFixture]
+	/// <summary>
+	///     Selected tests extracted from Lua test suite
+	/// </summary>
+	[TestFixture]
     internal class LuaTestSuiteExtract
     {
         private static void RunTest(string script)
         {
             HashSet<string> failedTests = new();
-            int i = 0;
+            var i = 0;
 
             Script S = new();
 
             var globalCtx = S.Globals;
-            globalCtx.Set(DynValue.NewString("xassert"), DynValue.NewCallback(new CallbackFunction(
-                (x, a) =>
-                {
-                    if (!a[1].CastToBool())
-                        failedTests.Add(a[0].String);
+            globalCtx.Set(DynValue.NewString("xassert"), DynValue.NewCallback(new CallbackFunction((x, a) =>
+            {
+                if (!a[1].CastToBool())
+                    failedTests.Add(a[0].String);
 
-                    return DynValue.Nil;
-                })));
-            globalCtx.Set(DynValue.NewString("assert"), DynValue.NewCallback(new CallbackFunction(
-                (x, a) =>
-                {
-                    ++i;
+                return DynValue.Nil;
+            })));
+            globalCtx.Set(DynValue.NewString("assert"), DynValue.NewCallback(new CallbackFunction((x, a) =>
+            {
+                ++i;
 
-                    if (!a[0].CastToBool())
-                        failedTests.Add(string.Format("assert #{0}", i));
+                if (!a[0].CastToBool())
+                    failedTests.Add(string.Format("assert #{0}", i));
 
-                    return DynValue.Nil;
-                })));
+                return DynValue.Nil;
+            })));
 
             globalCtx.Set(DynValue.NewString("print"), DynValue.NewCallback(new CallbackFunction((x, a) =>
             {
@@ -45,7 +43,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             })));
 
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.That(failedTests.Any(), Is.False, string.Format("Failed asserts {0}",
                 string.Join(", ", failedTests.Select(xi => xi.ToString()).ToArray())));
@@ -117,7 +115,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
 
-
         [Test]
         public void LuaSuite_Calls_Closures()
         {
@@ -159,10 +156,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				--print('+')
 				");
         }
-
-
-
-
-
     }
 }

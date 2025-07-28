@@ -1,240 +1,237 @@
 ﻿using System.Collections.Generic;
-using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Execution;
-using SolarSharp.Interpreter.Tree.Lexer;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace SolarSharp.Interpreter.Tree
+namespace SolarSharp.Interpreter.Tree;
+
+internal abstract class Expression : NodeBase
 {
-    internal abstract class Expression : NodeBase
+    public Expression(ScriptLoadingContext lcontext)
+        : base(lcontext)
     {
-        public Expression(ScriptLoadingContext lcontext)
-            : base(lcontext)
-        { }
+    }
 
-        public virtual string GetFriendlyDebugName()
+    public virtual string GetFriendlyDebugName()
+    {
+        return null;
+    }
+
+    public abstract DynValue Eval(ScriptExecutionContext context);
+
+    public virtual SymbolRef FindDynamic(ScriptExecutionContext context)
+    {
+        return null;
+    }
+
+    internal static List<Expression> ExprListAfterFirstExpr(ScriptLoadingContext lcontext, Expression expr1)
+    {
+        List<Expression> exps = new()
         {
-            return null;
+            expr1
+        };
+
+        while (lcontext.Lexer.Current.Type == TokenType.Comma)
+        {
+            lcontext.Lexer.Next();
+            exps.Add(Expr(lcontext));
         }
 
-        public abstract DynValue Eval(ScriptExecutionContext context);
+        return exps;
+    }
 
-        public virtual SymbolRef FindDynamic(ScriptExecutionContext context)
+
+    internal static List<Expression> ExprList(ScriptLoadingContext lcontext)
+    {
+        List<Expression> exps = new();
+
+        while (true)
         {
-            return null;
+            exps.Add(Expr(lcontext));
+
+            if (lcontext.Lexer.Current.Type != TokenType.Comma)
+                break;
+
+            lcontext.Lexer.Next();
         }
 
-        internal static List<Expression> ExprListAfterFirstExpr(ScriptLoadingContext lcontext, Expression expr1)
+        return exps;
+    }
+
+    internal static Expression Expr(ScriptLoadingContext lcontext)
+    {
+        return SubExpr(lcontext, true);
+    }
+
+    internal static Expression SubExpr(ScriptLoadingContext lcontext, bool isPrimary)
+    {
+        var T = lcontext.Lexer.Current;
+
+        Expression e;
+        if (T.IsUnaryOperator())
         {
-            List<Expression> exps = new()
-            {
-                expr1
-            };
+            lcontext.Lexer.Next();
+            e = SubExpr(lcontext, false);
 
-            while (lcontext.Lexer.Current.Type == TokenType.Comma)
-            {
-                lcontext.Lexer.Next();
-                exps.Add(Expr(lcontext));
-            }
-
-            return exps;
-        }
-
-
-        internal static List<Expression> ExprList(ScriptLoadingContext lcontext)
-        {
-            List<Expression> exps = new();
-
-            while (true)
-            {
-                exps.Add(Expr(lcontext));
-
-                if (lcontext.Lexer.Current.Type != TokenType.Comma)
-                    break;
-
-                lcontext.Lexer.Next();
-            }
-
-            return exps;
-        }
-
-        internal static Expression Expr(ScriptLoadingContext lcontext)
-        {
-            return SubExpr(lcontext, true);
-        }
-
-        internal static Expression SubExpr(ScriptLoadingContext lcontext, bool isPrimary)
-        {
-            Token T = lcontext.Lexer.Current;
-
-            Expression e;
-            if (T.IsUnaryOperator())
-            {
-                lcontext.Lexer.Next();
-                e = SubExpr(lcontext, false);
-
-                // check for power operator -- it be damned forever and ever for being higher priority than unary ops
-                Token unaryOp = T;
-                T = lcontext.Lexer.Current;
-
-                if (isPrimary && T.Type == TokenType.Op_Pwr)
-                {
-                    List<Expression> powerChain = new()
-                    {
-                        e
-                    };
-
-                    while (isPrimary && T.Type == TokenType.Op_Pwr)
-                    {
-                        lcontext.Lexer.Next();
-                        powerChain.Add(SubExpr(lcontext, false));
-                        T = lcontext.Lexer.Current;
-                    }
-
-                    e = powerChain[^1];
-
-                    for (int i = powerChain.Count - 2; i >= 0; i--)
-                    {
-                        e = BinaryOperatorExpression.CreatePowerExpression(powerChain[i], e, lcontext);
-                    }
-                }
-
-                e = new UnaryOperatorExpression(lcontext, e, unaryOp);
-            }
-            else
-            {
-                e = SimpleExp(lcontext);
-            }
-
+            // check for power operator -- it be damned forever and ever for being higher priority than unary ops
+            var unaryOp = T;
             T = lcontext.Lexer.Current;
 
-            if (isPrimary && T.IsBinaryOperator())
+            if (isPrimary && T.Type == TokenType.Op_Pwr)
             {
-                object chain = BinaryOperatorExpression.BeginOperatorChain();
-
-                BinaryOperatorExpression.AddExpressionToChain(chain, e);
-
-                while (T.IsBinaryOperator())
+                List<Expression> powerChain = new()
                 {
-                    BinaryOperatorExpression.AddOperatorToChain(chain, T);
+                    e
+                };
+
+                while (isPrimary && T.Type == TokenType.Op_Pwr)
+                {
                     lcontext.Lexer.Next();
-                    Expression right = SubExpr(lcontext, false);
-                    BinaryOperatorExpression.AddExpressionToChain(chain, right);
+                    powerChain.Add(SubExpr(lcontext, false));
                     T = lcontext.Lexer.Current;
                 }
 
-                e = BinaryOperatorExpression.CommitOperatorChain(chain, lcontext);
+                e = powerChain[^1];
+
+                for (var i = powerChain.Count - 2; i >= 0; i--)
+                    e = BinaryOperatorExpression.CreatePowerExpression(powerChain[i], e, lcontext);
             }
 
-            return e;
+            e = new UnaryOperatorExpression(lcontext, e, unaryOp);
+        }
+        else
+        {
+            e = SimpleExp(lcontext);
         }
 
-        internal static Expression SimpleExp(ScriptLoadingContext lcontext)
-        {
-            Token t = lcontext.Lexer.Current;
+        T = lcontext.Lexer.Current;
 
-            switch (t.Type)
+        if (isPrimary && T.IsBinaryOperator())
+        {
+            var chain = BinaryOperatorExpression.BeginOperatorChain();
+
+            BinaryOperatorExpression.AddExpressionToChain(chain, e);
+
+            while (T.IsBinaryOperator())
             {
-                case TokenType.Number:
-                case TokenType.Number_Hex:
-                case TokenType.Number_HexFloat:
-                case TokenType.String:
-                case TokenType.String_Long:
-                case TokenType.Nil:
-                case TokenType.True:
-                case TokenType.False:
-                    return new LiteralExpression(lcontext, t);
-                case TokenType.VarArgs:
-                    return new SymbolRefExpression(t, lcontext);
-                case TokenType.Brk_Open_Curly:
-                    return new TableConstructor(lcontext);
-                case TokenType.Function:
-                    lcontext.Lexer.Next();
-                    return new FunctionDefinitionExpression(lcontext, false, false);
-                case TokenType.Lambda:
-                    return new FunctionDefinitionExpression(lcontext, false, true);
-                default:
-                    return PrimaryExp(lcontext);
+                BinaryOperatorExpression.AddOperatorToChain(chain, T);
+                lcontext.Lexer.Next();
+                var right = SubExpr(lcontext, false);
+                BinaryOperatorExpression.AddExpressionToChain(chain, right);
+                T = lcontext.Lexer.Current;
             }
 
+            e = BinaryOperatorExpression.CommitOperatorChain(chain, lcontext);
         }
 
-        /// <summary>
-        /// Primaries the exp.
-        /// </summary>
-        /// <param name="lcontext">The lcontext.</param>
-        /// <returns></returns>
-        internal static Expression PrimaryExp(ScriptLoadingContext lcontext)
+        return e;
+    }
+
+    internal static Expression SimpleExp(ScriptLoadingContext lcontext)
+    {
+        var t = lcontext.Lexer.Current;
+
+        switch (t.Type)
         {
-            Expression e = PrefixExp(lcontext);
-
-            while (true)
-            {
-                Token T = lcontext.Lexer.Current;
-                Token thisCallName = null;
-
-                switch (T.Type)
-                {
-                    case TokenType.Dot:
-                        {
-                            lcontext.Lexer.Next();
-                            Token name = CheckTokenType(lcontext, TokenType.Name);
-                            e = new IndexExpression(e, name.Text, lcontext);
-                        }
-                        break;
-                    case TokenType.Brk_Open_Square:
-                        {
-                            Token openBrk = lcontext.Lexer.Current;
-                            lcontext.Lexer.Next(); // skip bracket
-                            Expression index = Expr(lcontext);
-
-                            // support solarsharp multiple indexers for userdata
-                            if (lcontext.Lexer.Current.Type == TokenType.Comma)
-                            {
-                                var explist = ExprListAfterFirstExpr(lcontext, index);
-                                index = new ExprListExpression(explist, lcontext);
-                            }
-
-                            CheckMatch(lcontext, openBrk, TokenType.Brk_Close_Square, "]");
-                            e = new IndexExpression(e, index, lcontext);
-                        }
-                        break;
-                    case TokenType.Colon:
-                        lcontext.Lexer.Next();
-                        thisCallName = CheckTokenType(lcontext, TokenType.Name);
-                        goto case TokenType.Brk_Open_Round;
-                    case TokenType.Brk_Open_Round:
-                    case TokenType.String:
-                    case TokenType.String_Long:
-                    case TokenType.Brk_Open_Curly:
-                        e = new FunctionCallExpression(lcontext, e, thisCallName);
-                        break;
-                    default:
-                        return e;
-                }
-            }
+            case TokenType.Number:
+            case TokenType.Number_Hex:
+            case TokenType.Number_HexFloat:
+            case TokenType.String:
+            case TokenType.String_Long:
+            case TokenType.Nil:
+            case TokenType.True:
+            case TokenType.False:
+                return new LiteralExpression(lcontext, t);
+            case TokenType.VarArgs:
+                return new SymbolRefExpression(t, lcontext);
+            case TokenType.Brk_Open_Curly:
+                return new TableConstructor(lcontext);
+            case TokenType.Function:
+                lcontext.Lexer.Next();
+                return new FunctionDefinitionExpression(lcontext, false, false);
+            case TokenType.Lambda:
+                return new FunctionDefinitionExpression(lcontext, false, true);
+            default:
+                return PrimaryExp(lcontext);
         }
+    }
 
-        private static Expression PrefixExp(ScriptLoadingContext lcontext)
+    /// <summary>
+    ///     Primaries the exp.
+    /// </summary>
+    /// <param name="lcontext">The lcontext.</param>
+    /// <returns></returns>
+    internal static Expression PrimaryExp(ScriptLoadingContext lcontext)
+    {
+        var e = PrefixExp(lcontext);
+
+        while (true)
         {
-            Token T = lcontext.Lexer.Current;
+            var T = lcontext.Lexer.Current;
+            Token thisCallName = null;
+
             switch (T.Type)
             {
-                case TokenType.Brk_Open_Round:
+                case TokenType.Dot:
+                {
                     lcontext.Lexer.Next();
-                    Expression e = Expr(lcontext);
-                    e = new AdjustmentExpression(lcontext, e);
-                    CheckMatch(lcontext, T, TokenType.Brk_Close_Round, ")");
-                    return e;
-                case TokenType.Name:
-                    return new SymbolRefExpression(T, lcontext);
-                default:
-                    throw new SyntaxErrorException(T, "unexpected symbol near '{0}'", T.Text)
+                    var name = CheckTokenType(lcontext, TokenType.Name);
+                    e = new IndexExpression(e, name.Text, lcontext);
+                }
+                    break;
+                case TokenType.Brk_Open_Square:
+                {
+                    var openBrk = lcontext.Lexer.Current;
+                    lcontext.Lexer.Next(); // skip bracket
+                    var index = Expr(lcontext);
+
+                    // support solarsharp multiple indexers for userdata
+                    if (lcontext.Lexer.Current.Type == TokenType.Comma)
                     {
-                        IsPrematureStreamTermination = T.Type == TokenType.Eof
-                    };
+                        var explist = ExprListAfterFirstExpr(lcontext, index);
+                        index = new ExprListExpression(explist, lcontext);
+                    }
+
+                    CheckMatch(lcontext, openBrk, TokenType.Brk_Close_Square, "]");
+                    e = new IndexExpression(e, index, lcontext);
+                }
+                    break;
+                case TokenType.Colon:
+                    lcontext.Lexer.Next();
+                    thisCallName = CheckTokenType(lcontext, TokenType.Name);
+                    goto case TokenType.Brk_Open_Round;
+                case TokenType.Brk_Open_Round:
+                case TokenType.String:
+                case TokenType.String_Long:
+                case TokenType.Brk_Open_Curly:
+                    e = new FunctionCallExpression(lcontext, e, thisCallName);
+                    break;
+                default:
+                    return e;
             }
+        }
+    }
+
+    private static Expression PrefixExp(ScriptLoadingContext lcontext)
+    {
+        var T = lcontext.Lexer.Current;
+        switch (T.Type)
+        {
+            case TokenType.Brk_Open_Round:
+                lcontext.Lexer.Next();
+                var e = Expr(lcontext);
+                e = new AdjustmentExpression(lcontext, e);
+                CheckMatch(lcontext, T, TokenType.Brk_Close_Round, ")");
+                return e;
+            case TokenType.Name:
+                return new SymbolRefExpression(T, lcontext);
+            default:
+                throw new SyntaxErrorException(T, "unexpected symbol near '{0}'", T.Text)
+                {
+                    IsPrematureStreamTermination = T.Type == TokenType.Eof
+                };
         }
     }
 }

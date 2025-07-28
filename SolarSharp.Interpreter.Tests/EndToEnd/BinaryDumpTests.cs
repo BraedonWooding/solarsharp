@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
-using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -13,14 +13,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         private static DynValue Script_RunString(string script)
         {
             Script s1 = new();
-            DynValue v1 = s1.LoadString(script);
+            var v1 = s1.LoadString(script);
 
             using MemoryStream ms = new();
             s1.Dump(v1, ms);
             ms.Seek(0, SeekOrigin.Begin);
 
             Script s2 = new();
-            DynValue func = s2.LoadStream(ms);
+            var func = s2.LoadStream(ms);
             return func.Function.Call();
         }
 
@@ -28,7 +28,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             Script s1 = new();
             _ = s1.DoString(script);
-            DynValue func = s1.Globals.Get(funcname);
+            var func = s1.Globals.Get(funcname);
 
             using MemoryStream ms = new();
             s1.Dump(func, ms);
@@ -41,14 +41,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void BinDump_ChunkDump()
         {
-            string script = @"
+            var script = @"
 				local chunk = load('return 81;');
 				local str = string.dump(chunk);
 				local fn = load(str);
 				return fn(9);
 			";
 
-            DynValue res = Script.RunString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -60,13 +60,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void BinDump_StringDump()
         {
-            string script = @"
+            var script = @"
 				local str = string.dump(function(n) return n * n; end);
 				local fn = load(str);
 				return fn(9);
 			";
 
-            DynValue res = Script.RunString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -78,7 +78,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void BinDump_StandardDumpFunc()
         {
-            string script = @"
+            var script = @"
 				function fact(n)
 					return n * 24;
 				end
@@ -87,8 +87,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				
 			";
 
-            DynValue fact = Script_LoadFunc(script, "fact");
-            DynValue res = fact.Function.Call(5);
+            var fact = Script_LoadFunc(script, "fact");
+            var res = fact.Function.Call(5);
 
             Assert.Multiple(() =>
             {
@@ -100,16 +100,16 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void BinDump_FactorialDumpFunc()
         {
-            string script = @"
+            var script = @"
 				function fact(n)
 					if (n == 0) then return 1; end
 					return fact(n - 1) * n;
 				end
 			";
 
-            DynValue fact = Script_LoadFunc(script, "fact");
+            var fact = Script_LoadFunc(script, "fact");
             fact.Function.OwnerScript.Globals.Set("fact", fact);
-            DynValue res = fact.Function.Call(5);
+            var res = fact.Function.Call(5);
 
             Assert.Multiple(() =>
             {
@@ -121,7 +121,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void BinDump_FactorialDumpFuncGlobal()
         {
-            string script = @"
+            var script = @"
 				x = 0
 
 				function fact(n)
@@ -130,10 +130,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				end
 			";
 
-            DynValue fact = Script_LoadFunc(script, "fact");
+            var fact = Script_LoadFunc(script, "fact");
             fact.Function.OwnerScript.Globals.Set("fact", fact);
             fact.Function.OwnerScript.Globals.Set("x", DynValue.NewNumber(0));
-            DynValue res = fact.Function.Call(5);
+            var res = fact.Function.Call(5);
 
             Assert.Multiple(() =>
             {
@@ -146,7 +146,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void BinDump_FactorialDumpFuncUpvalue()
         {
-            string script = @"
+            var script = @"
 				local x = 0
 
 				function fact(n)
@@ -161,7 +161,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void BinDump_FactorialClosure()
         {
-            string script = @"
+            var script = @"
 local x = 5;
 
 function fact(n)
@@ -180,7 +180,7 @@ y = y + fact(5);
 return y;
 ";
 
-            DynValue res = Script_RunString(script);
+            var res = Script_RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -192,7 +192,7 @@ return y;
         [Test]
         public void BinDump_ClosureOnParam()
         {
-            string script = @"
+            var script = @"
 				local function g (z)
 				  local function f(a)
 					return a + z;
@@ -202,7 +202,7 @@ return y;
 
 				return (g(3)(2));";
 
-            DynValue res = Script_RunString(script);
+            var res = Script_RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -214,7 +214,7 @@ return y;
         [Test]
         public void BinDump_NestedUpvalues()
         {
-            string script = @"
+            var script = @"
 	local y = y;
 
 	local x = 0;
@@ -233,7 +233,7 @@ return y;
 	return 10 * m.t.dojob();
 								";
 
-            DynValue res = Script_RunString(script);
+            var res = Script_RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -246,7 +246,7 @@ return y;
         [Test]
         public void BinDump_NestedOutOfScopeUpvalues()
         {
-            string script = @"
+            var script = @"
 
 	function X()
 		local y = y;
@@ -272,7 +272,7 @@ return y;
 	return 10 * Q.t.dojob();
 								";
 
-            DynValue res = Script_RunString(script);
+            var res = Script_RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -286,7 +286,7 @@ return y;
         {
             List<Table> list = new();
 
-            string script = @"
+            var script = @"
 				function print_env()
 				  print(_ENV)
 				end
@@ -316,9 +316,9 @@ return y;
 
             Assert.That(list, Has.Count.EqualTo(6));
 
-            int[] eqs = new int[] { 0, 1, 1, 0, 1, 1 };
+            var eqs = new[] { 0, 1, 1, 0, 1, 1 };
 
-            for (int i = 0; i < 6; i++)
+            for (var i = 0; i < 6; i++)
                 Assert.That(list[i], Is.EqualTo(list[eqs[i]]));
         }
     }

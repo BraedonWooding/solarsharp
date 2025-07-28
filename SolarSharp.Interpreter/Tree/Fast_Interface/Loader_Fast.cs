@@ -1,119 +1,122 @@
-﻿using SolarSharp.Interpreter.Tree.Statements;
-using SolarSharp.Interpreter.Debugging;
+﻿using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Diagnostics;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.Scopes;
 using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Expressions;
-using SolarSharp.Interpreter.Execution.Scopes;
+using SolarSharp.Interpreter.Tree.Statements;
 
-namespace SolarSharp.Interpreter.Tree.Fast_Interface
+namespace SolarSharp.Interpreter.Tree.Fast_Interface;
+
+internal static class Loader_Fast
 {
-    internal static class Loader_Fast
+    internal static DynamicExprExpression LoadDynamicExpr(Script script, SourceCode source)
     {
-        internal static DynamicExprExpression LoadDynamicExpr(Script script, SourceCode source)
+        var lcontext = CreateLoadingContext(script, source);
+
+        try
         {
-            ScriptLoadingContext lcontext = CreateLoadingContext(script, source);
+            lcontext.IsDynamicExpression = true;
+            lcontext.Anonymous = true;
 
-            try
+            Expression exp;
+            using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
             {
-                lcontext.IsDynamicExpression = true;
-                lcontext.Anonymous = true;
-
-                Expression exp;
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
-                    exp = Expression.Expr(lcontext);
-
-                return new DynamicExprExpression(exp, lcontext);
+                exp = Expression.Expr(lcontext);
             }
-            catch (SyntaxErrorException ex)
-            {
-                ex.DecorateMessage(script);
-                ex.Rethrow();
-                throw;
-            }
+
+            return new DynamicExprExpression(exp, lcontext);
         }
-
-        private static ScriptLoadingContext CreateLoadingContext(Script script, SourceCode source)
+        catch (SyntaxErrorException ex)
         {
-            return new ScriptLoadingContext(script)
-            {
-                Scope = new BuildTimeScope(),
-                Source = source,
-                Lexer = new Lexer.Lexer(source.SourceID, source.Code, true)
-            };
+            ex.DecorateMessage(script);
+            ex.Rethrow();
+            throw;
         }
+    }
 
-        internal static int LoadChunk(Script script, SourceCode source, ByteCode bytecode)
+    private static ScriptLoadingContext CreateLoadingContext(Script script, SourceCode source)
+    {
+        return new ScriptLoadingContext(script)
         {
-            ScriptLoadingContext lcontext = CreateLoadingContext(script, source);
-            try
-            {
-                Statement stat;
+            Scope = new BuildTimeScope(),
+            Source = source,
+            Lexer = new Lexer.Lexer(source.SourceID, source.Code, true)
+        };
+    }
 
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
-                    stat = new ChunkStatement(lcontext);
-
-                int beginIp = -1;
-
-                //var srcref = new SourceRef(source.SourceID);
-
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
-                using (bytecode.EnterSource(null))
-                {
-                    bytecode.Emit_Nop(string.Format("Begin chunk {0}", source.Name));
-                    beginIp = bytecode.GetJumpPointForLastInstruction();
-                    stat.Compile(bytecode);
-                    bytecode.Emit_Nop(string.Format("End chunk {0}", source.Name));
-                }
-
-                //Debug_DumpByteCode(bytecode, source.SourceID);
-
-                return beginIp;
-            }
-            catch (SyntaxErrorException ex)
-            {
-                ex.DecorateMessage(script);
-                ex.Rethrow();
-                throw;
-            }
-        }
-
-        internal static int LoadFunction(Script script, SourceCode source, ByteCode bytecode, bool usesGlobalEnv)
+    internal static int LoadChunk(Script script, SourceCode source, ByteCode bytecode)
+    {
+        var lcontext = CreateLoadingContext(script, source);
+        try
         {
-            ScriptLoadingContext lcontext = CreateLoadingContext(script, source);
+            Statement stat;
 
-            try
+            using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
             {
-                FunctionDefinitionExpression fnx;
-
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
-                    fnx = new FunctionDefinitionExpression(lcontext, usesGlobalEnv);
-
-                int beginIp = -1;
-
-                //var srcref = new SourceRef(source.SourceID);
-
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
-                using (bytecode.EnterSource(null))
-                {
-                    bytecode.Emit_Nop(string.Format("Begin function {0}", source.Name));
-                    beginIp = fnx.CompileBody(bytecode, source.Name);
-                    bytecode.Emit_Nop(string.Format("End function {0}", source.Name));
-                }
-
-                //Debug_DumpByteCode(bytecode, source.SourceID);
-
-                return beginIp;
-            }
-            catch (SyntaxErrorException ex)
-            {
-                ex.DecorateMessage(script);
-                ex.Rethrow();
-                throw;
+                stat = new ChunkStatement(lcontext);
             }
 
+            var beginIp = -1;
+
+            //var srcref = new SourceRef(source.SourceID);
+
+            using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
+            using (bytecode.EnterSource(null))
+            {
+                bytecode.Emit_Nop(string.Format("Begin chunk {0}", source.Name));
+                beginIp = bytecode.GetJumpPointForLastInstruction();
+                stat.Compile(bytecode);
+                bytecode.Emit_Nop(string.Format("End chunk {0}", source.Name));
+            }
+
+            //Debug_DumpByteCode(bytecode, source.SourceID);
+
+            return beginIp;
         }
+        catch (SyntaxErrorException ex)
+        {
+            ex.DecorateMessage(script);
+            ex.Rethrow();
+            throw;
+        }
+    }
 
+    internal static int LoadFunction(Script script, SourceCode source, ByteCode bytecode, bool usesGlobalEnv)
+    {
+        var lcontext = CreateLoadingContext(script, source);
+
+        try
+        {
+            FunctionDefinitionExpression fnx;
+
+            using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
+            {
+                fnx = new FunctionDefinitionExpression(lcontext, usesGlobalEnv);
+            }
+
+            var beginIp = -1;
+
+            //var srcref = new SourceRef(source.SourceID);
+
+            using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
+            using (bytecode.EnterSource(null))
+            {
+                bytecode.Emit_Nop(string.Format("Begin function {0}", source.Name));
+                beginIp = fnx.CompileBody(bytecode, source.Name);
+                bytecode.Emit_Nop(string.Format("End function {0}", source.Name));
+            }
+
+            //Debug_DumpByteCode(bytecode, source.SourceID);
+
+            return beginIp;
+        }
+        catch (SyntaxErrorException ex)
+        {
+            ex.DecorateMessage(script);
+            ex.Rethrow();
+            throw;
+        }
     }
 }

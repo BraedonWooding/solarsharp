@@ -1,6 +1,6 @@
-﻿using SolarSharp.Interpreter.DataTypes;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
-using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -11,7 +11,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void TcoTest_Pre()
         {
             // this just verifies the algorithm for TcoTest_Big
-            string script = @"
+            var script = @"
 				function recsum(num, partial)
 					if (num == 0) then
 						return partial
@@ -38,7 +38,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             // calc the sum of the first N numbers in the most stupid way ever to waste stack and trigger TCO..
             // (this could be a simple X*(X+1) / 2... )
-            string script = @"
+            var script = @"
 				function recsum(num, partial)
 					if (num == 0) then
 						return partial
@@ -64,7 +64,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TailCallFromCLR()
         {
-            string script = @"
+            var script = @"
 				function getResult(x)
 					return 156*x;  
 				end
@@ -76,8 +76,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("clrtail", DynValue.NewCallback((xc, a) =>
             {
-                DynValue fn = S.Globals.Get("getResult");
-                DynValue k3 = DynValue.NewNumber(a[0].Number / 3);
+                var fn = S.Globals.Get("getResult");
+                var k3 = DynValue.NewNumber(a[0].Number / 3);
 
                 return DynValue.NewTailCallReq(fn, k3);
             }));
@@ -95,7 +95,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void CheckToString()
         {
-            string script = @"
+            var script = @"
 				return tostring(9)";
 
 
@@ -112,7 +112,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void CheckToStringMeta()
         {
-            string script = @"
+            var script = @"
 				t = {}
 				m = {
 					__tostring = function(v)

@@ -83,7 +83,8 @@ namespace SolarSharp.Interpreter
 		/// <returns>
 		/// A DynValue containing the result of the processing of the loaded chunk.
 		/// </returns>
-		public static Task<DynValue> DoStringAsync(this Script script, string code, Table globalContext = null, string codeFriendlyName = null)
+		public static Task<DynValue> DoStringAsync(this Script script, string code, Table globalContext =
+ null, string codeFriendlyName = null)
 		{
 			return ExecAsync(() => script.DoString(code, globalContext, codeFriendlyName));
 		}
@@ -101,7 +102,8 @@ namespace SolarSharp.Interpreter
 		/// <returns>
 		/// A DynValue containing the result of the processing of the loaded chunk.
 		/// </returns>
-		public static Task<DynValue> DoStreamAsync(this Script script, Stream stream, Table globalContext = null, string codeFriendlyName = null)
+		public static Task<DynValue> DoStreamAsync(this Script script, Stream stream, Table globalContext =
+ null, string codeFriendlyName = null)
 		{
 			return ExecAsync(() => script.DoStream(stream, globalContext, codeFriendlyName));
 		}
@@ -119,7 +121,8 @@ namespace SolarSharp.Interpreter
 		/// <returns>
 		/// A DynValue containing the result of the processing of the loaded chunk.
 		/// </returns>
-		public static Task<DynValue> DoFileAsync(this Script script, string filename, Table globalContext = null, string codeFriendlyName = null)
+		public static Task<DynValue> DoFileAsync(this Script script, string filename, Table globalContext =
+ null, string codeFriendlyName = null)
 		{
 			return ExecAsync(() => script.DoFile(filename, globalContext, codeFriendlyName));
 		}
@@ -136,7 +139,8 @@ namespace SolarSharp.Interpreter
 		/// <returns>
 		/// A DynValue containing a function which will execute the loaded code.
 		/// </returns>
-		public static Task<DynValue> LoadFunctionAsync(this Script script, string code, Table globalTable = null, string funcFriendlyName = null)
+		public static Task<DynValue> LoadFunctionAsync(this Script script, string code, Table globalTable =
+ null, string funcFriendlyName = null)
 		{
 			return ExecAsync(() => script.LoadFunction(code, globalTable, funcFriendlyName));
 		}
@@ -155,7 +159,8 @@ namespace SolarSharp.Interpreter
 		/// <returns>
 		/// A DynValue containing a function which will execute the loaded code.
 		/// </returns>
-		public static Task<DynValue> LoadStringAsync(this Script script, string code, Table globalTable = null, string codeFriendlyName = null)
+		public static Task<DynValue> LoadStringAsync(this Script script, string code, Table globalTable =
+ null, string codeFriendlyName = null)
 		{
 			return ExecAsync(() => script.LoadString(code, globalTable, codeFriendlyName));
 		}
@@ -174,7 +179,8 @@ namespace SolarSharp.Interpreter
 		/// <returns>
 		/// A DynValue containing a function which will execute the loaded code.
 		/// </returns>
-		public static Task<DynValue> LoadStreamAsync(this Script script, Stream stream, Table globalTable = null, string codeFriendlyName = null)
+		public static Task<DynValue> LoadStreamAsync(this Script script, Stream stream, Table globalTable =
+ null, string codeFriendlyName = null)
 		{
 			return ExecAsync(() => script.LoadStream(stream, globalTable, codeFriendlyName));
 		}
@@ -211,7 +217,8 @@ namespace SolarSharp.Interpreter
 		/// <returns>
 		/// A DynValue containing a function which will execute the loaded code.
 		/// </returns>
-		public static Task<DynValue> LoadFileAsync(this Script script, string filename, Table globalContext = null, string friendlyFilename = null)
+		public static Task<DynValue> LoadFileAsync(this Script script, string filename, Table globalContext =
+ null, string friendlyFilename = null)
 		{
 			return ExecAsync(() => script.LoadFile(filename, globalContext, friendlyFilename));
 		}

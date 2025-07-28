@@ -1,4 +1,5 @@
 ﻿// This is just a simple playground for profiling
+
 using Benchmark;
 using Benchmark.Implementations;
 

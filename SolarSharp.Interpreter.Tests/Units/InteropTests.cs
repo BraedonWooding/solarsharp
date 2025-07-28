@@ -15,11 +15,6 @@ namespace SolarSharp.Interpreter.Tests.Units
             //v = Converter.FromObject(1);
             //v = Converter.FromObject(x);
             //v = Converter.FromObject(y);
-
-
-
-
         }
-
     }
 }

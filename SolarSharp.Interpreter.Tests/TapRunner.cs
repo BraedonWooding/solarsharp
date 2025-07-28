@@ -1,7 +1,7 @@
 ﻿using System.IO;
+using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Loaders;
-using NUnit.Framework;
 using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Tests
@@ -25,19 +25,19 @@ namespace SolarSharp.Interpreter.Tests
     {
         private readonly string m_File;
 
+        public TapRunner(string filename)
+        {
+            m_File = filename;
+        }
+
         /// <summary>
-        /// Prints the specified string.
+        ///     Prints the specified string.
         /// </summary>
         /// <param name="str">The string.</param>
         public void Print(string str)
         {
             TestContext.Out.WriteLine(str);
             Assert.That(str.Trim(), Does.Not.StartWith("not ok"), string.Format("TAP fail ({0}) : {1}", m_File, str));
-        }
-
-        public TapRunner(string filename)
-        {
-            m_File = filename;
         }
 
         public void Run()
@@ -50,7 +50,8 @@ namespace SolarSharp.Interpreter.Tests
 
             S.Globals.Set("arg", DynValue.NewTable(S));
 
-            ((ScriptLoaderBase)S.Options.ScriptLoader).ModulePaths = new string[] { "TestMore/Modules/?", "TestMore/Modules/?.lua" };
+            ((ScriptLoaderBase)S.Options.ScriptLoader).ModulePaths =
+                new[] { "TestMore/Modules/?", "TestMore/Modules/?.lua" };
 
             S.DoFile(m_File);
         }

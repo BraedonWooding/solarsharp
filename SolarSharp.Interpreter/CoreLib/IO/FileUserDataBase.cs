@@ -6,218 +6,210 @@ using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 
-namespace SolarSharp.Interpreter.CoreLib.IO
+namespace SolarSharp.Interpreter.CoreLib.IO;
+
+/// <summary>
+///     Abstract class implementing a file Lua userdata. Methods are meant to be called by Lua code.
+/// </summary>
+internal abstract class FileUserDataBase : RefIdObject
 {
-    /// <summary>
-    /// Abstract class implementing a file Lua userdata. Methods are meant to be called by Lua code.
-    /// </summary>
-    internal abstract class FileUserDataBase : RefIdObject
+    public DynValue lines(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        public DynValue lines(ScriptExecutionContext executionContext, CallbackArguments args)
+        List<DynValue> readLines = new();
+
+        DynValue readValue = null;
+
+        do
         {
-            List<DynValue> readLines = new();
+            readValue = read(executionContext, args);
+            readLines.Add(readValue);
+        } while (readValue.IsNotNil());
 
-            DynValue readValue = null;
+        return DynValue.FromObject(executionContext.GetScript(), readLines.Select(s => s));
+    }
 
-            do
-            {
-                readValue = read(executionContext, args);
-                readLines.Add(readValue);
+    public DynValue read(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        if (args.Count == 0)
+        {
+            var str = ReadLine();
 
-            } while (readValue.IsNotNil());
+            if (str == null)
+                return DynValue.Nil;
 
-            return DynValue.FromObject(executionContext.GetScript(), readLines.Select(s => s));
+            str = str.TrimEnd('\n', '\r');
+            return DynValue.NewString(str);
         }
 
-        public DynValue read(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            if (args.Count == 0)
-            {
-                string str = ReadLine();
+        List<DynValue> rets = new();
 
-                if (str == null)
+        for (var i = 0; i < args.Count; i++)
+        {
+            DynValue v;
+
+            if (args[i].Type == DataType.Number)
+            {
+                if (Eof())
                     return DynValue.Nil;
 
-                str = str.TrimEnd('\n', '\r');
-                return DynValue.NewString(str);
+                var howmany = (int)args[i].Number;
+
+                var str = ReadBuffer(howmany);
+                v = DynValue.NewString(str);
             }
             else
             {
-                List<DynValue> rets = new();
+                var opt = args.AsType(i, "read", DataType.String).String;
 
-                for (int i = 0; i < args.Count; i++)
+                if (Eof())
                 {
-                    DynValue v;
-
-                    if (args[i].Type == DataType.Number)
-                    {
-                        if (Eof())
-                            return DynValue.Nil;
-
-                        int howmany = (int)args[i].Number;
-
-                        string str = ReadBuffer(howmany);
-                        v = DynValue.NewString(str);
-                    }
-                    else
-                    {
-                        string opt = args.AsType(i, "read", DataType.String, false).String;
-
-                        if (Eof())
-                        {
-                            v = opt.StartsWith("*a") ? DynValue.NewString("") : DynValue.Nil;
-                        }
-                        else if (opt.StartsWith("*n"))
-                        {
-                            double? d = ReadNumber();
-
-                            v = d.HasValue ? DynValue.NewNumber(d.Value) : DynValue.Nil;
-                        }
-                        else if (opt.StartsWith("*a"))
-                        {
-                            string str = ReadToEnd();
-                            v = DynValue.NewString(str);
-                        }
-                        else if (opt.StartsWith("*l"))
-                        {
-                            string str = ReadLine();
-                            str = str.TrimEnd('\n', '\r');
-                            v = DynValue.NewString(str);
-                        }
-                        else if (opt.StartsWith("*L"))
-                        {
-                            string str = ReadLine();
-
-                            str = str.TrimEnd('\n', '\r');
-                            str += "\n";
-
-                            v = DynValue.NewString(str);
-                        }
-                        else
-                        {
-                            throw ScriptRuntimeException.BadArgument(i, "read", "invalid option");
-                        }
-                    }
-
-                    rets.Add(v);
+                    v = opt.StartsWith("*a") ? DynValue.NewString("") : DynValue.Nil;
                 }
-
-                return DynValue.NewTuple(rets.ToArray());
-            }
-        }
-
-
-        public DynValue write(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            try
-            {
-                for (int i = 0; i < args.Count; i++)
+                else if (opt.StartsWith("*n"))
                 {
-                    //string str = args.AsStringUsingMeta(executionContext, i, "file:write");
-                    string str = args.AsType(i, "write", DataType.String, false).String;
-                    Write(str);
+                    var d = ReadNumber();
+
+                    v = d.HasValue ? DynValue.NewNumber(d.Value) : DynValue.Nil;
                 }
+                else if (opt.StartsWith("*a"))
+                {
+                    var str = ReadToEnd();
+                    v = DynValue.NewString(str);
+                }
+                else if (opt.StartsWith("*l"))
+                {
+                    var str = ReadLine();
+                    str = str.TrimEnd('\n', '\r');
+                    v = DynValue.NewString(str);
+                }
+                else if (opt.StartsWith("*L"))
+                {
+                    var str = ReadLine();
 
-                return UserData.Create(this);
-            }
-            catch (ScriptRuntimeException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(ex.Message));
-            }
-        }
+                    str = str.TrimEnd('\n', '\r');
+                    str += "\n";
 
-        public DynValue close(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            try
-            {
-                string msg = Close();
-                if (msg == null)
-                    return DynValue.True;
+                    v = DynValue.NewString(str);
+                }
                 else
-                    return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(msg));
+                {
+                    throw ScriptRuntimeException.BadArgument(i, "read", "invalid option");
+                }
             }
-            catch (ScriptRuntimeException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(ex.Message));
-            }
+
+            rets.Add(v);
         }
 
-        private double? ReadNumber()
-        {
-            string chr = "";
+        return DynValue.NewTuple(rets.ToArray());
+    }
 
-            while (!Eof())
+
+    public DynValue write(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        try
+        {
+            for (var i = 0; i < args.Count; i++)
             {
-                char c = Peek();
-                if (char.IsWhiteSpace(c))
-                {
-                    ReadBuffer(1);
-                }
-                else if (IsNumericChar(c, chr))
-                {
-                    ReadBuffer(1);
-                    chr += c;
-                }
-                else break;
+                //string str = args.AsStringUsingMeta(executionContext, i, "file:write");
+                var str = args.AsType(i, "write", DataType.String).String;
+                Write(str);
             }
 
+            return UserData.Create(this);
+        }
+        catch (ScriptRuntimeException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(ex.Message));
+        }
+    }
 
-            if (double.TryParse(chr, out double d))
+    public DynValue close(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        try
+        {
+            var msg = Close();
+            if (msg == null)
+                return DynValue.True;
+            return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(msg));
+        }
+        catch (ScriptRuntimeException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(ex.Message));
+        }
+    }
+
+    private double? ReadNumber()
+    {
+        var chr = "";
+
+        while (!Eof())
+        {
+            var c = Peek();
+            if (char.IsWhiteSpace(c))
             {
-                return d;
+                ReadBuffer(1);
+            }
+            else if (IsNumericChar(c, chr))
+            {
+                ReadBuffer(1);
+                chr += c;
             }
             else
             {
-                return null;
+                break;
             }
         }
 
-        private bool IsNumericChar(char c, string numAsFar)
-        {
-            if (char.IsDigit(c))
-                return true;
 
-            if (c == '-')
-                return numAsFar.Length == 0;
+        if (double.TryParse(chr, out var d)) return d;
 
-            if (c == '.')
-                return !Framework.Do.StringContainsChar(numAsFar, '.');
+        return null;
+    }
 
-            if (c == 'E' || c == 'e')
-                return !(Framework.Do.StringContainsChar(numAsFar, 'E') || Framework.Do.StringContainsChar(numAsFar, 'e'));
+    private bool IsNumericChar(char c, string numAsFar)
+    {
+        if (char.IsDigit(c))
+            return true;
 
-            return false;
-        }
+        if (c == '-')
+            return numAsFar.Length == 0;
 
-        protected abstract bool Eof();
-        protected abstract string ReadLine();
-        protected abstract string ReadBuffer(int p);
-        protected abstract string ReadToEnd();
-        protected abstract char Peek();
-        protected abstract void Write(string value);
+        if (c == '.')
+            return !Framework.Do.StringContainsChar(numAsFar, '.');
+
+        if (c == 'E' || c == 'e')
+            return !(Framework.Do.StringContainsChar(numAsFar, 'E') || Framework.Do.StringContainsChar(numAsFar, 'e'));
+
+        return false;
+    }
+
+    protected abstract bool Eof();
+    protected abstract string ReadLine();
+    protected abstract string ReadBuffer(int p);
+    protected abstract string ReadToEnd();
+    protected abstract char Peek();
+    protected abstract void Write(string value);
 
 
-        protected internal abstract bool isopen();
-        protected abstract string Close();
+    protected internal abstract bool isopen();
+    protected abstract string Close();
 
-        public abstract bool flush();
-        public abstract long seek(string whence, long offset = 0);
-        public abstract bool setvbuf(string mode);
+    public abstract bool flush();
+    public abstract long seek(string whence, long offset = 0);
+    public abstract bool setvbuf(string mode);
 
-        public override string ToString()
-        {
-            if (isopen())
-                return string.Format("file ({0:X8})", ReferenceID);
-            else
-                return "file (closed)";
-        }
+    public override string ToString()
+    {
+        if (isopen())
+            return string.Format("file ({0:X8})", ReferenceID);
+        return "file (closed)";
     }
 }

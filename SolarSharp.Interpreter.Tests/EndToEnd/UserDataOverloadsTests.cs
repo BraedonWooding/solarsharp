@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using NUnit.Framework;
 using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.DataTypes;
-using NUnit.Framework;
-using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -21,6 +21,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             return "X3";
         }
     }
+
     public static class OverloadsExtMethods2
     {
         public static string MethodXXX(this UserDataOverloadsTests.OverloadsTestClass obj, string x, bool b)
@@ -101,7 +102,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             S.Globals.Set("s", UserData.CreateStatic<OverloadsTestClass>());
             S.Globals.Set("o", UserData.Create(obj));
 
-            DynValue v = S.DoString("return " + code);
+            var v = S.DoString("return " + code);
 
             if (tupleExpected)
             {
@@ -299,17 +300,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             // Iterate over the two methods through reflection
             foreach (var method in Framework.Do.GetMethods(GetType())
-                .Where(mi => mi.Name == "Method1" && mi.IsPrivate && !mi.IsStatic))
-            {
+                         .Where(mi => mi.Name == "Method1" && mi.IsPrivate && !mi.IsStatic))
                 ov.AddOverload(new MethodMemberDescriptor(method));
-            }
 
             // Creates the callback over the 'this' object
-            DynValue callback = DynValue.NewCallback(ov.GetCallbackFunction(s, this));
+            var callback = DynValue.NewCallback(ov.GetCallbackFunction(s, this));
             s.Globals.Set("func", callback);
 
             // Execute and check the results.
-            DynValue result = s.DoString("return func(), func(17)");
+            var result = s.DoString("return func(), func(17)");
 
             Assert.Multiple(() =>
             {

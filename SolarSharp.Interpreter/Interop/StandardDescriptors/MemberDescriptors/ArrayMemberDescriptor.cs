@@ -4,74 +4,77 @@ using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using SolarSharp.Interpreter.Interop.Converters;
 
-namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
+
+/// <summary>
+///     Member descriptor for indexer of array types
+/// </summary>
+public class ArrayMemberDescriptor : ObjectCallbackMemberDescriptor
 {
+    private readonly bool m_IsSetter;
+
     /// <summary>
-    /// Member descriptor for indexer of array types
+    ///     Initializes a new instance of the <see cref="ArrayMemberDescriptor" /> class.
     /// </summary>
-    public class ArrayMemberDescriptor : ObjectCallbackMemberDescriptor
-    {
-        private readonly bool m_IsSetter;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ArrayMemberDescriptor"/> class.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="isSetter">if set to <c>true</c> is a setter indexer.</param>
-        /// <param name="indexerParams">The indexer parameters.</param>
-        public ArrayMemberDescriptor(string name, bool isSetter, ParameterDescriptor[] indexerParams)
-            : base(
+    /// <param name="name">The name.</param>
+    /// <param name="isSetter">if set to <c>true</c> is a setter indexer.</param>
+    /// <param name="indexerParams">The indexer parameters.</param>
+    public ArrayMemberDescriptor(string name, bool isSetter, ParameterDescriptor[] indexerParams)
+        : base(
             name,
-            isSetter ? ArrayIndexerSet : (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerGet,
+            isSetter
+                ? ArrayIndexerSet
+                : (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerGet,
             indexerParams)
-        {
-            m_IsSetter = isSetter;
-        }
+    {
+        m_IsSetter = isSetter;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ArrayMemberDescriptor"/> class.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="isSetter">if set to <c>true</c> [is setter].</param>
-        public ArrayMemberDescriptor(string name, bool isSetter)
-            : base(
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="ArrayMemberDescriptor" /> class.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="isSetter">if set to <c>true</c> [is setter].</param>
+    public ArrayMemberDescriptor(string name, bool isSetter)
+        : base(
             name,
-            isSetter ? ArrayIndexerSet : (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerGet)
-        {
-            m_IsSetter = isSetter;
-        }
+            isSetter
+                ? ArrayIndexerSet
+                : (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerGet)
+    {
+        m_IsSetter = isSetter;
+    }
 
-        private static int[] BuildArrayIndices(CallbackArguments args, int count)
-        {
-            int[] indices = new int[count];
+    private static int[] BuildArrayIndices(CallbackArguments args, int count)
+    {
+        var indices = new int[count];
 
-            for (int i = 0; i < count; i++)
-                indices[i] = args.AsInt(i, "userdata_array_indexer");
+        for (var i = 0; i < count; i++)
+            indices[i] = args.AsInt(i, "userdata_array_indexer");
 
-            return indices;
-        }
+        return indices;
+    }
 
-        private static object ArrayIndexerSet(object arrayObj, ScriptExecutionContext ctx, CallbackArguments args)
-        {
-            Array array = (Array)arrayObj;
-            int[] indices = BuildArrayIndices(args, args.Count - 1);
-            DynValue value = args[^1];
+    private static object ArrayIndexerSet(object arrayObj, ScriptExecutionContext ctx, CallbackArguments args)
+    {
+        var array = (Array)arrayObj;
+        var indices = BuildArrayIndices(args, args.Count - 1);
+        var value = args[^1];
 
-            Type elemType = array.GetType().GetElementType();
+        var elemType = array.GetType().GetElementType();
 
-            object objValue = ScriptToClrConversions.DynValueToObjectOfType(value, elemType, null, false);
+        var objValue = ScriptToClrConversions.DynValueToObjectOfType(value, elemType, null, false);
 
-            array.SetValue(objValue, indices);
+        array.SetValue(objValue, indices);
 
-            return DynValue.Void;
-        }
+        return DynValue.Void;
+    }
 
-        private static object ArrayIndexerGet(object arrayObj, ScriptExecutionContext ctx, CallbackArguments args)
-        {
-            Array array = (Array)arrayObj;
-            int[] indices = BuildArrayIndices(args, args.Count);
+    private static object ArrayIndexerGet(object arrayObj, ScriptExecutionContext ctx, CallbackArguments args)
+    {
+        var array = (Array)arrayObj;
+        var indices = BuildArrayIndices(args, args.Count);
 
-            return array.GetValue(indices);
-        }
+        return array.GetValue(indices);
     }
 }

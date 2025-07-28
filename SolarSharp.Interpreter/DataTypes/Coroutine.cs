@@ -1,290 +1,303 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
 
-namespace SolarSharp.Interpreter.DataTypes
+namespace SolarSharp.Interpreter.DataTypes;
+
+/// <summary>
+///     A class representing a script coroutine
+/// </summary>
+public class Coroutine : RefIdObject, IScriptPrivateResource
 {
     /// <summary>
-    /// A class representing a script coroutine
+    ///     Possible types of coroutine
     /// </summary>
-    public class Coroutine : RefIdObject, IScriptPrivateResource
+    public enum CoroutineType
     {
         /// <summary>
-        /// Possible types of coroutine
+        ///     A valid coroutine
         /// </summary>
-        public enum CoroutineType
-        {
-            /// <summary>
-            /// A valid coroutine
-            /// </summary>
-            Coroutine,
-            /// <summary>
-            /// A CLR callback assigned to a coroutine. 
-            /// </summary>
-            ClrCallback,
-            /// <summary>
-            /// A CLR callback assigned to a coroutine and already executed.
-            /// </summary>
-            ClrCallbackDead,
-            /// <summary>
-            /// A recycled coroutine
-            /// </summary>
-            Recycled
-        }
+        Coroutine,
 
         /// <summary>
-        /// Gets the type of coroutine
+        ///     A CLR callback assigned to a coroutine.
         /// </summary>
-        public CoroutineType Type { get; private set; }
-
-        private readonly CallbackFunction m_ClrCallback;
-        private readonly Processor m_Processor;
-
-
-        internal Coroutine(CallbackFunction function)
-        {
-            Type = CoroutineType.ClrCallback;
-            m_ClrCallback = function;
-            OwnerScript = null;
-        }
-
-        internal Coroutine(Processor proc)
-        {
-            Type = CoroutineType.Coroutine;
-            m_Processor = proc;
-            m_Processor.AssociatedCoroutine = this;
-            OwnerScript = proc.GetScript();
-        }
-
-        internal void MarkClrCallbackAsDead()
-        {
-            if (Type != CoroutineType.ClrCallback)
-                throw new InvalidOperationException("State must be CoroutineType.ClrCallback");
-
-            Type = CoroutineType.ClrCallbackDead;
-        }
-
-        internal DynValue Recycle(Processor mainProcessor, Closure closure)
-        {
-            Type = CoroutineType.Recycled;
-            return m_Processor.Coroutine_Recycle(mainProcessor, closure);
-        }
+        ClrCallback,
 
         /// <summary>
-        /// Gets this coroutine as a typed enumerable which can be looped over for resuming.
-        /// Returns its result as DynValue(s)
+        ///     A CLR callback assigned to a coroutine and already executed.
         /// </summary>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
-        public IEnumerable<DynValue> AsTypedEnumerable()
-        {
-            if (Type != CoroutineType.Coroutine)
-                throw new InvalidOperationException("Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead");
-
-            while (State == CoroutineState.NotStarted || State == CoroutineState.Suspended)
-                yield return Resume();
-        }
-
+        ClrCallbackDead,
 
         /// <summary>
-        /// Gets this coroutine as a typed enumerable which can be looped over for resuming.
-        /// Returns its result as System.Object. Only the first element of tuples is returned.
-        /// Only non-CLR coroutines can be resumed with this method. Use an overload of the Resume method accepting a ScriptExecutionContext instead.
+        ///     A recycled coroutine
         /// </summary>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
-        public IEnumerable<object> AsEnumerable()
-        {
-            foreach (DynValue v in AsTypedEnumerable())
-            {
-                yield return v.ToScalar().ToObject();
-            }
-        }
+        Recycled
+    }
 
-        /// <summary>
-        /// Gets this coroutine as a typed enumerable which can be looped over for resuming.
-        /// Returns its result as the specified type. Only the first element of tuples is returned.
-        /// Only non-CLR coroutines can be resumed with this method. Use an overload of the Resume method accepting a ScriptExecutionContext instead.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
-        public IEnumerable<T> AsEnumerable<T>()
-        {
-            foreach (DynValue v in AsTypedEnumerable())
-            {
-                yield return v.ToScalar().ToObject<T>();
-            }
-        }
+    private readonly CallbackFunction m_ClrCallback;
+    private readonly Processor m_Processor;
 
-        /// <summary>
-        /// The purpose of this method is to convert a SolarSharp/Lua coroutine to a Unity3D coroutine.
-        /// This loops over the coroutine, discarding returned values, and returning null for each invocation.
-        /// This means however that the coroutine will be invoked each frame.
-        /// Only non-CLR coroutines can be resumed with this method. Use an overload of the Resume method accepting a ScriptExecutionContext instead.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
-        public System.Collections.IEnumerator AsUnityCoroutine()
+
+    internal Coroutine(CallbackFunction function)
+    {
+        Type = CoroutineType.ClrCallback;
+        m_ClrCallback = function;
+        OwnerScript = null;
+    }
+
+    internal Coroutine(Processor proc)
+    {
+        Type = CoroutineType.Coroutine;
+        m_Processor = proc;
+        m_Processor.AssociatedCoroutine = this;
+        OwnerScript = proc.GetScript();
+    }
+
+    /// <summary>
+    ///     Gets the type of coroutine
+    /// </summary>
+    public CoroutineType Type { get; private set; }
+
+
+    /// <summary>
+    ///     Gets the coroutine state.
+    /// </summary>
+    public CoroutineState State
+    {
+        get
         {
+            if (Type == CoroutineType.ClrCallback)
+                return CoroutineState.NotStarted;
+            if (Type == CoroutineType.ClrCallbackDead)
+                return CoroutineState.Dead;
+            return m_Processor.State;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the script owning this resource.
+    /// </summary>
+    /// <value>
+    ///     The script owning this resource.
+    /// </value>
+    /// <exception cref="NotImplementedException"></exception>
+    public Script OwnerScript { get; }
+
+    internal void MarkClrCallbackAsDead()
+    {
+        if (Type != CoroutineType.ClrCallback)
+            throw new InvalidOperationException("State must be CoroutineType.ClrCallback");
+
+        Type = CoroutineType.ClrCallbackDead;
+    }
+
+    internal DynValue Recycle(Processor mainProcessor, Closure closure)
+    {
+        Type = CoroutineType.Recycled;
+        return m_Processor.Coroutine_Recycle(mainProcessor, closure);
+    }
+
+    /// <summary>
+    ///     Gets this coroutine as a typed enumerable which can be looped over for resuming.
+    ///     Returns its result as DynValue(s)
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Only non-CLR coroutines can be resumed with this overload of the Resume
+    ///     method. Use the overload accepting a ScriptExecutionContext instead
+    /// </exception>
+    public IEnumerable<DynValue> AsTypedEnumerable()
+    {
+        if (Type != CoroutineType.Coroutine)
+            throw new InvalidOperationException(
+                "Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead");
+
+        while (State == CoroutineState.NotStarted || State == CoroutineState.Suspended)
+            yield return Resume();
+    }
+
+
+    /// <summary>
+    ///     Gets this coroutine as a typed enumerable which can be looped over for resuming.
+    ///     Returns its result as System.Object. Only the first element of tuples is returned.
+    ///     Only non-CLR coroutines can be resumed with this method. Use an overload of the Resume method accepting a
+    ///     ScriptExecutionContext instead.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Only non-CLR coroutines can be resumed with this overload of the Resume
+    ///     method. Use the overload accepting a ScriptExecutionContext instead
+    /// </exception>
+    public IEnumerable<object> AsEnumerable()
+    {
+        foreach (var v in AsTypedEnumerable()) yield return v.ToScalar().ToObject();
+    }
+
+    /// <summary>
+    ///     Gets this coroutine as a typed enumerable which can be looped over for resuming.
+    ///     Returns its result as the specified type. Only the first element of tuples is returned.
+    ///     Only non-CLR coroutines can be resumed with this method. Use an overload of the Resume method accepting a
+    ///     ScriptExecutionContext instead.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Only non-CLR coroutines can be resumed with this overload of the Resume
+    ///     method. Use the overload accepting a ScriptExecutionContext instead
+    /// </exception>
+    public IEnumerable<T> AsEnumerable<T>()
+    {
+        foreach (var v in AsTypedEnumerable()) yield return v.ToScalar().ToObject<T>();
+    }
+
+    /// <summary>
+    ///     The purpose of this method is to convert a SolarSharp/Lua coroutine to a Unity3D coroutine.
+    ///     This loops over the coroutine, discarding returned values, and returning null for each invocation.
+    ///     This means however that the coroutine will be invoked each frame.
+    ///     Only non-CLR coroutines can be resumed with this method. Use an overload of the Resume method accepting a
+    ///     ScriptExecutionContext instead.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Only non-CLR coroutines can be resumed with this overload of the Resume
+    ///     method. Use the overload accepting a ScriptExecutionContext instead
+    /// </exception>
+    public IEnumerator AsUnityCoroutine()
+    {
 #pragma warning disable 0219
-            foreach (DynValue v in AsTypedEnumerable())
-            {
-                yield return null;
-            }
+        foreach (var v in AsTypedEnumerable()) yield return null;
 #pragma warning restore 0219
-        }
+    }
 
-        /// <summary>
-        /// Resumes the coroutine.
-        /// Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead.
-        /// </summary>
-        /// <param name="args">The arguments.</param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
-        public DynValue Resume(params DynValue[] args)
+    /// <summary>
+    ///     Resumes the coroutine.
+    ///     Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a
+    ///     ScriptExecutionContext instead.
+    /// </summary>
+    /// <param name="args">The arguments.</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Only non-CLR coroutines can be resumed with this overload of the Resume
+    ///     method. Use the overload accepting a ScriptExecutionContext instead
+    /// </exception>
+    public DynValue Resume(params DynValue[] args)
+    {
+        this.CheckScriptOwnership(args);
+
+        if (Type == CoroutineType.Coroutine)
+            return m_Processor.Coroutine_Resume(args);
+        throw new InvalidOperationException(
+            "Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead");
+    }
+
+
+    /// <summary>
+    ///     Resumes the coroutine.
+    /// </summary>
+    /// <param name="context">The ScriptExecutionContext.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns></returns>
+    public DynValue Resume(ScriptExecutionContext context, params DynValue[] args)
+    {
+        this.CheckScriptOwnership(context);
+        this.CheckScriptOwnership(args);
+
+        if (Type == CoroutineType.Coroutine)
+            return m_Processor.Coroutine_Resume(args);
+        if (Type == CoroutineType.ClrCallback)
         {
-            this.CheckScriptOwnership(args);
-
-            if (Type == CoroutineType.Coroutine)
-                return m_Processor.Coroutine_Resume(args);
-            else
-                throw new InvalidOperationException("Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead");
+            var ret = m_ClrCallback.Invoke(context, args);
+            MarkClrCallbackAsDead();
+            return ret;
         }
 
+        throw ScriptRuntimeException.CannotResumeNotSuspended(CoroutineState.Dead);
+    }
 
-        /// <summary>
-        /// Resumes the coroutine.
-        /// </summary>
-        /// <param name="context">The ScriptExecutionContext.</param>
-        /// <param name="args">The arguments.</param>
-        /// <returns></returns>
-        public DynValue Resume(ScriptExecutionContext context, params DynValue[] args)
-        {
-            this.CheckScriptOwnership(context);
-            this.CheckScriptOwnership(args);
-
-            if (Type == CoroutineType.Coroutine)
-                return m_Processor.Coroutine_Resume(args);
-            else if (Type == CoroutineType.ClrCallback)
-            {
-                DynValue ret = m_ClrCallback.Invoke(context, args);
-                MarkClrCallbackAsDead();
-                return ret;
-            }
-            else
-                throw ScriptRuntimeException.CannotResumeNotSuspended(CoroutineState.Dead);
-        }
-
-        /// <summary>
-        /// Resumes the coroutine.
-        /// Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead</exception>
-        public DynValue Resume()
-        {
-            return Resume(new DynValue[0]);
-        }
+    /// <summary>
+    ///     Resumes the coroutine.
+    ///     Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a
+    ///     ScriptExecutionContext instead.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Only non-CLR coroutines can be resumed with this overload of the Resume
+    ///     method. Use the overload accepting a ScriptExecutionContext instead
+    /// </exception>
+    public DynValue Resume()
+    {
+        return Resume(new DynValue[0]);
+    }
 
 
-        /// <summary>
-        /// Resumes the coroutine.
-        /// </summary>
-        /// <param name="context">The ScriptExecutionContext.</param>
-        /// <returns></returns>
-        public DynValue Resume(ScriptExecutionContext context)
-        {
-            return Resume(context, new DynValue[0]);
-        }
+    /// <summary>
+    ///     Resumes the coroutine.
+    /// </summary>
+    /// <param name="context">The ScriptExecutionContext.</param>
+    /// <returns></returns>
+    public DynValue Resume(ScriptExecutionContext context)
+    {
+        return Resume(context, new DynValue[0]);
+    }
 
-        /// <summary>
-        /// Resumes the coroutine.
-        /// Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead.
-        /// </summary>
-        /// <param name="args">The arguments.</param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException">Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead.</exception>
-        public DynValue Resume(params object[] args)
-        {
-            if (Type != CoroutineType.Coroutine)
-                throw new InvalidOperationException("Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead");
+    /// <summary>
+    ///     Resumes the coroutine.
+    ///     Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a
+    ///     ScriptExecutionContext instead.
+    /// </summary>
+    /// <param name="args">The arguments.</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Only non-CLR coroutines can be resumed with this overload of the Resume
+    ///     method. Use the overload accepting a ScriptExecutionContext instead.
+    /// </exception>
+    public DynValue Resume(params object[] args)
+    {
+        if (Type != CoroutineType.Coroutine)
+            throw new InvalidOperationException(
+                "Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead");
 
-            DynValue[] dargs = new DynValue[args.Length];
+        var dargs = new DynValue[args.Length];
 
-            for (int i = 0; i < dargs.Length; i++)
-                dargs[i] = DynValue.FromObject(OwnerScript, args[i]);
+        for (var i = 0; i < dargs.Length; i++)
+            dargs[i] = DynValue.FromObject(OwnerScript, args[i]);
 
-            return Resume(dargs);
-        }
-
-
-        /// <summary>
-        /// Resumes the coroutine
-        /// </summary>
-        /// <param name="context">The ScriptExecutionContext.</param>
-        /// <param name="args">The arguments.</param>
-        /// <returns></returns>
-        public DynValue Resume(ScriptExecutionContext context, params object[] args)
-        {
-            DynValue[] dargs = new DynValue[args.Length];
-
-            for (int i = 0; i < dargs.Length; i++)
-                dargs[i] = DynValue.FromObject(context.GetScript(), args[i]);
-
-            return Resume(context, dargs);
-        }
+        return Resume(dargs);
+    }
 
 
+    /// <summary>
+    ///     Resumes the coroutine
+    /// </summary>
+    /// <param name="context">The ScriptExecutionContext.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns></returns>
+    public DynValue Resume(ScriptExecutionContext context, params object[] args)
+    {
+        var dargs = new DynValue[args.Length];
 
+        for (var i = 0; i < dargs.Length; i++)
+            dargs[i] = DynValue.FromObject(context.GetScript(), args[i]);
 
-        /// <summary>
-        /// Gets the coroutine state.
-        /// </summary>
-        public CoroutineState State
-        {
-            get
-            {
-                if (Type == CoroutineType.ClrCallback)
-                    return CoroutineState.NotStarted;
-                else if (Type == CoroutineType.ClrCallbackDead)
-                    return CoroutineState.Dead;
-                else
-                    return m_Processor.State;
-            }
-        }
+        return Resume(context, dargs);
+    }
 
-        /// <summary>
-        /// Gets the coroutine stack trace for debug purposes
-        /// </summary>
-        /// <param name="skip">The skip.</param>
-        /// <param name="entrySourceRef">The entry source reference.</param>
-        /// <returns></returns>
-        public WatchItem[] GetStackTrace(int skip, SourceRef entrySourceRef = null)
-        {
-            if (State != CoroutineState.Running)
-            {
-                entrySourceRef = m_Processor.GetCoroutineSuspendedLocation();
-            }
+    /// <summary>
+    ///     Gets the coroutine stack trace for debug purposes
+    /// </summary>
+    /// <param name="skip">The skip.</param>
+    /// <param name="entrySourceRef">The entry source reference.</param>
+    /// <returns></returns>
+    public WatchItem[] GetStackTrace(int skip, SourceRef entrySourceRef = null)
+    {
+        if (State != CoroutineState.Running) entrySourceRef = m_Processor.GetCoroutineSuspendedLocation();
 
-            List<WatchItem> stack = m_Processor.Debugger_GetCallStack(entrySourceRef);
-            return stack.Skip(skip).ToArray();
-        }
-
-        /// <summary>
-        /// Gets the script owning this resource.
-        /// </summary>
-        /// <value>
-        /// The script owning this resource.
-        /// </value>
-        /// <exception cref="NotImplementedException"></exception>
-        public Script OwnerScript
-        {
-            get;
-            private set;
-        }
+        var stack = m_Processor.Debugger_GetCallStack(entrySourceRef);
+        return stack.Skip(skip).ToArray();
     }
 }

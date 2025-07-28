@@ -1,40 +1,40 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <LangVersion>latest</LangVersion>
-    <TargetFrameworks>netstandard2.1;netstandard2.0;net8.0</TargetFrameworks>
-    <OutputType>Library</OutputType>
-    <RootNamespace>SolarSharp.Interpreter</RootNamespace>
-    <AssemblyName>SolarSharp.Interpreter</AssemblyName>
-    <SccProjectName>
-    </SccProjectName>
-    <SccLocalPath>
-    </SccLocalPath>
-    <SccAuxPath>
-    </SccAuxPath>
-    <SccProvider>
-    </SccProvider>
-    <AssemblyOriginatorKeyFile>..\keypair.snk</AssemblyOriginatorKeyFile>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <AssemblyTitle>SolarSharp.Interpreter</AssemblyTitle>
-    <Description>An interpreter for the Lua language</Description>
-    <Company>https://www.solarsharp.org</Company>
-    <Product>SolarSharp.Interpreter</Product>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DocumentationFile>bin\Release\SolarSharp.Interpreter.xml</DocumentationFile>
-  </PropertyGroup>
-          <ItemGroup>
-    <None Include="..\.editorconfig" Link=".editorconfig" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Bcl.Memory" Version="9.0.7" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Condition=" '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netstandard2.1' " Include="Microsoft.CSharp" Version="4.7.0" />
-    <ProjectReference Condition=" '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netstandard2.1' " Include="..\InternalAnalyzers\InternalAnalyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-  </ItemGroup>
+    <PropertyGroup>
+        <LangVersion>latest</LangVersion>
+        <TargetFrameworks>netstandard2.1;netstandard2.0;net8.0</TargetFrameworks>
+        <OutputType>Library</OutputType>
+        <RootNamespace>SolarSharp.Interpreter</RootNamespace>
+        <AssemblyName>SolarSharp.Interpreter</AssemblyName>
+        <SccProjectName>
+        </SccProjectName>
+        <SccLocalPath>
+        </SccLocalPath>
+        <SccAuxPath>
+        </SccAuxPath>
+        <SccProvider>
+        </SccProvider>
+        <AssemblyOriginatorKeyFile>..\keypair.snk</AssemblyOriginatorKeyFile>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <AssemblyTitle>SolarSharp.Interpreter</AssemblyTitle>
+        <Description>An interpreter for the Lua language</Description>
+        <Company>https://www.solarsharp.org</Company>
+        <Product>SolarSharp.Interpreter</Product>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+        <DocumentationFile>bin\Release\SolarSharp.Interpreter.xml</DocumentationFile>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Include="..\.editorconfig" Link=".editorconfig"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.Bcl.Memory" Version="9.0.7"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Condition=" '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netstandard2.1' " Include="Microsoft.CSharp" Version="4.7.0"/>
+        <ProjectReference Condition=" '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netstandard2.1' " Include="..\InternalAnalyzers\InternalAnalyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    </ItemGroup>
 </Project>

@@ -1,7 +1,7 @@
 ﻿using System;
+using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Modules;
-using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -22,6 +22,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     MyEvent(this, EventArgs.Empty);
                     return true;
                 }
+
                 return false;
             }
 
@@ -32,6 +33,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     MySEvent(null, EventArgs.Empty);
                     return true;
                 }
+
                 return false;
             }
         }
@@ -40,7 +42,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Event_Simple()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
@@ -48,7 +50,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
+            {
+                invocationCount += 1;
+                return DynValue.Void;
+            });
 
             s.DoString(@"
 				function handler(o, a)
@@ -66,7 +72,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Event_TwoObjects()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
@@ -76,7 +82,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             var obj2 = new SomeClass();
             s.Globals["myobj"] = obj;
             s.Globals["myobj2"] = obj2;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
+            {
+                invocationCount += 1;
+                return DynValue.Void;
+            });
 
             s.DoString(@"
 				function handler(o, a)
@@ -96,7 +106,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Event_Multi()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
@@ -104,7 +114,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
+            {
+                invocationCount += 1;
+                return DynValue.Void;
+            });
 
             s.DoString(@"
 				function handler(o, a)
@@ -123,7 +137,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Event_MultiAndDetach()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
@@ -131,7 +145,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
+            {
+                invocationCount += 1;
+                return DynValue.Void;
+            });
 
             s.DoString(@"
 				function handler(o, a)
@@ -151,7 +169,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_Event_DetachAndDeregister()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
@@ -159,7 +177,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
+            {
+                invocationCount += 1;
+                return DynValue.Void;
+            });
 
             s.DoString(@"
 				function handler(o, a)
@@ -182,14 +204,18 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_SEvent_DetachAndDeregister()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
             Script s = new(CoreModules.None);
 
             s.Globals["myobj"] = typeof(SomeClass);
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
+            {
+                invocationCount += 1;
+                return DynValue.Void;
+            });
 
             s.DoString(@"
 				function handler(o, a)
@@ -211,14 +237,18 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_SEvent_DetachAndReregister()
         {
-            int invocationCount = 0;
+            var invocationCount = 0;
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
             Script s = new(CoreModules.None);
 
             s.Globals["myobj"] = typeof(SomeClass);
-            s.Globals["ext"] = DynValue.NewCallback((c, a) => { invocationCount += 1; return DynValue.Void; });
+            s.Globals["ext"] = DynValue.NewCallback((c, a) =>
+            {
+                invocationCount += 1;
+                return DynValue.Void;
+            });
 
             s.DoString(@"
 				function handler(o, a)
@@ -239,13 +269,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(SomeClass.Trigger_MySEvent(), Is.True, "deregistration");
             });
         }
-
-
-
-
-
-
-
-
     }
 }

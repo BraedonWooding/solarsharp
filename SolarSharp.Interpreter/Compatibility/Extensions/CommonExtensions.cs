@@ -115,7 +115,8 @@ namespace System
 {
     internal static class StringExtensions
     {
-        public static string[] Split(this string str, char separator, int count, StringSplitOptions options = StringSplitOptions.None)
+        public static string[] Split(this string str, char separator, int count, StringSplitOptions options =
+ StringSplitOptions.None)
         {
             return str.Split([separator], count, options);
         }
@@ -260,10 +261,7 @@ namespace System.Diagnostics
     {
         public static void AddArguments(this ProcessStartInfo info, string[] args)
         {
-            foreach (var arg in args)
-            {
-                info.ArgumentList.Add(arg);
-            }
+            foreach (var arg in args) info.ArgumentList.Add(arg);
         }
     }
 }

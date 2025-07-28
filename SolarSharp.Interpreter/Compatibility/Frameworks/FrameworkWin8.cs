@@ -1,5 +1,4 @@
 ﻿#if NETFX_CORE && !DOTNET_CORE
-
 using System;
 using System.Collections.Generic;
 using System.Linq;

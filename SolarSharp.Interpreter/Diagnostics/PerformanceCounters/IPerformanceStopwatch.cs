@@ -1,10 +1,9 @@
 ﻿using System;
 
-namespace SolarSharp.Interpreter.Diagnostics.PerformanceCounters
+namespace SolarSharp.Interpreter.Diagnostics.PerformanceCounters;
+
+internal interface IPerformanceStopwatch
 {
-    internal interface IPerformanceStopwatch
-    {
-        IDisposable Start();
-        PerformanceResult GetResult();
-    }
+    IDisposable Start();
+    PerformanceResult GetResult();
 }

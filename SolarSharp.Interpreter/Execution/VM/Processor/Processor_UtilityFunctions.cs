@@ -1,99 +1,84 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using SolarSharp.Interpreter.DataTypes;
 
-namespace SolarSharp.Interpreter.Execution.VM
+namespace SolarSharp.Interpreter.Execution.VM;
+
+internal sealed partial class Processor
 {
-    internal sealed partial class Processor
+    private DynValue[] Internal_AdjustTuple(IList<DynValue> values)
     {
-        private DynValue[] Internal_AdjustTuple(IList<DynValue> values)
+        if (values == null || values.Count == 0)
+            return new DynValue[0];
+
+        if (values[values.Count - 1].Type == DataType.Tuple)
         {
-            if (values == null || values.Count == 0)
-                return new DynValue[0];
+            var baseLen = values.Count - 1 + values[values.Count - 1].Tuple.Length;
+            var result = new DynValue[baseLen];
 
-            if (values[values.Count - 1].Type == DataType.Tuple)
+            for (var i = 0; i < values.Count - 1; i++) result[i] = values[i].ToScalar();
+
+            for (var i = 0; i < values[values.Count - 1].Tuple.Length; i++)
+                result[values.Count + i - 1] = values[values.Count - 1].Tuple[i];
+
+            if (result[^1].Type == DataType.Tuple)
+                return Internal_AdjustTuple(result);
+            return result;
+        }
+        else
+        {
+            var result = new DynValue[values.Count];
+
+            for (var i = 0; i < values.Count; i++) result[i] = values[i].ToScalar();
+
+            return result;
+        }
+    }
+
+    private int Internal_InvokeUnaryMetaMethod(DynValue op1, string eventName, int instructionPtr)
+    {
+        DynValue m = null;
+
+        if (op1.Type == DataType.UserData)
+            m = op1.UserData.Descriptor.MetaIndex(m_Script, op1.UserData.Object, eventName);
+
+        if (m == null)
+        {
+            var op1_MetaTable = GetMetatable(op1);
+
+            if (op1_MetaTable != null)
             {
-                int baseLen = values.Count - 1 + values[values.Count - 1].Tuple.Length;
-                DynValue[] result = new DynValue[baseLen];
-
-                for (int i = 0; i < values.Count - 1; i++)
-                {
-                    result[i] = values[i].ToScalar();
-                }
-
-                for (int i = 0; i < values[values.Count - 1].Tuple.Length; i++)
-                {
-                    result[values.Count + i - 1] = values[values.Count - 1].Tuple[i];
-                }
-
-                if (result[^1].Type == DataType.Tuple)
-                    return Internal_AdjustTuple(result);
-                else
-                    return result;
-            }
-            else
-            {
-                DynValue[] result = new DynValue[values.Count];
-
-                for (int i = 0; i < values.Count; i++)
-                {
-                    result[i] = values[i].ToScalar();
-                }
-
-                return result;
+                var meta1 = op1_MetaTable.Get(eventName);
+                if (meta1.IsNotNil())
+                    m = meta1;
             }
         }
 
-        private int Internal_InvokeUnaryMetaMethod(DynValue op1, string eventName, int instructionPtr)
+        if (m != null)
         {
-            DynValue m = null;
-
-            if (op1.Type == DataType.UserData)
-            {
-                m = op1.UserData.Descriptor.MetaIndex(m_Script, op1.UserData.Object, eventName);
-            }
-
-            if (m == null)
-            {
-                var op1_MetaTable = GetMetatable(op1);
-
-                if (op1_MetaTable != null)
-                {
-                    DynValue meta1 = op1_MetaTable.Get(eventName);
-                    if (meta1.IsNotNil())
-                        m = meta1;
-                }
-            }
-
-            if (m != null)
-            {
-                m_ValueStack.Push(m);
-                m_ValueStack.Push(op1);
-                return Internal_ExecCall(1, instructionPtr);
-            }
-            else
-            {
-                return -1;
-            }
+            m_ValueStack.Push(m);
+            m_ValueStack.Push(op1);
+            return Internal_ExecCall(1, instructionPtr);
         }
 
-        private int Internal_InvokeBinaryMetaMethod(DynValue l, DynValue r, string eventName, int instructionPtr, DynValue extraPush = null)
+        return -1;
+    }
+
+    private int Internal_InvokeBinaryMetaMethod(DynValue l, DynValue r, string eventName, int instructionPtr,
+        DynValue extraPush = null)
+    {
+        var m = GetBinaryMetamethod(l, r, eventName);
+
+        if (m != null)
         {
-            var m = GetBinaryMetamethod(l, r, eventName);
+            if (extraPush != null)
+                m_ValueStack.Push(extraPush);
 
-            if (m != null)
-            {
-                if (extraPush != null)
-                    m_ValueStack.Push(extraPush);
-
-                m_ValueStack.Push(m);
-                m_ValueStack.Push(l);
-                m_ValueStack.Push(r);
-                return Internal_ExecCall(2, instructionPtr);
-            }
-            else
-            {
-                return -1;
-            }
+            m_ValueStack.Push(m);
+            m_ValueStack.Push(l);
+            m_ValueStack.Push(r);
+            return Internal_ExecCall(2, instructionPtr);
         }
+
+        return -1;
     }
 }

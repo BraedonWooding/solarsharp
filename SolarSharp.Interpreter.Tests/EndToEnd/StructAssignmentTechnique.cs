@@ -1,5 +1,5 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using NUnit.Framework;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -30,20 +30,20 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public float X
             {
-                get { return transf.position.X; }
-                set { transf.position.X = value; }
+                get => transf.position.X;
+                set => transf.position.X = value;
             }
 
             public float Y
             {
-                get { return transf.position.Y; }
-                set { transf.position.Y = value; }
+                get => transf.position.Y;
+                set => transf.position.Y = value;
             }
 
             public float Z
             {
-                get { return transf.position.Z; }
-                set { transf.position.Z = value; }
+                get => transf.position.Z;
+                set => transf.position.Z = value;
             }
         }
 
@@ -75,8 +75,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         //}
 
 
-
-
         [Test]
         public void StructField_CantSet()
         {
@@ -97,14 +95,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.UnregisterType<Transform>();
             UserData.UnregisterType<Vector3>();
         }
-
-
-
-
-
-
-
-
-
     }
 }

@@ -1,20 +1,19 @@
 ﻿using System.Collections.Generic;
 
-namespace SolarSharp.Interpreter.DataStructs
-{
-    /// <summary>
-    /// Implementation of IEqualityComparer enforcing reference equality
-    /// </summary>
-    internal class SimpleReferenceEqualityComparer : IEqualityComparer<object>
-    {
-        bool IEqualityComparer<object>.Equals(object x, object y)
-        {
-            return ReferenceEquals(x, y);
-        }
+namespace SolarSharp.Interpreter.DataStructs;
 
-        int IEqualityComparer<object>.GetHashCode(object obj)
-        {
-            return obj.GetHashCode();
-        }
+/// <summary>
+///     Implementation of IEqualityComparer enforcing reference equality
+/// </summary>
+internal class SimpleReferenceEqualityComparer : IEqualityComparer<object>
+{
+    bool IEqualityComparer<object>.Equals(object x, object y)
+    {
+        return ReferenceEquals(x, y);
+    }
+
+    int IEqualityComparer<object>.GetHashCode(object obj)
+    {
+        return obj.GetHashCode();
     }
 }

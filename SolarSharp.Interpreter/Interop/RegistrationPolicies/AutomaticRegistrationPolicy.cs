@@ -1,23 +1,22 @@
 ﻿using System;
 
-namespace SolarSharp.Interpreter.Interop.RegistrationPolicies
+namespace SolarSharp.Interpreter.Interop.RegistrationPolicies;
+
+/// <summary>
+///     Similar to <see cref="DefaultRegistrationPolicy" />, but with automatic type registration is disabled.
+/// </summary>
+public class AutomaticRegistrationPolicy : DefaultRegistrationPolicy
 {
     /// <summary>
-    /// Similar to <see cref="DefaultRegistrationPolicy"/>, but with automatic type registration is disabled.
+    ///     Allows type automatic registration for the specified type.
+    ///     NOTE: automatic type registration is NOT recommended.
     /// </summary>
-    public class AutomaticRegistrationPolicy : DefaultRegistrationPolicy
+    /// <param name="type">The type.</param>
+    /// <returns>
+    ///     True to register the type automatically, false otherwise.
+    /// </returns>
+    public override bool AllowTypeAutoRegistration(Type type)
     {
-        /// <summary>
-        /// Allows type automatic registration for the specified type.
-        /// NOTE: automatic type registration is NOT recommended.
-        /// </summary>
-        /// <param name="type">The type.</param>
-        /// <returns>
-        /// True to register the type automatically, false otherwise.
-        /// </returns>
-        public override bool AllowTypeAutoRegistration(Type type)
-        {
-            return true;
-        }
+        return true;
     }
 }

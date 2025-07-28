@@ -1,7 +1,7 @@
-﻿using SolarSharp.Interpreter.DataTypes;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Modules;
-using NUnit.Framework;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -11,7 +11,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void PCallMultipleReturns()
         {
-            string script = @"return pcall(function() return 1,2,3 end)";
+            var script = @"return pcall(function() return 1,2,3 end)";
 
             Script S = new();
             var res = S.DoString(script);
@@ -33,12 +33,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Errors_PCall_ClrFunction()
         {
-            string script = @"
+            var script = @"
 				r, msg = pcall(assert, false, 'catched')
 				return r, msg;
 								";
 
-            DynValue res = Script.RunString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -56,7 +56,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Errors_PCall_Multiples()
         {
-            string script = @"
+            var script = @"
 function try(fn)
 	local x, y = pcall(fn)
 	
@@ -87,7 +87,7 @@ end
 return a()
 ";
 
-            DynValue res = Script.RunString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -99,7 +99,7 @@ return a()
         [Test]
         public void Errors_TryCatch_Multiples()
         {
-            string script = @"
+            var script = @"
 function a()
 	return try(b) .. 'a';
 end
@@ -135,7 +135,7 @@ return a()
             });
 
 
-            DynValue res = S.DoString(script);
+            var res = S.DoString(script);
 
             Assert.Multiple(() =>
             {
@@ -143,6 +143,5 @@ return a()
                 Assert.That(res.String, Is.EqualTo("!cba"));
             });
         }
-
     }
 }

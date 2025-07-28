@@ -1,109 +1,104 @@
 ﻿using System;
 using System.Collections.Generic;
-using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.Debugging;
-using SolarSharp.Interpreter.Execution;
-using SolarSharp.Interpreter.Tree.Lexer;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Execution.VM;
+using SolarSharp.Interpreter.Tree.Expressions;
+using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace SolarSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements;
+
+internal class AssignmentStatement : Statement
 {
-    internal class AssignmentStatement : Statement
+    private readonly List<IVariable> m_LValues = new();
+    private readonly SourceRef m_Ref;
+    private readonly List<Expression> m_RValues;
+
+
+    public AssignmentStatement(ScriptLoadingContext lcontext, Token startToken)
+        : base(lcontext)
     {
-        private readonly List<IVariable> m_LValues = new();
-        private readonly List<Expression> m_RValues;
-        private readonly SourceRef m_Ref;
+        List<string> names = new();
 
+        var first = startToken;
 
-        public AssignmentStatement(ScriptLoadingContext lcontext, Token startToken)
-            : base(lcontext)
+        while (true)
         {
-            List<string> names = new();
+            var name = CheckTokenType(lcontext, TokenType.Name);
+            names.Add(name.Text);
 
-            Token first = startToken;
+            if (lcontext.Lexer.Current.Type != TokenType.Comma)
+                break;
 
-            while (true)
-            {
-                Token name = CheckTokenType(lcontext, TokenType.Name);
-                names.Add(name.Text);
-
-                if (lcontext.Lexer.Current.Type != TokenType.Comma)
-                    break;
-
-                lcontext.Lexer.Next();
-            }
-
-            if (lcontext.Lexer.Current.Type == TokenType.Op_Assignment)
-            {
-                CheckTokenType(lcontext, TokenType.Op_Assignment);
-                m_RValues = Expression.ExprList(lcontext);
-            }
-            else
-            {
-                m_RValues = new List<Expression>();
-            }
-
-            foreach (string name in names)
-            {
-                var localVar = lcontext.Scope.TryDefineLocal(name);
-                var symbol = new SymbolRefExpression(lcontext, localVar);
-                m_LValues.Add(symbol);
-            }
-
-            Token last = lcontext.Lexer.Current;
-            m_Ref = first.GetSourceRefUpTo(last);
-            lcontext.Source.Refs.Add(m_Ref);
-
+            lcontext.Lexer.Next();
         }
 
-
-        public AssignmentStatement(ScriptLoadingContext lcontext, Expression firstExpression, Token first)
-            : base(lcontext)
+        if (lcontext.Lexer.Current.Type == TokenType.Op_Assignment)
         {
-            m_LValues.Add(CheckVar(lcontext, firstExpression));
-
-            while (lcontext.Lexer.Current.Type == TokenType.Comma)
-            {
-                lcontext.Lexer.Next();
-                Expression e = Expression.PrimaryExp(lcontext);
-                m_LValues.Add(CheckVar(lcontext, e));
-            }
-
             CheckTokenType(lcontext, TokenType.Op_Assignment);
-
             m_RValues = Expression.ExprList(lcontext);
-
-            Token last = lcontext.Lexer.Current;
-            m_Ref = first.GetSourceRefUpTo(last);
-            lcontext.Source.Refs.Add(m_Ref);
-
         }
-
-        private IVariable CheckVar(ScriptLoadingContext lcontext, Expression firstExpression)
+        else
         {
-            if (firstExpression is not IVariable v)
-                throw new SyntaxErrorException(lcontext.Lexer.Current, "unexpected symbol near '{0}' - not a l-value", lcontext.Lexer.Current);
-
-            return v;
+            m_RValues = new List<Expression>();
         }
 
-        public override void Compile(Execution.VM.ByteCode bc)
+        foreach (var name in names)
         {
-            using (bc.EnterSource(m_Ref))
-            {
-                foreach (var exp in m_RValues)
-                {
-                    exp.Compile(bc);
-                }
-
-                for (int i = 0; i < m_LValues.Count; i++)
-                    m_LValues[i].CompileAssignment(bc,
-                            Math.Max(m_RValues.Count - 1 - i, 0), // index of r-value
-                            i - Math.Min(i, m_RValues.Count - 1)); // index in last tuple
-
-                bc.Emit_Pop(m_RValues.Count);
-            }
+            var localVar = lcontext.Scope.TryDefineLocal(name);
+            var symbol = new SymbolRefExpression(lcontext, localVar);
+            m_LValues.Add(symbol);
         }
 
+        var last = lcontext.Lexer.Current;
+        m_Ref = first.GetSourceRefUpTo(last);
+        lcontext.Source.Refs.Add(m_Ref);
+    }
+
+
+    public AssignmentStatement(ScriptLoadingContext lcontext, Expression firstExpression, Token first)
+        : base(lcontext)
+    {
+        m_LValues.Add(CheckVar(lcontext, firstExpression));
+
+        while (lcontext.Lexer.Current.Type == TokenType.Comma)
+        {
+            lcontext.Lexer.Next();
+            var e = Expression.PrimaryExp(lcontext);
+            m_LValues.Add(CheckVar(lcontext, e));
+        }
+
+        CheckTokenType(lcontext, TokenType.Op_Assignment);
+
+        m_RValues = Expression.ExprList(lcontext);
+
+        var last = lcontext.Lexer.Current;
+        m_Ref = first.GetSourceRefUpTo(last);
+        lcontext.Source.Refs.Add(m_Ref);
+    }
+
+    private IVariable CheckVar(ScriptLoadingContext lcontext, Expression firstExpression)
+    {
+        if (firstExpression is not IVariable v)
+            throw new SyntaxErrorException(lcontext.Lexer.Current, "unexpected symbol near '{0}' - not a l-value",
+                lcontext.Lexer.Current);
+
+        return v;
+    }
+
+    public override void Compile(ByteCode bc)
+    {
+        using (bc.EnterSource(m_Ref))
+        {
+            foreach (var exp in m_RValues) exp.Compile(bc);
+
+            for (var i = 0; i < m_LValues.Count; i++)
+                m_LValues[i].CompileAssignment(bc,
+                    Math.Max(m_RValues.Count - 1 - i, 0), // index of r-value
+                    i - Math.Min(i, m_RValues.Count - 1)); // index in last tuple
+
+            bc.Emit_Pop(m_RValues.Count);
+        }
     }
 }

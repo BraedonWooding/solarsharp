@@ -1,9 +1,9 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Interop;
-using SolarSharp.Interpreter.Modules;
-using NUnit.Framework;
-using SolarSharp.Interpreter.Interop.Attributes;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop;
+using SolarSharp.Interpreter.Interop.Attributes;
+using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -12,36 +12,29 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     {
         private class MySubclass
         {
-            [SolarSharpProperty]
-            public string MyString { get; set; }
+            [SolarSharpProperty] public string MyString { get; set; }
 
-            [SolarSharpProperty("number")]
-            public int MyNumber { get; private set; }
+            [SolarSharpProperty("number")] public int MyNumber { get; private set; }
         }
 
         private class MyClass
         {
-            [SolarSharpProperty]
-            public string MyString { get; set; }
+            [SolarSharpProperty] public string MyString { get; set; }
 
-            [SolarSharpProperty("number")]
-            public int MyNumber { get; private set; }
+            [SolarSharpProperty("number")] public int MyNumber { get; private set; }
 
-            [SolarSharpProperty]
-            internal Table SomeTable { get; private set; }
+            [SolarSharpProperty] internal Table SomeTable { get; private set; }
 
-            [SolarSharpProperty]
-            public DynValue NativeValue { get; private set; }
+            [SolarSharpProperty] public DynValue NativeValue { get; private set; }
 
-            [SolarSharpProperty]
-            public MySubclass SubObj { get; private set; }
+            [SolarSharpProperty] public MySubclass SubObj { get; private set; }
         }
 
         private static MyClass Test(string tableDef)
         {
             Script s = new(CoreModules.None);
 
-            DynValue table = s.DoString("return " + tableDef);
+            var table = s.DoString("return " + tableDef);
 
             Assert.That(table.Type, Is.EqualTo(DataType.Table));
 
@@ -60,7 +53,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void ConfigProp_SimpleAssign()
         {
-            MyClass x = Test(@"
+            var x = Test(@"
 				{
 				class = 'oohoh',
 				myString = 'ciao',
@@ -94,6 +87,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				nativeValue = function() end,
 				}"));
         }
-
     }
 }

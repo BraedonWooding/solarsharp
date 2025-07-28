@@ -1,57 +1,56 @@
-﻿using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.DataTypes;
+﻿using SolarSharp.Interpreter.DataTypes;
+using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
-using SolarSharp.Interpreter.Serialization.Json;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Serialization.Json;
 
-namespace SolarSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib;
+
+[SolarSharpModule(Namespace = "json")]
+public class JsonModule
 {
-    [SolarSharpModule(Namespace = "json")]
-    public class JsonModule
+    [SolarSharpModuleMethod]
+    public static DynValue parse(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        [SolarSharpModuleMethod]
-        public static DynValue parse(ScriptExecutionContext executionContext, CallbackArguments args)
+        try
         {
-            try
-            {
-                DynValue vs = args.AsType(0, "parse", DataType.String, false);
-                Table t = JsonTableConverter.JsonToTable(vs.String, executionContext.GetScript());
-                return DynValue.NewTable(t);
-            }
-            catch (SyntaxErrorException ex)
-            {
-                throw new ScriptRuntimeException(ex);
-            }
+            var vs = args.AsType(0, "parse", DataType.String);
+            var t = JsonTableConverter.JsonToTable(vs.String, executionContext.GetScript());
+            return DynValue.NewTable(t);
         }
-
-        [SolarSharpModuleMethod]
-        public static DynValue serialize(ScriptExecutionContext _, CallbackArguments args)
+        catch (SyntaxErrorException ex)
         {
-            try
-            {
-                DynValue vt = args.AsType(0, "serialize", DataType.Table, false);
-                string s = vt.Table.TableToJson();
-                return DynValue.NewString(s);
-            }
-            catch (SyntaxErrorException ex)
-            {
-                throw new ScriptRuntimeException(ex);
-            }
+            throw new ScriptRuntimeException(ex);
         }
+    }
 
-        [SolarSharpModuleMethod]
-        public static DynValue isnull(ScriptExecutionContext _, CallbackArguments args)
+    [SolarSharpModuleMethod]
+    public static DynValue serialize(ScriptExecutionContext _, CallbackArguments args)
+    {
+        try
         {
-            DynValue vs = args[0];
-            return DynValue.NewBoolean(JsonNull.IsJsonNull(vs) || vs.IsNil());
+            var vt = args.AsType(0, "serialize", DataType.Table);
+            var s = vt.Table.TableToJson();
+            return DynValue.NewString(s);
         }
+        catch (SyntaxErrorException ex)
+        {
+            throw new ScriptRuntimeException(ex);
+        }
+    }
 
-        [SolarSharpModuleMethod]
+    [SolarSharpModuleMethod]
+    public static DynValue isnull(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var vs = args[0];
+        return DynValue.NewBoolean(JsonNull.IsJsonNull(vs) || vs.IsNil());
+    }
+
+    [SolarSharpModuleMethod]
 #pragma warning disable IDE0060 // Remove unused parameter
-        public static DynValue @null(ScriptExecutionContext _, CallbackArguments _args)
+    public static DynValue @null(ScriptExecutionContext _, CallbackArguments _args)
 #pragma warning restore IDE0060 // Remove unused parameter
-        {
-            return JsonNull.Create();
-        }
+    {
+        return JsonNull.Create();
     }
 }

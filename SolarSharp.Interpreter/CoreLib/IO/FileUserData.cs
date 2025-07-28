@@ -1,21 +1,20 @@
 ﻿using System.IO;
 using System.Text;
 
-namespace SolarSharp.Interpreter.CoreLib.IO
+namespace SolarSharp.Interpreter.CoreLib.IO;
+
+/// <summary>
+///     Abstract class implementing a file Lua userdata. Methods are meant to be called by Lua code.
+/// </summary>
+internal class FileUserData : StreamFileUserDataBase
 {
-    /// <summary>
-    /// Abstract class implementing a file Lua userdata. Methods are meant to be called by Lua code.
-    /// </summary>
-    internal class FileUserData : StreamFileUserDataBase
+    public FileUserData(Script script, string filename, Encoding encoding, string mode)
     {
-        public FileUserData(Script script, string filename, Encoding encoding, string mode)
-        {
-            Stream stream = Script.GlobalOptions.Platform.IO_OpenFile(script, filename, encoding, mode);
+        var stream = Script.GlobalOptions.Platform.IO_OpenFile(script, filename, encoding, mode);
 
-            StreamReader reader = stream.CanRead ? new StreamReader(stream, encoding) : null;
-            StreamWriter writer = stream.CanWrite ? new StreamWriter(stream, encoding) : null;
+        var reader = stream.CanRead ? new StreamReader(stream, encoding) : null;
+        var writer = stream.CanWrite ? new StreamWriter(stream, encoding) : null;
 
-            Initialize(stream, reader, writer);
-        }
+        Initialize(stream, reader, writer);
     }
 }

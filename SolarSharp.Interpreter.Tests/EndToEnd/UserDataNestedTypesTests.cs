@@ -1,7 +1,7 @@
-﻿using SolarSharp.Interpreter.DataTypes;
-using NUnit.Framework;
-using SolarSharp.Interpreter.Interop.Attributes;
+﻿using NUnit.Framework;
+using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Interop.Attributes;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
@@ -12,7 +12,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             public enum SomeNestedEnum
             {
-                Asdasdasd,
+                Asdasdasd
             }
 
             public static SomeNestedEnum Get()
@@ -44,7 +44,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     return "Ciao from SomeNestedTypePrivate2";
                 }
             }
-
         }
 
         public struct VSomeType
@@ -73,7 +72,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     return "Ciao from SomeNestedTypePrivate2";
                 }
             }
-
         }
 
         [Test]
@@ -85,7 +83,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("o", UserData.CreateStatic<SomeType>());
 
-            DynValue res = S.DoString("return o:Get()");
+            var res = S.DoString("return o:Get()");
 
             Assert.That(res.Type, Is.EqualTo(DataType.UserData));
         }
@@ -100,7 +98,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("o", UserData.CreateStatic<SomeType>());
 
-            DynValue res = S.DoString("return o.SomeNestedType:Get()");
+            var res = S.DoString("return o.SomeNestedType:Get()");
 
             Assert.Multiple(() =>
             {
@@ -119,7 +117,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("o", UserData.CreateStatic<SomeType>());
 
-            DynValue res = S.DoString("return o.SomeNestedTypePrivate:Get()");
+            var res = S.DoString("return o.SomeNestedTypePrivate:Get()");
 
             Assert.Multiple(() =>
             {
@@ -149,7 +147,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("o", UserData.CreateStatic<VSomeType>());
 
-            DynValue res = S.DoString("return o.SomeNestedType:Get()");
+            var res = S.DoString("return o.SomeNestedType:Get()");
 
             Assert.Multiple(() =>
             {
@@ -167,7 +165,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("o", UserData.CreateStatic<VSomeType>());
 
-            DynValue res = S.DoString("return o.SomeNestedTypePrivate:Get()");
+            var res = S.DoString("return o.SomeNestedTypePrivate:Get()");
 
             Assert.Multiple(() =>
             {

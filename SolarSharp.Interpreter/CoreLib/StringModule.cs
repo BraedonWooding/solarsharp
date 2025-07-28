@@ -7,292 +7,280 @@ using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
 
-namespace SolarSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib;
+
+/// <summary>
+///     Class implementing string Lua functions
+/// </summary>
+[SolarSharpModule(Namespace = "string")]
+public class StringModule
 {
-    /// <summary>
-    /// Class implementing string Lua functions 
-    /// </summary>
-    [SolarSharpModule(Namespace = "string")]
-    public class StringModule
+    public const string BASE64_DUMP_HEADER = "SolarSharp_dump_b64::";
+
+    public static void SolarSharpInit(Table globalTable, Table stringTable)
     {
-        public const string BASE64_DUMP_HEADER = "SolarSharp_dump_b64::";
+        Table stringMetatable = new(globalTable.OwnerScript);
+        stringMetatable.Set("__index", DynValue.NewTable(stringTable));
+        globalTable.OwnerScript.SetTypeMetatable(DataType.String, stringMetatable);
+    }
 
-        public static void SolarSharpInit(Table globalTable, Table stringTable)
+
+    [SolarSharpModuleMethod]
+    public static DynValue dump(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        var fn = args.AsType(0, "dump", DataType.Function);
+
+        try
         {
-            Table stringMetatable = new(globalTable.OwnerScript);
-            stringMetatable.Set("__index", DynValue.NewTable(stringTable));
-            globalTable.OwnerScript.SetTypeMetatable(DataType.String, stringMetatable);
-        }
-
-
-        [SolarSharpModuleMethod]
-        public static DynValue dump(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            DynValue fn = args.AsType(0, "dump", DataType.Function, false);
-
-            try
+            byte[] bytes;
+            using (MemoryStream ms = new())
             {
-                byte[] bytes;
-                using (MemoryStream ms = new())
-                {
-                    executionContext.GetScript().Dump(fn, ms);
-                    ms.Seek(0, SeekOrigin.Begin);
-                    bytes = ms.ToArray();
-                }
-                string base64 = Convert.ToBase64String(bytes);
-                return DynValue.NewString(BASE64_DUMP_HEADER + base64);
+                executionContext.GetScript().Dump(fn, ms);
+                ms.Seek(0, SeekOrigin.Begin);
+                bytes = ms.ToArray();
             }
-            catch (Exception ex)
-            {
-                throw new ScriptRuntimeException(ex.Message);
-            }
+
+            var base64 = Convert.ToBase64String(bytes);
+            return DynValue.NewString(BASE64_DUMP_HEADER + base64);
         }
-
-
-        [SolarSharpModuleMethod]
-        public static DynValue @char(ScriptExecutionContext _, CallbackArguments args)
+        catch (Exception ex)
         {
-            StringBuilder sb = new(args.Count);
+            throw new ScriptRuntimeException(ex.Message);
+        }
+    }
 
-            for (int i = 0; i < args.Count; i++)
+
+    [SolarSharpModuleMethod]
+    public static DynValue @char(ScriptExecutionContext _, CallbackArguments args)
+    {
+        StringBuilder sb = new(args.Count);
+
+        for (var i = 0; i < args.Count; i++)
+        {
+            var v = args[i];
+            var d = 0d;
+
+            if (v.Type == DataType.String)
             {
-                DynValue v = args[i];
-                double d = 0d;
-
-                if (v.Type == DataType.String)
-                {
-                    double? nd = v.CastToNumber();
-                    if (nd == null)
-                        args.AsType(i, "char", DataType.Number, false);
-                    else
-                        d = nd.Value;
-                }
+                var nd = v.CastToNumber();
+                if (nd == null)
+                    args.AsType(i, "char", DataType.Number);
                 else
-                {
-                    args.AsType(i, "char", DataType.Number, false);
-                    d = v.Number;
-                }
-
-                sb.Append((char)d);
+                    d = nd.Value;
             }
-
-            return DynValue.NewString(sb.ToString());
-        }
-
-
-        [SolarSharpModuleMethod]
-        public static DynValue @byte(ScriptExecutionContext _, CallbackArguments args)
-        {
-            DynValue vs = args.AsType(0, "byte", DataType.String, false);
-            DynValue vi = args.AsType(1, "byte", DataType.Number, true);
-            DynValue vj = args.AsType(2, "byte", DataType.Number, true);
-
-            return PerformByteLike(vs, vi, vj,
-                i => Unicode2Ascii(i));
-        }
-
-        [SolarSharpModuleMethod]
-        public static DynValue unicode(ScriptExecutionContext _, CallbackArguments args)
-        {
-            DynValue vs = args.AsType(0, "unicode", DataType.String, false);
-            DynValue vi = args.AsType(1, "unicode", DataType.Number, true);
-            DynValue vj = args.AsType(2, "unicode", DataType.Number, true);
-
-            return PerformByteLike(vs, vi, vj, i => i);
-        }
-
-        private static int Unicode2Ascii(int i)
-        {
-            if (i >= 0 && i <= 255)
-                return i;
-
-            return '?';
-        }
-
-        private static DynValue PerformByteLike(DynValue vs, DynValue vi, DynValue vj, Func<int, int> filter)
-        {
-            StringRange range = StringRange.FromLuaRange(vi, vj, null);
-            string s = range.ApplyToString(vs.String);
-
-            int length = s.Length;
-            DynValue[] rets = new DynValue[length];
-
-            for (int i = 0; i < length; ++i)
+            else
             {
-                rets[i] = DynValue.NewNumber(filter(s[i]));
+                args.AsType(i, "char", DataType.Number);
+                d = v.Number;
             }
 
-            return DynValue.NewTuple(rets);
+            sb.Append((char)d);
         }
+
+        return DynValue.NewString(sb.ToString());
+    }
+
+
+    [SolarSharpModuleMethod]
+    public static DynValue @byte(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var vs = args.AsType(0, "byte", DataType.String);
+        var vi = args.AsType(1, "byte", DataType.Number, true);
+        var vj = args.AsType(2, "byte", DataType.Number, true);
+
+        return PerformByteLike(vs, vi, vj,
+            i => Unicode2Ascii(i));
+    }
+
+    [SolarSharpModuleMethod]
+    public static DynValue unicode(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var vs = args.AsType(0, "unicode", DataType.String);
+        var vi = args.AsType(1, "unicode", DataType.Number, true);
+        var vj = args.AsType(2, "unicode", DataType.Number, true);
+
+        return PerformByteLike(vs, vi, vj, i => i);
+    }
+
+    private static int Unicode2Ascii(int i)
+    {
+        if (i >= 0 && i <= 255)
+            return i;
+
+        return '?';
+    }
+
+    private static DynValue PerformByteLike(DynValue vs, DynValue vi, DynValue vj, Func<int, int> filter)
+    {
+        var range = StringRange.FromLuaRange(vi, vj);
+        var s = range.ApplyToString(vs.String);
+
+        var length = s.Length;
+        var rets = new DynValue[length];
+
+        for (var i = 0; i < length; ++i) rets[i] = DynValue.NewNumber(filter(s[i]));
+
+        return DynValue.NewTuple(rets);
+    }
 
 #pragma warning disable IDE0051 // Remove unused private members
-        private static int? AdjustIndex(string s, DynValue vi, int defval)
+    private static int? AdjustIndex(string s, DynValue vi, int defval)
 #pragma warning restore IDE0051 // Remove unused private members
+    {
+        if (vi.IsNil())
+            return defval;
+
+        var i = (int)Math.Round(vi.Number, 0);
+
+        if (i == 0)
+            return null;
+
+        if (i > 0)
+            return i - 1;
+
+        return s.Length - i;
+    }
+
+    [SolarSharpModuleMethod]
+    public static DynValue len(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var vs = args.AsType(0, "len", DataType.String);
+        return DynValue.NewNumber(vs.String.Length);
+    }
+
+
+    [SolarSharpModuleMethod]
+    public static DynValue match(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        return executionContext.EmulateClassicCall(args, "match", KopiLua_StringLib.str_match);
+    }
+
+
+    [SolarSharpModuleMethod]
+    public static DynValue gmatch(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        return executionContext.EmulateClassicCall(args, "gmatch", KopiLua_StringLib.str_gmatch);
+    }
+
+    [SolarSharpModuleMethod]
+    public static DynValue gsub(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        return executionContext.EmulateClassicCall(args, "gsub", KopiLua_StringLib.str_gsub);
+    }
+
+    [SolarSharpModuleMethod]
+    public static DynValue find(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        return executionContext.EmulateClassicCall(args, "find",
+            KopiLua_StringLib.str_find);
+    }
+
+
+    [SolarSharpModuleMethod]
+    public static DynValue lower(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var arg_s = args.AsType(0, "lower", DataType.String);
+        return DynValue.NewString(arg_s.String.ToLower());
+    }
+
+    [SolarSharpModuleMethod]
+    public static DynValue upper(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var arg_s = args.AsType(0, "upper", DataType.String);
+        return DynValue.NewString(arg_s.String.ToUpper());
+    }
+
+    [SolarSharpModuleMethod]
+    public static DynValue rep(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var arg_s = args.AsType(0, "rep", DataType.String);
+        var arg_n = args.AsType(1, "rep", DataType.Number);
+        var arg_sep = args.AsType(2, "rep", DataType.String, true);
+
+        if (string.IsNullOrEmpty(arg_s.String) || arg_n.Number < 1) return DynValue.NewString("");
+
+        var sep = arg_sep.IsNotNil() ? arg_sep.String : null;
+
+        var count = (int)arg_n.Number;
+        StringBuilder result = new(arg_s.String.Length * count);
+
+        for (var i = 0; i < count; ++i)
         {
-            if (vi.IsNil())
-                return defval;
+            if (i != 0 && sep != null)
+                result.Append(sep);
 
-            int i = (int)Math.Round(vi.Number, 0);
-
-            if (i == 0)
-                return null;
-
-            if (i > 0)
-                return i - 1;
-
-            return s.Length - i;
+            result.Append(arg_s.String);
         }
 
-        [SolarSharpModuleMethod]
-        public static DynValue len(ScriptExecutionContext _, CallbackArguments args)
-        {
-            DynValue vs = args.AsType(0, "len", DataType.String, false);
-            return DynValue.NewNumber(vs.String.Length);
-        }
+        return DynValue.NewString(result.ToString());
+    }
+
+    [SolarSharpModuleMethod]
+    public static DynValue format(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        return executionContext.EmulateClassicCall(args, "format", KopiLua_StringLib.str_format);
+    }
 
 
+    [SolarSharpModuleMethod]
+    public static DynValue reverse(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var arg_s = args.AsType(0, "reverse", DataType.String);
 
-        [SolarSharpModuleMethod]
-        public static DynValue match(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            return executionContext.EmulateClassicCall(args, "match", KopiLua_StringLib.str_match);
-        }
+        if (string.IsNullOrEmpty(arg_s.String)) return DynValue.NewString("");
 
+        var elements = arg_s.String.ToCharArray();
+        Array.Reverse(elements);
 
-        [SolarSharpModuleMethod]
-        public static DynValue gmatch(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            return executionContext.EmulateClassicCall(args, "gmatch", KopiLua_StringLib.str_gmatch);
-        }
+        return DynValue.NewString(new string(elements));
+    }
 
-        [SolarSharpModuleMethod]
-        public static DynValue gsub(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            return executionContext.EmulateClassicCall(args, "gsub", KopiLua_StringLib.str_gsub);
-        }
+    [SolarSharpModuleMethod]
+    public static DynValue sub(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var arg_s = args.AsType(0, "sub", DataType.String);
+        var arg_i = args.AsType(1, "sub", DataType.Number, true);
+        var arg_j = args.AsType(2, "sub", DataType.Number, true);
 
-        [SolarSharpModuleMethod]
-        public static DynValue find(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            return executionContext.EmulateClassicCall(args, "find",
-                KopiLua_StringLib.str_find);
-        }
+        var range = StringRange.FromLuaRange(arg_i, arg_j, -1);
+        var s = range.ApplyToString(arg_s.String);
 
+        return DynValue.NewString(s);
+    }
 
-        [SolarSharpModuleMethod]
-        public static DynValue lower(ScriptExecutionContext _, CallbackArguments args)
-        {
-            DynValue arg_s = args.AsType(0, "lower", DataType.String, false);
-            return DynValue.NewString(arg_s.String.ToLower());
-        }
+    [SolarSharpModuleMethod]
+    public static DynValue startsWith(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var arg_s1 = args.AsType(0, "startsWith", DataType.String, true);
+        var arg_s2 = args.AsType(1, "startsWith", DataType.String, true);
 
-        [SolarSharpModuleMethod]
-        public static DynValue upper(ScriptExecutionContext _, CallbackArguments args)
-        {
-            DynValue arg_s = args.AsType(0, "upper", DataType.String, false);
-            return DynValue.NewString(arg_s.String.ToUpper());
-        }
+        if (arg_s1.IsNil() || arg_s2.IsNil())
+            return DynValue.False;
 
-        [SolarSharpModuleMethod]
-        public static DynValue rep(ScriptExecutionContext _, CallbackArguments args)
-        {
-            DynValue arg_s = args.AsType(0, "rep", DataType.String, false);
-            DynValue arg_n = args.AsType(1, "rep", DataType.Number, false);
-            DynValue arg_sep = args.AsType(2, "rep", DataType.String, true);
+        return DynValue.NewBoolean(arg_s1.String.StartsWith(arg_s2.String));
+    }
 
-            if (string.IsNullOrEmpty(arg_s.String) || arg_n.Number < 1)
-            {
-                return DynValue.NewString("");
-            }
+    [SolarSharpModuleMethod]
+    public static DynValue endsWith(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var arg_s1 = args.AsType(0, "endsWith", DataType.String, true);
+        var arg_s2 = args.AsType(1, "endsWith", DataType.String, true);
 
-            string sep = arg_sep.IsNotNil() ? arg_sep.String : null;
+        if (arg_s1.IsNil() || arg_s2.IsNil())
+            return DynValue.False;
 
-            int count = (int)arg_n.Number;
-            StringBuilder result = new(arg_s.String.Length * count);
+        return DynValue.NewBoolean(arg_s1.String.EndsWith(arg_s2.String));
+    }
 
-            for (int i = 0; i < count; ++i)
-            {
-                if (i != 0 && sep != null)
-                    result.Append(sep);
+    [SolarSharpModuleMethod]
+    public static DynValue contains(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var arg_s1 = args.AsType(0, "contains", DataType.String, true);
+        var arg_s2 = args.AsType(1, "contains", DataType.String, true);
 
-                result.Append(arg_s.String);
-            }
+        if (arg_s1.IsNil() || arg_s2.IsNil())
+            return DynValue.False;
 
-            return DynValue.NewString(result.ToString());
-        }
-
-        [SolarSharpModuleMethod]
-        public static DynValue format(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            return executionContext.EmulateClassicCall(args, "format", KopiLua_StringLib.str_format);
-        }
-
-
-
-        [SolarSharpModuleMethod]
-        public static DynValue reverse(ScriptExecutionContext _, CallbackArguments args)
-        {
-            DynValue arg_s = args.AsType(0, "reverse", DataType.String, false);
-
-            if (string.IsNullOrEmpty(arg_s.String))
-            {
-                return DynValue.NewString("");
-            }
-
-            char[] elements = arg_s.String.ToCharArray();
-            Array.Reverse(elements);
-
-            return DynValue.NewString(new string(elements));
-        }
-
-        [SolarSharpModuleMethod]
-        public static DynValue sub(ScriptExecutionContext _, CallbackArguments args)
-        {
-            DynValue arg_s = args.AsType(0, "sub", DataType.String, false);
-            DynValue arg_i = args.AsType(1, "sub", DataType.Number, true);
-            DynValue arg_j = args.AsType(2, "sub", DataType.Number, true);
-
-            StringRange range = StringRange.FromLuaRange(arg_i, arg_j, -1);
-            string s = range.ApplyToString(arg_s.String);
-
-            return DynValue.NewString(s);
-        }
-
-        [SolarSharpModuleMethod]
-        public static DynValue startsWith(ScriptExecutionContext _, CallbackArguments args)
-        {
-            DynValue arg_s1 = args.AsType(0, "startsWith", DataType.String, true);
-            DynValue arg_s2 = args.AsType(1, "startsWith", DataType.String, true);
-
-            if (arg_s1.IsNil() || arg_s2.IsNil())
-                return DynValue.False;
-
-            return DynValue.NewBoolean(arg_s1.String.StartsWith(arg_s2.String));
-        }
-
-        [SolarSharpModuleMethod]
-        public static DynValue endsWith(ScriptExecutionContext _, CallbackArguments args)
-        {
-            DynValue arg_s1 = args.AsType(0, "endsWith", DataType.String, true);
-            DynValue arg_s2 = args.AsType(1, "endsWith", DataType.String, true);
-
-            if (arg_s1.IsNil() || arg_s2.IsNil())
-                return DynValue.False;
-
-            return DynValue.NewBoolean(arg_s1.String.EndsWith(arg_s2.String));
-        }
-
-        [SolarSharpModuleMethod]
-        public static DynValue contains(ScriptExecutionContext _, CallbackArguments args)
-        {
-            DynValue arg_s1 = args.AsType(0, "contains", DataType.String, true);
-            DynValue arg_s2 = args.AsType(1, "contains", DataType.String, true);
-
-            if (arg_s1.IsNil() || arg_s2.IsNil())
-                return DynValue.False;
-
-            return DynValue.NewBoolean(arg_s1.String.Contains(arg_s2.String));
-        }
-
+        return DynValue.NewBoolean(arg_s1.String.Contains(arg_s2.String));
     }
 }

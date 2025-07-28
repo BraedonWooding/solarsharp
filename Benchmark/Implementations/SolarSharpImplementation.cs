@@ -1,20 +1,19 @@
 ﻿using SolarSharp.Interpreter;
 
-namespace Benchmark.Implementations
+namespace Benchmark.Implementations;
+
+public class SolarSharpImplementation : AImplementation
 {
-    public class SolarSharpImplementation : AImplementation
+    public readonly Script script;
+
+    public SolarSharpImplementation()
     {
-        public readonly Script script;
+        Script.WarmUp();
+        script = new Script();
+    }
 
-        public SolarSharpImplementation()
-        {
-            Script.WarmUp();
-            script = new Script();
-        }
-
-        public override object Run(string file)
-        {
-            return script.DoString(file);
-        }
+    public override object Run(string file)
+    {
+        return script.DoString(file);
     }
 }

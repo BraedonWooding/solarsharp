@@ -1,20 +1,19 @@
 ﻿using Neo.IronLua;
 
-namespace Benchmark.Implementations
+namespace Benchmark.Implementations;
+
+public class NeoImplementation : AImplementation
 {
-    public class NeoImplementation : AImplementation
+    private readonly Lua state;
+
+    public NeoImplementation()
     {
-        private readonly Lua state;
+        state = new Lua();
+    }
 
-        public NeoImplementation()
-        {
-            state = new Lua();
-        }
-
-        public override object Run(string file)
-        {
-            var env = state.CreateEnvironment();
-            return env.DoChunk(file, "test.lua");
-        }
+    public override object Run(string file)
+    {
+        var env = state.CreateEnvironment();
+        return env.DoChunk(file, "test.lua");
     }
 }

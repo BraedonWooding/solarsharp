@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
-using NUnit.Framework;
 using SolarSharp.Interpreter.Interop.Attributes;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
@@ -12,19 +13,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     {
         internal class ClassWithLength
         {
-            public int Length { get { return 55; } }
+            public int Length => 55;
         }
 
         internal class ClassWithCount
         {
-            public int Count { get { return 123; } }
+            public int Count => 123;
         }
 
 
-        internal class ArithmOperatorsTestClass : IComparable, System.Collections.IEnumerable
+        internal class ArithmOperatorsTestClass : IComparable, IEnumerable
         {
-            public int Value { get; set; }
-
             public ArithmOperatorsTestClass()
             {
             }
@@ -32,6 +31,22 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             public ArithmOperatorsTestClass(int value)
             {
                 Value = value;
+            }
+
+            public int Value { get; set; }
+
+            public int CompareTo(object obj)
+            {
+                if (obj is double v)
+                    return Value.CompareTo((int)v);
+
+                if (obj is not ArithmOperatorsTestClass other) return 1;
+                return Value.CompareTo(other.Value);
+            }
+
+            public IEnumerator GetEnumerator()
+            {
+                return new List<int> { 1, 2, 3 }.GetEnumerator();
             }
 
             public static ArithmOperatorsTestClass operator -(ArithmOperatorsTestClass o)
@@ -135,20 +150,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return Value.GetHashCode();
             }
 
-            public int CompareTo(object obj)
-            {
-                if (obj is double v)
-                    return Value.CompareTo((int)v);
-
-                if (obj is not ArithmOperatorsTestClass other) return 1;
-                return Value.CompareTo(other.Value);
-            }
-
-            public System.Collections.IEnumerator GetEnumerator()
-            {
-                return new List<int>() { 1, 2, 3 }.GetEnumerator();
-            }
-
             [SolarSharpUserDataMetamethod("__call")]
             public int DefaultMethod()
             {
@@ -157,15 +158,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             [SolarSharpUserDataMetamethod("__pairs")]
             [SolarSharpUserDataMetamethod("__ipairs")]
-            public System.Collections.IEnumerator Pairs()
+            public IEnumerator Pairs()
             {
-                return new List<DynValue>() {
+                return new List<DynValue>
+                {
                     DynValue.NewTuple(DynValue.NewString("a"), DynValue.NewString("A")),
                     DynValue.NewTuple(DynValue.NewString("b"), DynValue.NewString("B")),
-                    DynValue.NewTuple(DynValue.NewString("c"), DynValue.NewString("C")) }.GetEnumerator();
+                    DynValue.NewTuple(DynValue.NewString("c"), DynValue.NewString("C"))
+                }.GetEnumerator();
             }
-
-
         }
 
         [Test]
@@ -175,7 +176,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<ArithmOperatorsTestClass>();
             S.Globals.Set("o", UserData.Create(new ArithmOperatorsTestClass(-5)));
 
-            string @script = @"
+            var script = @"
 				local str = ''
 				for k,v in pairs(o) do
 					str = str .. k .. v;
@@ -194,7 +195,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<ArithmOperatorsTestClass>();
             S.Globals.Set("o", UserData.Create(new ArithmOperatorsTestClass(-5)));
 
-            string @script = @"
+            var script = @"
 				local str = ''
 				for k,v in ipairs(o) do
 					str = str .. k .. v;
@@ -207,7 +208,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         }
 
 
-
         [Test]
         public void Interop_Meta_Iterator()
         {
@@ -215,7 +215,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<ArithmOperatorsTestClass>();
             S.Globals.Set("o", UserData.Create(new ArithmOperatorsTestClass(-5)));
 
-            string @script = @"
+            var script = @"
 				local sum = 0
 				for i in o do
 					sum = sum + i
@@ -226,11 +226,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(S.DoString(script).Number, Is.EqualTo(6));
         }
-
-
-
-
-
 
 
         [Test]
@@ -253,7 +248,6 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.Catch<ScriptRuntimeException>(() => S.DoString("return #o1"));
         }
-
 
 
         [Test]
@@ -323,7 +317,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             S.Globals.Set("o", UserData.Create(obj));
 
-            DynValue v = S.DoString(code);
+            var v = S.DoString(code);
 
             Assert.Multiple(() =>
             {
@@ -402,9 +396,5 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             OperatorTest("return o % o", 3, 0);
             OperatorTest("return 5 % o", 3, 2);
         }
-
-
-
-
     }
 }

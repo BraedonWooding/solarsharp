@@ -5,61 +5,59 @@ using SolarSharp.Interpreter.Execution.Scopes;
 using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace SolarSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements;
+
+internal class LabelStatement : Statement
 {
-    internal class LabelStatement : Statement
+    private readonly List<GotoStatement> m_Gotos = new();
+    private RuntimeScopeBlock m_StackFrame;
+
+
+    public LabelStatement(ScriptLoadingContext lcontext)
+        : base(lcontext)
     {
-        public string Label { get; private set; }
-        public int Address { get; private set; }
-        public SourceRef SourceRef { get; private set; }
-        public Token NameToken { get; private set; }
+        CheckTokenType(lcontext, TokenType.DoubleColon);
+        NameToken = CheckTokenType(lcontext, TokenType.Name);
+        CheckTokenType(lcontext, TokenType.DoubleColon);
 
-        internal int DefinedVarsCount { get; private set; }
-        internal string LastDefinedVarName { get; private set; }
+        SourceRef = NameToken.GetSourceRef();
+        Label = NameToken.Text;
 
-        private readonly List<GotoStatement> m_Gotos = new();
-        private RuntimeScopeBlock m_StackFrame;
+        lcontext.Scope.DefineLabel(this);
+    }
 
+    public string Label { get; private set; }
+    public int Address { get; private set; }
+    public SourceRef SourceRef { get; private set; }
+    public Token NameToken { get; }
 
-        public LabelStatement(ScriptLoadingContext lcontext)
-            : base(lcontext)
-        {
-            CheckTokenType(lcontext, TokenType.DoubleColon);
-            NameToken = CheckTokenType(lcontext, TokenType.Name);
-            CheckTokenType(lcontext, TokenType.DoubleColon);
+    internal int DefinedVarsCount { get; private set; }
+    internal string LastDefinedVarName { get; private set; }
 
-            SourceRef = NameToken.GetSourceRef();
-            Label = NameToken.Text;
+    internal void SetDefinedVars(int definedVarsCount, string lastDefinedVarsName)
+    {
+        DefinedVarsCount = definedVarsCount;
+        LastDefinedVarName = lastDefinedVarsName;
+    }
 
-            lcontext.Scope.DefineLabel(this);
-        }
-
-        internal void SetDefinedVars(int definedVarsCount, string lastDefinedVarsName)
-        {
-            DefinedVarsCount = definedVarsCount;
-            LastDefinedVarName = lastDefinedVarsName;
-        }
-
-        internal void RegisterGoto(GotoStatement gotostat)
-        {
-            m_Gotos.Add(gotostat);
-        }
+    internal void RegisterGoto(GotoStatement gotostat)
+    {
+        m_Gotos.Add(gotostat);
+    }
 
 
-        public override void Compile(ByteCode bc)
-        {
-            bc.Emit_Clean(m_StackFrame);
+    public override void Compile(ByteCode bc)
+    {
+        bc.Emit_Clean(m_StackFrame);
 
-            Address = bc.GetJumpPointForLastInstruction();
+        Address = bc.GetJumpPointForLastInstruction();
 
-            foreach (var gotostat in m_Gotos)
-                gotostat.SetAddress(Address);
-        }
+        foreach (var gotostat in m_Gotos)
+            gotostat.SetAddress(Address);
+    }
 
-        internal void SetScope(RuntimeScopeBlock runtimeScopeBlock)
-        {
-            m_StackFrame = runtimeScopeBlock;
-        }
+    internal void SetScope(RuntimeScopeBlock runtimeScopeBlock)
+    {
+        m_StackFrame = runtimeScopeBlock;
     }
 }
-

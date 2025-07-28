@@ -1,31 +1,25 @@
 ﻿using System;
 
-namespace SolarSharp.Interpreter.Interop.BasicDescriptors
+namespace SolarSharp.Interpreter.Interop.BasicDescriptors;
+
+/// <summary>
+///     Permissions for members access
+/// </summary>
+[Flags]
+public enum MemberDescriptorAccess
 {
     /// <summary>
-    /// Permissions for members access
+    ///     The member can be read from
     /// </summary>
-    [Flags]
-    public enum MemberDescriptorAccess
-    {
-        /// <summary>
-        /// The member can be read from
-        /// </summary>
-        CanRead = 1,
-        /// <summary>
-        /// The member can be written to
-        /// </summary>
-        CanWrite = 2,
-        /// <summary>
-        /// The can be invoked
-        /// </summary>
-        CanExecute = 4
-    }
+    CanRead = 1,
 
+    /// <summary>
+    ///     The member can be written to
+    /// </summary>
+    CanWrite = 2,
 
-
-
-
-
-
+    /// <summary>
+    ///     The can be invoked
+    /// </summary>
+    CanExecute = 4
 }
