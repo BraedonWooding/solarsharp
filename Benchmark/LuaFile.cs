@@ -11,7 +11,7 @@ public class LuaFile
     public string FileName { get; set; }
     public string Contents { get; set; }
 
-    public override string? ToString()
+    public override string ToString()
     {
         return Path.GetFileName(FileName);
     }

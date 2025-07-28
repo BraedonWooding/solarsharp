@@ -19,24 +19,24 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Script S = new();
 
             var globalCtx = S.Globals;
-            globalCtx.Set(DynValue.NewString("xassert"), DynValue.NewCallback(new CallbackFunction((x, a) =>
+            globalCtx.Set(DynValue.NewString("xassert"), DynValue.NewCallback(new CallbackFunction((_, a) =>
             {
                 if (!a[1].CastToBool())
                     failedTests.Add(a[0].String);
 
                 return DynValue.Nil;
             })));
-            globalCtx.Set(DynValue.NewString("assert"), DynValue.NewCallback(new CallbackFunction((x, a) =>
+            globalCtx.Set(DynValue.NewString("assert"), DynValue.NewCallback(new CallbackFunction((_, a) =>
             {
                 ++i;
 
                 if (!a[0].CastToBool())
-                    failedTests.Add(string.Format("assert #{0}", i));
+                    failedTests.Add($"assert #{i}");
 
                 return DynValue.Nil;
             })));
 
-            globalCtx.Set(DynValue.NewString("print"), DynValue.NewCallback(new CallbackFunction((x, a) =>
+            globalCtx.Set(DynValue.NewString("print"), DynValue.NewCallback(new CallbackFunction((_, _) =>
             {
                 // Debug.WriteLine(string.Join(" ", a.Select(v => v.AsString()).ToArray()));
                 return DynValue.Nil;
@@ -45,8 +45,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var res = S.DoString(script);
 
-            Assert.That(failedTests.Any(), Is.False, string.Format("Failed asserts {0}",
-                string.Join(", ", failedTests.Select(xi => xi.ToString()).ToArray())));
+            Assert.That(failedTests.Any(), Is.False,
+	            $"Failed asserts {string.Join(", ", failedTests.Select(xi => xi.ToString()).ToArray())}");
         }
 
         [Test]

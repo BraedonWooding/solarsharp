@@ -8,7 +8,7 @@ namespace SolarSharp.Interpreter.DataStructs;
 ///     Provides facility to create a "sliced" view over an existing IList<typeparamref name="T" />
 /// </summary>
 /// <typeparam name="T">The type of the items contained in the collection</typeparam>
-internal class Slice<T> : IEnumerable<T>, IList<T>
+internal class Slice<T> : IList<T>
 {
     private readonly IList<T> m_SourceList;
 
@@ -189,7 +189,7 @@ internal class Slice<T> : IEnumerable<T>, IList<T>
     private int CalcRealIndex(int index)
     {
         if (index < 0 || index >= Count)
-            throw new ArgumentOutOfRangeException("index");
+            throw new ArgumentOutOfRangeException(nameof(index));
 
         if (Reversed) return From + Count - index - 1;
 

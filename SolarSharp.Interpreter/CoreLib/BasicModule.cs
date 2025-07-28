@@ -226,7 +226,6 @@ public class BasicModule
         var ee = args[0].Type != DataType.Number
             ? args.AsType(0, "tonumber", DataType.String)
             : DynValue.NewString(args[0].Number.ToString(CultureInfo.InvariantCulture));
-        ;
 
         var bb = (int)b.Number;
 

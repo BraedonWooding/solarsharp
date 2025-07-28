@@ -39,12 +39,9 @@ internal static class ScriptToClrConversions
     {
         var converter =
             Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, typeof(object));
-        if (converter != null)
-        {
-            var v = converter(value);
-            if (v != null)
-                return v;
-        }
+        var v = converter?.Invoke(value);
+        if (v != null)
+            return v;
 
         switch (value.Type)
         {
@@ -66,9 +63,7 @@ internal static class ScriptToClrConversions
             case DataType.UserData:
                 if (value.UserData.Object != null)
                     return value.UserData.Object;
-                if (value.UserData.Descriptor != null)
-                    return value.UserData.Descriptor.Type;
-                return null;
+                return value.UserData.Descriptor?.Type;
             case DataType.ClrFunction:
                 return value.Callback;
             default:
@@ -86,11 +81,8 @@ internal static class ScriptToClrConversions
             desiredType = desiredType.GetElementType();
 
         var converter = Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, desiredType);
-        if (converter != null)
-        {
-            var v = converter(value);
-            if (v != null) return v;
-        }
+        var v = converter?.Invoke(value);
+        if (v != null) return v;
 
         if (desiredType == typeof(DynValue))
             return value;

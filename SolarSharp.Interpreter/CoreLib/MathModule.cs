@@ -81,49 +81,49 @@ public class MathModule
     [SolarSharpModuleMethod]
     public static DynValue abs(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "abs", d => Math.Abs(d));
+        return exec1(args, "abs", Math.Abs);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue acos(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "acos", d => Math.Acos(d));
+        return exec1(args, "acos", Math.Acos);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue asin(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "asin", d => Math.Asin(d));
+        return exec1(args, "asin", Math.Asin);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue atan(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "atan", d => Math.Atan(d));
+        return exec1(args, "atan", Math.Atan);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue atan2(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec2(args, "atan2", (d1, d2) => Math.Atan2(d1, d2));
+        return exec2(args, "atan2", Math.Atan2);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue ceil(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "ceil", d => Math.Ceiling(d));
+        return exec1(args, "ceil", Math.Ceiling);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue cos(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "cos", d => Math.Cos(d));
+        return exec1(args, "cos", Math.Cos);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue cosh(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "cosh", d => Math.Cosh(d));
+        return exec1(args, "cosh", Math.Cosh);
     }
 
     [SolarSharpModuleMethod]
@@ -135,19 +135,19 @@ public class MathModule
     [SolarSharpModuleMethod]
     public static DynValue exp(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "exp", d => Math.Exp(d));
+        return exec1(args, "exp", Math.Exp);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue floor(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "floor", d => Math.Floor(d));
+        return exec1(args, "floor", Math.Floor);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue fmod(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec2(args, "fmod", (d1, d2) => Math.IEEERemainder(d1, d2));
+        return exec2(args, "fmod", Math.IEEERemainder);
     }
 
     [SolarSharpModuleMethod]
@@ -212,19 +212,19 @@ public class MathModule
     [SolarSharpModuleMethod]
     public static DynValue log(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec2n(args, "log", Math.E, (d1, d2) => Math.Log(d1, d2));
+        return exec2n(args, "log", Math.E, Math.Log);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue max(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return execaccum(args, "max", (d1, d2) => Math.Max(d1, d2));
+        return execaccum(args, "max", Math.Max);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue min(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return execaccum(args, "min", (d1, d2) => Math.Min(d1, d2));
+        return execaccum(args, "min", Math.Min);
     }
 
     [SolarSharpModuleMethod]
@@ -239,7 +239,7 @@ public class MathModule
     [SolarSharpModuleMethod]
     public static DynValue pow(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec2(args, "pow", (d1, d2) => Math.Pow(d1, d2));
+        return exec2(args, "pow", Math.Pow);
     }
 
     [SolarSharpModuleMethod]
@@ -283,31 +283,31 @@ public class MathModule
     [SolarSharpModuleMethod]
     public static DynValue sin(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "sin", d => Math.Sin(d));
+        return exec1(args, "sin", Math.Sin);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue sinh(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "sinh", d => Math.Sinh(d));
+        return exec1(args, "sinh", Math.Sinh);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue sqrt(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "sqrt", d => Math.Sqrt(d));
+        return exec1(args, "sqrt", Math.Sqrt);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue tan(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "tan", d => Math.Tan(d));
+        return exec1(args, "tan", Math.Tan);
     }
 
     [SolarSharpModuleMethod]
     public static DynValue tanh(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        return exec1(args, "tanh", d => Math.Tanh(d));
+        return exec1(args, "tanh", Math.Tanh);
     }
 }
 #pragma warning restore IDE0060 // Remove unused parameter

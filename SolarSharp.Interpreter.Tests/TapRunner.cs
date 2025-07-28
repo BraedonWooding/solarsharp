@@ -14,7 +14,7 @@ namespace SolarSharp.Interpreter.Tests
             return File.Exists(name);
         }
 
-        public override object LoadFile(string file, Table globalContext)
+        public override object LoadFile(string file)
         {
             return new FileStream(file, FileMode.Open, FileAccess.Read);
         }
@@ -37,16 +37,19 @@ namespace SolarSharp.Interpreter.Tests
         public void Print(string str)
         {
             TestContext.Out.WriteLine(str);
-            Assert.That(str.Trim(), Does.Not.StartWith("not ok"), string.Format("TAP fail ({0}) : {1}", m_File, str));
+            Assert.That(str.Trim(), Does.Not.StartWith("not ok"), $"TAP fail ({m_File}) : {str}");
         }
 
         public void Run()
         {
-            Script S = new(CoreModules.Preset_Complete);
-
-            S.Options.DebugPrint = Print;
-
-            S.Options.UseLuaErrorLocations = true;
+            Script S = new(CoreModules.Preset_Complete)
+            {
+                Options =
+                {
+                    DebugPrint = Print,
+                    UseLuaErrorLocations = true
+                }
+            };
 
             S.Globals.Set("arg", DynValue.NewTable(S));
 

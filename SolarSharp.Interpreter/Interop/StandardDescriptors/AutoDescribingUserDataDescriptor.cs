@@ -70,9 +70,7 @@ public class AutoDescribingUserDataDescriptor : IUserDataDescriptor
     /// <returns></returns>
     public string AsString(object obj)
     {
-        if (obj != null)
-            return obj.ToString();
-        return null;
+        return obj?.ToString();
     }
 
     /// <summary>

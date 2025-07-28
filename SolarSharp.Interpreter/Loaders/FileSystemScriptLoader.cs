@@ -1,6 +1,5 @@
 ﻿#if DOTNET_CORE || (!(PCL || ENABLE_DOTNET || NETFX_CORE))
 using System.IO;
-using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Loaders;
 
@@ -26,11 +25,10 @@ public class FileSystemScriptLoader : ScriptLoaderBase
     ///     assumed to be either a script or the output of a string.dump call. If a Stream, autodetection takes place.
     /// </summary>
     /// <param name="file">The file.</param>
-    /// <param name="globalContext">The global context.</param>
     /// <returns>
     ///     A string, a byte[] or a Stream.
     /// </returns>
-    public override object LoadFile(string file, Table globalContext)
+    public override object LoadFile(string file)
     {
         return new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
     }

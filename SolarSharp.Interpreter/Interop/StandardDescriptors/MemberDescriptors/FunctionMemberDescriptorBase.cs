@@ -183,7 +183,7 @@ public abstract class FunctionMemberDescriptorBase : IOverloadableMemberDescript
     ///     specified.
     /// </param>
     /// <returns>The arguments, appropriately converted.</returns>
-    protected virtual object[] BuildArgumentList(Script script, object obj, ScriptExecutionContext context,
+    protected object[] BuildArgumentList(Script script, object obj, ScriptExecutionContext context,
         CallbackArguments args,
         out List<int> outParams)
     {

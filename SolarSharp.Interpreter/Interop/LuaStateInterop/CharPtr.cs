@@ -45,7 +45,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
 using System.Diagnostics;
 using System.Text;
 
@@ -55,12 +54,6 @@ public class CharPtr
 {
     public char[] chars;
     public int index;
-
-    public CharPtr()
-    {
-        chars = null;
-        index = 0;
-    }
 
     public CharPtr(string str)
     {
@@ -72,12 +65,6 @@ public class CharPtr
     {
         chars = ptr.chars;
         index = ptr.index;
-    }
-
-    public CharPtr(CharPtr ptr, int index)
-    {
-        chars = ptr.chars;
-        this.index = index;
     }
 
     public CharPtr(char[] chars)
@@ -97,12 +84,6 @@ public class CharPtr
         chars = new char[bytes.Length];
         for (var i = 0; i < bytes.Length; i++) chars[i] = (char)bytes[i];
 
-        index = 0;
-    }
-
-    public CharPtr(IntPtr ptr)
-    {
-        chars = new char[0];
         index = 0;
     }
 

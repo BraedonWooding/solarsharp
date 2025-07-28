@@ -126,10 +126,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             try
             {
-                var lua = new Script();
-                lua.Globals["DictionaryIntInt"] = typeof(Dictionary<int, int>);
+                var lua = new Script
+                {
+                    Globals =
+                    {
+                        ["DictionaryIntInt"] = typeof(Dictionary<int, int>)
+                    }
+                };
 
-                var script = @"local dict = DictionaryIntInt.__new(); local res, v = dict.TryGetValue(0)";
+                var script = "local dict = DictionaryIntInt.__new(); local res, v = dict.TryGetValue(0)";
                 lua.DoString(script);
                 lua.DoString(script);
             }

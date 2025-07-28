@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Platforms;
@@ -50,9 +48,7 @@ public abstract class PlatformAccessorBase : IPlatformAccessor
 	/// <returns>null</returns>
 	public virtual string DefaultInput(string prompt)
     {
-#pragma warning disable 618
-        return DefaultInput();
-#pragma warning restore 618
+		return null;
     }
 
 	/// <summary>
@@ -60,12 +56,10 @@ public abstract class PlatformAccessorBase : IPlatformAccessor
 	///     Can have an invalid implementation if 'io' module is filtered out.
 	///     It should return a correctly initialized Stream for the given file and access
 	/// </summary>
-	/// <param name="script"></param>
 	/// <param name="filename">The filename.</param>
-	/// <param name="encoding">The encoding.</param>
 	/// <param name="mode">The mode (as per Lua usage - e.g. 'w+', 'rb', etc.).</param>
 	/// <returns></returns>
-	public abstract Stream IO_OpenFile(Script script, string filename, Encoding encoding, string mode);
+	public abstract Stream IO_OpenFile(string filename, string mode);
 
 
 	/// <summary>
@@ -227,18 +221,5 @@ public abstract class PlatformAccessorBase : IPlatformAccessor
 #else
         return "UNKNOWNHW";
 #endif
-    }
-
-    /// <summary>
-    ///     DEPRECATED.
-    ///     This is kept for backward compatibility, see the overload taking a prompt as an input parameter.
-    ///     Default handler for interactive line input calls. Can be customized in ScriptOptions.
-    ///     If an inheriting class whants to give a meaningful implementation, this method MUST be overridden.
-    /// </summary>
-    /// <returns>null</returns>
-    [Obsolete("Replace with DefaultInput(string)")]
-    public virtual string DefaultInput()
-    {
-        return null;
     }
 }

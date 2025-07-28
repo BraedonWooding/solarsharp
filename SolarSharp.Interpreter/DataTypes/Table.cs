@@ -284,7 +284,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
         Array.Sort(ArraySegment, 1, Length, sortComparer);
     }
 
-    private struct Enumerator : IEnumerator<KeyValuePair<DynValue, DynValue>>, IEnumerator
+    private struct Enumerator : IEnumerator<KeyValuePair<DynValue, DynValue>>
     {
         private readonly Table table;
         private int _index;
@@ -514,7 +514,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// <param name="value">The value.</param>
     public void Set(object[] keys, DynValue value)
     {
-        if (keys == null || keys.Length <= 0)
+        if (keys is not { Length: > 0 })
             throw ScriptRuntimeException.TableIndexIsNil();
 
         ResolveMultipleKeys(keys, out var key).Set(key, value);
@@ -587,7 +587,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// <param name="keys">The keys to access the table and subtables</param>
     public DynValue Get(params object[] keys)
     {
-        if (keys == null || keys.Length <= 0)
+        if (keys is not { Length: > 0 })
             return DynValue.Nil;
 
         return ResolveMultipleKeys(keys, out var key).Get(key);

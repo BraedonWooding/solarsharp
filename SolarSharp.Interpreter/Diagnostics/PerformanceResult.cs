@@ -39,12 +39,7 @@ public class PerformanceResult
     /// </summary>
     public override string ToString()
     {
-        return string.Format("{0}{1} : {2} times / {3} {4}",
-            Name,
-            Global ? "(g)" : "",
-            Instances,
-            Counter,
-            PerformanceCounterTypeToString(Type));
+        return $"{Name}{(Global ? "(g)" : "")} : {Instances} times / {Counter} {PerformanceCounterTypeToString(Type)}";
     }
 
     /// <summary>

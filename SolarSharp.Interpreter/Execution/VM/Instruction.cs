@@ -101,8 +101,8 @@ internal class Instruction
         if ((usage & (int)InstructionFieldUsage.SymbolList) != 0)
         {
             wr.Write(SymbolList.Length);
-            for (var i = 0; i < SymbolList.Length; i++)
-                WriteSymbol(wr, SymbolList[i], symbolMap);
+            foreach (var t in SymbolList)
+                WriteSymbol(wr, t, symbolMap);
         }
     }
 
@@ -184,7 +184,7 @@ internal class Instruction
             case DataType.Table:
                 return DynValue.NewTable(envTable);
             default:
-                throw new NotSupportedException(string.Format("Unsupported type in chunk dump : {0}", dt));
+                throw new NotSupportedException($"Unsupported type in chunk dump : {dt}");
         }
     }
 
@@ -216,7 +216,7 @@ internal class Instruction
                 wr.Write(value.String);
                 break;
             default:
-                throw new NotSupportedException(string.Format("Unsupported type in chunk dump : {0}", value.Type));
+                throw new NotSupportedException($"Unsupported type in chunk dump : {value.Type}");
         }
     }
 

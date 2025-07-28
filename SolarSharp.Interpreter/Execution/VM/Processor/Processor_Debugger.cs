@@ -143,12 +143,12 @@ internal sealed partial class Processor
     private void ResetBreakPoints(DebuggerAction action)
     {
         var src = m_Script.GetSourceCode(action.SourceID);
-        ResetBreakPoints(src, new HashSet<int>(action.Lines));
+        ResetBreakPoints(src, [..action.Lines]);
     }
 
     internal HashSet<int> ResetBreakPoints(SourceCode src, HashSet<int> lines)
     {
-        HashSet<int> result = new();
+        HashSet<int> result = [];
 
         foreach (var srf in src.Refs)
         {
@@ -237,8 +237,8 @@ internal sealed partial class Processor
         var callStack = Debugger_GetCallStack(sref);
         var watches = Debugger_RefreshWatches(context, watchList);
         var vstack = Debugger_RefreshVStack();
-        var locals = Debugger_RefreshLocals(context);
-        var threads = Debugger_RefreshThreads(context);
+        var locals = Debugger_RefreshLocals();
+        var threads = Debugger_RefreshThreads();
 
         m_Debug.DebuggerAttached.Update(WatchType.CallStack, callStack);
         m_Debug.DebuggerAttached.Update(WatchType.Watches, watches);
@@ -250,7 +250,7 @@ internal sealed partial class Processor
             m_Debug.DebuggerAttached.RefreshBreakpoints(m_Debug.BreakPoints);
     }
 
-    private List<WatchItem> Debugger_RefreshThreads(ScriptExecutionContext context)
+    private List<WatchItem> Debugger_RefreshThreads()
     {
         var coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : m_CoroutinesStack;
 
@@ -263,7 +263,7 @@ internal sealed partial class Processor
 
     private List<WatchItem> Debugger_RefreshVStack()
     {
-        List<WatchItem> lwi = new();
+        List<WatchItem> lwi = [];
         for (var i = 0; i < Math.Min(32, m_ValueStack.Count); i++)
             lwi.Add(new WatchItem
             {
@@ -279,9 +279,9 @@ internal sealed partial class Processor
         return watchList.Select(w => Debugger_RefreshWatch(context, w)).ToList();
     }
 
-    private List<WatchItem> Debugger_RefreshLocals(ScriptExecutionContext context)
+    private List<WatchItem> Debugger_RefreshLocals()
     {
-        List<WatchItem> locals = new();
+        List<WatchItem> locals = [];
         var top = m_ExecutionStack.Peek();
 
         if (top != null && top.Debug_Symbols != null && top.LocalScope != null)
@@ -329,7 +329,7 @@ internal sealed partial class Processor
 
     internal List<WatchItem> Debugger_GetCallStack(SourceRef startingRef)
     {
-        List<WatchItem> wis = new();
+        List<WatchItem> wis = [];
 
         for (var i = 0; i < m_ExecutionStack.Count; i++)
         {

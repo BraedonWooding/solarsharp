@@ -30,10 +30,10 @@ internal class EnumerableWrapper : IUserDataType
             if (idx == "Current" || idx == "current") return DynValue.FromObject(script, m_Enumerator.Current);
 
             if (idx == "MoveNext" || idx == "moveNext" || idx == "move_next")
-                return DynValue.NewCallback((ctx, args) => DynValue.NewBoolean(m_Enumerator.MoveNext()));
+                return DynValue.NewCallback((_, _) => DynValue.NewBoolean(m_Enumerator.MoveNext()));
 
             if (idx == "Reset" || idx == "reset")
-                return DynValue.NewCallback((ctx, args) =>
+                return DynValue.NewCallback((_, _) =>
                 {
                     Reset();
                     return DynValue.Nil;

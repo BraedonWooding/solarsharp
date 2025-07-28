@@ -12,11 +12,11 @@ internal class RegexPolyFillSyntaxReceiver : ISyntaxReceiver
     public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
     {
         // Look for method declarations
-        if (syntaxNode is MethodDeclarationSyntax methodDecl)
-            // Must have GeneratedRegexAttribute
-            if (methodDecl.AttributeLists
-                .SelectMany(a => a.Attributes)
-                .Any(attr => attr.Name.ToString().Contains("GeneratedRegex")))
-                CandidateMethods.Add(methodDecl);
+        if (syntaxNode is not MethodDeclarationSyntax methodDecl) return;
+        // Must have GeneratedRegexAttribute
+        if (methodDecl.AttributeLists
+            .SelectMany(a => a.Attributes)
+            .Any(attr => attr.Name.ToString().Contains("GeneratedRegex")))
+            CandidateMethods.Add(methodDecl);
     }
 }

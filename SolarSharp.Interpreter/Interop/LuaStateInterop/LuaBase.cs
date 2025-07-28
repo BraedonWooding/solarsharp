@@ -105,7 +105,7 @@ public partial class LuaBase
 
     protected static string LuaToString(LuaState luaState, lua_Integer p)
     {
-        return LuaLCheckLString(luaState, p, out var l);
+        return LuaLCheckLString(luaState, p, out _);
     }
 
     protected static void LuaLAddValue(LuaLBuffer b)
@@ -155,7 +155,7 @@ public partial class LuaBase
         return L.Count;
     }
 
-    protected static lua_Integer LuaLError(LuaState luaState, string message, params object[] args)
+    protected static lua_Integer LuaLError(string message, params object[] args)
     {
         throw new ScriptRuntimeException(message, args);
     }
@@ -306,13 +306,17 @@ public partial class LuaBase
         {
             if (nresults == -1) nresults = ret.Type == DataType.Tuple ? ret.Tuple.Length : 1;
 
-            var vals = ret.Type == DataType.Tuple ? ret.Tuple : new DynValue[1] { ret };
+            var vals = ret.Type == DataType.Tuple ? ret.Tuple : [ret];
 
             var copied = 0;
 
             for (var i = 0; i < vals.Length && copied < nresults; i++, copied++) L.Push(vals[i]);
 
-            while (copied < nresults) L.Push(DynValue.Nil);
+            while (copied < nresults)
+            {
+                L.Push(DynValue.Nil);
+                copied++;
+            }
         }
     }
 }

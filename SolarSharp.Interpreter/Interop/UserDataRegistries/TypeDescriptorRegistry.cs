@@ -151,7 +151,7 @@ internal static class TypeDescriptorRegistry
     {
         lock (s_Lock)
         {
-            if (s_TypeRegistry.ContainsKey(t)) PerformRegistration(t, null, s_TypeRegistry[t]);
+            if (s_TypeRegistry.TryGetValue(t, out var value)) PerformRegistration(t, null, value);
         }
     }
 
@@ -217,7 +217,7 @@ internal static class TypeDescriptorRegistry
 #if NETFX_CORE
 							System.Threading.Tasks.Task.Run(() => ((IOptimizableDescriptor)udd).Optimize());
 #else
-                    ThreadPool.QueueUserWorkItem(o => ((IOptimizableDescriptor)udd).Optimize());
+                    ThreadPool.QueueUserWorkItem(_ => ((IOptimizableDescriptor)udd).Optimize());
 #endif
                 }
 
@@ -288,8 +288,8 @@ internal static class TypeDescriptorRegistry
             IUserDataDescriptor typeDescriptor = null;
 
             // if the type has been explicitly registered, return its descriptor as it's complete
-            if (s_TypeRegistry.ContainsKey(type))
-                return s_TypeRegistry[type];
+            if (s_TypeRegistry.TryGetValue(type, out var forType))
+                return forType;
 
             if (RegistrationPolicy.AllowTypeAutoRegistration(type))
                 // no autoreg of delegates
@@ -358,12 +358,6 @@ internal static class TypeDescriptorRegistry
             return new CompositeUserDataDescriptor(descriptors, type);
         }
     }
-
-    private static bool FrameworkIsAssignableFrom(Type type)
-    {
-        throw new NotImplementedException();
-    }
-
 
     /// <summary>
     ///     Determines whether the specified type is blacklisted.

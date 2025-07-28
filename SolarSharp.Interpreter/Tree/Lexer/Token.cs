@@ -30,11 +30,11 @@ internal class Token
     {
         var tokenTypeString = (Type + "                                                      ")[..16];
 
-        var location = string.Format("{0}:{1}-{2}:{3}", FromLine, FromCol, ToLine, ToCol);
+        var location = $"{FromLine}:{FromCol}-{ToLine}:{ToCol}";
 
         location = (location + "                                                      ")[..10];
 
-        return string.Format("{0}  - {1} - '{2}'", tokenTypeString, location, Text ?? "");
+        return $"{tokenTypeString}  - {location} - '{Text ?? ""}'";
     }
 
     public static TokenType? GetReservedTokenType(string reservedWord)
@@ -104,17 +104,11 @@ internal class Token
 
     public bool IsEndOfBlock()
     {
-        switch (Type)
+        return Type switch
         {
-            case TokenType.Else:
-            case TokenType.ElseIf:
-            case TokenType.End:
-            case TokenType.Until:
-            case TokenType.Eof:
-                return true;
-            default:
-                return false;
-        }
+            TokenType.Else or TokenType.ElseIf or TokenType.End or TokenType.Until or TokenType.Eof => true,
+            _ => false
+        };
     }
 
     public bool IsUnaryOperator()

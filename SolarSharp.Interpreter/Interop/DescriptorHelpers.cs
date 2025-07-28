@@ -38,14 +38,11 @@ public static class DescriptorHelpers
         var ha = mi.GetCustomAttributes(true).OfType<SolarSharpHiddenAttribute>().SingleOrDefault();
 
         if (va != null && ha != null && va.Visible)
-            throw new InvalidOperationException(string.Format(
-                "A member ('{0}') can't have discording SolarSharpHiddenAttribute and SolarSharpVisibleAttribute.",
-                mi.Name));
+            throw new InvalidOperationException(
+                $"A member ('{mi.Name}') can't have discording SolarSharpHiddenAttribute and SolarSharpVisibleAttribute.");
         if (ha != null)
             return false;
-        if (va != null)
-            return va.Visible;
-        return null;
+        return va?.Visible;
     }
 
     public static bool IsDelegateType(this Type t)
@@ -173,7 +170,7 @@ public static class DescriptorHelpers
         }
         catch (ReflectionTypeLoadException)
         {
-            return new Type[0];
+            return [];
         }
     }
 

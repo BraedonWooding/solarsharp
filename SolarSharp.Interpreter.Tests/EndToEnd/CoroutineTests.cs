@@ -108,10 +108,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				";
 
             // Load the code and get the returned function
-            Script script = new();
-
-            script.Globals["callback"] = DynValue.NewCallback((ctx, args) => args[0].Function.Call()
-            );
+            Script script = new()
+            {
+	            Globals =
+	            {
+		            ["callback"] = DynValue.NewCallback((_, args) => args[0].Function.Call()
+		            )
+	            }
+            };
 
             var ret = script.DoString(code);
 
@@ -167,9 +171,13 @@ checkresume(6, false, 'cannot resume dead coroutine');
 				";
 
             // Load the code and get the returned function
-            Script script = new();
-
-            script.Options.DebugPrint = s => last = s;
+            Script script = new()
+            {
+	            Options =
+	            {
+		            DebugPrint = s => last = s
+	            }
+            };
 
             script.DoString(code);
 

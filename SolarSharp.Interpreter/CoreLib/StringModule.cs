@@ -88,8 +88,7 @@ public class StringModule
         var vi = args.AsType(1, "byte", DataType.Number, true);
         var vj = args.AsType(2, "byte", DataType.Number, true);
 
-        return PerformByteLike(vs, vi, vj,
-            i => Unicode2Ascii(i));
+        return PerformByteLike(vs, vi, vj, Unicode2Ascii);
     }
 
     [SolarSharpModuleMethod]
@@ -121,24 +120,6 @@ public class StringModule
         for (var i = 0; i < length; ++i) rets[i] = DynValue.NewNumber(filter(s[i]));
 
         return DynValue.NewTuple(rets);
-    }
-
-#pragma warning disable IDE0051 // Remove unused private members
-    private static int? AdjustIndex(string s, DynValue vi, int defval)
-#pragma warning restore IDE0051 // Remove unused private members
-    {
-        if (vi.IsNil())
-            return defval;
-
-        var i = (int)Math.Round(vi.Number, 0);
-
-        if (i == 0)
-            return null;
-
-        if (i > 0)
-            return i - 1;
-
-        return s.Length - i;
     }
 
     [SolarSharpModuleMethod]

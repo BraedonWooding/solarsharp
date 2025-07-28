@@ -177,28 +177,28 @@ public class OverloadedMethodMemberDescriptor : IOptimizableDescriptor, IMemberD
         }
 
         if (extMethodCacheNotExpired)
-            for (var i = 0; i < m_Cache.Length; i++)
-                if (m_Cache[i] != null && CheckMatch(obj != null, args, m_Cache[i]))
+            foreach (var t in m_Cache)
+                if (t != null && CheckMatch(obj != null, args, t))
                 {
 #if DEBUG_OVERLOAD_RESOLVER
 						System.Diagnostics.Debug.WriteLine(string.Format("[OVERLOAD] : CACHED! slot {0}, hits: {1}", i, m_CacheHits));
 #endif
-                    return m_Cache[i].Method.Execute(script, obj, context, args);
+                    return t.Method.Execute(script, obj, context, args);
                 }
 
         // resolve on overloads first
         var maxScore = 0;
         IOverloadableMemberDescriptor bestOverload = null;
 
-        for (var i = 0; i < m_Overloads.Count; i++)
-            if (obj != null || m_Overloads[i].IsStatic)
+        foreach (var t in m_Overloads)
+            if (obj != null || t.IsStatic)
             {
-                var score = CalcScoreForOverload(context, args, m_Overloads[i], false);
+                var score = CalcScoreForOverload(args, t, false);
 
                 if (score > maxScore)
                 {
                     maxScore = score;
-                    bestOverload = m_Overloads[i];
+                    bestOverload = t;
                 }
             }
 
@@ -210,14 +210,14 @@ public class OverloadedMethodMemberDescriptor : IOptimizableDescriptor, IMemberD
                 m_ExtOverloads = UserData.GetExtensionMethodsByNameAndType(Name, DeclaringType);
             }
 
-            for (var i = 0; i < m_ExtOverloads.Count; i++)
+            foreach (var t in m_ExtOverloads)
             {
-                var score = CalcScoreForOverload(context, args, m_ExtOverloads[i], true);
+                var score = CalcScoreForOverload(args, t, true);
 
                 if (score > maxScore)
                 {
                     maxScore = score;
-                    bestOverload = m_ExtOverloads[i];
+                    bestOverload = t;
                 }
             }
         }
@@ -303,12 +303,11 @@ public class OverloadedMethodMemberDescriptor : IOptimizableDescriptor, IMemberD
     /// <summary>
     ///     Calculates the score for the overload.
     /// </summary>
-    /// <param name="context">The context.</param>
     /// <param name="args">The arguments.</param>
     /// <param name="method">The method.</param>
     /// <param name="isExtMethod">if set to <c>true</c>, is an extension method.</param>
     /// <returns></returns>
-    private int CalcScoreForOverload(ScriptExecutionContext context, CallbackArguments args,
+    private int CalcScoreForOverload(CallbackArguments args,
         IOverloadableMemberDescriptor method, bool isExtMethod)
     {
         var totalScore = ScriptToClrConversions.WEIGHT_EXACT_MATCH;

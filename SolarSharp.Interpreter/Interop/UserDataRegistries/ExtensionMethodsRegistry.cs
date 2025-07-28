@@ -33,7 +33,7 @@ internal class ExtensionMethodsRegistry
 
             foreach (var mi in Framework.Do.GetMethods(type).Where(_mi => _mi.IsStatic))
             {
-                if (mi.GetCustomAttributes(typeof(ExtensionAttribute), false).Count() == 0)
+                if (mi.GetCustomAttributes(typeof(ExtensionAttribute), false).Length == 0)
                     continue;
 
                 if (mi.ContainsGenericParameters)
@@ -55,11 +55,6 @@ internal class ExtensionMethodsRegistry
             if (changesDone)
                 ++s_ExtensionMethodChangeVersion;
         }
-    }
-
-    private static object FrameworkGetMethods()
-    {
-        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -112,7 +107,7 @@ internal class ExtensionMethodsRegistry
             if (ugm.AlreadyAddedTypes.Add(genericType))
                 if (genericType != null)
                 {
-                    var mi = InstantiateMethodInfo(ugm.Method, extensionType, genericType, extendedType);
+                    var mi = InstantiateMethodInfo(ugm.Method, genericType);
                     if (mi != null)
                     {
                         if (!MethodMemberDescriptor.CheckMethodIsCompatible(mi, false))
@@ -132,8 +127,7 @@ internal class ExtensionMethodsRegistry
             .ToList();
     }
 
-    private static MethodInfo InstantiateMethodInfo(MethodInfo mi, Type extensionType, Type genericType,
-        Type extendedType)
+    private static MethodInfo InstantiateMethodInfo(MethodInfo mi, Type genericType)
     {
         var defs = mi.GetGenericArguments();
         var tdefs = Framework.Do.GetGenericArguments(genericType);

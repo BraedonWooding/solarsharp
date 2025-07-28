@@ -20,7 +20,7 @@ public class ObjectCallbackMemberDescriptor : FunctionMemberDescriptorBase
     /// </summary>
     /// <param name="funcName">Name of the function.</param>
     public ObjectCallbackMemberDescriptor(string funcName)
-        : this(funcName, (o, c, a) => DynValue.Void, new ParameterDescriptor[0])
+        : this(funcName, (_, _, _) => DynValue.Void, [])
     {
     }
 
@@ -35,7 +35,7 @@ public class ObjectCallbackMemberDescriptor : FunctionMemberDescriptorBase
     /// <param name="callBack">The callback function.</param>
     public ObjectCallbackMemberDescriptor(string funcName,
         Func<object, ScriptExecutionContext, CallbackArguments, object> callBack)
-        : this(funcName, callBack, new ParameterDescriptor[0])
+        : this(funcName, callBack, [])
     {
     }
 

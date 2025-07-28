@@ -1515,7 +1515,7 @@ internal class LuaDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDiction
             return new Enumerator(_dictionary);
         }
 
-        public struct Enumerator : IEnumerator<TKey>, IEnumerator
+        public struct Enumerator : IEnumerator<TKey>
         {
             private readonly LuaDictionary<TKey, TValue> _dictionary;
             private int _index;
@@ -1685,7 +1685,7 @@ internal class LuaDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDiction
             return new Enumerator(_dictionary);
         }
 
-        public struct Enumerator : IEnumerator<TValue>, IEnumerator
+        public struct Enumerator : IEnumerator<TValue>
         {
             private readonly LuaDictionary<TKey, TValue> _dictionary;
             private int _index;

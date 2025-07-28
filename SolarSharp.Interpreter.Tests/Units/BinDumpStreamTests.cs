@@ -18,7 +18,8 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             using (BinDumpBinaryWriter bdbw = new(ms, Encoding.UTF8))
             {
-                for (var i = 0; i < values.Length; i++) bdbw.Write(values[i]);
+                foreach (var t in values)
+                    bdbw.Write(t);
             }
 
             ms.Seek(0, SeekOrigin.Begin);
@@ -41,7 +42,8 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             using (BinDumpBinaryWriter bdbw = new(ms, Encoding.UTF8))
             {
-                for (var i = 0; i < values.Length; i++) bdbw.Write(values[i]);
+                foreach (var t in values)
+                    bdbw.Write(t);
             }
 
             ms.Seek(0, SeekOrigin.Begin);
@@ -65,7 +67,8 @@ namespace SolarSharp.Interpreter.Tests.Units
 
             using (BinDumpBinaryWriter bdbw = new(ms, Encoding.UTF8))
             {
-                for (var i = 0; i < values.Length; i++) bdbw.Write(values[i]);
+                foreach (var t in values)
+                    bdbw.Write(t);
             }
 
             ms.Seek(0, SeekOrigin.Begin);

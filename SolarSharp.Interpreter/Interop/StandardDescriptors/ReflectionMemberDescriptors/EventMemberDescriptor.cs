@@ -36,9 +36,8 @@ public class EventMemberDescriptor : IMemberDescriptor
     ///     Initializes a new instance of the <see cref="EventMemberDescriptor" /> class.
     /// </summary>
     /// <param name="ei">The ei.</param>
-    /// <param name="accessMode">The access mode.</param>
 #pragma warning disable IDE0060 // Remove unused parameter
-    public EventMemberDescriptor(EventInfo ei, InteropAccessMode accessMode = InteropAccessMode.Default)
+    public EventMemberDescriptor(EventInfo ei)
 #pragma warning restore IDE0060 // Remove unused parameter
     {
         CheckEventIsCompatible(ei, true);
@@ -112,7 +111,7 @@ public class EventMemberDescriptor : IMemberDescriptor
         var remm = Framework.Do.GetRemoveMethod(ei);
 
         if (ei.GetVisibilityFromAttributes() ?? (remm != null && remm.IsPublic && addm != null && addm.IsPublic))
-            return new EventMemberDescriptor(ei, accessMode);
+            return new EventMemberDescriptor(ei);
 
         return null;
     }
@@ -180,8 +179,7 @@ public class EventMemberDescriptor : IMemberDescriptor
         if (pars.Length > MAX_ARGS_IN_DELEGATE)
         {
             if (throwException)
-                throw new ArgumentException(string.Format("Event handler cannot have more than {0} parameters",
-                    MAX_ARGS_IN_DELEGATE));
+                throw new ArgumentException($"Event handler cannot have more than {MAX_ARGS_IN_DELEGATE} parameters");
             return false;
         }
 
@@ -209,7 +207,7 @@ public class EventMemberDescriptor : IMemberDescriptor
         lock (m_Lock)
         {
             var closure = args.AsType(0,
-                string.Format("userdata<{0}>.{1}.add", EventInfo.DeclaringType, EventInfo.Name),
+                $"userdata<{EventInfo.DeclaringType}>.{EventInfo.Name}.add",
                 DataType.Function).Function;
 
             if (m_Callbacks.Add(o, closure))
@@ -224,7 +222,7 @@ public class EventMemberDescriptor : IMemberDescriptor
         lock (m_Lock)
         {
             var closure = args.AsType(0,
-                string.Format("userdata<{0}>.{1}.remove", EventInfo.DeclaringType, EventInfo.Name),
+                $"userdata<{EventInfo.DeclaringType}>.{EventInfo.Name}.remove",
                 DataType.Function).Function;
 
             if (m_Callbacks.RemoveValue(o, closure))
@@ -244,16 +242,16 @@ public class EventMemberDescriptor : IMemberDescriptor
 #else
             var handler = Delegate.CreateDelegate(EventInfo.EventHandlerType, d.Target, d.Method);
 #endif
-            m_Add.Invoke(o, new object[] { handler });
+            m_Add.Invoke(o, [handler]);
             return handler;
         });
     }
 
     private void UnregisterCallback(object o)
     {
-        var handler = m_Delegates.GetOrDefault(o) ?? throw new InternalErrorException("can't unregister null delegate");
+        var handler = m_Delegates.GetValueOrDefault(o) ?? throw new InternalErrorException("can't unregister null delegate");
         m_Delegates.Remove(o);
-        m_Remove.Invoke(o, new object[] { handler });
+        m_Remove.Invoke(o, [handler]);
     }
 
 

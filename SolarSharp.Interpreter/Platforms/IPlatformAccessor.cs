@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Text;
 using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Platforms;
@@ -54,6 +53,7 @@ public interface IPlatformAccessor
     ///     Default handler for interactive line input calls. Can be customized in ScriptOptions.
     ///     If a meaningful implementation cannot be provided, this method should return null.
     /// </summary>
+    /// <param name="prompt">The prompt.</param>
     /// <returns></returns>
     string DefaultInput(string prompt);
 
@@ -62,12 +62,10 @@ public interface IPlatformAccessor
     ///     Can have an invalid implementation if 'io' module is filtered out.
     ///     It should return a correctly initialized Stream for the given file and access
     /// </summary>
-    /// <param name="script">The script.</param>
     /// <param name="filename">The filename.</param>
-    /// <param name="encoding">The encoding.</param>
     /// <param name="mode">The mode (as per Lua usage - e.g. 'w+', 'rb', etc.).</param>
     /// <returns></returns>
-    Stream IO_OpenFile(Script script, string filename, Encoding encoding, string mode);
+    Stream IO_OpenFile(string filename, string mode);
 
     /// <summary>
     ///     Gets a standard stream (stdin, stdout, stderr).

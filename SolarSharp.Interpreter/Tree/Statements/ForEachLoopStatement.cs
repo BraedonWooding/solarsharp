@@ -24,10 +24,7 @@ internal class ForEachLoopStatement : Statement
     {
         //	for namelist in explist do block end | 		
 
-        List<string> names = new()
-        {
-            firstNameToken.Text
-        };
+        List<string> names = [firstNameToken.Text];
 
         while (lcontext.Lexer.Current.Type == TokenType.Comma)
         {

@@ -43,7 +43,7 @@ public class PropertyMemberDescriptor : IMemberDescriptor, IOptimizableDescripto
     public PropertyMemberDescriptor(PropertyInfo pi, InteropAccessMode accessMode, MethodInfo getter, MethodInfo setter)
     {
         if (getter == null && setter == null)
-            throw new ArgumentNullException("getter and setter cannot both be null");
+            throw new ArgumentNullException(null, "getter and setter cannot both be null");
 
         if (Script.GlobalOptions.Platform.IsRunningOnAOT())
             accessMode = InteropAccessMode.Reflection;
@@ -157,7 +157,7 @@ public class PropertyMemberDescriptor : IMemberDescriptor, IOptimizableDescripto
                 m_OptimizedSetter(obj, value);
             else
                 m_Setter.Invoke(IsStatic ? null : obj,
-                    new[] { value }); // convoluted workaround for --full-aot Mono execution
+                    [value]); // convoluted workaround for --full-aot Mono execution
         }
         catch (ArgumentException)
         {

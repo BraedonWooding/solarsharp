@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using SolarSharp.Interpreter.Compatibility;
-using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Loaders;
 
@@ -86,9 +85,9 @@ public class UnityAssetsScriptLoader : ScriptLoaderBase
             var textAssetTextGet = Framework.Do.GetGetMethod(Framework.Do.GetProperty(textAssetType, "text"));
 
             var loadAll = Framework.Do.GetMethod(resourcesType, "LoadAll",
-                new[] { typeof(string), typeof(Type) });
+                [typeof(string), typeof(Type)]);
 
-            var array = (Array)loadAll.Invoke(null, new object[] { assetsPath, textAssetType });
+            var array = (Array)loadAll.Invoke(null, [assetsPath, textAssetType]);
 
             for (var i = 0; i < array.Length; i++)
             {
@@ -127,21 +126,22 @@ public class UnityAssetsScriptLoader : ScriptLoaderBase
     ///     assumed to be either a script or the output of a string.dump call. If a Stream, autodetection takes place.
     /// </summary>
     /// <param name="file">The file.</param>
-    /// <param name="globalContext">The global context.</param>
     /// <returns>
     ///     A string, a byte[] or a Stream.
     /// </returns>
     /// <exception cref="Exception">UnityAssetsScriptLoader.LoadFile : Cannot load  + file</exception>
-    public override object LoadFile(string file, Table globalContext)
+    public override object LoadFile(string file)
     {
         file = GetFileName(file);
 
-        if (m_Resources.ContainsKey(file))
-            return m_Resources[file];
-        var error = string.Format(
-            @"Cannot load script '{0}'. By default, scripts should be .txt files placed under a Assets/Resources/{1} directory.
-If you want scripts to be put in another directory or another way, use a custom instance of UnityAssetsScriptLoader or implement
-your own IScriptLoader (possibly extending ScriptLoaderBase).", file, DEFAULT_PATH);
+        if (m_Resources.TryGetValue(file, out var loadFile))
+            return loadFile;
+        var error =
+            $"""
+             Cannot load script '{file}'. By default, scripts should be .txt files placed under a Assets/Resources/{DEFAULT_PATH} directory.
+             If you want scripts to be put in another directory or another way, use a custom instance of UnityAssetsScriptLoader or implement
+             your own IScriptLoader (possibly extending ScriptLoaderBase).
+             """;
 
         throw new Exception(error);
     }

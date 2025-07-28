@@ -7,7 +7,7 @@ namespace SolarSharp.Interpreter.Tree;
 
 internal class Loop : ILoop
 {
-    public List<Instruction> BreakJumps = new();
+    public List<Instruction> BreakJumps = [];
     public RuntimeScopeBlock Scope;
 
     public void CompileBreak(ByteCode bc)

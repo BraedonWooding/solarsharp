@@ -170,7 +170,7 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
     public IEnumerator AsUnityCoroutine()
     {
 #pragma warning disable 0219
-        foreach (var v in AsTypedEnumerable()) yield return null;
+        foreach (var _ in AsTypedEnumerable()) yield return null;
 #pragma warning restore 0219
     }
 
@@ -231,7 +231,7 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
     /// </exception>
     public DynValue Resume()
     {
-        return Resume(new DynValue[0]);
+        return Resume([]);
     }
 
 
@@ -242,7 +242,7 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
     /// <returns></returns>
     public DynValue Resume(ScriptExecutionContext context)
     {
-        return Resume(context, new DynValue[0]);
+        return Resume(context, []);
     }
 
     /// <summary>

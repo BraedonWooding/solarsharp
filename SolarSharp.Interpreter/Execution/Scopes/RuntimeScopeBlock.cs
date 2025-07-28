@@ -8,6 +8,6 @@ internal class RuntimeScopeBlock
 
     public override string ToString()
     {
-        return string.Format("ScopeBlock : {0} -> {1} --> {2}", From, To, ToInclusive);
+        return $"ScopeBlock : {From} -> {To} --> {ToInclusive}";
     }
 }

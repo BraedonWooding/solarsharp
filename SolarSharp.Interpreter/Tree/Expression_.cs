@@ -14,7 +14,7 @@ internal abstract class Expression : NodeBase
     {
     }
 
-    public virtual string GetFriendlyDebugName()
+    public string GetFriendlyDebugName()
     {
         return null;
     }
@@ -28,10 +28,7 @@ internal abstract class Expression : NodeBase
 
     internal static List<Expression> ExprListAfterFirstExpr(ScriptLoadingContext lcontext, Expression expr1)
     {
-        List<Expression> exps = new()
-        {
-            expr1
-        };
+        List<Expression> exps = [expr1];
 
         while (lcontext.Lexer.Current.Type == TokenType.Comma)
         {
@@ -45,7 +42,7 @@ internal abstract class Expression : NodeBase
 
     internal static List<Expression> ExprList(ScriptLoadingContext lcontext)
     {
-        List<Expression> exps = new();
+        List<Expression> exps = [];
 
         while (true)
         {
@@ -81,10 +78,7 @@ internal abstract class Expression : NodeBase
 
             if (isPrimary && T.Type == TokenType.Op_Pwr)
             {
-                List<Expression> powerChain = new()
-                {
-                    e
-                };
+                List<Expression> powerChain = [e];
 
                 while (isPrimary && T.Type == TokenType.Op_Pwr)
                 {

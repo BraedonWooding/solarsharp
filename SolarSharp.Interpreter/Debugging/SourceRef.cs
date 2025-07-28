@@ -86,10 +86,7 @@ public class SourceRef
     /// </returns>
     public override string ToString()
     {
-        return string.Format("[{0}]{1} ({2}, {3}) -> ({4}, {5})",
-            SourceIdx, IsStepStop ? "*" : " ",
-            FromLine, FromChar,
-            ToLine, ToChar);
+        return $"[{SourceIdx}]{(IsStepStop ? "*" : " ")} ({FromLine}, {FromChar}) -> ({ToLine}, {ToChar})";
     }
 
     internal int GetLocationDistance(int sourceIdx, int line, int col)
@@ -180,7 +177,7 @@ public class SourceRef
             return "[clr]";
 
         if (script.Options.UseLuaErrorLocations || forceClassicFormat)
-            return string.Format("{0}:{1}", sc.Name, FromLine);
+            return $"{sc.Name}:{FromLine}";
 
         if (FromLine == ToLine)
         {
@@ -189,6 +186,6 @@ public class SourceRef
             return string.Format("{0}:({1},{2}-{4})", sc.Name, FromLine, FromChar, ToLine, ToChar);
         }
 
-        return string.Format("{0}:({1},{2}-{3},{4})", sc.Name, FromLine, FromChar, ToLine, ToChar);
+        return $"{sc.Name}:({FromLine},{FromChar}-{ToLine},{ToChar})";
     }
 }

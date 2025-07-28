@@ -25,7 +25,7 @@ public class ValueTypeDefaultCtorMemberDescriptor : IOverloadableMemberDescripto
             throw new ArgumentException("valueType is not a value type");
 
         Name = "__new";
-        Parameters = new ParameterDescriptor[0];
+        Parameters = [];
 
         ValueTypeDefaultCtor = valueType;
     }

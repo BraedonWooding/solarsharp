@@ -29,7 +29,7 @@ namespace System.Linq
         {
             return source == null
                 ? throw new ArgumentNullException(nameof(source))
-                : new HashSet<TSource>(source);
+                : [..source];
         }
 
         public static HashSet<TSource> ToHashSet<TSource>(this IEnumerable<TSource> source, IEqualityComparer<TSource>? comparer)

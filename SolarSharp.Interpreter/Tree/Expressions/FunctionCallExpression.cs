@@ -33,7 +33,7 @@ internal class FunctionCallExpression : Expression
                 var t = lcontext.Lexer.Current;
                 if (t.Type == TokenType.Brk_Close_Round)
                 {
-                    m_Arguments = new List<Expression>();
+                    m_Arguments = [];
                     SourceRef = callToken.GetSourceRef(t);
                     lcontext.Lexer.Next();
                 }
@@ -47,7 +47,7 @@ internal class FunctionCallExpression : Expression
             case TokenType.String:
             case TokenType.String_Long:
             {
-                m_Arguments = new List<Expression>();
+                m_Arguments = [];
                 Expression le = new LiteralExpression(lcontext, lcontext.Lexer.Current);
                 m_Arguments.Add(le);
                 SourceRef = callToken.GetSourceRef(lcontext.Lexer.Current);
@@ -55,10 +55,7 @@ internal class FunctionCallExpression : Expression
                 break;
             case TokenType.Brk_Open_Curly:
             {
-                m_Arguments = new List<Expression>
-                {
-                    new TableConstructor(lcontext)
-                };
+                m_Arguments = [new TableConstructor(lcontext)];
                 SourceRef = callToken.GetSourceRefUpTo(lcontext.Lexer.Current);
             }
                 break;
@@ -86,8 +83,8 @@ internal class FunctionCallExpression : Expression
             ++argslen;
         }
 
-        for (var i = 0; i < m_Arguments.Count; i++)
-            m_Arguments[i].Compile(bc);
+        foreach (var t in m_Arguments)
+            t.Compile(bc);
 
         if (!string.IsNullOrEmpty(m_Name))
             bc.Emit_ThisCall(argslen, m_DebugErr);

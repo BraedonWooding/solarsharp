@@ -7,7 +7,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors;
 /// <summary>
 ///     Standard user data descriptor used to instantiate generics.
 /// </summary>
-public class StandardGenericsUserDataDescriptor : IUserDataDescriptor, IGeneratorUserDataDescriptor
+public class StandardGenericsUserDataDescriptor : IGeneratorUserDataDescriptor
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="StandardUserDataDescriptor" /> class.

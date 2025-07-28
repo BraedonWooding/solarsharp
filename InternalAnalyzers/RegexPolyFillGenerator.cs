@@ -21,8 +21,7 @@ public class RegexPolyFillGenerator : ISourceGenerator
         foreach (var methodDecl in receiver.CandidateMethods)
         {
             var model = compilation.GetSemanticModel(methodDecl.SyntaxTree);
-            if (model.GetDeclaredSymbol(methodDecl) is not IMethodSymbol methodSymbol ||
-                !methodSymbol.IsPartialDefinition)
+            if (model.GetDeclaredSymbol(methodDecl) is not IMethodSymbol { IsPartialDefinition: true } methodSymbol)
                 continue;
 
             var attr = methodSymbol.GetAttributes()
@@ -46,19 +45,21 @@ public class RegexPolyFillGenerator : ISourceGenerator
             var isRecord = containingType.IsRecord;
             var typeKeyword = isRecord ? "record" : "class";
 
-            var source = $@"
-        using System.Text.RegularExpressions;
-        namespace {ns}
-        {{
-        public partial {typeKeyword} {containingType.Name}
-        {{
-        {string.Join(" ", methodSymbol.DeclaredAccessibility.ToString().ToLower(), methodSymbol.IsStatic ? "static" : "", "partial", methodSymbol.ReturnType.ToDisplayString())} {methodSymbol.Name}({string.Join(", ", methodSymbol.Parameters.Select(p => p.ToDisplayString()))})
-        {{
-            return new Regex(@""{pattern}"", (RegexOptions){flags});
-        }}
-        }}
-        }}
-        ";
+            var source = $$"""
+
+                                   using System.Text.RegularExpressions;
+                                   namespace {{ns}}
+                                   {
+                                   public partial {{typeKeyword}} {{containingType.Name}}
+                                   {
+                                   {{string.Join(" ", methodSymbol.DeclaredAccessibility.ToString().ToLower(), methodSymbol.IsStatic ? "static" : "", "partial", methodSymbol.ReturnType.ToDisplayString())}} {{methodSymbol.Name}}({{string.Join(", ", methodSymbol.Parameters.Select(p => p.ToDisplayString()))}})
+                                   {
+                                       return new Regex(@"{{pattern}}", (RegexOptions){{flags}});
+                                   }
+                                   }
+                                   }
+                                   
+                           """;
             context.AddSource($"{containingType.Name}_{methodSymbol.Name}_Regex.g.cs", source);
         }
     }

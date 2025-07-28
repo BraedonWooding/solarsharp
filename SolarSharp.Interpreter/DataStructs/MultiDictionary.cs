@@ -9,7 +9,7 @@ namespace SolarSharp.Interpreter.DataStructs;
 /// <typeparam name="V">The value type</typeparam>
 internal class MultiDictionary<K, V>
 {
-    private readonly V[] m_DefaultRet = new V[0];
+    private readonly V[] m_DefaultRet = [];
     private readonly Dictionary<K, List<V>> m_Map;
 
     /// <summary>
@@ -49,10 +49,7 @@ internal class MultiDictionary<K, V>
             return false;
         }
 
-        list = new List<V>
-        {
-            value
-        };
+        list = [value];
         m_Map.Add(key, list);
         return true;
     }

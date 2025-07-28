@@ -209,7 +209,7 @@ internal abstract class FileUserDataBase : RefIdObject
     public override string ToString()
     {
         if (isopen())
-            return string.Format("file ({0:X8})", ReferenceID);
+            return $"file ({ReferenceID:X8})";
         return "file (closed)";
     }
 }

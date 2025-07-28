@@ -28,12 +28,8 @@ public interface IProxyFactory
 /// </summary>
 /// <typeparam name="TProxy">The type of the proxy.</typeparam>
 /// <typeparam name="TTarget">The type of the target.</typeparam>
-public interface IProxyFactory<TProxy, TTarget> : IProxyFactory
+public interface IProxyFactory<out TProxy, in TTarget> : IProxyFactory
     where TProxy : class
     where TTarget : class
 {
-    /// <summary>
-    ///     Takes an instance of a target object and returns a proxy object wrapping it
-    /// </summary>
-    TProxy CreateProxyObject(TTarget target);
 }

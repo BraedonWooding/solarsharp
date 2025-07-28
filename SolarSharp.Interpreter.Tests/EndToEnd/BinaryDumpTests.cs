@@ -308,9 +308,13 @@ return y;
 
 				sandbox()";
 
-            Script S = new(CoreModules.Preset_Complete);
-
-            S.Globals["print"] = (Action<Table>)(t => list.Add(t));
+            Script S = new(CoreModules.Preset_Complete)
+            {
+	            Globals =
+	            {
+		            ["print"] = (Action<Table>)(t => list.Add(t))
+	            }
+            };
 
             S.DoString(script);
 

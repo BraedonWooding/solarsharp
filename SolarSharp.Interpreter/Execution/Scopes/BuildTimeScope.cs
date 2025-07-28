@@ -53,7 +53,7 @@ internal class BuildTimeScope
 
             if (symb != null)
             {
-                symb = CreateUpValue(this, symb, i, m_Frames.Count - 2);
+                symb = CreateUpValue(symb, i, m_Frames.Count - 2);
 
                 if (symb != null)
                     return symb;
@@ -78,13 +78,13 @@ internal class BuildTimeScope
         Find(WellKnownSymbols.ENV);
     }
 
-    private SymbolRef CreateUpValue(BuildTimeScope buildTimeScope, SymbolRef symb, int closuredFrame, int currentFrame)
+    private SymbolRef CreateUpValue(SymbolRef symb, int closuredFrame, int currentFrame)
     {
         // it's a 0-level upvalue. Just create it and we're done.
         if (closuredFrame == currentFrame)
             return m_ClosureBuilders[currentFrame + 1].CreateUpvalue(this, symb);
 
-        var upvalue = CreateUpValue(buildTimeScope, symb, closuredFrame, currentFrame - 1);
+        var upvalue = CreateUpValue(symb, closuredFrame, currentFrame - 1);
 
         return m_ClosureBuilders[currentFrame + 1].CreateUpvalue(this, upvalue);
     }

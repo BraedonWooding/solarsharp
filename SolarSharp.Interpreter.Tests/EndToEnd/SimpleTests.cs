@@ -35,7 +35,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Script S = new();
 
-            S.Globals.Set("print", DynValue.NewCallback(new CallbackFunction((x, a) =>
+            S.Globals.Set("print", DynValue.NewCallback(new CallbackFunction((_, a) =>
             {
                 args = a.GetArray();
                 return DynValue.NewNumber(1234.0);
@@ -65,7 +65,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             var script = "local print = print; print(\"hello\", \"world\");";
 
             var S = new Script();
-            S.Globals.Set("print", DynValue.NewCallback(new CallbackFunction((_x, a) =>
+            S.Globals.Set("print", DynValue.NewCallback(new CallbackFunction((_, a) =>
             {
                 args = a.GetArray();
                 return DynValue.NewNumber(1234.0);
@@ -90,8 +90,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             var script = "return callback()();";
 
             var callback2 =
-                DynValue.NewCallback(new CallbackFunction((_x, a) => { return DynValue.NewNumber(1234.0); }));
-            var callback = DynValue.NewCallback(new CallbackFunction((_x, a) => { return callback2; }));
+                DynValue.NewCallback(new CallbackFunction((_, _) => { return DynValue.NewNumber(1234.0); }));
+            var callback = DynValue.NewCallback(new CallbackFunction((_, _) => { return callback2; }));
 
             var S = new Script();
             S.Globals.Set("callback", callback);
@@ -110,7 +110,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             var script = "return callback();";
 
-            var callback = DynValue.NewCallback(new CallbackFunction((_x, a) =>
+            var callback = DynValue.NewCallback(new CallbackFunction((_, _) =>
             {
                 return DynValue.NewNumber(1234.0);
             }));
@@ -135,7 +135,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             var script = "return callback 'hello';";
 
             var S = new Script();
-            S.Globals.Set("callback", DynValue.NewCallback(new CallbackFunction((_x, a) =>
+            S.Globals.Set("callback", DynValue.NewCallback(new CallbackFunction((_, a) =>
             {
                 args = a.GetArray();
                 return DynValue.NewNumber(1234.0);
@@ -161,7 +161,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             var script = "return print(\"hello\", \"world\");";
 
             var S = new Script();
-            S.Globals.Set("print", DynValue.NewCallback(new CallbackFunction((_x, a) =>
+            S.Globals.Set("print", DynValue.NewCallback(new CallbackFunction((_, a) =>
             {
                 args = a.GetArray();
                 return DynValue.NewNumber(1234.0);
@@ -242,9 +242,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             var keywrd =
                 "and break do else elseif end false end for function end goto if ::in:: in local nil not [or][[][==][[]] repeat return { then 0 end return; }; then true (x != 5 or == * 3 - 5) x";
 
-            var script = string.Format(@"    
-				x = '{0}';
-				return x;", keywrd);
+            var script = $@"    
+				x = '{keywrd}';
+				return x;";
 
             var res = Script.RunString(script);
             Assert.Multiple(() =>
@@ -327,7 +327,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void ReturnSimpleUnop()
         {
-            var script = @"return -42";
+            var script = "return -42";
 
             var res = Script.RunString(script);
 
@@ -341,7 +341,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void ReturnSimple()
         {
-            var script = @"return 42";
+            var script = "return 42";
 
             var res = Script.RunString(script);
 
@@ -356,7 +356,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OperatorSimple()
         {
-            var script = @"return 6*7";
+            var script = "return 6*7";
 
             var res = Script.RunString(script);
 
@@ -378,7 +378,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Script S = new();
             S.Globals.Set("crash",
-                DynValue.NewCallback(new CallbackFunction((_x, a) => { throw new Exception("FAIL!"); })));
+                DynValue.NewCallback(new CallbackFunction((_, _) => { throw new Exception("FAIL!"); })));
 
             S.DoString(script);
         }
@@ -746,7 +746,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void VeryBasic()
         {
-            var script = @"return 7";
+            var script = "return 7";
 
             var res = Script.RunString(script);
 
@@ -760,7 +760,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OperatorPrecedence1()
         {
-            var script = @"return 1+2*3";
+            var script = "return 1+2*3";
 
             Script s = new(CoreModules.None);
             var res = s.DoString(script);
@@ -775,7 +775,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OperatorPrecedence2()
         {
-            var script = @"return 2*3+1";
+            var script = "return 2*3+1";
 
             var res = Script.RunString(script);
 
@@ -789,7 +789,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OperatorAssociativity()
         {
-            var script = @"return 2^3^2";
+            var script = "return 2^3^2";
 
             var res = Script.RunString(script);
 
@@ -803,7 +803,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OperatorPrecedence3()
         {
-            var script = @"return 5-3-2";
+            var script = "return 5-3-2";
             Script S = new(CoreModules.None);
 
             var res = S.DoString(script);
@@ -818,7 +818,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OperatorPrecedence4()
         {
-            var script = @"return 3 + -1";
+            var script = "return 3 + -1";
             Script S = new(CoreModules.None);
 
             var res = S.DoString(script);
@@ -833,7 +833,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OperatorPrecedence5()
         {
-            var script = @"return 3 * -1 + 5 * 3";
+            var script = "return 3 * -1 + 5 * 3";
             Script S = new(CoreModules.None);
 
             var res = S.DoString(script);
@@ -848,7 +848,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OperatorPrecedence6()
         {
-            var script = @"return -2^2";
+            var script = "return -2^2";
             Script S = new(CoreModules.None);
 
             var res = S.DoString(script);
@@ -863,7 +863,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OperatorPrecedence7()
         {
-            var script = @"return -7 / 0.5";
+            var script = "return -7 / 0.5";
             Script S = new(CoreModules.None);
 
             var res = S.DoString(script);
@@ -878,7 +878,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OperatorPrecedenceAndAssociativity()
         {
-            var script = @"return 5+3*7-2*5+2^3^2";
+            var script = "return 5+3*7-2*5+2^3^2";
 
             var res = Script.RunString(script);
 
@@ -892,7 +892,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void OperatorParenthesis()
         {
-            var script = @"return (5+3)*7-2*5+(2^3)^2";
+            var script = "return (5+3)*7-2*5+(2^3)^2";
 
             var res = Script.RunString(script);
 
@@ -906,7 +906,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void GlobalVarAssignment()
         {
-            var script = @"x = 1; return x;";
+            var script = "x = 1; return x;";
 
             var res = Script.RunString(script);
 
@@ -1651,8 +1651,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         public void Simple_Delegate_Interop_1()
         {
             var a = 3;
-            var script = new Script();
-            script.Globals["action"] = new Action(() => a = 5);
+            var script = new Script
+            {
+	            Globals =
+	            {
+		            ["action"] = new Action(() => a = 5)
+	            }
+            };
             script.DoString("action()");
             Assert.That(a, Is.EqualTo(5));
         }
@@ -1667,8 +1672,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 UserData.RegistrationPolicy = InteropRegistrationPolicy.Automatic;
 
                 var a = 3;
-                var script = new Script();
-                script.Globals["action"] = new Action(() => a = 5);
+                var script = new Script
+                {
+	                Globals =
+	                {
+		                ["action"] = new Action(() => a = 5)
+	                }
+                };
                 script.DoString("action()");
                 Assert.That(a, Is.EqualTo(5));
             }
@@ -1740,9 +1750,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void NumericConversionFailsIfOutOfBounds()
         {
-            Script S = new();
-
-            S.Globals["my_function_takes_byte"] = (Action<byte>)(p => { });
+            Script S = new()
+            {
+	            Globals =
+	            {
+		            ["my_function_takes_byte"] = (Action<byte>)(_ => { })
+	            }
+            };
 
             try
             {

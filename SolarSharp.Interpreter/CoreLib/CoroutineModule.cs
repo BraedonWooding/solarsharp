@@ -28,7 +28,7 @@ public class CoroutineModule
             args.AsType(0, "wrap", DataType.Function); // this throws
 
         var v = create(executionContext, args);
-        var c = DynValue.NewCallback((context, args) => v.Coroutine.Resume(args.GetArray()));
+        var c = DynValue.NewCallback((_, args) => v.Coroutine.Resume(args.GetArray()));
         return c;
     }
 
@@ -41,10 +41,7 @@ public class CoroutineModule
         {
             var ret = handle.Coroutine.Resume(args.GetArray(1));
 
-            List<DynValue> retval = new()
-            {
-                DynValue.True
-            };
+            List<DynValue> retval = [DynValue.True];
 
             if (ret.Type == DataType.Tuple)
                 for (var i = 0; i < ret.Tuple.Length; i++)

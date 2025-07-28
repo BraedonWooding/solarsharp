@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Platforms;
@@ -43,16 +42,14 @@ public class LimitedPlatformAccessor : PlatformAccessorBase
     ///     LimitedPlatformAccessorBase does NOT offer a meaningful implementation of this method and
     ///     thus does not support 'io' and 'os' modules.
     /// </summary>
-    /// <param name="script"></param>
     /// <param name="filename">The filename.</param>
-    /// <param name="encoding">The encoding.</param>
     /// <param name="mode">The mode (as per Lua usage - e.g. 'w+', 'rb', etc.).</param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException">
     ///     The current platform accessor does not support 'io' and 'os' operations.
     ///     Provide your own implementation of platform to work around this limitation, if needed.
     /// </exception>
-    public override Stream IO_OpenFile(Script script, string filename, Encoding encoding, string mode)
+    public override Stream IO_OpenFile(string filename, string mode)
     {
         throw new NotImplementedException(
             "The current platform accessor does not support 'io' and 'os' operations. Provide your own implementation of platform to work around this limitation, if needed.");

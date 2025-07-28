@@ -29,8 +29,8 @@ internal static class HashHelpers
     // h1(key) + i*h2(key), 0 <= i < size.  h2 and the size must be relatively prime.
     // We prefer the low computation costs of higher prime numbers over the increased
     // memory allocation of a fixed prime number i.e. when right sizing a HashSet.
-    internal static ReadOnlySpan<int> Primes => new[]
-    {
+    internal static ReadOnlySpan<int> Primes =>
+    [
         3,
         7,
         11,
@@ -103,7 +103,7 @@ internal static class HashHelpers
         4999559,
         5999471,
         7199369
-    };
+    ];
 
     public static bool IsPrime(int candidate)
     {

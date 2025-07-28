@@ -511,13 +511,13 @@ public sealed class DynValue
             DataType.Boolean => Boolean.ToString().ToLower(),
             DataType.Number => Number.ToString(CultureInfo.InvariantCulture),
             DataType.String => "\"" + String + "\"",
-            DataType.Function => string.Format("(Function {0:X8})", Function.EntryPointByteCodeLocation),
+            DataType.Function => $"(Function {Function.EntryPointByteCodeLocation:X8})",
             DataType.ClrFunction => string.Format("(Function CLR)", Function),
             DataType.Table => "(Table)",
             DataType.Tuple => string.Join(", ", Tuple.Select(t => t.ToString()).ToArray()),
             DataType.TailCallRequest => "Tail:(" + string.Join(", ", Tuple.Select(t => t.ToString()).ToArray()) + ")",
             DataType.UserData => "(UserData)",
-            DataType.Thread => string.Format("(Coroutine {0:X8})", Coroutine.ReferenceID),
+            DataType.Thread => $"(Coroutine {Coroutine.ReferenceID:X8})",
             _ => "(???)"
         };
     }

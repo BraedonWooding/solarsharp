@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Tree.Statements;
@@ -32,7 +31,7 @@ internal class BuildTimeScopeBlock
     {
         var sref = m_DefinedNames[name];
         m_DefinedNames.Remove(name);
-        m_DefinedNames.Add(string.Format("@{0}_{1}", name, Guid.NewGuid().ToString("N")), sref);
+        m_DefinedNames.Add($"@{name}_{Guid.NewGuid().ToString("N")}", sref);
     }
 
 
@@ -45,7 +44,7 @@ internal class BuildTimeScopeBlock
 
     internal SymbolRef Find(string name)
     {
-        return m_DefinedNames.GetOrDefault(name);
+        return m_DefinedNames.GetValueOrDefault(name);
     }
 
     internal SymbolRef Define(string name)
@@ -91,9 +90,9 @@ internal class BuildTimeScopeBlock
     {
         m_LocalLabels ??= new Dictionary<string, LabelStatement>();
 
-        if (m_LocalLabels.ContainsKey(label.Label))
+        if (m_LocalLabels.TryGetValue(label.Label, out var localLabel))
             throw new SyntaxErrorException(label.NameToken, "label '{0}' already defined on line {1}", label.Label,
-                m_LocalLabels[label.Label].SourceRef.FromLine);
+                localLabel.SourceRef.FromLine);
 
         m_LocalLabels.Add(label.Label, label);
         label.SetDefinedVars(m_DefinedNames.Count, m_LastDefinedName);

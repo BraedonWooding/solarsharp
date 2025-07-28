@@ -16,6 +16,6 @@ internal class RuntimeScopeFrame
 
     public override string ToString()
     {
-        return string.Format("ScopeFrame : #{0}", Count);
+        return $"ScopeFrame : #{Count}";
     }
 }

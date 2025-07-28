@@ -473,8 +473,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 			return t;
 		";
 
-            Script s = new();
-            s.Globals["x"] = "hello";
+            Script s = new()
+            {
+	            Globals =
+	            {
+		            ["x"] = "hello"
+	            }
+            };
             var t = s.DoString(script);
 
             Assert.That(t.Table["ciao"], Is.EqualTo("hello"));

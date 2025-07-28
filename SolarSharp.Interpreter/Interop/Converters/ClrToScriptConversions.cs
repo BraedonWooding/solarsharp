@@ -56,12 +56,9 @@ internal static class ClrToScriptConversions
 
 
         var converter = Script.GlobalOptions.CustomConverters.GetClrToScriptCustomConversion(obj.GetType());
-        if (converter != null)
-        {
-            var v = converter(script, obj);
-            if (v != null)
-                return v;
-        }
+        var v = converter?.Invoke(script, obj);
+        if (v != null)
+            return v;
 
         var t = obj.GetType();
 

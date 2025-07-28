@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Interop;
@@ -92,8 +91,7 @@ public class CustomConvertersCollection
 
         if (converter == null)
         {
-            if (map.ContainsKey(clrDataType))
-                map.Remove(clrDataType);
+            map.Remove(clrDataType);
         }
         else
         {
@@ -113,7 +111,7 @@ public class CustomConvertersCollection
             return null;
 
         var map = m_Script2Clr[(int)scriptDataType];
-        return map.GetOrDefault(clrDataType);
+        return map.GetValueOrDefault(clrDataType);
     }
 
     /// <summary>
@@ -125,8 +123,7 @@ public class CustomConvertersCollection
     {
         if (converter == null)
         {
-            if (m_Clr2Script.ContainsKey(clrDataType))
-                m_Clr2Script.Remove(clrDataType);
+            m_Clr2Script.Remove(clrDataType);
         }
         else
         {
@@ -152,7 +149,7 @@ public class CustomConvertersCollection
     /// <returns>The converter function, or null if not found</returns>
     public Func<Script, object, DynValue> GetClrToScriptCustomConversion(Type clrDataType)
     {
-        return m_Clr2Script.GetOrDefault(clrDataType);
+        return m_Clr2Script.GetValueOrDefault(clrDataType);
     }
 
     /// Sets a custom converter from a CLR data type. Set null to remove a previous custom converter.
@@ -162,7 +159,7 @@ public class CustomConvertersCollection
     [Obsolete("This method is deprecated. Use the overloads accepting functions with a Script argument.")]
     public void SetClrToScriptCustomConversion(Type clrDataType, Func<object, DynValue> converter = null)
     {
-        SetClrToScriptCustomConversion(clrDataType, (s, o) => converter(o));
+        SetClrToScriptCustomConversion(clrDataType, (_, o) => converter(o));
     }
 
     /// <summary>
@@ -184,7 +181,7 @@ public class CustomConvertersCollection
     {
         m_Clr2Script.Clear();
 
-        for (var i = 0; i < m_Script2Clr.Length; i++)
-            m_Script2Clr[i].Clear();
+        foreach (var t in m_Script2Clr)
+            t.Clear();
     }
 }

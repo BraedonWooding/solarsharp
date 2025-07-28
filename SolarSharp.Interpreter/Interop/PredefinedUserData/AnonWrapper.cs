@@ -3,9 +3,7 @@
 /// <summary>
 ///     Internal type used by <see cref="AnonWrapper{T}" /> for registration
 /// </summary>
-public class AnonWrapper
-{
-}
+public class AnonWrapper;
 
 /// <summary>
 ///     Wrapper which allows for easier management of userdata without registering a new userdata type - useful

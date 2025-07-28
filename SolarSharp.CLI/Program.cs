@@ -18,9 +18,13 @@ internal class Program
 
         Script.DefaultOptions.ScriptLoader = new ReplInterpreterScriptLoader();
 
-        Script script = new(CoreModules.Preset_Complete);
-
-        script.Globals["makestatic"] = (Func<string, DynValue>)MakeStatic;
+        Script script = new(CoreModules.Preset_Complete)
+        {
+            Globals =
+            {
+                ["makestatic"] = (Func<string, DynValue>)MakeStatic
+            }
+        };
 
         if (CheckArgs(args, new ShellContext(script)))
             return;
@@ -54,9 +58,9 @@ internal class Program
 
         var s = Console.ReadLine();
 
-        if (!interpreter.HasPendingCommand && s.StartsWith("!"))
+        if (!interpreter.HasPendingCommand && s.StartsWith('!'))
         {
-            ExecuteCommand(shellContext, s.Substring(1));
+            ExecuteCommand(shellContext, s[1..]);
             return;
         }
 

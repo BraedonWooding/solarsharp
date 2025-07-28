@@ -74,7 +74,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Script S = new();
 
-            S.Globals.Set("clrtail", DynValue.NewCallback((xc, a) =>
+            S.Globals.Set("clrtail", DynValue.NewCallback((_, a) =>
             {
                 var fn = S.Globals.Get("getResult");
                 var k3 = DynValue.NewNumber(a[0].Number / 3);

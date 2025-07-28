@@ -110,8 +110,8 @@ internal sealed partial class Processor
 
         args = Internal_AdjustTuple(args);
 
-        for (var i = 0; i < args.Length; i++)
-            m_ValueStack.Push(args[i]);
+        foreach (var t in args)
+            m_ValueStack.Push(t);
 
         m_ValueStack.Push(DynValue.NewNumber(args.Length)); // func args count
 
@@ -155,9 +155,8 @@ internal sealed partial class Processor
 
         if (m_OwningThreadID >= 0 && m_OwningThreadID != threadID && m_Script.Options.CheckThreadAccess)
         {
-            var msg = string.Format(
-                "Cannot enter the same SolarSharp processor from two different threads : {0} and {1}", m_OwningThreadID,
-                threadID);
+            var msg =
+                $"Cannot enter the same SolarSharp processor from two different threads : {m_OwningThreadID} and {threadID}";
             throw new InvalidOperationException(msg);
         }
 

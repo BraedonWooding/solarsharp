@@ -97,7 +97,7 @@ public class CallbackArguments
         if (!m_LastIsTuple && skip == 0) return m_Args.ToArray();
 
         if (skip >= Count)
-            return new DynValue[0];
+            return [];
 
         var vals = new DynValue[Count - skip];
 

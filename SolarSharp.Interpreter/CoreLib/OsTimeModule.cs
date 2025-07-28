@@ -199,10 +199,8 @@ public class OsTimeModule
 
         var isEscapeSequence = false;
 
-        for (var i = 0; i < format.Length; i++)
+        foreach (var c in format)
         {
-            var c = format[i];
-
             if (c == '%')
             {
                 if (isEscapeSequence)
@@ -228,9 +226,9 @@ public class OsTimeModule
 
             isEscapeSequence = false;
 
-            if (STANDARD_PATTERNS.ContainsKey(c))
+            if (STANDARD_PATTERNS.TryGetValue(c, out var value))
             {
-                sb.Append(d.ToString(STANDARD_PATTERNS[c]));
+                sb.Append(d.ToString(value));
             }
             else if (c == 'e')
             {

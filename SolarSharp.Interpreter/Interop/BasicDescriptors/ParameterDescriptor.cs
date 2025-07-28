@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
 using SolarSharp.Interpreter.Compatibility;
 
@@ -76,7 +75,7 @@ public sealed class ParameterDescriptor
         DefaultValue = pi.DefaultValue;
         IsOut = pi.IsOut;
         IsRef = pi.ParameterType.IsByRef;
-        IsVarArgs = pi.ParameterType.IsArray && pi.GetCustomAttributes(typeof(ParamArrayAttribute), true).Any();
+        IsVarArgs = pi.ParameterType.IsArray && pi.GetCustomAttributes(typeof(ParamArrayAttribute), true).Length != 0;
     }
 
     /// <summary>
@@ -133,7 +132,7 @@ public sealed class ParameterDescriptor
     /// </returns>
     public override string ToString()
     {
-        return string.Format("{0} {1}{2}", Type.Name, Name, HasDefaultValue ? " = ..." : "");
+        return $"{Type.Name} {Name}{(HasDefaultValue ? " = ..." : "")}";
     }
 
     /// <summary>

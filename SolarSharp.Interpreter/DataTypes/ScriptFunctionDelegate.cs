@@ -13,4 +13,4 @@ public delegate object ScriptFunctionDelegate(params object[] args);
 /// <typeparam name="T"></typeparam>
 /// <param name="args">The arguments.</param>
 /// <returns>The return value of the script function</returns>
-public delegate T ScriptFunctionDelegate<T>(params object[] args);
+public delegate T ScriptFunctionDelegate<out T>(params object[] args);

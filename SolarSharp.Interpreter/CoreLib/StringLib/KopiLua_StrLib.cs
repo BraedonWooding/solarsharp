@@ -100,7 +100,7 @@ internal class KopiLua_StringLib : LuaBase
     {
         l -= '1';
         if (l < 0 || l >= ms.level || ms.capture[l].len == CAP_UNFINISHED)
-            return LuaLError(ms.L, "invalid capture index {0}", l + 1);
+            return LuaLError("invalid capture index {0}", l + 1);
         return l;
     }
 
@@ -111,7 +111,7 @@ internal class KopiLua_StringLib : LuaBase
         for (level--; level >= 0; level--)
             if (ms.capture[level].len == CAP_UNFINISHED)
                 return level;
-        return LuaLError(ms.L, "invalid pattern capture");
+        return LuaLError("invalid pattern capture");
     }
 
 
@@ -125,7 +125,7 @@ internal class KopiLua_StringLib : LuaBase
             case L_ESC:
             {
                 if (p[0] == '\0')
-                    LuaLError(ms.L, "malformed pattern (ends with " + LUA_QL("%") + ")");
+                    LuaLError("malformed pattern (ends with " + LUA_QL("%") + ")");
                 return p + 1;
             }
             case '[':
@@ -135,7 +135,7 @@ internal class KopiLua_StringLib : LuaBase
                 {
                     /* look for a `]' */
                     if (p[0] == '\0')
-                        LuaLError(ms.L, "malformed pattern (missing " + LUA_QL("]") + ")");
+                        LuaLError("malformed pattern (missing " + LUA_QL("]") + ")");
                     c = p[0];
                     p = p.next();
                     if (c == L_ESC && p[0] != '\0')
@@ -222,7 +222,7 @@ internal class KopiLua_StringLib : LuaBase
         CharPtr p)
     {
         if (p[0] == 0 || p[1] == 0)
-            LuaLError(ms.L, "unbalanced pattern");
+            LuaLError("unbalanced pattern");
         if (s[0] != p[0]) return null;
         int b = p[0];
         int e = p[1];
@@ -279,7 +279,7 @@ internal class KopiLua_StringLib : LuaBase
     {
         CharPtr res;
         var level = ms.level;
-        if (level >= LUA_MAXCAPTURES) LuaLError(ms.L, "too many captures");
+        if (level >= LUA_MAXCAPTURES) LuaLError("too many captures");
         ms.capture[level].init = s;
         ms.capture[level].len = what;
         ms.level = level + 1;
@@ -318,7 +318,7 @@ internal class KopiLua_StringLib : LuaBase
         s = new CharPtr(s);
         p = new CharPtr(p);
         if (ms.matchdepth-- == 0)
-            LuaLError(ms.L, "pattern too complex");
+            LuaLError("pattern too complex");
         init: /* using goto's to optimize tail recursion */
         switch (p[0])
         {
@@ -353,8 +353,8 @@ internal class KopiLua_StringLib : LuaBase
                         char previous;
                         p += 2;
                         if (p[0] != '[')
-                            LuaLError(ms.L, "missing " + LUA_QL("[") + " after " +
-                                            LUA_QL("%f") + " in pattern");
+                            LuaLError("missing " + LUA_QL("[") + " after " +
+                                      LUA_QL("%f") + " in pattern");
                         ep = classend(ms, p); /* points to what is next */
                         previous = s == ms.src_init ? '\0' : s[-1];
                         if (matchbracketclass((byte)previous, p, ep - 1) != 0 ||
@@ -502,12 +502,12 @@ internal class KopiLua_StringLib : LuaBase
             if (i == 0) /* ms.level == 0, too */
                 LuaPushLString(ms.L, s, (uint)(e - s)); /* add whole match */
             else
-                LuaLError(ms.L, "invalid capture index");
+                LuaLError("invalid capture index");
         }
         else
         {
             var l = ms.capture[i].len;
-            if (l == CAP_UNFINISHED) LuaLError(ms.L, "unfinished capture");
+            if (l == CAP_UNFINISHED) LuaLError("unfinished capture");
             if (l == CAP_POSITION)
                 LuaPushInteger(ms.L, ms.capture[i].init - ms.src_init + 1);
             else
@@ -650,14 +650,6 @@ internal class KopiLua_StringLib : LuaBase
         return 1;
     }
 
-#pragma warning disable IDE0051 // Remove unused private members
-    private static int gfind_nodef(LuaState L)
-#pragma warning restore IDE0051 // Remove unused private members
-    {
-        return LuaLError(L, LUA_QL("string.gfind") + " was renamed to " +
-                            LUA_QL("string.gmatch"));
-    }
-
     private static void add_s(MatchState ms, LuaLBuffer b, CharPtr s, CharPtr e)
     {
         uint i;
@@ -672,7 +664,7 @@ internal class KopiLua_StringLib : LuaBase
                 i++; /* skip ESC */
                 if (!isdigit(news[i]))
                 {
-                    if (news[i] != L_ESC) LuaLError(ms.L, "invalid use of '%' in replacement string");
+                    if (news[i] != L_ESC) LuaLError("invalid use of '%' in replacement string");
                     LuaLAddChar(b, news[i]);
                 }
                 else if (news[i] == '0')
@@ -725,7 +717,7 @@ internal class KopiLua_StringLib : LuaBase
         }
         else if (LuaIsString(L, -1) == 0)
         {
-            LuaLError(L, "invalid replacement value (a {0})", LuaLTypeName(L, -1));
+            LuaLError("invalid replacement value (a {0})", LuaLTypeName(L, -1));
         }
 
         LuaLAddValue(b); /* add result to accumulator */
@@ -827,9 +819,9 @@ internal class KopiLua_StringLib : LuaBase
                                 isfollowedbynum = true;
 
                         if (isfollowedbynum)
-                            LuaLAddString(b, string.Format("\\{0:000}", (int)s[0]));
+                            LuaLAddString(b, $"\\{(int)s[0]:000}");
                         else
-                            LuaLAddString(b, string.Format("\\{0}", (int)s[0]));
+                            LuaLAddString(b, $"\\{(int)s[0]}");
                     }
                     else
                     {
@@ -851,7 +843,7 @@ internal class KopiLua_StringLib : LuaBase
         var p = strfrmt;
         while (p[0] != '\0' && strchr(FLAGS, p[0]) != null) p = p.next(); /* skip flags */
         if ((uint)(p - strfrmt) >= FLAGS.Length + 1)
-            LuaLError(L, "invalid format (repeated flags)");
+            LuaLError("invalid format (repeated flags)");
         if (isdigit((byte)p[0])) p = p.next(); /* skip width */
         if (isdigit((byte)p[0])) p = p.next(); /* (2 digits at most) */
         if (p[0] == '.')
@@ -862,7 +854,7 @@ internal class KopiLua_StringLib : LuaBase
         }
 
         if (isdigit((byte)p[0]))
-            LuaLError(L, "invalid format (width or precision too long)");
+            LuaLError("invalid format (width or precision too long)");
         form[0] = '%';
         form = form.next();
         strncpy(form, strfrmt, p - strfrmt + 1);
@@ -967,8 +959,8 @@ internal class KopiLua_StringLib : LuaBase
                     default:
                     {
                         /* also treat cases `pnLlh' */
-                        return LuaLError(L, "invalid option " + LUA_QL("%" + ch) + " to " +
-                                            LUA_QL("format"), strfrmt[-1]);
+                        return LuaLError("invalid option " + LUA_QL("%" + ch) + " to " +
+                                         LUA_QL("format"), strfrmt[-1]);
                     }
                 }
 

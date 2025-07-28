@@ -32,7 +32,7 @@ internal sealed partial class Processor
     private DynValue GetGlobalSymbol(DynValue dynValue, string name)
     {
         if (dynValue.Type != DataType.Table)
-            throw new InvalidOperationException(string.Format("_ENV is not a table but a {0}", dynValue.Type));
+            throw new InvalidOperationException($"_ENV is not a table but a {dynValue.Type}");
 
         return dynValue.Table.Get(name);
     }
@@ -40,7 +40,7 @@ internal sealed partial class Processor
     private void SetGlobalSymbol(DynValue dynValue, string name, DynValue value)
     {
         if (dynValue.Type != DataType.Table)
-            throw new InvalidOperationException(string.Format("_ENV is not a table but a {0}", dynValue.Type));
+            throw new InvalidOperationException($"_ENV is not a table but a {dynValue.Type}");
 
         dynValue.Table.Set(name, value ?? DynValue.Nil);
     }

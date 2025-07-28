@@ -37,15 +37,15 @@ public class DebugModule
                 var result = interpreter.Evaluate(s);
 
                 if (result != null && result.Type != DataType.Void)
-                    script.Options.DebugPrint(string.Format("{0}", result));
+                    script.Options.DebugPrint($"{result}");
             }
             catch (InterpreterException ex)
             {
-                script.Options.DebugPrint(string.Format("{0}", ex.DecoratedMessage ?? ex.Message));
+                script.Options.DebugPrint($"{ex.DecoratedMessage ?? ex.Message}");
             }
             catch (Exception ex)
             {
-                script.Options.DebugPrint(string.Format("{0}", ex.Message));
+                script.Options.DebugPrint($"{ex.Message}");
             }
         }
     }

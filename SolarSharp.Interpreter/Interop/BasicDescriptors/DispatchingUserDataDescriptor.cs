@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using SolarSharp.Interpreter.Compatibility;
-using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Interop.Attributes;
@@ -116,7 +115,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
         if (!isDirectIndexing)
         {
             var mdesc = m_Members
-                .GetOrDefault(SPECIALNAME_INDEXER_GET)
+                .GetValueOrDefault(SPECIALNAME_INDEXER_GET)
                 .WithAccessOrNull(MemberDescriptorAccess.CanExecute);
 
             if (mdesc != null)
@@ -169,7 +168,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
         if (!isDirectIndexing)
         {
             var mdesc = m_Members
-                .GetOrDefault(SPECIALNAME_INDEXER_SET)
+                .GetValueOrDefault(SPECIALNAME_INDEXER_SET)
                 .WithAccessOrNull(MemberDescriptorAccess.CanExecute);
 
             if (mdesc != null)
@@ -230,7 +229,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     /// <returns></returns>
     public virtual DynValue MetaIndex(Script script, object obj, string metaname)
     {
-        var desc = m_MetaMembers.GetOrDefault(metaname);
+        var desc = m_MetaMembers.GetValueOrDefault(metaname);
 
         if (desc != null) return desc.GetValue(script, obj);
 
@@ -313,7 +312,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     /// <returns></returns>
     public IMemberDescriptor FindMember(string memberName)
     {
-        return m_Members.GetOrDefault(memberName);
+        return m_Members.GetValueOrDefault(memberName);
     }
 
     /// <summary>
@@ -331,7 +330,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     /// <param name="memberName">Name of the member.</param>
     public IMemberDescriptor FindMetaMember(string memberName)
     {
-        return m_MetaMembers.GetOrDefault(memberName);
+        return m_MetaMembers.GetValueOrDefault(memberName);
     }
 
     /// <summary>
@@ -348,14 +347,13 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     {
         if (desc is IOverloadableMemberDescriptor odesc)
         {
-            if (members.ContainsKey(name))
+            if (members.TryGetValue(name, out var member))
             {
-                if (members[name] is OverloadedMethodMemberDescriptor overloads)
+                if (member is OverloadedMethodMemberDescriptor overloads)
                     overloads.AddOverload(odesc);
                 else
-                    throw new ArgumentException(string.Format(
-                        "Multiple members named {0} are being added to type {1} and one or more of these members do not support overloads.",
-                        name, Type.FullName));
+                    throw new ArgumentException(
+                        $"Multiple members named {name} are being added to type {Type.FullName} and one or more of these members do not support overloads.");
             }
             else
             {
@@ -365,9 +363,8 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
         else
         {
             if (members.ContainsKey(name))
-                throw new ArgumentException(string.Format(
-                    "Multiple members named {0} are being added to type {1} and one or more of these members do not support overloads.",
-                    name, Type.FullName));
+                throw new ArgumentException(
+                    $"Multiple members named {name} are being added to type {Type.FullName} and one or more of these members do not support overloads.");
 
             members.Add(name, desc);
         }
@@ -425,7 +422,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     /// <param name="obj">The object.</param>
     /// <param name="indexName">Member name to be indexed.</param>
     /// <returns></returns>
-    protected virtual DynValue TryIndex(Script script, object obj, string indexName)
+    protected DynValue TryIndex(Script script, object obj, string indexName)
     {
         if (m_Members.TryGetValue(indexName, out var desc)) return desc.GetValue(script, obj);
 
@@ -440,9 +437,9 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     /// <param name="indexName">Member name to be indexed.</param>
     /// <param name="value">The value.</param>
     /// <returns></returns>
-    protected virtual bool TrySetIndex(Script script, object obj, string indexName, DynValue value)
+    protected bool TrySetIndex(Script script, object obj, string indexName, DynValue value)
     {
-        var descr = m_Members.GetOrDefault(indexName);
+        var descr = m_Members.GetValueOrDefault(indexName);
 
         if (descr != null)
         {
@@ -486,7 +483,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     /// <param name="value">The dynvalue to set on a setter, or null.</param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    protected virtual DynValue ExecuteIndexer(IMemberDescriptor mdesc, Script script, object obj, DynValue index,
+    protected DynValue ExecuteIndexer(IMemberDescriptor mdesc, Script script, object obj, DynValue index,
         DynValue value)
     {
         IList<DynValue> values;
@@ -499,7 +496,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
                     value
                 };
         else
-            values = value == null ? new[] { index } : (IList<DynValue>)new[] { index, value };
+            values = value == null ? [index] : [index, value];
 
         CallbackArguments args = new(values, false);
         var execCtx = script.CreateDynamicExecutionContext();
@@ -533,8 +530,8 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
 
     private DynValue MultiDispatchLessThanOrEqual(Script _, object obj)
     {
-        if (obj is IComparable comp)
-            return DynValue.NewCallback((context, args) =>
+        if (obj is IComparable)
+            return DynValue.NewCallback((_, args) =>
                 DynValue.NewBoolean(PerformComparison(obj, args[0].ToObject(), args[1].ToObject()) <= 0));
 
         return null;
@@ -542,8 +539,8 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
 
     private DynValue MultiDispatchLessThan(Script _, object obj)
     {
-        if (obj is IComparable comp)
-            return DynValue.NewCallback((context, args) =>
+        if (obj is IComparable)
+            return DynValue.NewCallback((_, args) =>
                 DynValue.NewBoolean(PerformComparison(obj, args[0].ToObject(), args[1].ToObject()) < 0));
 
         return null;
@@ -553,11 +550,11 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     {
         if (obj == null) return null;
 
-        var lenprop = m_Members.GetOrDefault("Length");
+        var lenprop = m_Members.GetValueOrDefault("Length");
         if (lenprop != null && lenprop.CanRead() && !lenprop.CanExecute())
             return lenprop.GetGetterCallbackAsDynValue(script, obj);
 
-        var countprop = m_Members.GetOrDefault("Count");
+        var countprop = m_Members.GetValueOrDefault("Count");
         if (countprop != null && countprop.CanRead() && !countprop.CanExecute())
             return countprop.GetGetterCallbackAsDynValue(script, obj);
 
@@ -566,7 +563,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
 
     private DynValue MultiDispatchEqual(Script _, object obj)
     {
-        return DynValue.NewCallback((context, args) =>
+        return DynValue.NewCallback((_, args) =>
             DynValue.NewBoolean(CheckEquality(obj, args[0].ToObject(), args[1].ToObject())));
     }
 
@@ -587,11 +584,9 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
 
     private DynValue DispatchMetaOnMethod(Script script, object obj, string methodName)
     {
-        var desc = m_Members.GetOrDefault(methodName);
+        var desc = m_Members.GetValueOrDefault(methodName);
 
-        if (desc != null) return desc.GetValue(script, obj);
-
-        return null;
+        return desc?.GetValue(script, obj);
     }
 
     private DynValue TryDispatchToNumber(Script script, object obj)

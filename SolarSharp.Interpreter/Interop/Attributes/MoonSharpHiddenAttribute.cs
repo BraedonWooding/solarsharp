@@ -8,6 +8,4 @@ namespace SolarSharp.Interpreter.Interop.Attributes;
 /// </summary>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field
                 | AttributeTargets.Constructor | AttributeTargets.Event)]
-public sealed class SolarSharpHiddenAttribute : Attribute
-{
-}
+public sealed class SolarSharpHiddenAttribute : Attribute;

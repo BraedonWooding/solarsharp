@@ -173,7 +173,7 @@ public static class LuaTypeExtensions
             DataType.Table => "table",
             DataType.UserData => "userdata",
             DataType.Thread => "coroutine",
-            _ => string.Format("internal<{0}>", type.ToLuaDebuggerString())
+            _ => $"internal<{type.ToLuaDebuggerString()}>"
         };
     }
 

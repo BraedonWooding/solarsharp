@@ -27,12 +27,9 @@ internal static class ScriptPrivateResource_Extension
 
     public static void CheckScriptOwnership(this IScriptPrivateResource containingResource, DynValue value)
     {
-        if (value != null)
-        {
-            var otherResource = value.GetAsPrivateResource();
+        var otherResource = value?.GetAsPrivateResource();
 
-            if (otherResource != null) containingResource.CheckScriptOwnership(otherResource);
-        }
+        if (otherResource != null) containingResource.CheckScriptOwnership(otherResource);
     }
 
     public static void CheckScriptOwnership(this IScriptPrivateResource resource, Script script)

@@ -11,7 +11,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void PCallMultipleReturns()
         {
-            var script = @"return pcall(function() return 1,2,3 end)";
+            var script = "return pcall(function() return 1,2,3 end)";
 
             Script S = new();
             var res = S.DoString(script);
@@ -119,20 +119,24 @@ end
 
 return a()
 ";
-            Script S = new(CoreModules.None);
-
-            S.Globals["try"] = DynValue.NewCallback((c, a) =>
+            Script S = new(CoreModules.None)
             {
-                try
+                Globals =
                 {
-                    var v = a[0].Function.Call();
-                    return v;
+                    ["try"] = DynValue.NewCallback((_, a) =>
+                    {
+                        try
+                        {
+                            var v = a[0].Function.Call();
+                            return v;
+                        }
+                        catch (ScriptRuntimeException)
+                        {
+                            return DynValue.NewString("!");
+                        }
+                    })
                 }
-                catch (ScriptRuntimeException)
-                {
-                    return DynValue.NewString("!");
-                }
-            });
+            };
 
 
             var res = S.DoString(script);

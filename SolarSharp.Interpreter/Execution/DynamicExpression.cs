@@ -64,9 +64,7 @@ public class DynamicExpression : IScriptPrivateResource
     {
         this.CheckScriptOwnership(context.GetScript());
 
-        if (m_Exp != null)
-            return m_Exp.FindDynamic(context);
-        return null;
+        return m_Exp?.FindDynamic(context);
     }
 
     /// <summary>

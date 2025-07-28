@@ -131,7 +131,7 @@ public class MethodMemberDescriptor : FunctionMemberDescriptorBase, IOptimizable
                 args[i] = Expression.Convert(x, parameters[i].OriginalType);
             }
 
-            var fn = IsStatic ? Expression.Call(methodInfo, args) : (Expression)Expression.Call(inst, methodInfo, args);
+            Expression fn = IsStatic ? Expression.Call(methodInfo, args) : Expression.Call(inst, methodInfo, args);
             if (m_IsAction)
             {
                 var lambda = Expression.Lambda<Action<object, object[]>>(fn, objinst, ep);

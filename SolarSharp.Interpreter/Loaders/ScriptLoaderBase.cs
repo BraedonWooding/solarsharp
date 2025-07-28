@@ -29,11 +29,10 @@ public abstract class ScriptLoaderBase : IScriptLoader
     ///     assumed to be either a script or the output of a string.dump call. If a Stream, autodetection takes place.
     /// </summary>
     /// <param name="file">The file.</param>
-    /// <param name="globalContext">The global context.</param>
     /// <returns>
     ///     A string, a byte[] or a Stream.
     /// </returns>
-    public abstract object LoadFile(string file, Table globalContext);
+    public abstract object LoadFile(string file);
 
     /// <summary>
     ///     Resolves the name of a module to a filename (which will later be passed to OpenScriptFile).
@@ -62,9 +61,8 @@ public abstract class ScriptLoaderBase : IScriptLoader
     ///     Resolves a filename [applying paths, etc.]
     /// </summary>
     /// <param name="filename">The filename.</param>
-    /// <param name="globalContext">The global context.</param>
     /// <returns></returns>
-    public virtual string ResolveFileName(string filename, Table globalContext)
+    public virtual string ResolveFileName(string filename)
     {
         return filename;
     }
@@ -83,7 +81,7 @@ public abstract class ScriptLoaderBase : IScriptLoader
     /// <param name="modname">The modname.</param>
     /// <param name="paths">The paths.</param>
     /// <returns></returns>
-    protected virtual string ResolveModuleName(string modname, string[] paths)
+    protected string ResolveModuleName(string modname, string[] paths)
     {
         if (paths == null)
             return null;
@@ -106,7 +104,7 @@ public abstract class ScriptLoaderBase : IScriptLoader
     /// </summary>
     public static string[] UnpackStringPaths(string str)
     {
-        return str.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+        return str.Split([';'], StringSplitOptions.RemoveEmptyEntries)
             .Select(s => s.Trim())
             .Where(s => !string.IsNullOrEmpty(s))
             .ToArray();

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Loaders;
 
@@ -62,11 +61,10 @@ public class EmbeddedResourcesScriptLoader : ScriptLoaderBase
     ///     assumed to be either a script or the output of a string.dump call. If a Stream, autodetection takes place.
     /// </summary>
     /// <param name="file">The file.</param>
-    /// <param name="globalContext">The global context.</param>
     /// <returns>
     ///     A string, a byte[] or a Stream.
     /// </returns>
-    public override object LoadFile(string file, Table globalContext)
+    public override object LoadFile(string file)
     {
         file = FileNameToResource(file);
         return m_ResourceAssembly.GetManifestResourceStream(file);

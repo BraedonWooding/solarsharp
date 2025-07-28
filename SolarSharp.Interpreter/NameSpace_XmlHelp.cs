@@ -6,9 +6,7 @@ namespace SolarSharp.Interpreter
     ///     Namespace containing all the most commonly used classes for SolarSharp operation.
     ///     When in doubt, refer to <see cref="Script" /> and <see cref="DynValue" /> classes as starting points.
     /// </summary>
-    internal static class NamespaceDoc
-    {
-    }
+    internal static class NamespaceDoc;
 }
 
 namespace SolarSharp.Interpreter.CoreLib
@@ -17,9 +15,7 @@ namespace SolarSharp.Interpreter.CoreLib
     ///     Namespace containing the implementation of the Lua standard library, as SolarSharp modules.
     ///     There's seldom the need to access these classes directly.
     /// </summary>
-    internal static class NamespaceDoc
-    {
-    }
+    internal static class NamespaceDoc;
 }
 
 namespace SolarSharp.Interpreter.CoreLib.IO
@@ -27,9 +23,7 @@ namespace SolarSharp.Interpreter.CoreLib.IO
     /// <summary>
     ///     Namespace containing userdata classes for the 'io' module
     /// </summary>
-    internal static class NamespaceDoc
-    {
-    }
+    internal static class NamespaceDoc;
 }
 
 namespace SolarSharp.Interpreter.Debugging
@@ -37,9 +31,7 @@ namespace SolarSharp.Interpreter.Debugging
     /// <summary>
     ///     Namespace containing classes used to support debuggers
     /// </summary>
-    internal static class NamespaceDoc
-    {
-    }
+    internal static class NamespaceDoc;
 }
 
 namespace SolarSharp.Interpreter.Diagnostics
@@ -47,9 +39,7 @@ namespace SolarSharp.Interpreter.Diagnostics
     /// <summary>
     ///     Namespace containing classes used to support self diagnostics (e.g. performance counters)
     /// </summary>
-    internal static class NamespaceDoc
-    {
-    }
+    internal static class NamespaceDoc;
 }
 
 namespace SolarSharp.Interpreter.Interop
@@ -58,9 +48,7 @@ namespace SolarSharp.Interpreter.Interop
     ///     Namespace containing classes used to customize and support advanced interoperations between
     ///     scripts and CLR code.
     /// </summary>
-    internal static class NamespaceDoc
-    {
-    }
+    internal static class NamespaceDoc;
 }
 
 namespace SolarSharp.Interpreter.Interop.LuaStateInterop
@@ -69,9 +57,7 @@ namespace SolarSharp.Interpreter.Interop.LuaStateInterop
     ///     Namespace containing classes used to provide a minimal support for porting code based on the classic
     ///     "LuaState" model (e.g. code based on KopiLua, UniLua or Lua itself).
     /// </summary>
-    internal static class NamespaceDoc
-    {
-    }
+    internal static class NamespaceDoc;
 }
 
 
@@ -80,9 +66,7 @@ namespace SolarSharp.Interpreter.Loaders
     /// <summary>
     ///     Namespace containing classes used to customized how scripts are loaded from external files.
     /// </summary>
-    internal static class NamespaceDoc
-    {
-    }
+    internal static class NamespaceDoc;
 }
 
 
@@ -93,9 +77,7 @@ namespace SolarSharp.Interpreter.Platforms
     ///     for the 'os' and 'io' modules, and for future modules/classes which may require OS access.
     ///     See <see cref="IPlatformAccessor" /> and <see cref="ScriptGlobalOptions.Platform" /> .
     /// </summary>
-    internal static class NamespaceDoc
-    {
-    }
+    internal static class NamespaceDoc;
 }
 
 namespace SolarSharp.Interpreter.REPL
@@ -104,7 +86,5 @@ namespace SolarSharp.Interpreter.REPL
     ///     Contains classes useful to implement REPL interpreters.
     ///     See : <see href="http://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop" />
     /// </summary>
-    internal static class NamespaceDoc
-    {
-    }
+    internal static class NamespaceDoc;
 }

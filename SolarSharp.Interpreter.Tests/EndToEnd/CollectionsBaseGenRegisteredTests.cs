@@ -64,7 +64,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             lst.Add(lst.Sum());
             lst.Add(lst.Last());
 
-            Do(code, (d, o) => asserts(d));
+            Do(code, (d, _) => asserts(d));
         }
 
         private static void Do(string code, Action<DynValue, RegCollMethods> asserts)

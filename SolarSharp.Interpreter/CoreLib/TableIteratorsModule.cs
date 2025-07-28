@@ -25,7 +25,7 @@ public class TableIteratorsModule
         var meta = executionContext.GetMetamethodTailCall(table, "__ipairs", args.GetArray());
 
         var current = DynValue.NewNumber(0);
-        return meta ?? DynValue.NewTuple(DynValue.NewCallback((ex, args) =>
+        return meta ?? DynValue.NewTuple(DynValue.NewCallback((_, args) =>
         {
             if (args[1].Number == current.Number)
             {
@@ -59,7 +59,7 @@ public class TableIteratorsModule
         // we use an efficient iterator when using pairs()
         // over the slower next(), this should save quite a few cycles
         var it = table.Table.GetEnumerator();
-        return DynValue.NewTuple(DynValue.NewCallback((ex, args) =>
+        return DynValue.NewTuple(DynValue.NewCallback((_, args) =>
         {
             if (args[1].Equals(it.Current.Key))
                 return it.MoveNext() ? DynValue.NewTuple(it.Current.Key, it.Current.Value) : DynValue.Nil;

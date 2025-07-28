@@ -12,19 +12,19 @@ internal class InvalidScriptLoader : IScriptLoader
 
     internal InvalidScriptLoader(string frameworkname)
     {
-        m_Error = string.Format(
-            @"Loading scripts from files is not automatically supported on {0}. 
-Please implement your own IScriptLoader (possibly, extending ScriptLoaderBase for easier implementation),
-use a preexisting loader like EmbeddedResourcesScriptLoader or UnityAssetsScriptLoader or load scripts from strings.",
-            frameworkname);
+        m_Error = $"""
+                   Loading scripts from files is not automatically supported on {frameworkname}. 
+                   Please implement your own IScriptLoader (possibly, extending ScriptLoaderBase for easier implementation),
+                   use a preexisting loader like EmbeddedResourcesScriptLoader or UnityAssetsScriptLoader or load scripts from strings.
+                   """;
     }
 
-    public object LoadFile(string file, Table globalContext)
+    public object LoadFile(string file)
     {
         throw new PlatformNotSupportedException(m_Error);
     }
 
-    public string ResolveFileName(string filename, Table globalContext)
+    public string ResolveFileName(string filename)
     {
         return filename;
     }

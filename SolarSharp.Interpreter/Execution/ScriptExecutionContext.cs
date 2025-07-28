@@ -191,7 +191,7 @@ public struct ScriptExecutionContext : IScriptPrivateResource
         {
             var env = EvaluateSymbolByName(WellKnownSymbols.ENV);
 
-            if (env == null || env.Type != DataType.Table)
+            if (env is not { Type: DataType.Table })
                 return null;
             return env.Table;
         }

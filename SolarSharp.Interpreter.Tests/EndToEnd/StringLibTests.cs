@@ -33,7 +33,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void String_Find_1()
         {
-            var script = @"return string.find('Hello Lua user', 'Lua');";
+            var script = "return string.find('Hello Lua user', 'Lua');";
             var res = Script.RunString(script);
             Utils.DynAssert(res, 7, 9);
         }
@@ -41,7 +41,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void String_Find_2()
         {
-            var script = @"return string.find('Hello Lua user', 'banana');";
+            var script = "return string.find('Hello Lua user', 'banana');";
             var res = Script.RunString(script);
             Utils.DynAssert(res, null);
         }
@@ -49,7 +49,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void String_Find_3()
         {
-            var script = @"return string.find('Hello Lua user', 'Lua', 1);";
+            var script = "return string.find('Hello Lua user', 'Lua', 1);";
             var res = Script.RunString(script);
             Utils.DynAssert(res, 7, 9);
         }
@@ -57,7 +57,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void String_Find_4()
         {
-            var script = @"return string.find('Hello Lua user', 'Lua', 8);";
+            var script = "return string.find('Hello Lua user', 'Lua', 8);";
             var res = Script.RunString(script);
             Utils.DynAssert(res, null);
         }
@@ -65,7 +65,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void String_Find_5()
         {
-            var script = @"return string.find('Hello Lua user', 'e', -5);";
+            var script = "return string.find('Hello Lua user', 'e', -5);";
             var res = Script.RunString(script);
             Utils.DynAssert(res, 13, 13);
         }
@@ -73,7 +73,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void String_Find_6()
         {
-            var script = @"return string.find('Hello Lua user', '%su');";
+            var script = "return string.find('Hello Lua user', '%su');";
             var res = Script.RunString(script);
             Utils.DynAssert(res, 10, 11);
         }
@@ -81,7 +81,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void String_Find_7()
         {
-            var script = @"return string.find('Hello Lua user', '%su', 1);";
+            var script = "return string.find('Hello Lua user', '%su', 1);";
             var res = Script.RunString(script);
             Utils.DynAssert(res, 10, 11);
         }
@@ -89,7 +89,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void String_Find_8()
         {
-            var script = @"return string.find('Hello Lua user', '%su', 1, true);";
+            var script = "return string.find('Hello Lua user', '%su', 1, true);";
             var res = Script.RunString(script);
             Utils.DynAssert(res, null);
         }
@@ -228,10 +228,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void String_GSub_3()
         {
-            Script S = new();
-            S.Globals["a"] =
-                @"                  'C:\temp\test.lua:68: bad argument #1 to 'date' (invalid conversion specifier '%Ja')'
-    doesn't match '^[^:]+:%d+: bad argument #1 to 'date' %(invalid conversion specifier '%%Ja'%)'";
+            Script S = new()
+            {
+                Globals =
+                {
+                    ["a"] = @"                  'C:\temp\test.lua:68: bad argument #1 to 'date' (invalid conversion specifier '%Ja')'
+    doesn't match '^[^:]+:%d+: bad argument #1 to 'date' %(invalid conversion specifier '%%Ja'%)'"
+                }
+            };
 
             var script = @"
 				string.gsub(a, '\n', '\n #')
@@ -242,17 +246,22 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void String_Match_1()
         {
-            var s = @"test.lua:185: field 'day' missing in date table";
-            var p = @"^[^:]+:%d+: field 'day' missing in date table";
+            var s = "test.lua:185: field 'day' missing in date table";
+            var p = "^[^:]+:%d+: field 'day' missing in date table";
 
             TestMatch(s, p, true);
         }
 
         private static void TestMatch(string s, string p, bool expected)
         {
-            Script S = new(CoreModules.String);
-            S.Globals["s"] = s;
-            S.Globals["p"] = p;
+            Script S = new(CoreModules.String)
+            {
+                Globals =
+                {
+                    ["s"] = s,
+                    ["p"] = p
+                }
+            };
             var res = S.DoString("return string.match(s, p)");
 
             Assert.That(!res.IsNil(), Is.EqualTo(expected));

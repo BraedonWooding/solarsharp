@@ -58,7 +58,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private void Do(string code, Action<DynValue> asserts)
         {
-            Do(code, (d, o) => asserts(d));
+            Do(code, (d, _) => asserts(d));
         }
 
         private static void Do(string code, Action<DynValue, RegCollMethods> asserts)

@@ -37,8 +37,8 @@ internal static class CommandManager
 
     public static ICommand Find(string cmd)
     {
-        if (m_Registry.ContainsKey(cmd))
-            return m_Registry[cmd];
+        if (m_Registry.TryGetValue(cmd, out var find))
+            return find;
 
         return null;
     }

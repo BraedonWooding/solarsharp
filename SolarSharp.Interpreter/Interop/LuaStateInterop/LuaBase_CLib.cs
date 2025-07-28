@@ -85,7 +85,7 @@ public partial class LuaBase
 
     protected static bool isxdigit(char c)
     {
-        return "0123456789ABCDEFabcdef".IndexOf(c) >= 0;
+        return "0123456789ABCDEFabcdef".Contains(c.ToString());
     }
 
     protected static bool isgraph(char c)

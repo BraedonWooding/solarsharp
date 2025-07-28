@@ -36,7 +36,7 @@ public class Script : IScriptPrivateResource
 
     private readonly ByteCode m_ByteCode;
     private readonly Processor m_MainProcessor;
-    private readonly List<SourceCode> m_Sources = new();
+    private readonly List<SourceCode> m_Sources = [];
     private readonly Table[] m_TypeMetatables = new Table[(int)LuaTypeExtensions.MaxMetaTypes];
     private IDebugger m_Debugger;
 
@@ -49,8 +49,8 @@ public class Script : IScriptPrivateResource
 
         DefaultOptions = new ScriptOptions
         {
-            DebugPrint = s => { GlobalOptions.Platform.DefaultPrint(s); },
-            DebugInput = s => { return GlobalOptions.Platform.DefaultInput(s); },
+            DebugPrint = GlobalOptions.Platform.DefaultPrint,
+            DebugInput = GlobalOptions.Platform.DefaultInput,
             CheckThreadAccess = true,
             ScriptLoader = PlatformAutoDetector.GetDefaultScriptLoader(),
             TailCallOptimizationThreshold = 65536
@@ -156,7 +156,7 @@ public class Script : IScriptPrivateResource
     {
         this.CheckScriptOwnership(globalTable);
 
-        var chunkName = string.Format("libfunc_{0}", funcFriendlyName ?? m_Sources.Count.ToString());
+        var chunkName = $"libfunc_{funcFriendlyName ?? m_Sources.Count.ToString()}";
 
         SourceCode source = new(chunkName, code, m_Sources.Count, this);
 
@@ -205,7 +205,7 @@ public class Script : IScriptPrivateResource
             return LoadStream(ms, globalTable, codeFriendlyName);
         }
 
-        var chunkName = string.Format("{0}", codeFriendlyName ?? "chunk_" + m_Sources.Count);
+        var chunkName = $"{codeFriendlyName ?? "chunk_" + m_Sources.Count}";
 
         SourceCode source = new(codeFriendlyName ?? chunkName, code, m_Sources.Count, this);
 
@@ -243,10 +243,10 @@ public class Script : IScriptPrivateResource
             return LoadString(scriptCode, globalTable, codeFriendlyName);
         }
 
-        var chunkName = string.Format("{0}", codeFriendlyName ?? "dump_" + m_Sources.Count);
+        var chunkName = $"{codeFriendlyName ?? "dump_" + m_Sources.Count}";
 
         SourceCode source = new(codeFriendlyName ?? chunkName,
-            string.Format("-- This script was decoded from a binary dump - dump_{0}", m_Sources.Count),
+            $"-- This script was decoded from a binary dump - dump_{m_Sources.Count}",
             m_Sources.Count, this);
 
         m_Sources.Add(source);
@@ -309,10 +309,10 @@ public class Script : IScriptPrivateResource
         this.CheckScriptOwnership(globalContext);
 
 #pragma warning disable 618
-        filename = Options.ScriptLoader.ResolveFileName(filename, globalContext ?? Globals);
+        filename = Options.ScriptLoader.ResolveFileName(filename);
 #pragma warning restore 618
 
-        var code = Options.ScriptLoader.LoadFile(filename, globalContext ?? Globals);
+        var code = Options.ScriptLoader.LoadFile(filename);
         switch (code)
         {
             case string v: return LoadString(v, globalContext, friendlyFilename ?? filename);
@@ -329,7 +329,7 @@ public class Script : IScriptPrivateResource
             case null: throw new InvalidCastException("Unexpected null from IScriptLoader.LoadFile");
             default:
                 throw new InvalidCastException(
-                    string.Format("Unsupported return type from IScriptLoader.LoadFile : {0}", code.GetType()));
+                    $"Unsupported return type from IScriptLoader.LoadFile : {code.GetType()}");
         }
     }
 
@@ -431,21 +431,21 @@ public class Script : IScriptPrivateResource
             // if we find the meta for a new chunk, we use the value in the meta for the _ENV upvalue
             c = meta != null && meta.NumVal2 == (int)OpCodeMetadataType.ChunkEntrypoint
                 ? new Closure(this, address,
-                    new[] { SymbolRef.Upvalue(WellKnownSymbols.ENV, 0) },
-                    new[] { meta.Value })
-                : new Closure(this, address, new SymbolRef[0], new DynValue[0]);
+                    [SymbolRef.Upvalue(WellKnownSymbols.ENV, 0)],
+                    [meta.Value])
+                : new Closure(this, address, [], []);
         }
         else
         {
-            var syms = new SymbolRef[]
-            {
+            SymbolRef[] syms =
+            [
                 new() { i_Env = null, i_Index = 0, i_Name = WellKnownSymbols.ENV, i_Type = SymbolRefType.DefaultEnv }
-            };
+            ];
 
-            var vals = new[]
-            {
+            DynValue[] vals =
+            [
                 DynValue.NewTable(envTable)
-            };
+            ];
 
             c = new Closure(this, address, syms, vals);
         }
@@ -463,7 +463,7 @@ public class Script : IScriptPrivateResource
     /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
     public DynValue Call(DynValue function)
     {
-        return Call(function, new DynValue[0]);
+        return Call(function, []);
     }
 
     /// <summary>
@@ -584,9 +584,9 @@ public class Script : IScriptPrivateResource
         this.CheckScriptOwnership(coroutine);
         this.CheckScriptOwnership(function);
 
-        if (coroutine == null || coroutine.Type != Coroutine.CoroutineType.Coroutine)
+        if (coroutine is not { Type: Coroutine.CoroutineType.Coroutine })
             throw new InvalidOperationException("coroutine is not CoroutineType.Coroutine");
-        if (function == null || function.Type != DataType.Function)
+        if (function is not { Type: DataType.Function })
             throw new InvalidOperationException("function is not DataType.Function");
         if (coroutine.State != CoroutineState.Dead)
             throw new InvalidOperationException("coroutine's state must be CoroutineState.Dead to recycle");
@@ -738,8 +738,7 @@ public class Script : IScriptPrivateResource
         subproduct = subproduct != null ? subproduct + " " : "";
 
         StringBuilder sb = new();
-        sb.AppendLine(string.Format("SolarSharp {0}{1} [{2}]", subproduct, VERSION,
-            GlobalOptions.Platform.GetPlatformName()));
+        sb.AppendLine($"SolarSharp {subproduct}{VERSION} [{GlobalOptions.Platform.GetPlatformName()}]");
         sb.AppendLine("Copyright (C) 2014-2016 Marco Mastropaolo");
         sb.AppendLine("http://www.SolarSharp.org");
         return sb.ToString();

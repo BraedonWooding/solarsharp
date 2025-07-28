@@ -39,7 +39,8 @@ internal class FunctionDefinitionExpression : Expression, IClosureBuilder
         bool isLambda)
         : base(lcontext)
     {
-        if (m_UsesGlobalEnv = usesGlobalEnv)
+        m_UsesGlobalEnv = usesGlobalEnv;
+        if (m_UsesGlobalEnv)
             CheckTokenType(lcontext, TokenType.Function);
 
         // here lexer should be at the '(' or at the '|'

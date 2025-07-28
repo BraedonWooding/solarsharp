@@ -23,7 +23,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public static string ConcatNums(int p1, int p2)
             {
-                return string.Format("{0}%{1}", p1, p2);
+                return $"{p1}%{p2}";
             }
 
             public static int SomeMethodWithLongName(int i)
@@ -145,7 +145,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public string ConcatNums(int p1, int p2)
             {
-                return string.Format("{0}%{1}", p1, p2);
+                return $"{p1}%{p2}";
             }
 
             public int SomeMethodWithLongName(int i)
@@ -401,15 +401,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table,
                     typeof(List<string>),
-                    v => null);
+                    _ => null);
 
                 Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(IList<int>),
-                    v => new List<int> { 42, 77, 125, 13 });
+                    _ => new List<int> { 42, 77, 125, 13 });
 
                 Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(int[]),
-                    v => new[] { 43, 78, 126, 14 });
+                    _ => new[] { 43, 78, 126, 14 });
 
-                Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<StringBuilder>((_s, v) =>
+                Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<StringBuilder>((_, v) =>
                     DynValue.NewString(v.ToString().ToUpper()));
 
 
@@ -953,7 +953,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             try
             {
-                var script = @"return myobj:Test1()";
+                var script = "return myobj:Test1()";
 
                 UserData.RegistrationPolicy = InteropRegistrationPolicy.Automatic;
 
@@ -980,7 +980,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void VInterop_DualInterfaces()
         {
-            var script = @"return myobj:Test1() .. myobj:Test2()";
+            var script = "return myobj:Test1() .. myobj:Test2()";
 
             Script S = new();
 

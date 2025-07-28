@@ -61,9 +61,9 @@ public class IoModule
 
         optionsStream ??= Script.GlobalOptions.Platform.IO_GetStandardStream(file);
 
-        var udb = file == StandardFileType.StdIn
+        FileUserDataBase udb = file == StandardFileType.StdIn
             ? StandardIOFileUserDataBase.CreateInputStream(optionsStream)
-            : (FileUserDataBase)StandardIOFileUserDataBase.CreateOutputStream(optionsStream);
+            : StandardIOFileUserDataBase.CreateOutputStream(optionsStream);
         R.Set("853BEAAF298648839E2C99D005E1DF94_STD_" + file, UserData.Create(udb));
     }
 
@@ -170,7 +170,7 @@ public class IoModule
             List<DynValue> readLines = new();
 
             using (var stream =
-                   Script.GlobalOptions.Platform.IO_OpenFile(executionContext.GetScript(), filename, null, "r"))
+                   Script.GlobalOptions.Platform.IO_OpenFile(filename, "r"))
             {
                 using var reader = new StreamReader(stream);
                 while (!reader.EndOfStream)
@@ -249,7 +249,7 @@ public class IoModule
     public static string IoExceptionToLuaMessage(Exception ex, string filename)
     {
         if (ex is FileNotFoundException)
-            return string.Format("{0}: No such file or directory", filename);
+            return $"{filename}: No such file or directory";
         return ex.Message;
     }
 

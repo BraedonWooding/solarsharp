@@ -57,7 +57,7 @@ public static class ModuleRegister
         var m = solarsharp_table.Table;
 
         table.Set("_G", DynValue.NewTable(table));
-        table.Set("_VERSION", DynValue.NewString(string.Format("SolarSharp {0}", Script.VERSION)));
+        table.Set("_VERSION", DynValue.NewString($"SolarSharp {Script.VERSION}"));
         table.Set("_SOLARSHARP", solarsharp_table);
 
         m.Set("version", DynValue.NewString(Script.VERSION));
@@ -91,8 +91,7 @@ public static class ModuleRegister
                     .GetCustomAttributes(typeof(SolarSharpModuleMethodAttribute), false).First();
 
                 if (!CallbackFunction.CheckCallbackSignature(mi, true))
-                    throw new ArgumentException(string.Format("Method {0} does not have the right signature.",
-                        mi.Name));
+                    throw new ArgumentException($"Method {mi.Name} does not have the right signature.");
 
 #if NETFX_CORE
 					Delegate deleg =
@@ -112,7 +111,7 @@ public static class ModuleRegister
             }
             else if (mi.Name == "SolarSharpInit")
             {
-                var args = new object[2] { gtable, table };
+                object[] args = [gtable, table];
                 mi.Invoke(null, args);
             }
 
@@ -124,7 +123,7 @@ public static class ModuleRegister
                 .GetCustomAttributes(typeof(SolarSharpModuleMethodAttribute), false).First();
             var name = !string.IsNullOrEmpty(attr.Name) ? attr.Name : fi.Name;
 
-            RegisterScriptField(fi, null, table, t, name);
+            RegisterScriptField(fi, null, table, name);
         }
 
         foreach (var fi in Framework.Do.GetFields(t).Where(_mi =>
@@ -135,13 +134,13 @@ public static class ModuleRegister
                 .GetCustomAttributes(typeof(SolarSharpModuleConstantAttribute), false).First();
             var name = !string.IsNullOrEmpty(attr.Name) ? attr.Name : fi.Name;
 
-            RegisterScriptFieldAsConst(fi, null, table, t, name);
+            RegisterScriptFieldAsConst(fi, null, table, name);
         }
 
         return gtable;
     }
 
-    private static void RegisterScriptFieldAsConst(FieldInfo fi, object o, Table table, Type t, string name)
+    private static void RegisterScriptFieldAsConst(FieldInfo fi, object o, Table table, string name)
     {
         if (fi.FieldType == typeof(string))
         {
@@ -156,15 +155,14 @@ public static class ModuleRegister
         else
         {
             throw new ArgumentException(
-                string.Format("Field {0} does not have the right type - it must be string or double.", name));
+                $"Field {name} does not have the right type - it must be string or double.");
         }
     }
 
-    private static void RegisterScriptField(FieldInfo fi, object o, Table table, Type t, string name)
+    private static void RegisterScriptField(FieldInfo fi, object o, Table table, string name)
     {
         if (fi.FieldType != typeof(string))
-            throw new ArgumentException(string.Format("Field {0} does not have the right type - it must be string.",
-                name));
+            throw new ArgumentException($"Field {name} does not have the right type - it must be string.");
 
         var val = fi.GetValue(o) as string;
 

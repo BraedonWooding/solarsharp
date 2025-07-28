@@ -26,6 +26,6 @@ public class RefIdObject
     /// <returns></returns>
     public string FormatTypeString(string typeString)
     {
-        return string.Format("{0}: {1:X8}", typeString, ReferenceID);
+        return $"{typeString}: {ReferenceID:X8}";
     }
 }

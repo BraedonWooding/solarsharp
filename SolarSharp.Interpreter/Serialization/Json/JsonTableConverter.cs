@@ -37,7 +37,7 @@ public static class JsonTableConverter
 
         if (table.Length == 0)
         {
-            sb.Append("{");
+            sb.Append('{');
             foreach (var pair in table)
                 if (pair.Key.Type == DataType.String && IsValueJsonCompatible(pair.Value))
                 {
@@ -51,11 +51,11 @@ public static class JsonTableConverter
                     first = false;
                 }
 
-            sb.Append("}");
+            sb.Append('}');
         }
         else
         {
-            sb.Append("[");
+            sb.Append('[');
             for (var i = 1; i <= table.Length; i++)
             {
                 var value = table.Get(i);
@@ -70,7 +70,7 @@ public static class JsonTableConverter
                 }
             }
 
-            sb.Append("]");
+            sb.Append(']');
         }
     }
 
@@ -112,7 +112,7 @@ public static class JsonTableConverter
     private static string EscapeString(string s)
     {
         s = s.Replace(@"\", @"\\");
-        s = s.Replace(@"/", @"\/");
+        s = s.Replace("/", @"\/");
         s = s.Replace("\"", "\\\"");
         s = s.Replace("\f", @"\f");
         s = s.Replace("\b", @"\b");

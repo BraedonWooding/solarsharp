@@ -351,8 +351,6 @@ internal static class Tools
                 paramIx = Convert.ToInt32(val) - 1;
             }
 
-            ;
-
             #endregion
 
             #region format flags
@@ -368,11 +366,11 @@ internal static class Tools
             {
                 var flags = m.Groups[2].Value;
 
-                flagAlternate = flags.IndexOf('#') >= 0;
-                flagLeft2Right = flags.IndexOf('-') >= 0;
-                flagPositiveSign = flags.IndexOf('+') >= 0;
-                flagPositiveSpace = flags.IndexOf(' ') >= 0;
-                flagGroupThousands = flags.IndexOf('\'') >= 0;
+                flagAlternate = flags.Contains('#');
+                flagLeft2Right = flags.Contains('-');
+                flagPositiveSign = flags.Contains('+');
+                flagPositiveSpace = flags.Contains(' ');
+                flagGroupThousands = flags.Contains('\'');
 
                 // positive + indicator overrides a
                 // positive space character
@@ -493,7 +491,7 @@ internal static class Tools
                 #region d - integer
 
                 case 'd': // integer
-                    w = FormatNumber(flagGroupThousands ? "n" : "d", flagAlternate,
+                    w = FormatNumber(flagGroupThousands ? "n" : "d",
                         fieldLength, int.MinValue, flagLeft2Right,
                         flagPositiveSign, flagPositiveSpace,
                         paddingCharacter, o);
@@ -512,8 +510,8 @@ internal static class Tools
                 #region o - octal integer
 
                 case 'o': // octal integer - no leading zero
-                    w = FormatOct("o", flagAlternate,
-                        fieldLength, int.MinValue, flagLeft2Right,
+                    w = FormatOct(flagAlternate,
+                        fieldLength, flagLeft2Right,
                         paddingCharacter, o);
                     defaultParamIx++;
                     break;
@@ -545,7 +543,7 @@ internal static class Tools
                 #region u - unsigned integer
 
                 case 'u': // unsigned integer
-                    w = FormatNumber(flagGroupThousands ? "n" : "d", flagAlternate,
+                    w = FormatNumber(flagGroupThousands ? "n" : "d",
                         fieldLength, int.MinValue, flagLeft2Right,
                         false, false,
                         paddingCharacter, ToUnsigned(o));
@@ -588,7 +586,7 @@ internal static class Tools
                 #region f - double number
 
                 case 'f': // double
-                    w = FormatNumber(flagGroupThousands ? "n" : "f", flagAlternate,
+                    w = FormatNumber(flagGroupThousands ? "n" : "f",
                         fieldLength, fieldPrecision, flagLeft2Right,
                         flagPositiveSign, flagPositiveSpace,
                         paddingCharacter, o);
@@ -600,7 +598,7 @@ internal static class Tools
                 #region e - exponent number
 
                 case 'e': // double / exponent
-                    w = FormatNumber("e", flagAlternate,
+                    w = FormatNumber("e",
                         fieldLength, fieldPrecision, flagLeft2Right,
                         flagPositiveSign, flagPositiveSpace,
                         paddingCharacter, o);
@@ -612,7 +610,7 @@ internal static class Tools
                 #region E - exponent number
 
                 case 'E': // double / exponent
-                    w = FormatNumber("E", flagAlternate,
+                    w = FormatNumber("E",
                         fieldLength, fieldPrecision, flagLeft2Right,
                         flagPositiveSign, flagPositiveSpace,
                         paddingCharacter, o);
@@ -624,7 +622,7 @@ internal static class Tools
                 #region g - general number
 
                 case 'g': // double / exponent
-                    w = FormatNumber("g", flagAlternate,
+                    w = FormatNumber("g",
                         fieldLength, fieldPrecision, flagLeft2Right,
                         flagPositiveSign, flagPositiveSpace,
                         paddingCharacter, o);
@@ -636,7 +634,7 @@ internal static class Tools
                 #region G - general number
 
                 case 'G': // double / exponent
-                    w = FormatNumber("G", flagAlternate,
+                    w = FormatNumber("G",
                         fieldLength, fieldPrecision, flagLeft2Right,
                         flagPositiveSign, flagPositiveSpace,
                         paddingCharacter, o);
@@ -662,7 +660,7 @@ internal static class Tools
                 #region n - number of processed chars so far
 
                 case 'n': // number of characters so far
-                    w = FormatNumber("d", flagAlternate,
+                    w = FormatNumber("d",
                         fieldLength, int.MinValue, flagLeft2Right,
                         flagPositiveSign, flagPositiveSpace,
                         paddingCharacter, m.Index);
@@ -697,8 +695,8 @@ internal static class Tools
 
     #region FormatOCT
 
-    private static string FormatOct(string NativeFormat, bool Alternate,
-        int FieldLength, int FieldPrecision,
+    private static string FormatOct(bool Alternate,
+        int FieldLength,
         bool Left2Right,
         char Padding, object Value)
     {
@@ -771,7 +769,7 @@ internal static class Tools
 
     #region FormatNumber
 
-    private static string FormatNumber(string NativeFormat, bool Alternate,
+    private static string FormatNumber(string NativeFormat,
         int FieldLength, int FieldPrecision,
         bool Left2Right,
         bool PositiveSign, bool PositiveSpace,

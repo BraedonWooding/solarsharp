@@ -17,7 +17,7 @@ internal class ClosureContext : List<DynValue>
 
     internal ClosureContext()
     {
-        Symbols = new string[0];
+        Symbols = [];
     }
 
     /// <summary>

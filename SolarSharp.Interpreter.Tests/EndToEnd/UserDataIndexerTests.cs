@@ -55,7 +55,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_SingleSetterOnly()
         {
-            var script = @"o[1] = 1; return 13";
+            var script = "o[1] = 1; return 13";
             IndexerTest(script, 13);
         }
 
@@ -63,14 +63,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_SingleIndexerGetSet()
         {
-            var script = @"o[5] = 19; return o[5];";
+            var script = "o[5] = 19; return o[5];";
             IndexerTest(script, 19);
         }
 
         [Test]
         public void Interop_MultiIndexerGetSet()
         {
-            var script = @"o[1,2,3] = 47; return o[1,2,3];";
+            var script = "o[1,2,3] = 47; return o[1,2,3];";
             IndexerTest(script, 47);
         }
 
@@ -111,7 +111,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_MixedIndexerGetSet()
         {
-            var script = @"o[3,2,3] = 119; return o[15];";
+            var script = "o[3,2,3] = 119; return o[15];";
             IndexerTest(script, 119);
         }
 

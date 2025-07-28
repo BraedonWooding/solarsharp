@@ -16,20 +16,18 @@ public interface IScriptLoader
     ///     assumed to be either a script or the output of a string.dump call. If a Stream, autodetection takes place.
     /// </summary>
     /// <param name="file">The file.</param>
-    /// <param name="globalContext">The global context.</param>
     /// <returns>
     ///     A string, a byte[] or a Stream.
     /// </returns>
-    object LoadFile(string file, Table globalContext);
+    object LoadFile(string file);
 
     /// <summary>
     ///     Resolves a filename [applying paths, etc.]
     /// </summary>
     /// <param name="filename">The filename.</param>
-    /// <param name="globalContext">The global context.</param>
     /// <returns></returns>
     [Obsolete("This serves almost no purpose. Kept here just to preserve backward compatibility.")]
-    string ResolveFileName(string filename, Table globalContext);
+    string ResolveFileName(string filename);
 
     /// <summary>
     ///     Resolves the name of a module to a filename (which will later be passed to OpenScriptFile)

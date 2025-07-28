@@ -7,7 +7,7 @@ namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
 /// <summary>
 ///     Class providing a simple descriptor for constant DynValues in userdata
 /// </summary>
-public class DynValueMemberDescriptor : IMemberDescriptor
+public sealed class DynValueMemberDescriptor : IMemberDescriptor
 {
     private readonly DynValue m_Value;
 
@@ -19,7 +19,7 @@ public class DynValueMemberDescriptor : IMemberDescriptor
     ///     A string containing a table whose first member is the dynvalue to be deserialized
     ///     (convoluted...).
     /// </param>
-    protected DynValueMemberDescriptor(string name, string serializedTableValue)
+    private DynValueMemberDescriptor(string name, string serializedTableValue)
     {
         Script s = new();
         var exp = s.CreateDynamicExpression(serializedTableValue);
@@ -34,7 +34,7 @@ public class DynValueMemberDescriptor : IMemberDescriptor
     ///     Initializes a new instance of the <see cref="DynValueMemberDescriptor" /> class.
     /// </summary>
     /// <param name="name">The name.</param>
-    protected DynValueMemberDescriptor(string name)
+    private DynValueMemberDescriptor(string name)
     {
         MemberAccess = MemberDescriptorAccess.CanRead;
         m_Value = null;
@@ -61,7 +61,7 @@ public class DynValueMemberDescriptor : IMemberDescriptor
     /// <summary>
     ///     Gets the value wrapped by this descriptor
     /// </summary>
-    public virtual DynValue Value => m_Value;
+    public DynValue Value => m_Value;
 
     /// <summary>
     ///     Gets a value indicating whether the described member is static.

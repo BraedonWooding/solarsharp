@@ -204,10 +204,9 @@ internal sealed partial class Processor
                         if (instructionPtr == YIELD_SPECIAL_TRAP) goto yield_to_calling_coroutine;
                         break;
                     case OpCode.Invalid:
-                        throw new NotImplementedException(string.Format("Invalid opcode : {0}", i.Name));
+                        throw new NotImplementedException($"Invalid opcode : {i.Name}");
                     default:
-                        throw new NotImplementedException(string.Format("Execution for {0} not implented yet!",
-                            i.OpCode));
+                        throw new NotImplementedException($"Execution for {i.OpCode} not implented yet!");
                 }
             }
 
@@ -258,7 +257,7 @@ internal sealed partial class Processor
                         m_ValueStack.RemoveLast(argscnt + 1);
                     }
 
-                    var cbargs = new[] { DynValue.NewString(ex.DecoratedMessage) };
+                    DynValue[] cbargs = [DynValue.NewString(ex.DecoratedMessage)];
 
                     var handled =
                         csi.ErrorHandler.Invoke(new ScriptExecutionContext(this, GetCurrentSourceRef(instructionPtr)),
@@ -289,7 +288,7 @@ internal sealed partial class Processor
     {
         try
         {
-            var args = new[] { DynValue.NewString(decoratedMessage) };
+            DynValue[] args = [DynValue.NewString(decoratedMessage)];
             var ret = DynValue.Nil;
 
             if (messageHandler.Type == DataType.Function)
@@ -375,7 +374,7 @@ internal sealed partial class Processor
     private void ExecClosure(Instruction i)
     {
         Closure c = new(m_Script, i.NumVal, i.SymbolList,
-            i.SymbolList.Select(s => GetUpvalueSymbol(s)).ToList());
+            i.SymbolList.Select(GetUpvalueSymbol).ToList());
 
         m_ValueStack.Push(DynValue.NewClosure(c));
     }
@@ -420,8 +419,8 @@ internal sealed partial class Processor
         var t = m_ValueStack.Peek(i.NumVal);
 
         if (t.Type == DataType.Tuple)
-            for (var idx = 0; idx < t.Tuple.Length; idx++)
-                m_ValueStack.Push(t.Tuple[idx]);
+            foreach (var t1 in t.Tuple)
+                m_ValueStack.Push(t1);
         else
             m_ValueStack.Push(t);
     }
@@ -536,19 +535,19 @@ internal sealed partial class Processor
 
     private IList<DynValue> CreateArgsListForFunctionCall(int numargs, int offsFromTop)
     {
-        if (numargs == 0) return new DynValue[0];
+        if (numargs == 0) return [];
 
         var lastParam = m_ValueStack.Peek(offsFromTop);
 
         if (lastParam.Type == DataType.Tuple && lastParam.Tuple.Length > 1)
         {
-            List<DynValue> values = new();
+            List<DynValue> values = [];
 
             for (var idx = 0; idx < numargs - 1; idx++)
                 values.Add(m_ValueStack.Peek(numargs - idx - 1 + offsFromTop));
 
-            for (var idx = 0; idx < lastParam.Tuple.Length; idx++)
-                values.Add(lastParam.Tuple[idx]);
+            foreach (var t in lastParam.Tuple)
+                values.Add(t);
 
             return values;
         }
@@ -737,7 +736,7 @@ internal sealed partial class Processor
 
         if (csi.Continuation != null)
             m_ValueStack.Push(csi.Continuation.Invoke(new ScriptExecutionContext(this, i.SourceCodeRef),
-                new DynValue[1] { m_ValueStack.Pop() }));
+                [m_ValueStack.Pop()]));
 
         return retpoint;
     }
@@ -754,8 +753,8 @@ internal sealed partial class Processor
 
             m_ValueStack.Push(tcd.Function);
 
-            for (var ii = 0; ii < tcd.Args.Length; ii++)
-                m_ValueStack.Push(tcd.Args[ii]);
+            foreach (var t in tcd.Args)
+                m_ValueStack.Push(t);
 
             return Internal_ExecCall(tcd.Args.Length, instructionPtr, tcd.ErrorHandler, tcd.Continuation, false, null,
                 tcd.ErrorHandlerBeforeUnwind);
@@ -1016,7 +1015,6 @@ internal sealed partial class Processor
 
                 if (ip < 0)
                     throw ScriptRuntimeException.CompareInvalidType(l, r);
-                return ip;
             }
 
             return ip;

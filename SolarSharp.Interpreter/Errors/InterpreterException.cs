@@ -79,8 +79,8 @@ public class InterpreterException : Exception
                 DecoratedMessage = Message;
             else
                 DecoratedMessage = sref != null
-                    ? string.Format("{0}: {1}", sref.FormatLocation(script), Message)
-                    : string.Format("bytecode:{0}: {1}", ip, Message);
+                    ? $"{sref.FormatLocation(script)}: {Message}"
+                    : $"bytecode:{ip}: {Message}";
         }
     }
 

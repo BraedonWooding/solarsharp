@@ -20,8 +20,8 @@ internal static class NumericConversions
 
     static NumericConversions()
     {
-        NumericTypesOrdered = new[]
-        {
+        NumericTypesOrdered =
+        [
             typeof(double),
             typeof(decimal),
             typeof(float),
@@ -33,7 +33,7 @@ internal static class NumericConversions
             typeof(uint),
             typeof(ushort),
             typeof(byte)
-        };
+        ];
         NumericTypes = new HashSet<Type>(NumericTypesOrdered);
     }
 
