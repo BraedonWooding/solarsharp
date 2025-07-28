@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Benchmark\Benchmark.csproj" />
-    <ProjectReference Include="..\SolarSharp.Hardwire\SolarSharp.Hardwire.csproj" />
     <ProjectReference Include="..\SolarSharp.Interpreter\SolarSharp.Interpreter.csproj" />
   </ItemGroup>
 

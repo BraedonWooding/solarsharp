@@ -6,7 +6,6 @@ namespace SolarSharp.Commands.Implementations
 {
     internal class DebugCommand : ICommand
     {
-        //private RemoteDebuggerService m_Debugger;
 
         public string Name
         {

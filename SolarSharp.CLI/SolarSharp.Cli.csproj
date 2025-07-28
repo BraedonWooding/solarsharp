@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <LangVersion>9.0</LangVersion>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <RootNamespace>SolarSharp</RootNamespace>
@@ -9,7 +8,6 @@
     <Authors>Marco Mastropaolo, Braedon Wooding, MoonSharp Contributors</Authors>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SolarSharp.Hardwire\SolarSharp.Hardwire.csproj" />
     <ProjectReference Include="..\SolarSharp.Interpreter\SolarSharp.Interpreter.csproj" />
   </ItemGroup>
   <ItemGroup>
