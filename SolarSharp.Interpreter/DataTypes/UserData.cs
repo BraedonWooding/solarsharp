@@ -40,7 +40,7 @@ public class UserData : RefIdObject
     ///     Gets or sets the "uservalue". See debug.getuservalue and debug.setuservalue.
     ///     http://www.lua.org/manual/5.2/manual.html#pdf-debug.setuservalue
     /// </summary>
-    public DynValue UserValue { get; set; }
+    public LuaValue UserValue { get; set; }
 
     /// <summary>
     ///     Gets the object associated to this userdata (null for statics)
@@ -229,14 +229,14 @@ public class UserData : RefIdObject
     }
 
     /// <summary>
-    ///     Creates a userdata DynValue from the specified object, using a specific descriptor
+    ///     Creates a userdata LuaValue from the specified object, using a specific descriptor
     /// </summary>
     /// <param name="o">The object</param>
     /// <param name="descr">The descriptor.</param>
     /// <returns></returns>
-    public static DynValue Create(object o, IUserDataDescriptor descr)
+    public static LuaValue Create(object o, IUserDataDescriptor descr)
     {
-        return DynValue.NewUserData(new UserData
+        return LuaValue.NewUserData(new UserData
         {
             Descriptor = descr,
             Object = o
@@ -244,11 +244,11 @@ public class UserData : RefIdObject
     }
 
     /// <summary>
-    ///     Creates a userdata DynValue from the specified object
+    ///     Creates a userdata LuaValue from the specified object
     /// </summary>
     /// <param name="o">The object</param>
     /// <returns></returns>
-    public static DynValue Create(object o)
+    public static LuaValue Create(object o)
     {
         var descr = GetDescriptorForObject(o);
         if (descr == null)
@@ -263,15 +263,15 @@ public class UserData : RefIdObject
     }
 
     /// <summary>
-    ///     Creates a static userdata DynValue from the specified IUserDataDescriptor
+    ///     Creates a static userdata LuaValue from the specified IUserDataDescriptor
     /// </summary>
     /// <param name="descr">The IUserDataDescriptor</param>
     /// <returns></returns>
-    public static DynValue CreateStatic(IUserDataDescriptor descr)
+    public static LuaValue CreateStatic(IUserDataDescriptor descr)
     {
         if (descr == null) return null;
 
-        return DynValue.NewUserData(new UserData
+        return LuaValue.NewUserData(new UserData
         {
             Descriptor = descr,
             Object = null
@@ -279,21 +279,21 @@ public class UserData : RefIdObject
     }
 
     /// <summary>
-    ///     Creates a static userdata DynValue from the specified Type
+    ///     Creates a static userdata LuaValue from the specified Type
     /// </summary>
     /// <param name="t">The type</param>
     /// <returns></returns>
-    public static DynValue CreateStatic(Type t)
+    public static LuaValue CreateStatic(Type t)
     {
         return CreateStatic(GetDescriptorForType(t, false));
     }
 
     /// <summary>
-    ///     Creates a static userdata DynValue from the specified Type
+    ///     Creates a static userdata LuaValue from the specified Type
     /// </summary>
     /// <typeparam name="T">The Type</typeparam>
     /// <returns></returns>
-    public static DynValue CreateStatic<T>()
+    public static LuaValue CreateStatic<T>()
     {
         return CreateStatic(GetDescriptorForType(typeof(T), false));
     }

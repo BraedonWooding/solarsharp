@@ -13,7 +13,7 @@ internal class EnumerableWrapper : IUserDataType
     private readonly IEnumerator m_Enumerator;
     private readonly Script m_Script;
     private bool m_HasTurnOnce;
-    private DynValue m_Prev = DynValue.Nil;
+    private LuaValue m_Prev = LuaValue.Nil;
 
     private EnumerableWrapper(Script script, IEnumerator enumerator)
     {
@@ -21,37 +21,37 @@ internal class EnumerableWrapper : IUserDataType
         m_Enumerator = enumerator;
     }
 
-    public DynValue Index(Script script, DynValue index, bool isDirectIndexing)
+    public LuaValue Index(Script script, LuaValue index, bool isDirectIndexing)
     {
         if (index.Type == DataType.String)
         {
             var idx = index.String;
 
-            if (idx == "Current" || idx == "current") return DynValue.FromObject(script, m_Enumerator.Current);
+            if (idx == "Current" || idx == "current") return LuaValue.FromObject(script, m_Enumerator.Current);
 
             if (idx == "MoveNext" || idx == "moveNext" || idx == "move_next")
-                return DynValue.NewCallback((_, _) => DynValue.NewBoolean(m_Enumerator.MoveNext()));
+                return LuaValue.NewCallback((_, _) => LuaValue.NewBoolean(m_Enumerator.MoveNext()));
 
             if (idx == "Reset" || idx == "reset")
-                return DynValue.NewCallback((_, _) =>
+                return LuaValue.NewCallback((_, _) =>
                 {
                     Reset();
-                    return DynValue.Nil;
+                    return LuaValue.Nil;
                 });
         }
 
         return null;
     }
 
-    public bool SetIndex(Script script, DynValue index, DynValue value, bool isDirectIndexing)
+    public bool SetIndex(Script script, LuaValue index, LuaValue value, bool isDirectIndexing)
     {
         return false;
     }
 
-    public DynValue MetaIndex(Script script, string metaname)
+    public LuaValue MetaIndex(Script script, string metaname)
     {
         if (metaname == "__call")
-            return DynValue.NewCallback(LuaIteratorCallback);
+            return LuaValue.NewCallback(LuaIteratorCallback);
         return null;
     }
 
@@ -63,35 +63,35 @@ internal class EnumerableWrapper : IUserDataType
         m_HasTurnOnce = true;
     }
 
-    private DynValue GetNext(DynValue prev)
+    private LuaValue GetNext(LuaValue prev)
     {
         if (prev.IsNil())
             Reset();
 
         while (m_Enumerator.MoveNext())
         {
-            var v = ClrToScriptConversions.ObjectToDynValue(m_Script, m_Enumerator.Current);
+            var v = ClrToScriptConversions.ObjectToLuaValue(m_Script, m_Enumerator.Current);
 
             if (!v.IsNil())
                 return v;
         }
 
-        return DynValue.Nil;
+        return LuaValue.Nil;
     }
 
-    private DynValue LuaIteratorCallback(ScriptExecutionContext executionContext, CallbackArguments args)
+    private LuaValue LuaIteratorCallback(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         m_Prev = GetNext(m_Prev);
         return m_Prev;
     }
 
-    internal static DynValue ConvertIterator(Script script, IEnumerator enumerator)
+    internal static LuaValue ConvertIterator(Script script, IEnumerator enumerator)
     {
         EnumerableWrapper ei = new(script, enumerator);
-        return DynValue.NewTuple(UserData.Create(ei), DynValue.Nil, DynValue.Nil);
+        return LuaValue.NewTuple(UserData.Create(ei), LuaValue.Nil, LuaValue.Nil);
     }
 
-    internal static DynValue ConvertTable(Table table)
+    internal static LuaValue ConvertTable(Table table)
     {
         return ConvertIterator(table.OwnerScript, table.Values.GetEnumerator());
     }

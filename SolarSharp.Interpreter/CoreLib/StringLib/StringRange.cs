@@ -28,7 +28,7 @@ internal class StringRange
     public int Start { get; set; }
     public int End { get; set; }
 
-    public static StringRange FromLuaRange(DynValue start, DynValue end, int? defaultEnd = null)
+    public static StringRange FromLuaRange(LuaValue start, LuaValue end, int? defaultEnd = null)
     {
         var i = start.IsNil() ? 1 : (int)start.Number;
         var j = end.IsNil() ? defaultEnd ?? i : (int)end.Number;

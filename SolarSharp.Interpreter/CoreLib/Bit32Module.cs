@@ -24,14 +24,14 @@ public class Bit32Module
         0x1FFFFFFF, 0x3FFFFFFF, 0x7FFFFFFF, 0xFFFFFFFF
     ];
 
-    private static uint ToUInt32(DynValue v)
+    private static uint ToUInt32(LuaValue v)
     {
         var d = v.Number;
         d = Math.IEEERemainder(d, Math.Pow(2.0, 32.0));
         return (uint)d;
     }
 
-    private static int ToInt32(DynValue v)
+    private static int ToInt32(LuaValue v)
     {
         var d = v.Number;
         d = Math.IEEERemainder(d, Math.Pow(2.0, 32.0));
@@ -63,7 +63,7 @@ public class Bit32Module
 
 
     [SolarSharpModuleMethod]
-    public static DynValue extract(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue extract(ScriptExecutionContext _, CallbackArguments args)
     {
         var v_v = args.AsType(0, "extract", DataType.Number);
         var v = ToUInt32(v_v);
@@ -77,12 +77,12 @@ public class Bit32Module
         ValidatePosWidth("extract", 2, pos, width);
 
         var res = (v >> pos) & NBitMask(width);
-        return DynValue.NewNumber(res);
+        return LuaValue.NewNumber(res);
     }
 
 
     [SolarSharpModuleMethod]
-    public static DynValue replace(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue replace(ScriptExecutionContext _, CallbackArguments args)
     {
         var v_v = args.AsType(0, "replace", DataType.Number);
         var v = ToUInt32(v_v);
@@ -102,7 +102,7 @@ public class Bit32Module
         u &= mask;
         v |= u;
 
-        return DynValue.NewNumber(v);
+        return LuaValue.NewNumber(v);
     }
 
     private static void ValidatePosWidth(string func, int argPos, int pos, int width)
@@ -118,7 +118,7 @@ public class Bit32Module
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue arshift(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue arshift(ScriptExecutionContext _, CallbackArguments args)
     {
         var v_v = args.AsType(0, "arshift", DataType.Number);
         var v = ToInt32(v_v);
@@ -132,11 +132,11 @@ public class Bit32Module
         else
             v >>= a;
 
-        return DynValue.NewNumber(v);
+        return LuaValue.NewNumber(v);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue rshift(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue rshift(ScriptExecutionContext _, CallbackArguments args)
     {
         var v_v = args.AsType(0, "rshift", DataType.Number);
         var v = ToUInt32(v_v);
@@ -150,11 +150,11 @@ public class Bit32Module
         else
             v >>= a;
 
-        return DynValue.NewNumber(v);
+        return LuaValue.NewNumber(v);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue lshift(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue lshift(ScriptExecutionContext _, CallbackArguments args)
     {
         var v_v = args.AsType(0, "lshift", DataType.Number);
         var v = ToUInt32(v_v);
@@ -168,43 +168,43 @@ public class Bit32Module
         else
             v <<= a;
 
-        return DynValue.NewNumber(v);
+        return LuaValue.NewNumber(v);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue band(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue band(ScriptExecutionContext _, CallbackArguments args)
     {
-        return DynValue.NewNumber(Bitwise("band", args, (x, y) => x & y));
+        return LuaValue.NewNumber(Bitwise("band", args, (x, y) => x & y));
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue btest(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue btest(ScriptExecutionContext _, CallbackArguments args)
     {
-        return DynValue.NewBoolean(0 != Bitwise("btest", args, (x, y) => x & y));
+        return LuaValue.NewBoolean(0 != Bitwise("btest", args, (x, y) => x & y));
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue bor(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue bor(ScriptExecutionContext _, CallbackArguments args)
     {
-        return DynValue.NewNumber(Bitwise("bor", args, (x, y) => x | y));
+        return LuaValue.NewNumber(Bitwise("bor", args, (x, y) => x | y));
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue bnot(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue bnot(ScriptExecutionContext _, CallbackArguments args)
     {
         var v_v = args.AsType(0, "bnot", DataType.Number);
         var v = ToUInt32(v_v);
-        return DynValue.NewNumber(~v);
+        return LuaValue.NewNumber(~v);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue bxor(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue bxor(ScriptExecutionContext _, CallbackArguments args)
     {
-        return DynValue.NewNumber(Bitwise("bxor", args, (x, y) => x ^ y));
+        return LuaValue.NewNumber(Bitwise("bxor", args, (x, y) => x ^ y));
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue lrotate(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue lrotate(ScriptExecutionContext _, CallbackArguments args)
     {
         var v_v = args.AsType(0, "lrotate", DataType.Number);
         var v = ToUInt32(v_v);
@@ -215,11 +215,11 @@ public class Bit32Module
 
         v = a < 0 ? (v >> -a) | (v << (32 + a)) : (v << a) | (v >> (32 - a));
 
-        return DynValue.NewNumber(v);
+        return LuaValue.NewNumber(v);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue rrotate(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue rrotate(ScriptExecutionContext _, CallbackArguments args)
     {
         var v_v = args.AsType(0, "rrotate", DataType.Number);
         var v = ToUInt32(v_v);
@@ -230,6 +230,6 @@ public class Bit32Module
 
         v = a < 0 ? (v << -a) | (v >> (32 + a)) : (v >> a) | (v << (32 - a));
 
-        return DynValue.NewNumber(v);
+        return LuaValue.NewNumber(v);
     }
 }

@@ -321,7 +321,7 @@ internal sealed partial class Processor
             return new WatchItem
             {
                 IsError = true,
-                Value = DynValue.NewString(ex.Message),
+                Value = LuaValue.NewString(ex.Message),
                 Name = dynExpr.ExpressionCode
             };
         }

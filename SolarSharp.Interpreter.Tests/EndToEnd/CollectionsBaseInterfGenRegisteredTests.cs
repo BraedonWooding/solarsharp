@@ -57,12 +57,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     [TestFixture]
     public class CollectionsBaseInterfGenRegisteredTests
     {
-        private void Do(string code, Action<DynValue> asserts)
+        private void Do(string code, Action<LuaValue> asserts)
         {
             Do(code, (d, _) => asserts(d));
         }
 
-        private static void Do(string code, Action<DynValue, RegCollMethods> asserts)
+        private static void Do(string code, Action<LuaValue, RegCollMethods> asserts)
         {
             try
             {

@@ -79,12 +79,12 @@ public static class JsonTableConverter
     /// </summary>
     public static string ObjectToJson(object obj)
     {
-        var v = ObjectValueConverter.SerializeObjectToDynValue(null, obj, JsonNull.Create());
+        var v = ObjectValueConverter.SerializeObjectToLuaValue(null, obj, JsonNull.Create());
         return v.Table.TableToJson();
     }
 
 
-    private static void ValueToJson(StringBuilder sb, DynValue value)
+    private static void ValueToJson(StringBuilder sb, LuaValue value)
     {
         switch (value.Type)
         {
@@ -122,7 +122,7 @@ public static class JsonTableConverter
         return "\"" + s + "\"";
     }
 
-    private static bool IsValueJsonCompatible(DynValue value)
+    private static bool IsValueJsonCompatible(LuaValue value)
     {
         return value.Type == DataType.Boolean || value.IsNil() ||
                value.Type == DataType.Number || value.Type == DataType.String ||
@@ -196,35 +196,35 @@ public static class JsonTableConverter
         return t;
     }
 
-    private static DynValue ParseJsonValue(Lexer L, Script script)
+    private static LuaValue ParseJsonValue(Lexer L, Script script)
     {
         if (L.Current.Type == TokenType.Brk_Open_Curly)
         {
             var t = ParseJsonObject(L, script);
-            return DynValue.NewTable(t);
+            return LuaValue.NewTable(t);
         }
 
         if (L.Current.Type == TokenType.Brk_Open_Square)
         {
             var t = ParseJsonArray(L, script);
-            return DynValue.NewTable(t);
+            return LuaValue.NewTable(t);
         }
 
-        if (L.Current.Type == TokenType.String) return DynValue.NewString(L.Current.Text);
+        if (L.Current.Type == TokenType.String) return LuaValue.NewString(L.Current.Text);
 
         if (L.Current.Type == TokenType.Number || L.Current.Type == TokenType.Op_MinusOrSub)
             return ParseJsonNumberValue(L, script);
 
-        if (L.Current.Type == TokenType.True) return DynValue.True;
+        if (L.Current.Type == TokenType.True) return LuaValue.True;
 
-        if (L.Current.Type == TokenType.False) return DynValue.False;
+        if (L.Current.Type == TokenType.False) return LuaValue.False;
 
         if (L.Current.Type == TokenType.Name && L.Current.Text == "null") return JsonNull.Create();
 
         throw new SyntaxErrorException(L.Current, "Unexpected token : '{0}'", L.Current.Text);
     }
 
-    private static DynValue ParseJsonNumberValue(Lexer L, Script _)
+    private static LuaValue ParseJsonNumberValue(Lexer L, Script _)
     {
         bool negative;
         if (L.Current.Type == TokenType.Op_MinusOrSub)
@@ -242,6 +242,6 @@ public static class JsonTableConverter
             throw new SyntaxErrorException(L.Current, "Unexpected token : '{0}'", L.Current.Text);
         var numberValue = L.Current.GetNumberValue();
         if (negative) numberValue = -numberValue;
-        return DynValue.NewNumber(numberValue).AsReadOnly();
+        return LuaValue.NewNumber(numberValue).AsReadOnly();
     }
 }

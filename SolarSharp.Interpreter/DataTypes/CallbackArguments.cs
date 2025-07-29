@@ -11,7 +11,7 @@ namespace SolarSharp.Interpreter.DataTypes;
 /// </summary>
 public class CallbackArguments
 {
-    private readonly IList<DynValue> m_Args;
+    private readonly IList<LuaValue> m_Args;
     private readonly bool m_LastIsTuple;
 
     /// <summary>
@@ -19,7 +19,7 @@ public class CallbackArguments
     /// </summary>
     /// <param name="args">The arguments.</param>
     /// <param name="isMethodCall">if set to <c>true</c> [is method call].</param>
-    public CallbackArguments(IList<DynValue> args, bool isMethodCall)
+    public CallbackArguments(IList<LuaValue> args, bool isMethodCall)
     {
         m_Args = args;
 
@@ -57,19 +57,19 @@ public class CallbackArguments
 
 
     /// <summary>
-    ///     Gets the <see cref="DynValue" /> at the specified index, or Void if not found
+    ///     Gets the <see cref="LuaValue" /> at the specified index, or Void if not found
     /// </summary>
-    public DynValue this[int index] => RawGet(index, true) ?? DynValue.Void;
+    public LuaValue this[int index] => RawGet(index, true) ?? LuaValue.Void;
 
     /// <summary>
-    ///     Gets the <see cref="DynValue" /> at the specified index, or null.
+    ///     Gets the <see cref="LuaValue" /> at the specified index, or null.
     /// </summary>
     /// <param name="index">The index.</param>
     /// <param name="translateVoids">if set to <c>true</c> all voids are translated to nils.</param>
     /// <returns></returns>
-    public DynValue RawGet(int index, bool translateVoids)
+    public LuaValue RawGet(int index, bool translateVoids)
     {
-        DynValue v;
+        LuaValue v;
 
         if (index >= Count)
             return null;
@@ -78,9 +78,9 @@ public class CallbackArguments
             ? m_Args[index]
             : m_Args[m_Args.Count - 1].Tuple[index - (m_Args.Count - 1)];
 
-        if (v.Type == DataType.Tuple) v = v.Tuple.Length > 0 ? v.Tuple[0] : DynValue.Nil;
+        if (v.Type == DataType.Tuple) v = v.Tuple.Length > 0 ? v.Tuple[0] : LuaValue.Nil;
 
-        if (translateVoids && v.Type == DataType.Void) v = DynValue.Nil;
+        if (translateVoids && v.Type == DataType.Void) v = LuaValue.Nil;
 
         return v;
     }
@@ -91,7 +91,7 @@ public class CallbackArguments
     /// </summary>
     /// <param name="skip">The number of elements to skip (default= 0).</param>
     /// <returns></returns>
-    public DynValue[] GetArray(int skip = 0)
+    public LuaValue[] GetArray(int skip = 0)
     {
         // TODO: Get rid of this class... or allow coroutine resume to take in slices
         if (!m_LastIsTuple && skip == 0) return m_Args.ToArray();
@@ -99,7 +99,7 @@ public class CallbackArguments
         if (skip >= Count)
             return [];
 
-        var vals = new DynValue[Count - skip];
+        var vals = new LuaValue[Count - skip];
 
         for (var i = skip; i < Count; i++)
             vals[i - skip] = this[i];
@@ -116,7 +116,7 @@ public class CallbackArguments
     /// <param name="type">The type desired.</param>
     /// <param name="allowNil">if set to <c>true</c> nil values are allowed.</param>
     /// <returns></returns>
-    public DynValue AsType(int argNum, string funcName, DataType type, bool allowNil = false)
+    public LuaValue AsType(int argNum, string funcName, DataType type, bool allowNil = false)
     {
         return this[argNum].CheckType(funcName, type, argNum,
             allowNil
@@ -201,7 +201,7 @@ public class CallbackArguments
     {
         if (IsMethodCall)
         {
-            Slice<DynValue> slice = new(m_Args, 1, m_Args.Count - 1, false);
+            Slice<LuaValue> slice = new(m_Args, 1, m_Args.Count - 1, false);
             return new CallbackArguments(slice, false);
         }
 

@@ -38,29 +38,29 @@ public class MathModule
     }
 
 
-    private static DynValue exec1(CallbackArguments args, string funcName, Func<double, double> func)
+    private static LuaValue exec1(CallbackArguments args, string funcName, Func<double, double> func)
     {
         var arg = args.AsType(0, funcName, DataType.Number);
-        return DynValue.NewNumber(func(arg.Number));
+        return LuaValue.NewNumber(func(arg.Number));
     }
 
-    private static DynValue exec2(CallbackArguments args, string funcName, Func<double, double, double> func)
+    private static LuaValue exec2(CallbackArguments args, string funcName, Func<double, double, double> func)
     {
         var arg = args.AsType(0, funcName, DataType.Number);
         var arg2 = args.AsType(1, funcName, DataType.Number);
-        return DynValue.NewNumber(func(arg.Number, arg2.Number));
+        return LuaValue.NewNumber(func(arg.Number, arg2.Number));
     }
 
-    private static DynValue exec2n(CallbackArguments args, string funcName, double defVal,
+    private static LuaValue exec2n(CallbackArguments args, string funcName, double defVal,
         Func<double, double, double> func)
     {
         var arg = args.AsType(0, funcName, DataType.Number);
         var arg2 = args.AsType(1, funcName, DataType.Number, true);
 
-        return DynValue.NewNumber(func(arg.Number, arg2.IsNil() ? defVal : arg2.Number));
+        return LuaValue.NewNumber(func(arg.Number, arg2.IsNil() ? defVal : arg2.Number));
     }
 
-    private static DynValue execaccum(CallbackArguments args, string funcName, Func<double, double, double> func)
+    private static LuaValue execaccum(CallbackArguments args, string funcName, Func<double, double, double> func)
     {
         var accum = double.NaN;
 
@@ -74,84 +74,84 @@ public class MathModule
             accum = i == 0 ? arg.Number : func(accum, arg.Number);
         }
 
-        return DynValue.NewNumber(accum);
+        return LuaValue.NewNumber(accum);
     }
 
 
     [SolarSharpModuleMethod]
-    public static DynValue abs(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue abs(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "abs", Math.Abs);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue acos(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue acos(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "acos", Math.Acos);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue asin(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue asin(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "asin", Math.Asin);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue atan(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue atan(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "atan", Math.Atan);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue atan2(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue atan2(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec2(args, "atan2", Math.Atan2);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue ceil(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue ceil(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "ceil", Math.Ceiling);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue cos(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue cos(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "cos", Math.Cos);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue cosh(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue cosh(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "cosh", Math.Cosh);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue deg(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue deg(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "deg", d => d * 180.0 / Math.PI);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue exp(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue exp(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "exp", Math.Exp);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue floor(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue floor(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "floor", Math.Floor);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue fmod(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue fmod(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec2(args, "fmod", Math.IEEERemainder);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue frexp(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue frexp(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         // http://stackoverflow.com/questions/389993/extracting-mantissa-and-exponent-from-double-in-c-sharp
 
@@ -180,7 +180,7 @@ public class MathModule
         // to subtract another 52 from it.
         exponent -= 1075;
 
-        if (mantissa == 0) return DynValue.NewTuple(DynValue.NewNumber(0), DynValue.NewNumber(0));
+        if (mantissa == 0) return LuaValue.NewTuple(LuaValue.NewNumber(0), LuaValue.NewNumber(0));
 
         /* Normalize */
         while ((mantissa & 1) == 0)
@@ -200,56 +200,56 @@ public class MathModule
 
         if (negative) m = -m;
 
-        return DynValue.NewTuple(DynValue.NewNumber(m), DynValue.NewNumber(e));
+        return LuaValue.NewTuple(LuaValue.NewNumber(m), LuaValue.NewNumber(e));
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue ldexp(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue ldexp(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec2(args, "ldexp", (d1, d2) => d1 * Math.Pow(2, d2));
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue log(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue log(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec2n(args, "log", Math.E, Math.Log);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue max(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue max(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return execaccum(args, "max", Math.Max);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue min(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue min(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return execaccum(args, "min", Math.Min);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue modf(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue modf(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var arg = args.AsType(0, "modf", DataType.Number);
-        return DynValue.NewTuple(DynValue.NewNumber(Math.Floor(arg.Number)),
-            DynValue.NewNumber(arg.Number - Math.Floor(arg.Number)));
+        return LuaValue.NewTuple(LuaValue.NewNumber(Math.Floor(arg.Number)),
+            LuaValue.NewNumber(arg.Number - Math.Floor(arg.Number)));
     }
 
 
     [SolarSharpModuleMethod]
-    public static DynValue pow(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue pow(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec2(args, "pow", Math.Pow);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue rad(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue rad(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "rad", d => d * Math.PI / 180.0);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue random(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue random(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var m = args.AsType(0, "random", DataType.Number, true);
         var n = args.AsType(1, "random", DataType.Number, true);
@@ -268,44 +268,44 @@ public class MathModule
             d = a < b ? R.Next(a, b + 1) : R.Next(b, a + 1);
         }
 
-        return DynValue.NewNumber(d);
+        return LuaValue.NewNumber(d);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue randomseed(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue randomseed(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var arg = args.AsType(0, "randomseed", DataType.Number);
         var script = executionContext.GetScript();
         SetRandom(script, new Random((int)arg.Number));
-        return DynValue.Nil;
+        return LuaValue.Nil;
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue sin(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue sin(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "sin", Math.Sin);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue sinh(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue sinh(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "sinh", Math.Sinh);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue sqrt(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue sqrt(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "sqrt", Math.Sqrt);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue tan(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue tan(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "tan", Math.Tan);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue tanh(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue tanh(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return exec1(args, "tanh", Math.Tanh);
     }

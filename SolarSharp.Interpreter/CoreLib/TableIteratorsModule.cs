@@ -17,15 +17,15 @@ public class TableIteratorsModule
     //	  for i,v in ipairs(t) do body end
     // will iterate over the pairs (1,t[1]), (2,t[2]), ..., up to the first integer key absent from the table. 
     [SolarSharpModuleMethod]
-    public static DynValue ipairs(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue ipairs(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var table = args[0];
         var tableVal = table.Table;
 
         var meta = executionContext.GetMetamethodTailCall(table, "__ipairs", args.GetArray());
 
-        var current = DynValue.NewNumber(0);
-        return meta ?? DynValue.NewTuple(DynValue.NewCallback((_, args) =>
+        var current = LuaValue.NewNumber(0);
+        return meta ?? LuaValue.NewTuple(LuaValue.NewCallback((_, args) =>
         {
             if (args[1].Number == current.Number)
             {
@@ -33,7 +33,7 @@ public class TableIteratorsModule
                 current.AssignNumber(next);
                 var value = tableVal.Get(next);
                 if (value.IsNil()) return value;
-                return DynValue.NewTuple(current, value);
+                return LuaValue.NewTuple(current, value);
             }
 
             return __next_i(executionContext, args);
@@ -48,21 +48,21 @@ public class TableIteratorsModule
     // will iterate over all key–value pairs of table t.
     // See function next for the caveats of modifying the table during its traversal. 
     [SolarSharpModuleMethod]
-    public static DynValue pairs(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue pairs(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var table = args[0];
         var meta = executionContext.GetMetamethodTailCall(table, "__pairs", args.GetArray());
         if (meta != null) return meta;
 
         // TODO: Should we check if someone is calling this wrong?  i.e. if they do something like callback = pairs(); callback("BOO")
-        //       we could compare the dynvalues to check that the keys are the same (can use ref checks even) and in case they aren't fallback to next
+        //       we could compare the LuaValues to check that the keys are the same (can use ref checks even) and in case they aren't fallback to next
         // we use an efficient iterator when using pairs()
         // over the slower next(), this should save quite a few cycles
         var it = table.Table.GetEnumerator();
-        return DynValue.NewTuple(DynValue.NewCallback((_, args) =>
+        return LuaValue.NewTuple(LuaValue.NewCallback((_, args) =>
         {
             if (args[1].Equals(it.Current.Key))
-                return it.MoveNext() ? DynValue.NewTuple(it.Current.Key, it.Current.Value) : DynValue.Nil;
+                return it.MoveNext() ? LuaValue.NewTuple(it.Current.Key, it.Current.Value) : LuaValue.Nil;
 
             // fallback to next
             return next(executionContext, args);
@@ -81,7 +81,7 @@ public class TableIteratorsModule
     // The behavior of next is undefined if, during the traversal, you assign any value to a non-existent field in the table. 
     // You may however modify existing fields. In particular, you may clear existing fields. 
     [SolarSharpModuleMethod]
-    public static DynValue next(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue next(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var table = args.AsType(0, "next", DataType.Table);
         var index = args[1];
@@ -92,7 +92,7 @@ public class TableIteratorsModule
     // __next_i (table [, index])
     // -------------------------------------------------------------------------------------------------------------------
     // Allows a program to traverse all fields of an array. index is an integer number
-    public static DynValue __next_i(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue __next_i(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var table = args.AsType(0, "!!next_i!!", DataType.Table);
         var index = args.AsType(1, "!!next_i!!", DataType.Number);
@@ -100,8 +100,8 @@ public class TableIteratorsModule
         var idx = (int)index.Number + 1;
         var val = table.Table.Get(idx);
 
-        if (val.Type != DataType.Nil) return DynValue.NewTuple(DynValue.NewNumber(idx), val);
+        if (val.Type != DataType.Nil) return LuaValue.NewTuple(LuaValue.NewNumber(idx), val);
 
-        return DynValue.Nil;
+        return LuaValue.Nil;
     }
 }

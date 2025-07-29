@@ -10,16 +10,16 @@ namespace SolarSharp.Interpreter.Interop;
 /// </summary>
 public class CustomConvertersCollection
 {
-    private readonly Dictionary<Type, Func<Script, object, DynValue>> m_Clr2Script = new();
+    private readonly Dictionary<Type, Func<Script, object, LuaValue>> m_Clr2Script = new();
 
-    private readonly Dictionary<Type, Func<DynValue, object>>[] m_Script2Clr =
-        new Dictionary<Type, Func<DynValue, object>>[(int)LuaTypeExtensions.MaxConvertibleTypes + 1];
+    private readonly Dictionary<Type, Func<LuaValue, object>>[] m_Script2Clr =
+        new Dictionary<Type, Func<LuaValue, object>>[(int)LuaTypeExtensions.MaxConvertibleTypes + 1];
 
 
     internal CustomConvertersCollection()
     {
         for (var i = 0; i < m_Script2Clr.Length; i++)
-            m_Script2Clr[i] = new Dictionary<Type, Func<DynValue, object>>();
+            m_Script2Clr[i] = new Dictionary<Type, Func<LuaValue, object>>();
     }
 
     // This needs to be evaluated further (doesn't work well with inheritance)
@@ -34,7 +34,7 @@ public class CustomConvertersCollection
     //	SetScriptToClrCustomConversion(DataType.UserData, destType, v => DispatchUserDataCustomConverter(destTypeMap, v));
     //}
 
-    //private object DispatchUserDataCustomConverter(Dictionary<Type, Func<object, object>> destTypeMap, DynValue v)
+    //private object DispatchUserDataCustomConverter(Dictionary<Type, Func<object, object>> destTypeMap, LuaValue v)
     //{
     //	if (v.Type != DataType.UserData)
     //		return null;
@@ -82,7 +82,7 @@ public class CustomConvertersCollection
     /// <param name="clrDataType">The CLR data type.</param>
     /// <param name="converter">The converter, or null.</param>
     public void SetScriptToClrCustomConversion(DataType scriptDataType, Type clrDataType,
-        Func<DynValue, object> converter = null)
+        Func<LuaValue, object> converter = null)
     {
         if ((int)scriptDataType > m_Script2Clr.Length)
             throw new ArgumentException("scriptDataType");
@@ -105,7 +105,7 @@ public class CustomConvertersCollection
     /// <param name="scriptDataType">The script data type</param>
     /// <param name="clrDataType">The CLR data type.</param>
     /// <returns>The converter function, or null if not found</returns>
-    public Func<DynValue, object> GetScriptToClrCustomConversion(DataType scriptDataType, Type clrDataType)
+    public Func<LuaValue, object> GetScriptToClrCustomConversion(DataType scriptDataType, Type clrDataType)
     {
         if ((int)scriptDataType > m_Script2Clr.Length)
             return null;
@@ -119,7 +119,7 @@ public class CustomConvertersCollection
     /// </summary>
     /// <param name="clrDataType">The CLR data type.</param>
     /// <param name="converter">The converter, or null.</param>
-    public void SetClrToScriptCustomConversion(Type clrDataType, Func<Script, object, DynValue> converter = null)
+    public void SetClrToScriptCustomConversion(Type clrDataType, Func<Script, object, LuaValue> converter = null)
     {
         if (converter == null)
         {
@@ -136,7 +136,7 @@ public class CustomConvertersCollection
     /// </summary>
     /// <typeparam name="T">The CLR data type.</typeparam>
     /// <param name="converter">The converter, or null.</param>
-    public void SetClrToScriptCustomConversion<T>(Func<Script, T, DynValue> converter = null)
+    public void SetClrToScriptCustomConversion<T>(Func<Script, T, LuaValue> converter = null)
     {
         SetClrToScriptCustomConversion(typeof(T), (s, o) => converter(s, (T)o));
     }
@@ -147,7 +147,7 @@ public class CustomConvertersCollection
     /// </summary>
     /// <param name="clrDataType">Type of the color data.</param>
     /// <returns>The converter function, or null if not found</returns>
-    public Func<Script, object, DynValue> GetClrToScriptCustomConversion(Type clrDataType)
+    public Func<Script, object, LuaValue> GetClrToScriptCustomConversion(Type clrDataType)
     {
         return m_Clr2Script.GetValueOrDefault(clrDataType);
     }
@@ -157,7 +157,7 @@ public class CustomConvertersCollection
     /// <param name="clrDataType">The CLR data type.</param>
     /// <param name="converter">The converter, or null.</param>
     [Obsolete("This method is deprecated. Use the overloads accepting functions with a Script argument.")]
-    public void SetClrToScriptCustomConversion(Type clrDataType, Func<object, DynValue> converter = null)
+    public void SetClrToScriptCustomConversion(Type clrDataType, Func<object, LuaValue> converter = null)
     {
         SetClrToScriptCustomConversion(clrDataType, (_, o) => converter(o));
     }
@@ -168,7 +168,7 @@ public class CustomConvertersCollection
     /// <typeparam name="T">The CLR data type.</typeparam>
     /// <param name="converter">The converter, or null.</param>
     [Obsolete("This method is deprecated. Use the overloads accepting functions with a Script argument.")]
-    public void SetClrToScriptCustomConversion<T>(Func<T, DynValue> converter = null)
+    public void SetClrToScriptCustomConversion<T>(Func<T, LuaValue> converter = null)
     {
         SetClrToScriptCustomConversion(typeof(T), o => converter((T)o));
     }

@@ -26,7 +26,7 @@ public interface IUserDataDescriptor
     /// <param name="index">The index.</param>
     /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
     /// <returns></returns>
-    DynValue Index(Script script, object obj, DynValue index, bool isDirectIndexing);
+    LuaValue Index(Script script, object obj, LuaValue index, bool isDirectIndexing);
 
     /// <summary>
     ///     Performs an "index" "set" operation.
@@ -37,7 +37,7 @@ public interface IUserDataDescriptor
     /// <param name="value">The value to be set</param>
     /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
     /// <returns></returns>
-    bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing);
+    bool SetIndex(Script script, object obj, LuaValue index, LuaValue value, bool isDirectIndexing);
 
     /// <summary>
     ///     Converts this userdata to string
@@ -60,7 +60,7 @@ public interface IUserDataDescriptor
     /// <param name="obj">The object (null if a static request is done)</param>
     /// <param name="metaname">The name of the metamember.</param>
     /// <returns></returns>
-    DynValue MetaIndex(Script script, object obj, string metaname);
+    LuaValue MetaIndex(Script script, object obj, string metaname);
 
     /// <summary>
     ///     Determines whether the specified object is compatible with the specified type.

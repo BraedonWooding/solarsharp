@@ -107,7 +107,7 @@ public class PropertyMemberDescriptor : IMemberDescriptor, IOptimizableDescripto
     /// <param name="script">The script.</param>
     /// <param name="obj">The object.</param>
     /// <returns></returns>
-    public DynValue GetValue(Script script, object obj)
+    public LuaValue GetValue(Script script, object obj)
     {
         this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
 
@@ -126,7 +126,7 @@ public class PropertyMemberDescriptor : IMemberDescriptor, IOptimizableDescripto
             result = m_Getter.Invoke(IsStatic ? null : obj,
                 null); // convoluted workaround for --full-aot Mono execution
 
-        return ClrToScriptConversions.ObjectToDynValue(script, result);
+        return ClrToScriptConversions.ObjectToLuaValue(script, result);
     }
 
     /// <summary>
@@ -135,7 +135,7 @@ public class PropertyMemberDescriptor : IMemberDescriptor, IOptimizableDescripto
     /// <param name="script">The script.</param>
     /// <param name="obj">The object.</param>
     /// <param name="v">The value to set.</param>
-    public void SetValue(Script script, object obj, DynValue v)
+    public void SetValue(Script script, object obj, LuaValue v)
     {
         this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
 
@@ -143,7 +143,7 @@ public class PropertyMemberDescriptor : IMemberDescriptor, IOptimizableDescripto
             throw new ScriptRuntimeException("userdata property '{0}.{1}' cannot be written to.",
                 PropertyInfo.DeclaringType.Name, Name);
 
-        var value = ScriptToClrConversions.DynValueToObjectOfType(v, PropertyInfo.PropertyType, null, false);
+        var value = ScriptToClrConversions.LuaValueToObjectOfType(v, PropertyInfo.PropertyType, null, false);
 
         try
         {

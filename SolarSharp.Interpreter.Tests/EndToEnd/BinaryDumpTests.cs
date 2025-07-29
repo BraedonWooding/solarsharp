@@ -10,7 +10,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     [TestFixture]
     public class BinaryDumpTests
     {
-        private static DynValue Script_RunString(string script)
+        private static LuaValue Script_RunString(string script)
         {
             Script s1 = new();
             var v1 = s1.LoadString(script);
@@ -24,7 +24,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             return func.Function.Call();
         }
 
-        private static DynValue Script_LoadFunc(string script, string funcname)
+        private static LuaValue Script_LoadFunc(string script, string funcname)
         {
             Script s1 = new();
             _ = s1.DoString(script);
@@ -132,7 +132,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var fact = Script_LoadFunc(script, "fact");
             fact.Function.OwnerScript.Globals.Set("fact", fact);
-            fact.Function.OwnerScript.Globals.Set("x", DynValue.NewNumber(0));
+            fact.Function.OwnerScript.Globals.Set("x", LuaValue.NewNumber(0));
             var res = fact.Function.Call(5);
 
             Assert.Multiple(() =>

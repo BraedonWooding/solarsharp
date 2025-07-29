@@ -20,7 +20,7 @@ public class DynamicModule
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue eval(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue eval(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         try
         {
@@ -44,7 +44,7 @@ public class DynamicModule
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue prepare(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue prepare(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         try
         {

@@ -38,7 +38,7 @@ internal class ForLoopStatement : Statement
         }
         else
         {
-            m_Step = new LiteralExpression(lcontext, DynValue.NewNumber(1));
+            m_Step = new LiteralExpression(lcontext, LuaValue.NewNumber(1));
         }
 
         lcontext.Scope.PushBlock();

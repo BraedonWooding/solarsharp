@@ -4,7 +4,7 @@ namespace SolarSharp.Interpreter
 {
     /// <summary>
     ///     Namespace containing all the most commonly used classes for SolarSharp operation.
-    ///     When in doubt, refer to <see cref="Script" /> and <see cref="DynValue" /> classes as starting points.
+    ///     When in doubt, refer to <see cref="Script" /> and <see cref="LuaValue" /> classes as starting points.
     /// </summary>
     internal static class NamespaceDoc;
 }

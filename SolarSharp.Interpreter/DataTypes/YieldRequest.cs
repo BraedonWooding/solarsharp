@@ -8,5 +8,5 @@ public class YieldRequest
     /// <summary>
     ///     The return values of the coroutine
     /// </summary>
-    public DynValue[] ReturnValues;
+    public LuaValue[] ReturnValues;
 }

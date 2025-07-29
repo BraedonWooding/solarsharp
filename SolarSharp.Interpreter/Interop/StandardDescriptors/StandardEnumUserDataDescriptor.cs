@@ -68,7 +68,7 @@ public class StandardEnumUserDataDescriptor : DispatchingUserDataDescriptor
             var value = values.GetValue(i);
             var cvalue = UserData.Create(value, this);
 
-            AddDynValue(name, cvalue);
+            AddLuaValue(name, cvalue);
         }
 
         var attrs = Framework.Do.GetCustomAttributes(Type, typeof(FlagsAttribute), true);
@@ -77,12 +77,12 @@ public class StandardEnumUserDataDescriptor : DispatchingUserDataDescriptor
         {
             IsFlags = true;
 
-            AddEnumMethod("flagsAnd", DynValue.NewCallback(Callback_And));
-            AddEnumMethod("flagsOr", DynValue.NewCallback(Callback_Or));
-            AddEnumMethod("flagsXor", DynValue.NewCallback(Callback_Xor));
-            AddEnumMethod("flagsNot", DynValue.NewCallback(Callback_BwNot));
-            AddEnumMethod("hasAll", DynValue.NewCallback(Callback_HasAll));
-            AddEnumMethod("hasAny", DynValue.NewCallback(Callback_HasAny));
+            AddEnumMethod("flagsAnd", LuaValue.NewCallback(Callback_And));
+            AddEnumMethod("flagsOr", LuaValue.NewCallback(Callback_Or));
+            AddEnumMethod("flagsXor", LuaValue.NewCallback(Callback_Xor));
+            AddEnumMethod("flagsNot", LuaValue.NewCallback(Callback_BwNot));
+            AddEnumMethod("hasAll", LuaValue.NewCallback(Callback_HasAll));
+            AddEnumMethod("hasAny", LuaValue.NewCallback(Callback_HasAny));
         }
     }
 
@@ -91,21 +91,21 @@ public class StandardEnumUserDataDescriptor : DispatchingUserDataDescriptor
     ///     Adds an enum method to the object
     /// </summary>
     /// <param name="name">The name.</param>
-    /// <param name="dynValue">The dyn value.</param>
-    private void AddEnumMethod(string name, DynValue dynValue)
+    /// <param name="LuaValue">The dyn value.</param>
+    private void AddEnumMethod(string name, LuaValue LuaValue)
     {
         if (!HasMember(name))
-            AddDynValue(name, dynValue);
+            AddLuaValue(name, LuaValue);
 
         if (!HasMember("__" + name))
-            AddDynValue("__" + name, dynValue);
+            AddLuaValue("__" + name, LuaValue);
     }
 
 
     /// <summary>
     ///     Gets the value of the enum as a long
     /// </summary>
-    private long GetValueSigned(DynValue dv)
+    private long GetValueSigned(LuaValue dv)
     {
         CreateSignedConversionFunctions();
 
@@ -121,7 +121,7 @@ public class StandardEnumUserDataDescriptor : DispatchingUserDataDescriptor
     /// <summary>
     ///     Gets the value of the enum as a ulong
     /// </summary>
-    private ulong GetValueUnsigned(DynValue dv)
+    private ulong GetValueUnsigned(LuaValue dv)
     {
         CreateUnsignedConversionFunctions();
 
@@ -137,7 +137,7 @@ public class StandardEnumUserDataDescriptor : DispatchingUserDataDescriptor
     /// <summary>
     ///     Creates an enum value from a long
     /// </summary>
-    private DynValue CreateValueSigned(long value)
+    private LuaValue CreateValueSigned(long value)
     {
         CreateSignedConversionFunctions();
         return UserData.Create(m_LongToEnum(value), this);
@@ -146,7 +146,7 @@ public class StandardEnumUserDataDescriptor : DispatchingUserDataDescriptor
     /// <summary>
     ///     Creates an enum value from a ulong
     /// </summary>
-    private DynValue CreateValueUnsigned(ulong value)
+    private LuaValue CreateValueUnsigned(ulong value)
     {
         CreateUnsignedConversionFunctions();
         return UserData.Create(m_ULongToEnum(value), this);
@@ -220,8 +220,8 @@ public class StandardEnumUserDataDescriptor : DispatchingUserDataDescriptor
         }
     }
 
-    private DynValue PerformBinaryOperationS(string funcName, ScriptExecutionContext _, CallbackArguments args,
-        Func<long, long, DynValue> operation)
+    private LuaValue PerformBinaryOperationS(string funcName, ScriptExecutionContext _, CallbackArguments args,
+        Func<long, long, LuaValue> operation)
     {
         if (args.Count != 2)
             throw new ScriptRuntimeException("Enum.{0} expects two arguments", funcName);
@@ -231,8 +231,8 @@ public class StandardEnumUserDataDescriptor : DispatchingUserDataDescriptor
         return operation(v1, v2);
     }
 
-    private DynValue PerformBinaryOperationU(string funcName, ScriptExecutionContext _, CallbackArguments args,
-        Func<ulong, ulong, DynValue> operation)
+    private LuaValue PerformBinaryOperationU(string funcName, ScriptExecutionContext _, CallbackArguments args,
+        Func<ulong, ulong, LuaValue> operation)
     {
         if (args.Count != 2)
             throw new ScriptRuntimeException("Enum.{0} expects two arguments", funcName);
@@ -242,19 +242,19 @@ public class StandardEnumUserDataDescriptor : DispatchingUserDataDescriptor
         return operation(v1, v2);
     }
 
-    private DynValue PerformBinaryOperationS(string funcName, ScriptExecutionContext ctx, CallbackArguments args,
+    private LuaValue PerformBinaryOperationS(string funcName, ScriptExecutionContext ctx, CallbackArguments args,
         Func<long, long, long> operation)
     {
         return PerformBinaryOperationS(funcName, ctx, args, (v1, v2) => CreateValueSigned(operation(v1, v2)));
     }
 
-    private DynValue PerformBinaryOperationU(string funcName, ScriptExecutionContext ctx, CallbackArguments args,
+    private LuaValue PerformBinaryOperationU(string funcName, ScriptExecutionContext ctx, CallbackArguments args,
         Func<ulong, ulong, ulong> operation)
     {
         return PerformBinaryOperationU(funcName, ctx, args, (v1, v2) => CreateValueUnsigned(operation(v1, v2)));
     }
 
-    private DynValue PerformUnaryOperationS(string funcName, ScriptExecutionContext _, CallbackArguments args,
+    private LuaValue PerformUnaryOperationS(string funcName, ScriptExecutionContext _, CallbackArguments args,
         Func<long, long> operation)
     {
         if (args.Count != 1)
@@ -265,7 +265,7 @@ public class StandardEnumUserDataDescriptor : DispatchingUserDataDescriptor
         return CreateValueSigned(r);
     }
 
-    private DynValue PerformUnaryOperationU(string funcName, ScriptExecutionContext _, CallbackArguments args,
+    private LuaValue PerformUnaryOperationU(string funcName, ScriptExecutionContext _, CallbackArguments args,
         Func<ulong, ulong> operation)
     {
         if (args.Count != 1)
@@ -276,46 +276,46 @@ public class StandardEnumUserDataDescriptor : DispatchingUserDataDescriptor
         return CreateValueUnsigned(r);
     }
 
-    internal DynValue Callback_Or(ScriptExecutionContext ctx, CallbackArguments args)
+    internal LuaValue Callback_Or(ScriptExecutionContext ctx, CallbackArguments args)
     {
         if (IsUnsigned)
             return PerformBinaryOperationU("or", ctx, args, (v1, v2) => v1 | v2);
         return PerformBinaryOperationS("or", ctx, args, (v1, v2) => v1 | v2);
     }
 
-    internal DynValue Callback_And(ScriptExecutionContext ctx, CallbackArguments args)
+    internal LuaValue Callback_And(ScriptExecutionContext ctx, CallbackArguments args)
     {
         if (IsUnsigned)
             return PerformBinaryOperationU("and", ctx, args, (v1, v2) => v1 & v2);
         return PerformBinaryOperationS("and", ctx, args, (v1, v2) => v1 & v2);
     }
 
-    internal DynValue Callback_Xor(ScriptExecutionContext ctx, CallbackArguments args)
+    internal LuaValue Callback_Xor(ScriptExecutionContext ctx, CallbackArguments args)
     {
         if (IsUnsigned)
             return PerformBinaryOperationU("xor", ctx, args, (v1, v2) => v1 ^ v2);
         return PerformBinaryOperationS("xor", ctx, args, (v1, v2) => v1 ^ v2);
     }
 
-    internal DynValue Callback_BwNot(ScriptExecutionContext ctx, CallbackArguments args)
+    internal LuaValue Callback_BwNot(ScriptExecutionContext ctx, CallbackArguments args)
     {
         if (IsUnsigned)
             return PerformUnaryOperationU("not", ctx, args, v1 => ~v1);
         return PerformUnaryOperationS("not", ctx, args, v1 => ~v1);
     }
 
-    internal DynValue Callback_HasAll(ScriptExecutionContext ctx, CallbackArguments args)
+    internal LuaValue Callback_HasAll(ScriptExecutionContext ctx, CallbackArguments args)
     {
         if (IsUnsigned)
-            return PerformBinaryOperationU("hasAll", ctx, args, (v1, v2) => DynValue.NewBoolean((v1 & v2) == v2));
-        return PerformBinaryOperationS("hasAll", ctx, args, (v1, v2) => DynValue.NewBoolean((v1 & v2) == v2));
+            return PerformBinaryOperationU("hasAll", ctx, args, (v1, v2) => LuaValue.NewBoolean((v1 & v2) == v2));
+        return PerformBinaryOperationS("hasAll", ctx, args, (v1, v2) => LuaValue.NewBoolean((v1 & v2) == v2));
     }
 
-    internal DynValue Callback_HasAny(ScriptExecutionContext ctx, CallbackArguments args)
+    internal LuaValue Callback_HasAny(ScriptExecutionContext ctx, CallbackArguments args)
     {
         if (IsUnsigned)
-            return PerformBinaryOperationU("hasAny", ctx, args, (v1, v2) => DynValue.NewBoolean((v1 & v2) != 0));
-        return PerformBinaryOperationS("hasAny", ctx, args, (v1, v2) => DynValue.NewBoolean((v1 & v2) != 0));
+            return PerformBinaryOperationU("hasAny", ctx, args, (v1, v2) => LuaValue.NewBoolean((v1 & v2) != 0));
+        return PerformBinaryOperationS("hasAny", ctx, args, (v1, v2) => LuaValue.NewBoolean((v1 & v2) != 0));
     }
 
     /// <summary>
@@ -341,10 +341,10 @@ public class StandardEnumUserDataDescriptor : DispatchingUserDataDescriptor
     /// <param name="obj"></param>
     /// <param name="metaname"></param>
     /// <returns></returns>
-    public override DynValue MetaIndex(Script script, object obj, string metaname)
+    public override LuaValue MetaIndex(Script script, object obj, string metaname)
     {
         if (metaname == "__concat" && IsFlags)
-            return DynValue.NewCallback(Callback_Or);
+            return LuaValue.NewCallback(Callback_Or);
 
         return null;
     }

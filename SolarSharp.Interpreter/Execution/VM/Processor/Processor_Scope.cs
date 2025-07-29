@@ -16,11 +16,11 @@ internal sealed partial class Processor
         if (to >= 0 && from >= 0 && to >= from) Array.Clear(array, from, to - from + 1);
     }
 
-    public DynValue GetGenericSymbol(SymbolRef symref)
+    public LuaValue GetGenericSymbol(SymbolRef symref)
     {
         return symref.i_Type switch
         {
-            SymbolRefType.DefaultEnv => DynValue.NewTable(GetScript().Globals),
+            SymbolRefType.DefaultEnv => LuaValue.NewTable(GetScript().Globals),
             SymbolRefType.Global => GetGlobalSymbol(GetGenericSymbol(symref.i_Env), symref.i_Name),
             SymbolRefType.Local => GetTopNonClrFunction().LocalScope[symref.i_Index],
             SymbolRefType.Upvalue => GetTopNonClrFunction().ClosureScope[symref.i_Index],
@@ -29,23 +29,23 @@ internal sealed partial class Processor
         };
     }
 
-    private DynValue GetGlobalSymbol(DynValue dynValue, string name)
+    private LuaValue GetGlobalSymbol(LuaValue LuaValue, string name)
     {
-        if (dynValue.Type != DataType.Table)
-            throw new InvalidOperationException($"_ENV is not a table but a {dynValue.Type}");
+        if (LuaValue.Type != DataType.Table)
+            throw new InvalidOperationException($"_ENV is not a table but a {LuaValue.Type}");
 
-        return dynValue.Table.Get(name);
+        return LuaValue.Table.Get(name);
     }
 
-    private void SetGlobalSymbol(DynValue dynValue, string name, DynValue value)
+    private void SetGlobalSymbol(LuaValue LuaValue, string name, LuaValue value)
     {
-        if (dynValue.Type != DataType.Table)
-            throw new InvalidOperationException($"_ENV is not a table but a {dynValue.Type}");
+        if (LuaValue.Type != DataType.Table)
+            throw new InvalidOperationException($"_ENV is not a table but a {LuaValue.Type}");
 
-        dynValue.Table.Set(name, value ?? DynValue.Nil);
+        LuaValue.Table.Set(name, value ?? LuaValue.Nil);
     }
 
-    public void AssignGenericSymbol(SymbolRef symref, DynValue value)
+    public void AssignGenericSymbol(SymbolRef symref, LuaValue value)
     {
         switch (symref.i_Type)
         {
@@ -58,7 +58,7 @@ internal sealed partial class Processor
 
                 var v = stackframe.LocalScope[symref.i_Index];
                 if (v == null)
-                    stackframe.LocalScope[symref.i_Index] = v = DynValue.NewNil();
+                    stackframe.LocalScope[symref.i_Index] = v = LuaValue.NewNil();
 
                 v.Assign(value);
             }
@@ -69,7 +69,7 @@ internal sealed partial class Processor
 
                 var v = stackframe.ClosureScope[symref.i_Index];
                 if (v == null)
-                    stackframe.ClosureScope[symref.i_Index] = v = DynValue.NewNil();
+                    stackframe.ClosureScope[symref.i_Index] = v = LuaValue.NewNil();
 
                 v.Assign(value);
             }

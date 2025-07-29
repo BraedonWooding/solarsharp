@@ -11,21 +11,21 @@ namespace SolarSharp.Interpreter.DataTypes;
 /// <summary>
 ///     A class representing a Lua table.
 /// </summary>
-public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePair<DynValue, DynValue>>
+public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePair<LuaValue, LuaValue>>
 {
     private const int MAX_INT_KEY_ARRAY = 16_000_000;
 
     /// <summary>
     ///     Fallback value map for all other keys/values
     /// </summary>
-    private readonly LuaDictionary<DynValue, DynValue> ValueMap;
+    private readonly LuaDictionary<LuaValue, LuaValue> ValueMap;
 
     /// <summary>
     ///     The array segment of the table.  This starts from 0
     ///     with the first slot always being empty (similar to LuaJIT)
     ///     This does mean that doing table[0] = X will write to the 0 slot.
     /// </summary>
-    private DynValue[] ArraySegment;
+    private LuaValue[] ArraySegment;
 
     private int m_CachedLength = -1;
 
@@ -38,9 +38,9 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     public Table(Script owner, int arraySizeHint = 0, int associativeSizeHint = 0)
     {
         OwnerScript = owner;
-        ArraySegment = new DynValue[arraySizeHint + 1];
-        // we don't have a string map here too because strings are pretty efficiently handled by dynvalues.
-        ValueMap = new LuaDictionary<DynValue, DynValue>(associativeSizeHint);
+        ArraySegment = new LuaValue[arraySizeHint + 1];
+        // we don't have a string map here too because strings are pretty efficiently handled by LuaValues.
+        ValueMap = new LuaDictionary<LuaValue, LuaValue>(associativeSizeHint);
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// </summary>
     /// <param name="owner">The owner.</param>
     /// <param name="arrayValues">The values for the "array-like" part of the table.</param>
-    public Table(Script owner, params DynValue[] arrayValues)
+    public Table(Script owner, params LuaValue[] arrayValues)
         : this(owner)
     {
         for (var i = 0; i < arrayValues.Length; i++) Set(i + 1, arrayValues[i]);
@@ -67,7 +67,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     public object this[params object[] keys]
     {
         get => Get(keys).ToObject();
-        set => Set(keys, DynValue.FromObject(OwnerScript, value));
+        set => Set(keys, LuaValue.FromObject(OwnerScript, value));
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     public object this[object key]
     {
         get => Get(key).ToObject();
-        set => Set(key, DynValue.FromObject(OwnerScript, value));
+        set => Set(key, LuaValue.FromObject(OwnerScript, value));
     }
 
     /// <summary>
@@ -112,15 +112,15 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// <summary>
     ///     Enumerates the key/value pairs.
     /// </summary>
-    public IEnumerator<KeyValuePair<DynValue, DynValue>> AssociativePairs => ValueMap.GetEnumerator();
+    public IEnumerator<KeyValuePair<LuaValue, LuaValue>> AssociativePairs => ValueMap.GetEnumerator();
 
     /// <summary>
     ///     Enumerates the values
     /// </summary>
     /// <returns></returns>
-    public IEnumerable<DynValue> Values => this.Select(kvp => kvp.Value);
+    public IEnumerable<LuaValue> Values => this.Select(kvp => kvp.Value);
 
-    public IEnumerator<KeyValuePair<DynValue, DynValue>> GetEnumerator()
+    public IEnumerator<KeyValuePair<LuaValue, LuaValue>> GetEnumerator()
     {
         return new Enumerator(this);
     }
@@ -140,7 +140,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// </summary>
     public void Clear()
     {
-        ArraySegment = new DynValue[1];
+        ArraySegment = new LuaValue[1];
         ValueMap.Clear();
         m_CachedLength = -1;
     }
@@ -181,7 +181,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// </summary>
     /// <param name="value">The value.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(DynValue value)
+    public void Append(LuaValue value)
     {
         // Table.Insert uses rawset
 
@@ -210,15 +210,15 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     ///     Performs the Next() operation
     /// </summary>
     /// <param name="v">The previous value or nil</param>
-    public DynValue GetNextFromIt(DynValue v)
+    public LuaValue GetNextFromIt(LuaValue v)
     {
         var wasNil = false;
         // note a custom dictionary may be a smart idea to make some of this faster
         if (v.IsNil())
         {
             wasNil = true;
-            v = DynValue.NewNumber(0);
-            if (ArraySegment.Length > 0 && ArraySegment[0] != null) return DynValue.NewTuple(v, ArraySegment[0]);
+            v = LuaValue.NewNumber(0);
+            if (ArraySegment.Length > 0 && ArraySegment[0] != null) return LuaValue.NewTuple(v, ArraySegment[0]);
         }
 
         var skipFinding = false;
@@ -235,22 +235,22 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
             } while (n < ArraySegment.Length && ArraySegment[n] == null);
 
             // if we are at the end
-            if (n < ArraySegment.Length) return DynValue.NewTuple(DynValue.NewNumber(n), ArraySegment[n]);
+            if (n < ArraySegment.Length) return LuaValue.NewTuple(LuaValue.NewNumber(n), ArraySegment[n]);
         }
 
         if (skipFinding)
         {
-            if (ValueMap.Count == 0) return DynValue.Nil;
+            if (ValueMap.Count == 0) return LuaValue.Nil;
             var kvp = ValueMap.First();
-            return DynValue.NewTuple(kvp.Key, kvp.Value);
+            return LuaValue.NewTuple(kvp.Key, kvp.Value);
         }
 
         var it = ValueMap.TryGetEnumeratorFrom(v) ?? throw new ScriptRuntimeException("invalid key to 'next'");
-        if (!it.MoveNext()) return DynValue.Nil;
-        return DynValue.NewTuple(it.Current.Key, it.Current.Value);
+        if (!it.MoveNext()) return LuaValue.Nil;
+        return LuaValue.NewTuple(it.Current.Key, it.Current.Value);
     }
 
-    internal void InitNextArrayKeys(DynValue val, int idx)
+    internal void InitNextArrayKeys(LuaValue val, int idx)
     {
         if (idx == ArraySegment.Length - 1 && val.Type == DataType.Tuple && val.Tuple.Length > 1)
         {
@@ -279,16 +279,16 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// <summary>
     ///     Sort the array segment of the table.
     /// </summary>
-    public void Sort(IComparer<DynValue> sortComparer)
+    public void Sort(IComparer<LuaValue> sortComparer)
     {
         Array.Sort(ArraySegment, 1, Length, sortComparer);
     }
 
-    private struct Enumerator : IEnumerator<KeyValuePair<DynValue, DynValue>>
+    private struct Enumerator : IEnumerator<KeyValuePair<LuaValue, LuaValue>>
     {
         private readonly Table table;
         private int _index;
-        private IEnumerator<KeyValuePair<DynValue, DynValue>> _map;
+        private IEnumerator<KeyValuePair<LuaValue, LuaValue>> _map;
 
         public Enumerator(Table table) : this()
         {
@@ -296,7 +296,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
             _index = -1;
         }
 
-        public KeyValuePair<DynValue, DynValue> Current { get; private set; }
+        public KeyValuePair<LuaValue, LuaValue> Current { get; private set; }
 
         readonly object IEnumerator.Current => Current;
 
@@ -320,7 +320,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
                 }
                 else
                 {
-                    Current = new KeyValuePair<DynValue, DynValue>(DynValue.NewNumber(_index),
+                    Current = new KeyValuePair<LuaValue, LuaValue>(LuaValue.NewNumber(_index),
                         table.ArraySegment[_index]);
                     return true;
                 }
@@ -346,7 +346,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
 
     #region Set
 
-    public void Insert(int index, DynValue value)
+    public void Insert(int index, LuaValue value)
     {
         // inserting at end
         if (index == Length + 1)
@@ -375,7 +375,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// <param name="value"></param>
     /// <param name="setIfAbsent"></param>
     /// <returns></returns>
-    private bool RawArraySet(int index, DynValue value, bool setIfAbsent)
+    private bool RawArraySet(int index, LuaValue value, bool setIfAbsent)
     {
         if (index >= ArraySegment.Length) Array.Resize(ref ArraySegment, NextPowOfTwo(index + 1));
 
@@ -408,24 +408,24 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
         return true;
     }
 
-    private DynValue ArraySet(int index, DynValue value, bool invokeMetaMethods)
+    private LuaValue ArraySet(int index, LuaValue value, bool invokeMetaMethods)
     {
         // just a quick check for our max index
         // this is probably a *bit* too large
         // but the real large limit is: 2_146_435_071
         // so this is semi-reasonable for now.
-        if (index >= MAX_INT_KEY_ARRAY) return MapSet(DynValue.NewNumber(index), value, invokeMetaMethods);
+        if (index >= MAX_INT_KEY_ARRAY) return MapSet(LuaValue.NewNumber(index), value, invokeMetaMethods);
 
         if (!RawArraySet(index, value, !invokeMetaMethods || MetaTable == null) && invokeMetaMethods)
         {
-            if (MetaTable?.Get("__newindex") is DynValue newIndex && newIndex.IsNotNil()) return newIndex;
+            if (MetaTable?.Get("__newindex") is LuaValue newIndex && newIndex.IsNotNil()) return newIndex;
 
             ArraySegment[index] = value;
             // The meta method could do anything to the array so I can't presume it's length
             m_CachedLength = -1;
         }
 
-        return DynValue.Nil;
+        return LuaValue.Nil;
     }
 
     /// <summary>
@@ -435,7 +435,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// <param name="value">The value.</param>
     /// <param name="invokeMetaMethods">Set if the value in the table is absent</param>
     /// <returns>Returns the previous value in the table</returns>
-    public DynValue Set(DynValue key, DynValue value, bool invokeMetaMethods)
+    public LuaValue Set(LuaValue key, LuaValue value, bool invokeMetaMethods)
     {
         if (key.IsNilOrNan())
         {
@@ -458,7 +458,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// </summary>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool RawMapSet(DynValue key, DynValue value, bool setIfAbsent)
+    private bool RawMapSet(LuaValue key, LuaValue value, bool setIfAbsent)
     {
         if (value.IsNil())
         {
@@ -474,23 +474,23 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// </summary>
     /// <param name="invokeMetaMethods">This is used to implement __newindex operations</param>
     /// <returns></returns>
-    private DynValue MapSet(DynValue key, DynValue value, bool invokeMetaMethods)
+    private LuaValue MapSet(LuaValue key, LuaValue value, bool invokeMetaMethods)
     {
         // we optimize specifically for MetaTable == null which is quite common
         if (!RawMapSet(key, value, !invokeMetaMethods || MetaTable == null) && invokeMetaMethods)
         {
-            if (MetaTable?.Get("__newindex") is DynValue newIndex && newIndex.IsNotNil()) return newIndex;
+            if (MetaTable?.Get("__newindex") is LuaValue newIndex && newIndex.IsNotNil()) return newIndex;
 
             ValueMap[key] = value;
         }
 
-        return DynValue.Nil;
+        return LuaValue.Nil;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Set(string s, DynValue value)
+    public void Set(string s, LuaValue value)
     {
-        MapSet(DynValue.NewString(s), value, false);
+        MapSet(LuaValue.NewString(s), value, false);
     }
 
     /// <summary>
@@ -498,12 +498,12 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// </summary>
     /// <param name="key">The key.</param>
     /// <param name="value">The value.</param>
-    public void Set(object key, DynValue value)
+    public void Set(object key, LuaValue value)
     {
         if (key == null)
             throw ScriptRuntimeException.TableIndexIsNil();
 
-        Set(DynValue.FromObject(OwnerScript, key), value, false);
+        Set(LuaValue.FromObject(OwnerScript, key), value, false);
     }
 
     /// <summary>
@@ -512,7 +512,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// </summary>
     /// <param name="keys">The keys.</param>
     /// <param name="value">The value.</param>
-    public void Set(object[] keys, DynValue value)
+    public void Set(object[] keys, LuaValue value)
     {
         if (keys is not { Length: > 0 })
             throw ScriptRuntimeException.TableIndexIsNil();
@@ -529,9 +529,9 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// </summary>
     /// <param name="key">The key.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public DynValue Get(string key)
+    public LuaValue Get(string key)
     {
-        return Get(DynValue.NewString(key));
+        return Get(LuaValue.NewString(key));
     }
 
     /// <summary>
@@ -539,18 +539,18 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// </summary>
     /// <param name="key">The key.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public DynValue Get(int key)
+    public LuaValue Get(int key)
     {
         if (key < MAX_INT_KEY_ARRAY && key >= 0)
-            return key < ArraySegment.Length ? ArraySegment[key] ?? DynValue.Nil : DynValue.Nil;
-        return Get(DynValue.NewNumber(key));
+            return key < ArraySegment.Length ? ArraySegment[key] ?? LuaValue.Nil : LuaValue.Nil;
+        return Get(LuaValue.NewNumber(key));
     }
 
     /// <summary>
     ///     Gets the value associated with the specified key.
     /// </summary>
     /// <param name="key">The key.</param>
-    public DynValue Get(DynValue key)
+    public LuaValue Get(LuaValue key)
     {
         if (key.Type == DataType.Number)
         {
@@ -558,7 +558,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
             if (idx > 0 && idx < MAX_INT_KEY_ARRAY) return Get(idx);
         }
 
-        return ValueMap.GetValueOrDefault(key) ?? DynValue.Nil;
+        return ValueMap.GetValueOrDefault(key) ?? LuaValue.Nil;
     }
 
     /// <summary>
@@ -567,7 +567,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     /// </summary>
     /// <param name="key">The key.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public DynValue Get(object key)
+    public LuaValue Get(object key)
     {
         if (key == null)
             return null;
@@ -575,7 +575,7 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
         if (key is int v && v < MAX_INT_KEY_ARRAY)
             return Get(v);
 
-        return Get(DynValue.FromObject(OwnerScript, key));
+        return Get(LuaValue.FromObject(OwnerScript, key));
     }
 
     /// <summary>
@@ -585,10 +585,10 @@ public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePa
     ///     Multiple keys can be used to access subtables.
     /// </summary>
     /// <param name="keys">The keys to access the table and subtables</param>
-    public DynValue Get(params object[] keys)
+    public LuaValue Get(params object[] keys)
     {
         if (keys is not { Length: > 0 })
-            return DynValue.Nil;
+            return LuaValue.Nil;
 
         return ResolveMultipleKeys(keys, out var key).Get(key);
     }

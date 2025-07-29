@@ -291,12 +291,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public readonly Type Type => typeof(SomeOtherClassCustomDescriptor);
 
-            public readonly DynValue Index(Script script, object obj, DynValue index, bool dummy)
+            public readonly LuaValue Index(Script script, object obj, LuaValue index, bool dummy)
             {
-                return DynValue.NewNumber(index.Number * 4);
+                return LuaValue.NewNumber(index.Number * 4);
             }
 
-            public bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool dummy)
+            public bool SetIndex(Script script, object obj, LuaValue index, LuaValue value, bool dummy)
             {
                 throw new NotImplementedException();
             }
@@ -306,7 +306,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return null;
             }
 
-            public readonly DynValue MetaIndex(Script script, object obj, string metaname)
+            public readonly LuaValue MetaIndex(Script script, object obj, string metaname)
             {
                 return null;
             }
@@ -320,17 +320,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         public struct SelfDescribingClass : IUserDataType
         {
-            public readonly DynValue Index(Script script, DynValue index, bool isNameIndex)
+            public readonly LuaValue Index(Script script, LuaValue index, bool isNameIndex)
             {
-                return DynValue.NewNumber(index.Number * 3);
+                return LuaValue.NewNumber(index.Number * 3);
             }
 
-            public bool SetIndex(Script script, DynValue index, DynValue value, bool isNameIndex)
+            public bool SetIndex(Script script, LuaValue index, LuaValue value, bool isNameIndex)
             {
                 throw new NotImplementedException();
             }
 
-            public DynValue MetaIndex(Script script, string metaname)
+            public LuaValue MetaIndex(Script script, string metaname)
             {
                 throw new NotImplementedException();
             }
@@ -410,7 +410,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                     _ => new[] { 43, 78, 126, 14 });
 
                 Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<StringBuilder>((_, v) =>
-                    DynValue.NewString(v.ToString().ToUpper()));
+                    LuaValue.NewString(v.ToString().ToUpper()));
 
 
                 S.Globals.Set("static", UserData.CreateStatic<SomeClass>());

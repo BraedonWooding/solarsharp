@@ -81,12 +81,12 @@ public class ValueTypeDefaultCtorMemberDescriptor : IOverloadableMemberDescripto
     /// <param name="context">The context.</param>
     /// <param name="args">The arguments.</param>
     /// <returns></returns>
-    public DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
+    public LuaValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
     {
         this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
 
         var vto = Activator.CreateInstance(ValueTypeDefaultCtor);
-        return ClrToScriptConversions.ObjectToDynValue(script, vto);
+        return ClrToScriptConversions.ObjectToLuaValue(script, vto);
     }
 
 
@@ -103,33 +103,33 @@ public class ValueTypeDefaultCtorMemberDescriptor : IOverloadableMemberDescripto
 
     /// <summary>
     ///     Gets the value of this member as a
-    ///     <see cref="DynValue" /> to be exposed to scripts.
+    ///     <see cref="LuaValue" /> to be exposed to scripts.
     ///     Implementors should raise exceptions if the value cannot be read or if access to an
     ///     instance member through a static userdata is attempted.
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object owning this member, or null if static.</param>
     /// <returns>
-    ///     The value of this member as a <see cref="DynValue" />.
+    ///     The value of this member as a <see cref="LuaValue" />.
     /// </returns>
-    public DynValue GetValue(Script script, object obj)
+    public LuaValue GetValue(Script script, object obj)
     {
         this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
 
         var vto = Activator.CreateInstance(ValueTypeDefaultCtor);
-        return ClrToScriptConversions.ObjectToDynValue(script, vto);
+        return ClrToScriptConversions.ObjectToLuaValue(script, vto);
     }
 
     /// <summary>
     ///     Sets the value of this member from a
-    ///     <see cref="DynValue" />.
+    ///     <see cref="LuaValue" />.
     ///     Implementors should raise exceptions if the value cannot be read or if access to an
     ///     instance member through a static userdata is attempted.
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object owning this member, or null if static.</param>
     /// <param name="value">The value to be set.</param>
-    public void SetValue(Script script, object obj, DynValue value)
+    public void SetValue(Script script, object obj, LuaValue value)
     {
         this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
     }

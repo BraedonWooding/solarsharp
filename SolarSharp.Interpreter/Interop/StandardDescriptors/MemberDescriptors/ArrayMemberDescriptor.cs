@@ -63,11 +63,11 @@ public class ArrayMemberDescriptor : ObjectCallbackMemberDescriptor
 
         var elemType = array.GetType().GetElementType();
 
-        var objValue = ScriptToClrConversions.DynValueToObjectOfType(value, elemType, null, false);
+        var objValue = ScriptToClrConversions.LuaValueToObjectOfType(value, elemType, null, false);
 
         array.SetValue(objValue, indices);
 
-        return DynValue.Void;
+        return LuaValue.Void;
     }
 
     private static object ArrayIndexerGet(object arrayObj, ScriptExecutionContext ctx, CallbackArguments args)

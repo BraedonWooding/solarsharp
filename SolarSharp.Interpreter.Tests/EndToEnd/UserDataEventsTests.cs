@@ -50,10 +50,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((_, _) =>
+            s.Globals["ext"] = LuaValue.NewCallback((_, _) =>
             {
                 invocationCount += 1;
-                return DynValue.Void;
+                return LuaValue.Void;
             });
 
             s.DoString(@"
@@ -82,10 +82,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             var obj2 = new SomeClass();
             s.Globals["myobj"] = obj;
             s.Globals["myobj2"] = obj2;
-            s.Globals["ext"] = DynValue.NewCallback((_, _) =>
+            s.Globals["ext"] = LuaValue.NewCallback((_, _) =>
             {
                 invocationCount += 1;
-                return DynValue.Void;
+                return LuaValue.Void;
             });
 
             s.DoString(@"
@@ -114,10 +114,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((_, _) =>
+            s.Globals["ext"] = LuaValue.NewCallback((_, _) =>
             {
                 invocationCount += 1;
-                return DynValue.Void;
+                return LuaValue.Void;
             });
 
             s.DoString(@"
@@ -145,10 +145,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((_, _) =>
+            s.Globals["ext"] = LuaValue.NewCallback((_, _) =>
             {
                 invocationCount += 1;
-                return DynValue.Void;
+                return LuaValue.Void;
             });
 
             s.DoString(@"
@@ -177,10 +177,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback((_, _) =>
+            s.Globals["ext"] = LuaValue.NewCallback((_, _) =>
             {
                 invocationCount += 1;
-                return DynValue.Void;
+                return LuaValue.Void;
             });
 
             s.DoString(@"
@@ -213,10 +213,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 	            Globals =
 	            {
 		            ["myobj"] = typeof(SomeClass),
-		            ["ext"] = DynValue.NewCallback((_, _) =>
+		            ["ext"] = LuaValue.NewCallback((_, _) =>
 		            {
 			            invocationCount += 1;
-			            return DynValue.Void;
+			            return LuaValue.Void;
 		            })
 	            }
             };
@@ -250,10 +250,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 	            Globals =
 	            {
 		            ["myobj"] = typeof(SomeClass),
-		            ["ext"] = DynValue.NewCallback((_, _) =>
+		            ["ext"] = LuaValue.NewCallback((_, _) =>
 		            {
 			            invocationCount += 1;
-			            return DynValue.Void;
+			            return LuaValue.Void;
 		            })
 	            }
             };

@@ -8,21 +8,21 @@ var file = new LuaFile("./Tests/empty_test.lua");
 var impl = new SolarSharpImplementation();
 //impl.Run(file.Contents);
 
-//impl.script.Globals.Set("A", (DynValue.NewCallback((ctx, arg) =>
+//impl.script.Globals.Set("A", (LuaValue.NewCallback((ctx, arg) =>
 //{
-//    return DynValue.NewNumber(10);
-//    //return DynValue.NewYieldReq(new DynValue[1] { DynValue.NewNumber(10) });
-//    //return DynValue.NewTailCallReq(new TailCallData
+//    return LuaValue.NewNumber(10);
+//    //return LuaValue.NewYieldReq(new LuaValue[1] { LuaValue.NewNumber(10) });
+//    //return LuaValue.NewTailCallReq(new TailCallData
 //    //{
-//    //    Args = new DynValue[0],
-//    //    Function = DynValue.NewCallback((ctx, arg) =>
+//    //    Args = new LuaValue[0],
+//    //    Function = LuaValue.NewCallback((ctx, arg) =>
 //    //    {
-//    //        return DynValue.NewYieldReq(new DynValue[1] { DynValue.NewNumber(10) });
+//    //        return LuaValue.NewYieldReq(new LuaValue[1] { LuaValue.NewNumber(10) });
 //    //    }),
 //    //    Continuation = new CallbackFunction((ctx, arg) =>
 //    //    {
 //    //        Console.WriteLine("CONT");
-//    //        return DynValue.NewNumber(20);
+//    //        return LuaValue.NewNumber(20);
 //    //    })
 //    //});
 //})));

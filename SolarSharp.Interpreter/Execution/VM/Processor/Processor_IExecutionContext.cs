@@ -4,7 +4,7 @@ namespace SolarSharp.Interpreter.Execution.VM;
 
 internal sealed partial class Processor
 {
-    internal Table GetMetatable(DynValue value)
+    internal Table GetMetatable(LuaValue value)
     {
         if (value.Type == DataType.Table) return value.Table.MetaTable;
 
@@ -13,7 +13,7 @@ internal sealed partial class Processor
         return null;
     }
 
-    internal DynValue GetBinaryMetamethod(DynValue op1, DynValue op2, string eventName)
+    internal LuaValue GetBinaryMetamethod(LuaValue op1, LuaValue op2, string eventName)
     {
         var op1_MetaTable = GetMetatable(op1);
         if (op1_MetaTable != null)
@@ -52,7 +52,7 @@ internal sealed partial class Processor
         return null;
     }
 
-    internal DynValue GetMetamethod(DynValue value, string metamethod)
+    internal LuaValue GetMetamethod(LuaValue value, string metamethod)
     {
         if (value.Type == DataType.UserData)
         {
@@ -65,7 +65,7 @@ internal sealed partial class Processor
     }
 
 
-    internal DynValue GetMetamethodRaw(DynValue value, string metamethod)
+    internal LuaValue GetMetamethodRaw(LuaValue value, string metamethod)
     {
         var metatable = GetMetatable(value);
 

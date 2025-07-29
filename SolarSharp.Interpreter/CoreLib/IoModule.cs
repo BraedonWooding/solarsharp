@@ -25,7 +25,7 @@ public class IoModule
         UserData.RegisterType<FileUserDataBase>(InteropAccessMode.Default, "file");
 
         Table meta = new(ioTable.OwnerScript);
-        var __index = DynValue.NewCallback(new CallbackFunction(__index_callback, "__index_callback"));
+        var __index = LuaValue.NewCallback(new CallbackFunction(__index_callback, "__index_callback"));
         meta.Set("__index", __index);
         ioTable.MetaTable = meta;
 
@@ -34,7 +34,7 @@ public class IoModule
         SetStandardFile(globalTable.OwnerScript, StandardFileType.StdErr, globalTable.OwnerScript.Options.Stderr);
     }
 
-    private static DynValue __index_callback(ScriptExecutionContext executionContext, CallbackArguments args)
+    private static LuaValue __index_callback(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var name = args[1].CastToString();
 
@@ -44,10 +44,10 @@ public class IoModule
             return GetStandardFile(executionContext.GetScript(), StandardFileType.StdOut);
         if (name == "stderr")
             return GetStandardFile(executionContext.GetScript(), StandardFileType.StdErr);
-        return DynValue.Nil;
+        return LuaValue.Nil;
     }
 
-    private static DynValue GetStandardFile(Script S, StandardFileType file)
+    private static LuaValue GetStandardFile(Script S, StandardFileType file)
     {
         var R = S.Registry;
 
@@ -100,7 +100,7 @@ public class IoModule
 
 
     [SolarSharpModuleMethod]
-    public static DynValue close(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue close(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var outp = args.AsUserData<FileUserDataBase>(0, "close", true) ??
                    GetDefaultFile(executionContext, StandardFileType.StdOut);
@@ -108,28 +108,28 @@ public class IoModule
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue flush(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue flush(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var outp = args.AsUserData<FileUserDataBase>(0, "close", true) ??
                    GetDefaultFile(executionContext, StandardFileType.StdOut);
         outp.flush();
-        return DynValue.True;
+        return LuaValue.True;
     }
 
 
     [SolarSharpModuleMethod]
-    public static DynValue input(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue input(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return HandleDefaultStreamSetter(executionContext, args, StandardFileType.StdIn);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue output(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue output(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return HandleDefaultStreamSetter(executionContext, args, StandardFileType.StdOut);
     }
 
-    private static DynValue HandleDefaultStreamSetter(ScriptExecutionContext executionContext, CallbackArguments args,
+    private static LuaValue HandleDefaultStreamSetter(ScriptExecutionContext executionContext, CallbackArguments args,
         StandardFileType defaultFiles)
     {
         if (args.Count == 0 || args[0].IsNil())
@@ -161,13 +161,13 @@ public class IoModule
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue lines(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue lines(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var filename = args.AsType(0, "lines", DataType.String).String;
 
         try
         {
-            List<DynValue> readLines = new();
+            List<LuaValue> readLines = new();
 
             using (var stream =
                    Script.GlobalOptions.Platform.IO_OpenFile(filename, "r"))
@@ -176,13 +176,13 @@ public class IoModule
                 while (!reader.EndOfStream)
                 {
                     var line = reader.ReadLine();
-                    readLines.Add(DynValue.NewString(line));
+                    readLines.Add(LuaValue.NewString(line));
                 }
             }
 
-            readLines.Add(DynValue.Nil);
+            readLines.Add(LuaValue.Nil);
 
-            return DynValue.FromObject(executionContext.GetScript(), readLines.Select(s => s));
+            return LuaValue.FromObject(executionContext.GetScript(), readLines.Select(s => s));
         }
         catch (Exception ex)
         {
@@ -191,7 +191,7 @@ public class IoModule
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue open(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue open(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var filename = args.AsType(0, "open", DataType.String).String;
         var vmode = args.AsType(1, "open", DataType.String, true);
@@ -241,8 +241,8 @@ public class IoModule
         }
         catch (Exception ex)
         {
-            return DynValue.NewTuple(DynValue.Nil,
-                DynValue.NewString(IoExceptionToLuaMessage(ex, filename)));
+            return LuaValue.NewTuple(LuaValue.Nil,
+                LuaValue.NewString(IoExceptionToLuaMessage(ex, filename)));
         }
     }
 
@@ -254,34 +254,34 @@ public class IoModule
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue type(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue type(ScriptExecutionContext _, CallbackArguments args)
     {
         if (args[0].Type != DataType.UserData)
-            return DynValue.Nil;
+            return LuaValue.Nil;
 
         if (!(args[0].UserData.Object is FileUserDataBase file))
-            return DynValue.Nil;
+            return LuaValue.Nil;
         if (file.isopen())
-            return DynValue.NewString("file");
-        return DynValue.NewString("closed file");
+            return LuaValue.NewString("file");
+        return LuaValue.NewString("closed file");
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue read(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue read(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var file = GetDefaultFile(executionContext, StandardFileType.StdIn);
         return file.read(executionContext, args);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue write(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue write(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var file = GetDefaultFile(executionContext, StandardFileType.StdOut);
         return file.write(executionContext, args);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue tmpfile(ScriptExecutionContext executionContext, CallbackArguments _)
+    public static LuaValue tmpfile(ScriptExecutionContext executionContext, CallbackArguments _)
     {
         var tmpfilename = Script.GlobalOptions.Platform.IO_OS_GetTempFilename();
         var file = Open(executionContext, tmpfilename, GetUTF8Encoding(), "w");

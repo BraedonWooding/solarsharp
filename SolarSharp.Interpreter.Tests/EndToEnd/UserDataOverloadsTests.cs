@@ -309,7 +309,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 ov.AddOverload(new MethodMemberDescriptor(method));
 
             // Creates the callback over the 'this' object
-            var callback = DynValue.NewCallback(ov.GetCallbackFunction(s, this));
+            var callback = LuaValue.NewCallback(ov.GetCallbackFunction(s, this));
             s.Globals.Set("func", callback);
 
             // Execute and check the results.

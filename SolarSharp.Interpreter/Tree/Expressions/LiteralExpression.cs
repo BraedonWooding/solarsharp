@@ -8,7 +8,7 @@ namespace SolarSharp.Interpreter.Tree.Expressions;
 
 internal class LiteralExpression : Expression
 {
-    public LiteralExpression(ScriptLoadingContext lcontext, DynValue value)
+    public LiteralExpression(ScriptLoadingContext lcontext, LuaValue value)
         : base(lcontext)
     {
         Value = value;
@@ -20,12 +20,12 @@ internal class LiteralExpression : Expression
     {
         Value = t.Type switch
         {
-            TokenType.Number or TokenType.Number_Hex or TokenType.Number_HexFloat => DynValue
+            TokenType.Number or TokenType.Number_Hex or TokenType.Number_HexFloat => LuaValue
                 .NewNumber(t.GetNumberValue()).AsReadOnly(),
-            TokenType.String or TokenType.String_Long => DynValue.NewString(t.Text).AsReadOnly(),
-            TokenType.True => DynValue.True,
-            TokenType.False => DynValue.False,
-            TokenType.Nil => DynValue.Nil,
+            TokenType.String or TokenType.String_Long => LuaValue.NewString(t.Text).AsReadOnly(),
+            TokenType.True => LuaValue.True,
+            TokenType.False => LuaValue.False,
+            TokenType.Nil => LuaValue.Nil,
             _ => throw new InternalErrorException("type mismatch")
         };
         if (Value == null)
@@ -34,14 +34,14 @@ internal class LiteralExpression : Expression
         lcontext.Lexer.Next();
     }
 
-    public DynValue Value { get; }
+    public LuaValue Value { get; }
 
     public override void Compile(ByteCode bc)
     {
         bc.Emit_Literal(Value);
     }
 
-    public override DynValue Eval(ScriptExecutionContext context)
+    public override LuaValue Eval(ScriptExecutionContext context)
     {
         return Value;
     }

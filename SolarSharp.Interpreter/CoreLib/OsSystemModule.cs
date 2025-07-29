@@ -15,30 +15,30 @@ namespace SolarSharp.Interpreter.CoreLib;
 public class OsSystemModule
 {
     [SolarSharpModuleMethod]
-    public static DynValue execute(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue execute(ScriptExecutionContext _, CallbackArguments args)
     {
         var v = args.AsType(0, "execute", DataType.String, true);
 
-        if (v.IsNil()) return DynValue.NewBoolean(true);
+        if (v.IsNil()) return LuaValue.NewBoolean(true);
 
         try
         {
             var exitCode = Script.GlobalOptions.Platform.OS_Execute(v.String);
 
-            return DynValue.NewTuple(
-                DynValue.Nil,
-                DynValue.NewString("exit"),
-                DynValue.NewNumber(exitCode));
+            return LuaValue.NewTuple(
+                LuaValue.Nil,
+                LuaValue.NewString("exit"),
+                LuaValue.NewNumber(exitCode));
         }
         catch (Exception)
         {
             // +++ bad to swallow.. 
-            return DynValue.Nil;
+            return LuaValue.Nil;
         }
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue exit(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue exit(ScriptExecutionContext _, CallbackArguments args)
     {
         var v_exitCode = args.AsType(0, "exit", DataType.Number, true);
         var exitCode = 0;
@@ -52,19 +52,19 @@ public class OsSystemModule
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue getenv(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue getenv(ScriptExecutionContext _, CallbackArguments args)
     {
         var varName = args.AsType(0, "getenv", DataType.String);
 
         var val = Script.GlobalOptions.Platform.GetEnvironmentVariable(varName.String);
 
         if (val == null)
-            return DynValue.Nil;
-        return DynValue.NewString(val);
+            return LuaValue.Nil;
+        return LuaValue.NewString(val);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue remove(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue remove(ScriptExecutionContext _, CallbackArguments args)
     {
         var fileName = args.AsType(0, "remove", DataType.String).String;
 
@@ -73,22 +73,22 @@ public class OsSystemModule
             if (Script.GlobalOptions.Platform.OS_FileExists(fileName))
             {
                 Script.GlobalOptions.Platform.OS_FileDelete(fileName);
-                return DynValue.True;
+                return LuaValue.True;
             }
 
-            return DynValue.NewTuple(
-                DynValue.Nil,
-                DynValue.NewString("{0}: No such file or directory.", fileName),
-                DynValue.NewNumber(-1));
+            return LuaValue.NewTuple(
+                LuaValue.Nil,
+                LuaValue.NewString("{0}: No such file or directory.", fileName),
+                LuaValue.NewNumber(-1));
         }
         catch (Exception ex)
         {
-            return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(ex.Message), DynValue.NewNumber(-1));
+            return LuaValue.NewTuple(LuaValue.Nil, LuaValue.NewString(ex.Message), LuaValue.NewNumber(-1));
         }
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue rename(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue rename(ScriptExecutionContext _, CallbackArguments args)
     {
         var fileNameOld = args.AsType(0, "rename", DataType.String).String;
         var fileNameNew = args.AsType(1, "rename", DataType.String).String;
@@ -96,30 +96,30 @@ public class OsSystemModule
         try
         {
             if (!Script.GlobalOptions.Platform.OS_FileExists(fileNameOld))
-                return DynValue.NewTuple(DynValue.Nil,
-                    DynValue.NewString("{0}: No such file or directory.", fileNameOld),
-                    DynValue.NewNumber(-1));
+                return LuaValue.NewTuple(LuaValue.Nil,
+                    LuaValue.NewString("{0}: No such file or directory.", fileNameOld),
+                    LuaValue.NewNumber(-1));
 
             Script.GlobalOptions.Platform.OS_FileMove(fileNameOld, fileNameNew);
-            return DynValue.True;
+            return LuaValue.True;
         }
         catch (Exception ex)
         {
-            return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(ex.Message), DynValue.NewNumber(-1));
+            return LuaValue.NewTuple(LuaValue.Nil, LuaValue.NewString(ex.Message), LuaValue.NewNumber(-1));
         }
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue setlocale(ScriptExecutionContext _, CallbackArguments _args)
+    public static LuaValue setlocale(ScriptExecutionContext _, CallbackArguments _args)
     {
         // TODO:
-        return DynValue.NewString("n/a");
+        return LuaValue.NewString("n/a");
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue tmpname(ScriptExecutionContext _, CallbackArguments _args)
+    public static LuaValue tmpname(ScriptExecutionContext _, CallbackArguments _args)
     {
-        return DynValue.NewString(Script.GlobalOptions.Platform.IO_OS_GetTempFilename());
+        return LuaValue.NewString(Script.GlobalOptions.Platform.IO_OS_GetTempFilename());
     }
 }
 

@@ -74,12 +74,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Script S = new();
 
-            S.Globals.Set("clrtail", DynValue.NewCallback((_, a) =>
+            S.Globals.Set("clrtail", LuaValue.NewCallback((_, a) =>
             {
                 var fn = S.Globals.Get("getResult");
-                var k3 = DynValue.NewNumber(a[0].Number / 3);
+                var k3 = LuaValue.NewNumber(a[0].Number / 3);
 
-                return DynValue.NewTailCallReq(fn, k3);
+                return LuaValue.NewTailCallReq(fn, k3);
             }));
 
             var res = S.DoString(script);

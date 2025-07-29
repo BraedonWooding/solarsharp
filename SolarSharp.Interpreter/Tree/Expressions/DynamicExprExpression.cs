@@ -17,7 +17,7 @@ internal class DynamicExprExpression : Expression
     }
 
 
-    public override DynValue Eval(ScriptExecutionContext context)
+    public override LuaValue Eval(ScriptExecutionContext context)
     {
         return m_Exp.Eval(context);
     }

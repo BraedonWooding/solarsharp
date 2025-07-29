@@ -18,7 +18,7 @@ public class MetaTableModule
     // If the original metatable has a "__metatable" field, raises an error ("cannot change a protected metatable").
     // This function returns table. 
     [SolarSharpModuleMethod]
-    public static DynValue setmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue setmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var table = args.AsType(0, "setmetatable", DataType.Table);
         var metatable = args.AsType(1, "setmetatable", DataType.Table, true);
@@ -36,7 +36,7 @@ public class MetaTableModule
     // If object does not have a metatable, returns nil. Otherwise, if the object's metatable 
     // has a "__metatable" field, returns the associated value. Otherwise, returns the metatable of the given object. 
     [SolarSharpModuleMethod]
-    public static DynValue getmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue getmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var obj = args[0];
         Table meta = null;
@@ -47,17 +47,17 @@ public class MetaTableModule
         if (obj.Type == DataType.Table) meta = obj.Table.MetaTable;
 
         if (meta == null)
-            return DynValue.Nil;
+            return LuaValue.Nil;
         if (meta.Get("__metatable") is var metaTable && metaTable.IsNotNil())
             return metaTable;
-        return DynValue.NewTable(meta);
+        return LuaValue.NewTable(meta);
     }
 
     // rawget (table, index)
     // -------------------------------------------------------------------------------------------------------------------
     // Gets the real value of table[index], without invoking any metamethod. table must be a table; index may be any value.
     [SolarSharpModuleMethod]
-    public static DynValue rawget(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue rawget(ScriptExecutionContext _, CallbackArguments args)
     {
         var table = args.AsType(0, "rawget", DataType.Table);
         var index = args[1];
@@ -71,7 +71,7 @@ public class MetaTableModule
     // index any value different from nil and NaN, and value any Lua value.
     // This function returns table. 
     [SolarSharpModuleMethod]
-    public static DynValue rawset(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue rawset(ScriptExecutionContext _, CallbackArguments args)
     {
         var table = args.AsType(0, "rawset", DataType.Table);
         var index = args[1];
@@ -85,19 +85,19 @@ public class MetaTableModule
     // -------------------------------------------------------------------------------------------------------------------
     // Checks whether v1 is equal to v2, without invoking any metamethod. Returns a boolean. 
     [SolarSharpModuleMethod]
-    public static DynValue rawequal(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue rawequal(ScriptExecutionContext _, CallbackArguments args)
     {
         var v1 = args[0];
         var v2 = args[1];
 
-        return DynValue.NewBoolean(v1.Equals(v2));
+        return LuaValue.NewBoolean(v1.Equals(v2));
     }
 
     //rawlen (v)
     // -------------------------------------------------------------------------------------------------------------------
     //Returns the length of the object v, which must be a table or a string, without invoking any metamethod. Returns an integer number.	
     [SolarSharpModuleMethod]
-    public static DynValue rawlen(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue rawlen(ScriptExecutionContext _, CallbackArguments args)
     {
         if (args[0].Type != DataType.String && args[0].Type != DataType.Table)
             throw ScriptRuntimeException.BadArgument(0, "rawlen", "table or string", args[0].Type.ToErrorTypeString(),

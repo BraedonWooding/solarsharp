@@ -53,21 +53,21 @@ public static class ModuleRegister
     /// <returns></returns>
     public static Table RegisterConstants(this Table table)
     {
-        var solarsharp_table = DynValue.NewTable(table.OwnerScript);
+        var solarsharp_table = LuaValue.NewTable(table.OwnerScript);
         var m = solarsharp_table.Table;
 
-        table.Set("_G", DynValue.NewTable(table));
-        table.Set("_VERSION", DynValue.NewString($"SolarSharp {Script.VERSION}"));
+        table.Set("_G", LuaValue.NewTable(table));
+        table.Set("_VERSION", LuaValue.NewString($"SolarSharp {Script.VERSION}"));
         table.Set("_SOLARSHARP", solarsharp_table);
 
-        m.Set("version", DynValue.NewString(Script.VERSION));
-        m.Set("luacompat", DynValue.NewString(Script.LUA_VERSION));
-        m.Set("platform", DynValue.NewString(Script.GlobalOptions.Platform.GetPlatformName()));
-        m.Set("is_aot", DynValue.NewBoolean(Script.GlobalOptions.Platform.IsRunningOnAOT()));
-        m.Set("is_unity", DynValue.NewBoolean(PlatformAutoDetector.IsRunningOnUnity));
-        m.Set("is_mono", DynValue.NewBoolean(PlatformAutoDetector.IsRunningOnMono));
-        m.Set("is_pcl", DynValue.NewBoolean(PlatformAutoDetector.IsPortableFramework));
-        m.Set("banner", DynValue.NewString(Script.GetBanner()));
+        m.Set("version", LuaValue.NewString(Script.VERSION));
+        m.Set("luacompat", LuaValue.NewString(Script.LUA_VERSION));
+        m.Set("platform", LuaValue.NewString(Script.GlobalOptions.Platform.GetPlatformName()));
+        m.Set("is_aot", LuaValue.NewBoolean(Script.GlobalOptions.Platform.IsRunningOnAOT()));
+        m.Set("is_unity", LuaValue.NewBoolean(PlatformAutoDetector.IsRunningOnUnity));
+        m.Set("is_mono", LuaValue.NewBoolean(PlatformAutoDetector.IsRunningOnMono));
+        m.Set("is_pcl", LuaValue.NewBoolean(PlatformAutoDetector.IsPortableFramework));
+        m.Set("banner", LuaValue.NewString(Script.GetBanner()));
 
         return table;
     }
@@ -95,19 +95,19 @@ public static class ModuleRegister
 
 #if NETFX_CORE
 					Delegate deleg =
- mi.CreateDelegate(typeof(Func<ScriptExecutionContext, CallbackArguments, DynValue>));
+ mi.CreateDelegate(typeof(Func<ScriptExecutionContext, CallbackArguments, LuaValue>));
 #else
-                var deleg = Delegate.CreateDelegate(typeof(Func<ScriptExecutionContext, CallbackArguments, DynValue>),
+                var deleg = Delegate.CreateDelegate(typeof(Func<ScriptExecutionContext, CallbackArguments, LuaValue>),
                     mi);
 #endif
 
                 var func =
-                    (Func<ScriptExecutionContext, CallbackArguments, DynValue>)deleg;
+                    (Func<ScriptExecutionContext, CallbackArguments, LuaValue>)deleg;
 
 
                 var name = !string.IsNullOrEmpty(attr.Name) ? attr.Name : mi.Name;
 
-                table.Set(name, DynValue.NewCallback(func, name));
+                table.Set(name, LuaValue.NewCallback(func, name));
             }
             else if (mi.Name == "SolarSharpInit")
             {
@@ -145,12 +145,12 @@ public static class ModuleRegister
         if (fi.FieldType == typeof(string))
         {
             var val = fi.GetValue(o) as string;
-            table.Set(name, DynValue.NewString(val));
+            table.Set(name, LuaValue.NewString(val));
         }
         else if (fi.FieldType == typeof(double))
         {
             var val = (double)fi.GetValue(o);
-            table.Set(name, DynValue.NewNumber(val));
+            table.Set(name, LuaValue.NewNumber(val));
         }
         else
         {
@@ -189,20 +189,20 @@ public static class ModuleRegister
         else
         {
             table = new Table(gtable.OwnerScript);
-            gtable.Set(attr.Namespace, DynValue.NewTable(table));
+            gtable.Set(attr.Namespace, LuaValue.NewTable(table));
         }
 
         var package = gtable.Get("package");
 
         if (package.IsNil() || package.Type != DataType.Table)
-            gtable.Set("package", package = DynValue.NewTable(gtable.OwnerScript));
+            gtable.Set("package", package = LuaValue.NewTable(gtable.OwnerScript));
 
         var loaded = package.Table.Get("loaded");
 
         if (loaded.IsNil() || loaded.Type != DataType.Table)
-            package.Table.Set("loaded", loaded = DynValue.NewTable(gtable.OwnerScript));
+            package.Table.Set("loaded", loaded = LuaValue.NewTable(gtable.OwnerScript));
 
-        loaded.Table.Set(attr.Namespace, DynValue.NewTable(table));
+        loaded.Table.Set(attr.Namespace, LuaValue.NewTable(table));
 
         return table;
     }

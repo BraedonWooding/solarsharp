@@ -68,7 +68,7 @@ internal class TableConstructor : Expression
 
     private void StructField(ScriptLoadingContext lcontext)
     {
-        Expression key = new LiteralExpression(lcontext, DynValue.NewString(lcontext.Lexer.Current.Text));
+        Expression key = new LiteralExpression(lcontext, LuaValue.NewString(lcontext.Lexer.Current.Text));
         lcontext.Lexer.Next();
 
         CheckTokenType(lcontext, TokenType.Op_Assignment);
@@ -106,12 +106,12 @@ internal class TableConstructor : Expression
         }
     }
 
-    public override DynValue Eval(ScriptExecutionContext context)
+    public override LuaValue Eval(ScriptExecutionContext context)
     {
         // TODO: Not sure what eval is but we can probably safely remove it.
         throw new DynamicExpressionException("Dynamic Expressions cannot define new non-prime tables.");
 
-        // DynValue tval = DynValue.NewPrimeTable();
+        // LuaValue tval = LuaValue.NewPrimeTable();
         // Table t = tval.Table;
 
         // int idx = 0;

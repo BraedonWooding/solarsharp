@@ -645,7 +645,7 @@ internal class KopiLua_StringLib : LuaBase
         };
         CallbackFunction C = new((executionContext, args) => executionContext.EmulateClassicCall(args, "gmatch",
             L => gmatch_aux(L, data)), "gmatch");
-        L.Push(DynValue.NewCallback(C));
+        L.Push(LuaValue.NewCallback(C));
 
         return 1;
     }

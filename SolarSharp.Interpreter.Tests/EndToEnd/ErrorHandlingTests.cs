@@ -123,7 +123,7 @@ return a()
             {
                 Globals =
                 {
-                    ["try"] = DynValue.NewCallback((_, a) =>
+                    ["try"] = LuaValue.NewCallback((_, a) =>
                     {
                         try
                         {
@@ -132,7 +132,7 @@ return a()
                         }
                         catch (ScriptRuntimeException)
                         {
-                            return DynValue.NewString("!");
+                            return LuaValue.NewString("!");
                         }
                     })
                 }

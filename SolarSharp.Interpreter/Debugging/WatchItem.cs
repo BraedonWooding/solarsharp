@@ -33,7 +33,7 @@ public class WatchItem
     /// <summary>
     ///     Gets or sets the value of the item
     /// </summary>
-    public DynValue Value { get; set; }
+    public LuaValue Value { get; set; }
 
     /// <summary>
     ///     Gets or sets the symbol reference of the item

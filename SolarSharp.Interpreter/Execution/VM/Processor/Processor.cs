@@ -18,7 +18,7 @@ internal sealed partial class Processor
     private readonly Processor m_Parent;
     private readonly ByteCode m_RootChunk;
     private readonly Script m_Script;
-    private readonly FastStack<DynValue> m_ValueStack;
+    private readonly FastStack<LuaValue> m_ValueStack;
     private bool m_CanYield = true;
     private int m_ExecutionNesting;
 
@@ -28,7 +28,7 @@ internal sealed partial class Processor
 
     public Processor(Script script, Table globalContext, ByteCode byteCode)
     {
-        m_ValueStack = new FastStack<DynValue>(STACK_SIZE);
+        m_ValueStack = new FastStack<LuaValue>(STACK_SIZE);
         m_ExecutionStack = new FastStack<CallStackItem>(STACK_SIZE);
         m_CoroutinesStack = new List<Processor>();
 
@@ -37,12 +37,12 @@ internal sealed partial class Processor
         m_GlobalTable = globalContext;
         m_Script = script;
         State = CoroutineState.Main;
-        DynValue.NewCoroutine(new Coroutine(this)); // creates an associated coroutine for the main processor
+        LuaValue.NewCoroutine(new Coroutine(this)); // creates an associated coroutine for the main processor
     }
 
     private Processor(Processor parentProcessor)
     {
-        m_ValueStack = new FastStack<DynValue>(STACK_SIZE);
+        m_ValueStack = new FastStack<LuaValue>(STACK_SIZE);
         m_ExecutionStack = new FastStack<CallStackItem>(STACK_SIZE);
         m_Debug = parentProcessor.m_Debug;
         m_RootChunk = parentProcessor.m_RootChunk;
@@ -66,7 +66,7 @@ internal sealed partial class Processor
         State = CoroutineState.NotStarted;
     }
 
-    public DynValue Call(DynValue function, DynValue[] args)
+    public LuaValue Call(LuaValue function, LuaValue[] args)
     {
         var coroutinesStack = m_Parent != null ? m_Parent.m_CoroutinesStack : m_CoroutinesStack;
 
@@ -101,7 +101,7 @@ internal sealed partial class Processor
 
     // pushes all what's required to perform a clr-to-script function call. function can be null if it's already
     // at vstack top.
-    private int PushClrToScriptStackFrame(CallStackItemFlags flags, DynValue function, DynValue[] args)
+    private int PushClrToScriptStackFrame(CallStackItemFlags flags, LuaValue function, LuaValue[] args)
     {
         if (function == null)
             function = m_ValueStack.Peek();
@@ -113,7 +113,7 @@ internal sealed partial class Processor
         foreach (var t in args)
             m_ValueStack.Push(t);
 
-        m_ValueStack.Push(DynValue.NewNumber(args.Length)); // func args count
+        m_ValueStack.Push(LuaValue.NewNumber(args.Length)); // func args count
 
         m_ExecutionStack.Push(new CallStackItem
         {

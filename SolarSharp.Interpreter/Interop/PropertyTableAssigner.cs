@@ -164,7 +164,7 @@ public class PropertyTableAssigner : IPropertyTableAssigner
     }
 
 
-    private bool TryAssignProperty(object obj, string name, DynValue value)
+    private bool TryAssignProperty(object obj, string name, LuaValue value)
     {
         if (m_PropertyMap.TryGetValue(name, out var pi))
         {
@@ -179,7 +179,7 @@ public class PropertyTableAssigner : IPropertyTableAssigner
                 }
                 else
                 {
-                    o = ScriptToClrConversions.DynValueToObjectOfType(value,
+                    o = ScriptToClrConversions.LuaValueToObjectOfType(value,
                         pi.PropertyType, null, false);
                 }
 
@@ -192,7 +192,7 @@ public class PropertyTableAssigner : IPropertyTableAssigner
         return false;
     }
 
-    private void AssignProperty(object obj, string name, DynValue value)
+    private void AssignProperty(object obj, string name, LuaValue value)
     {
         if (TryAssignProperty(obj, name, value)) return;
         if ((Script.GlobalOptions.FuzzySymbolMatching & FuzzySymbolMatchingBehavior.UpperFirstLetter) ==

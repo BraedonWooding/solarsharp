@@ -13,19 +13,19 @@ namespace SolarSharp.Interpreter.CoreLib;
 public class ErrorHandlingModule
 {
     [SolarSharpModuleMethod]
-    public static DynValue pcall(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue pcall(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return SetErrorHandlerStrategy("pcall", executionContext, args, null);
     }
 
 
-    private static DynValue SetErrorHandlerStrategy(string funcName,
+    private static LuaValue SetErrorHandlerStrategy(string funcName,
         ScriptExecutionContext executionContext,
         CallbackArguments args,
-        DynValue handlerBeforeUnwind)
+        LuaValue handlerBeforeUnwind)
     {
         var v = args[0];
-        var a = new DynValue[args.Count - 1];
+        var a = new LuaValue[args.Count - 1];
 
         for (var i = 1; i < args.Count; i++)
             a[i - 1] = args[i];
@@ -41,7 +41,7 @@ public class ErrorHandlingModule
                             "the function passed to {0} cannot be called directly by {0}. wrap in a script function instead.",
                             funcName);
 
-                    return DynValue.NewTailCallReq(new TailCallData
+                    return LuaValue.NewTailCallReq(new TailCallData
                     {
                         Args = ret.TailCallData.Args,
                         Function = ret.TailCallData.Function,
@@ -56,19 +56,19 @@ public class ErrorHandlingModule
                         "the function passed to {0} cannot be called directly by {0}. wrap in a script function instead.",
                         funcName);
 
-                return DynValue.NewTupleNested(DynValue.True, ret);
+                return LuaValue.NewTupleNested(LuaValue.True, ret);
             }
             catch (ScriptRuntimeException ex)
             {
                 executionContext.PerformMessageDecorationBeforeUnwind(handlerBeforeUnwind, ex);
-                return DynValue.NewTupleNested(DynValue.False, DynValue.NewString(ex.DecoratedMessage));
+                return LuaValue.NewTupleNested(LuaValue.False, LuaValue.NewString(ex.DecoratedMessage));
             }
 
         if (args[0].Type != DataType.Function)
-            return DynValue.NewTupleNested(DynValue.False,
-                DynValue.NewString("attempt to " + funcName + " a non-function"));
+            return LuaValue.NewTupleNested(LuaValue.False,
+                LuaValue.NewString("attempt to " + funcName + " a non-function"));
 
-        return DynValue.NewTailCallReq(new TailCallData
+        return LuaValue.NewTailCallReq(new TailCallData
         {
             Args = a,
             Function = v,
@@ -78,40 +78,40 @@ public class ErrorHandlingModule
         });
     }
 
-    private static DynValue MakeReturnTuple(bool retstatus, CallbackArguments args)
+    private static LuaValue MakeReturnTuple(bool retstatus, CallbackArguments args)
     {
-        var rets = new DynValue[args.Count + 1];
+        var rets = new LuaValue[args.Count + 1];
 
         for (var i = 0; i < args.Count; i++)
             rets[i + 1] = args[i];
 
-        rets[0] = DynValue.NewBoolean(retstatus);
+        rets[0] = LuaValue.NewBoolean(retstatus);
 
-        return DynValue.NewTuple(rets);
+        return LuaValue.NewTuple(rets);
     }
 
 
-    public static DynValue pcall_continuation(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue pcall_continuation(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return MakeReturnTuple(true, args);
     }
 
-    public static DynValue pcall_onerror(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue pcall_onerror(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return MakeReturnTuple(false, args);
     }
 
 
     [SolarSharpModuleMethod]
-    public static DynValue xpcall(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue xpcall(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        List<DynValue> a = new();
+        List<LuaValue> a = new();
 
         for (var i = 0; i < args.Count; i++)
             if (i != 1)
                 a.Add(args[i]);
 
-        DynValue handler = null;
+        LuaValue handler = null;
         if (args[1].Type == DataType.Function || args[1].Type == DataType.ClrFunction)
             handler = args[1];
         else if (args[1].Type != DataType.Nil) args.AsType(1, "xpcall", DataType.Function);

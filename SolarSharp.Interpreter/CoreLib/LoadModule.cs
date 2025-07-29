@@ -43,7 +43,7 @@ public class LoadModule
 
         if (package.IsNil())
         {
-            package = DynValue.NewTable(globalTable.OwnerScript);
+            package = LuaValue.NewTable(globalTable.OwnerScript);
             globalTable["package"] = package;
         }
         else if (package.Type != DataType.Table)
@@ -57,7 +57,7 @@ public class LoadModule
         var cfg = Path.DirectorySeparatorChar + "\n;\n?\n!\n-\n";
 #endif
 
-        package.Table.Set("config", DynValue.NewString(cfg));
+        package.Table.Set("config", LuaValue.NewString(cfg));
     }
 
 
@@ -76,7 +76,7 @@ public class LoadModule
     // 
     // The string mode is ignored, and assumed to be "t"; 
     [SolarSharpModuleMethod]
-    public static DynValue load(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue load(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return load_impl(executionContext, args, null);
     }
@@ -86,12 +86,12 @@ public class LoadModule
     // Same as load, except that "env" defaults to the current environment of the function
     // calling load, instead of the actual global environment.
     [SolarSharpModuleMethod]
-    public static DynValue loadsafe(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue loadsafe(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return load_impl(executionContext, args, GetSafeDefaultEnv(executionContext));
     }
 
-    public static DynValue load_impl(ScriptExecutionContext executionContext, CallbackArguments args, Table defaultEnv)
+    public static LuaValue load_impl(ScriptExecutionContext executionContext, CallbackArguments args, Table defaultEnv)
     {
         try
         {
@@ -108,8 +108,8 @@ public class LoadModule
                     else if (ret.IsNil())
                         break;
                     else
-                        return DynValue.NewTuple(DynValue.Nil,
-                            DynValue.NewString("reader function must return a string"));
+                        return LuaValue.NewTuple(LuaValue.Nil,
+                            LuaValue.NewString("reader function must return a string"));
                 }
             else if (ld.Type == DataType.String)
                 script = ld.String;
@@ -127,7 +127,7 @@ public class LoadModule
         }
         catch (SyntaxErrorException ex)
         {
-            return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(ex.DecoratedMessage ?? ex.Message));
+            return LuaValue.NewTuple(LuaValue.Nil, LuaValue.NewString(ex.DecoratedMessage ?? ex.Message));
         }
     }
 
@@ -136,7 +136,7 @@ public class LoadModule
     // Similar to load, but gets the chunk from file filename or from the standard input, 
     // if no file name is given. INCOMPAT: stdin not supported, mode ignored
     [SolarSharpModuleMethod]
-    public static DynValue loadfile(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue loadfile(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return loadfile_impl(executionContext, args, null);
     }
@@ -146,13 +146,13 @@ public class LoadModule
     // Same as loadfile, except that "env" defaults to the current environment of the function
     // calling load, instead of the actual global environment.
     [SolarSharpModuleMethod]
-    public static DynValue loadfilesafe(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue loadfilesafe(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return loadfile_impl(executionContext, args, GetSafeDefaultEnv(executionContext));
     }
 
 
-    private static DynValue loadfile_impl(ScriptExecutionContext executionContext, CallbackArguments args,
+    private static LuaValue loadfile_impl(ScriptExecutionContext executionContext, CallbackArguments args,
         Table defaultEnv)
     {
         try
@@ -167,7 +167,7 @@ public class LoadModule
         }
         catch (SyntaxErrorException ex)
         {
-            return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(ex.DecoratedMessage ?? ex.Message));
+            return LuaValue.NewTuple(LuaValue.Nil, LuaValue.NewString(ex.DecoratedMessage ?? ex.Message));
         }
     }
 
@@ -185,7 +185,7 @@ public class LoadModule
     //dofile executes the contents of the standard input (stdin). Returns all values returned by the chunk. 
     //In case of errors, dofile propagates the error to its caller (that is, dofile does not run in protected mode). 
     [SolarSharpModuleMethod]
-    public static DynValue dofile(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue dofile(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         try
         {
@@ -194,7 +194,7 @@ public class LoadModule
 
             var fn = S.LoadFile(v.String);
 
-            return DynValue.NewTailCallReq(fn); // tail call to dofile
+            return LuaValue.NewTailCallReq(fn); // tail call to dofile
         }
         catch (SyntaxErrorException ex)
         {
@@ -224,7 +224,7 @@ public class LoadModule
     //If there is any error loading or running the module, or if it cannot find any loader for the module, then require 
     //signals an error. 
     [SolarSharpModuleMethod]
-    public static DynValue __require_clr_impl(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue __require_clr_impl(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var S = executionContext.GetScript();
         var v = args.AsType(0, "__require_clr_impl", DataType.String);

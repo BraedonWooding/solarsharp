@@ -26,24 +26,24 @@ public interface IMemberDescriptor
     MemberDescriptorAccess MemberAccess { get; }
 
     /// <summary>
-    ///     Gets the value of this member as a <see cref="DynValue" /> to be exposed to scripts.
+    ///     Gets the value of this member as a <see cref="LuaValue" /> to be exposed to scripts.
     ///     Implementors should raise exceptions if the value cannot be read or if access to an
     ///     instance member through a static userdata is attempted.
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object owning this member, or null if static.</param>
-    /// <returns>The value of this member as a <see cref="DynValue" />.</returns>
-    DynValue GetValue(Script script, object obj);
+    /// <returns>The value of this member as a <see cref="LuaValue" />.</returns>
+    LuaValue GetValue(Script script, object obj);
 
     /// <summary>
-    ///     Sets the value of this member from a <see cref="DynValue" />.
+    ///     Sets the value of this member from a <see cref="LuaValue" />.
     ///     Implementors should raise exceptions if the value cannot be read or if access to an
     ///     instance member through a static userdata is attempted.
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object owning this member, or null if static.</param>
     /// <param name="value">The value to be set.</param>
-    void SetValue(Script script, object obj, DynValue value);
+    void SetValue(Script script, object obj, LuaValue value);
 }
 
 /// <summary>
@@ -93,15 +93,15 @@ public static class MemberDescriptor
     }
 
     /// <summary>
-    ///     Gets the getter of the member as a DynValue containing a callback
+    ///     Gets the getter of the member as a LuaValue containing a callback
     /// </summary>
     /// <param name="desc">The descriptor instance.</param>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object.</param>
     /// <returns></returns>
-    public static DynValue GetGetterCallbackAsDynValue(this IMemberDescriptor desc, Script script, object obj)
+    public static LuaValue GetGetterCallbackAsLuaValue(this IMemberDescriptor desc, Script script, object obj)
     {
-        return DynValue.NewCallback((_, _) => desc.GetValue(script, obj));
+        return LuaValue.NewCallback((_, _) => desc.GetValue(script, obj));
     }
 
     /// <summary>

@@ -112,7 +112,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             {
 	            Globals =
 	            {
-		            ["callback"] = DynValue.NewCallback((_, args) => args[0].Function.Call()
+		            ["callback"] = LuaValue.NewCallback((_, args) => args[0].Function.Call()
 		            )
 	            }
             };

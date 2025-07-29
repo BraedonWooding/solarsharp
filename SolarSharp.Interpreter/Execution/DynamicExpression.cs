@@ -13,7 +13,7 @@ public class DynamicExpression : IScriptPrivateResource
     /// </summary>
     public readonly string ExpressionCode;
 
-    private readonly DynValue m_Constant;
+    private readonly LuaValue m_Constant;
     private readonly DynamicExprExpression m_Exp;
 
     internal DynamicExpression(Script S, string strExpr, DynamicExprExpression expr)
@@ -23,7 +23,7 @@ public class DynamicExpression : IScriptPrivateResource
         m_Exp = expr;
     }
 
-    internal DynamicExpression(Script S, string strExpr, DynValue constant)
+    internal DynamicExpression(Script S, string strExpr, LuaValue constant)
     {
         ExpressionCode = strExpr;
         OwnerScript = S;
@@ -43,7 +43,7 @@ public class DynamicExpression : IScriptPrivateResource
     /// </summary>
     /// <param name="context">The context.</param>
     /// <returns></returns>
-    public DynValue Evaluate(ScriptExecutionContext? context = null)
+    public LuaValue Evaluate(ScriptExecutionContext? context = null)
     {
         context ??= OwnerScript.CreateDynamicExecutionContext();
 

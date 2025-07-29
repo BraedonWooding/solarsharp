@@ -4,7 +4,7 @@ namespace SolarSharp.Interpreter.Modules;
 
 /// <summary>
 ///     In a module type, mark methods or fields with this attribute to have them exposed as module functions.
-///     Methods must have the signature "public static DynValue ...(ScriptExecutionContextCallbackArguments)".
+///     Methods must have the signature "public static LuaValue ...(ScriptExecutionContextCallbackArguments)".
 ///     Fields must be static or const strings, with an anonymous Lua function inside.
 ///     See <see cref="SolarSharpModuleAttribute" /> for more information about modules.
 /// </summary>

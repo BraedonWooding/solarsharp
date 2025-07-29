@@ -36,12 +36,12 @@ public partial class LuaBase
 
     protected const string LUA_INTFRMLEN = "l";
 
-    protected static DynValue GetArgument(LuaState L, lua_Integer pos)
+    protected static LuaValue GetArgument(LuaState L, lua_Integer pos)
     {
         return L.At(pos);
     }
 
-    protected static DynValue ArgAsType(LuaState L, lua_Integer pos, DataType type, bool allowNil = false)
+    protected static LuaValue ArgAsType(LuaState L, lua_Integer pos, DataType type, bool allowNil = false)
     {
         return GetArgument(L, pos).CheckType(L.FunctionName, type, pos - 1,
             allowNil
@@ -90,7 +90,7 @@ public partial class LuaBase
 
     protected static void LuaPushInteger(LuaState L, lua_Integer val)
     {
-        L.Push(DynValue.NewNumber(val));
+        L.Push(LuaValue.NewNumber(val));
     }
 
     protected static lua_Integer LuaToBoolean(LuaState L, lua_Integer p)
@@ -171,7 +171,7 @@ public partial class LuaBase
 
     protected static void LuaPushLiteral(LuaState L, string literalString)
     {
-        L.Push(DynValue.NewString(literalString));
+        L.Push(LuaValue.NewString(literalString));
     }
 
     protected static void LuaLPushResult(LuaLBuffer b)
@@ -182,7 +182,7 @@ public partial class LuaBase
     protected static void LuaPushLString(LuaState L, CharPtr s, uint len)
     {
         var ss = s.ToString((int)len);
-        L.Push(DynValue.NewString(ss));
+        L.Push(LuaValue.NewString(ss));
     }
 
     protected static void LuaLCheckStack(LuaState L, lua_Integer n, string message)
@@ -198,7 +198,7 @@ public partial class LuaBase
 
     protected static void LuaPushNil(LuaState L)
     {
-        L.Push(DynValue.Nil);
+        L.Push(LuaValue.Nil);
     }
 
     protected static void LuaAssert(bool p)
@@ -314,7 +314,7 @@ public partial class LuaBase
 
             while (copied < nresults)
             {
-                L.Push(DynValue.Nil);
+                L.Push(LuaValue.Nil);
                 copied++;
             }
         }

@@ -110,7 +110,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     /// <param name="index">The index.</param>
     /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
     /// <returns></returns>
-    public virtual DynValue Index(Script script, object obj, DynValue index, bool isDirectIndexing)
+    public virtual LuaValue Index(Script script, object obj, LuaValue index, bool isDirectIndexing)
     {
         if (!isDirectIndexing)
         {
@@ -163,7 +163,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     /// <param name="value">The value to be set</param>
     /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
     /// <returns></returns>
-    public virtual bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
+    public virtual bool SetIndex(Script script, object obj, LuaValue index, LuaValue value, bool isDirectIndexing)
     {
         if (!isDirectIndexing)
         {
@@ -227,7 +227,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     ///     <param name="metaname">The name of the metamember.</param>
     /// </summary>
     /// <returns></returns>
-    public virtual DynValue MetaIndex(Script script, object obj, string metaname)
+    public virtual LuaValue MetaIndex(Script script, object obj, string metaname)
     {
         var desc = m_MetaMembers.GetValueOrDefault(metaname);
 
@@ -247,7 +247,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
             "__len" => TryDispatchLength(script, obj),
             "__tonumber" => TryDispatchToNumber(script, obj),
             "__tobool" => TryDispatchToBool(script, obj),
-            "__iterator" => ClrToScriptConversions.EnumerationToDynValue(script, obj),
+            "__iterator" => ClrToScriptConversions.EnumerationToLuaValue(script, obj),
             _ => null
         };
     }
@@ -281,13 +281,13 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
 
 
     /// <summary>
-    ///     Adds a DynValue as a member
+    ///     Adds a LuaValue as a member
     /// </summary>
     /// <param name="name">The name.</param>
     /// <param name="value">The value.</param>
-    public void AddDynValue(string name, DynValue value)
+    public void AddLuaValue(string name, LuaValue value)
     {
-        var desc = new DynValueMemberDescriptor(name, value);
+        var desc = new LuaValueMemberDescriptor(name, value);
         AddMemberTo(m_Members, name, desc);
     }
 
@@ -379,7 +379,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     /// <param name="indexName">Member name to be indexed.</param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    private DynValue TryIndexOnExtMethod(Script script, object obj, string indexName)
+    private LuaValue TryIndexOnExtMethod(Script script, object obj, string indexName)
     {
         var methods = UserData.GetExtensionMethodsByNameAndType(indexName, Type);
 
@@ -388,7 +388,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
             var ext = new OverloadedMethodMemberDescriptor(indexName, Type);
             ext.SetExtensionMethodsSnapshot(UserData.GetExtensionMethodsChangeVersion(), methods);
             m_Members.Add(indexName, ext);
-            return DynValue.NewCallback(ext.GetCallback(script, obj));
+            return LuaValue.NewCallback(ext.GetCallback(script, obj));
         }
 
         return null;
@@ -422,7 +422,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     /// <param name="obj">The object.</param>
     /// <param name="indexName">Member name to be indexed.</param>
     /// <returns></returns>
-    protected DynValue TryIndex(Script script, object obj, string indexName)
+    protected LuaValue TryIndex(Script script, object obj, string indexName)
     {
         if (m_Members.TryGetValue(indexName, out var desc)) return desc.GetValue(script, obj);
 
@@ -437,7 +437,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     /// <param name="indexName">Member name to be indexed.</param>
     /// <param name="value">The value.</param>
     /// <returns></returns>
-    protected bool TrySetIndex(Script script, object obj, string indexName, DynValue value)
+    protected bool TrySetIndex(Script script, object obj, string indexName, LuaValue value)
     {
         var descr = m_Members.GetValueOrDefault(indexName);
 
@@ -480,18 +480,18 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     /// <param name="script">The script.</param>
     /// <param name="obj">The object.</param>
     /// <param name="index">The indexer parameter</param>
-    /// <param name="value">The dynvalue to set on a setter, or null.</param>
+    /// <param name="value">The LuaValue to set on a setter, or null.</param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    protected DynValue ExecuteIndexer(IMemberDescriptor mdesc, Script script, object obj, DynValue index,
-        DynValue value)
+    protected LuaValue ExecuteIndexer(IMemberDescriptor mdesc, Script script, object obj, LuaValue index,
+        LuaValue value)
     {
-        IList<DynValue> values;
+        IList<LuaValue> values;
 
         if (index.Type == DataType.Tuple)
             values = value == null
                 ? index.Tuple
-                : new List<DynValue>(index.Tuple)
+                : new List<LuaValue>(index.Tuple)
                 {
                     value
                 };
@@ -528,43 +528,43 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     }
 
 
-    private DynValue MultiDispatchLessThanOrEqual(Script _, object obj)
+    private LuaValue MultiDispatchLessThanOrEqual(Script _, object obj)
     {
         if (obj is IComparable)
-            return DynValue.NewCallback((_, args) =>
-                DynValue.NewBoolean(PerformComparison(obj, args[0].ToObject(), args[1].ToObject()) <= 0));
+            return LuaValue.NewCallback((_, args) =>
+                LuaValue.NewBoolean(PerformComparison(obj, args[0].ToObject(), args[1].ToObject()) <= 0));
 
         return null;
     }
 
-    private DynValue MultiDispatchLessThan(Script _, object obj)
+    private LuaValue MultiDispatchLessThan(Script _, object obj)
     {
         if (obj is IComparable)
-            return DynValue.NewCallback((_, args) =>
-                DynValue.NewBoolean(PerformComparison(obj, args[0].ToObject(), args[1].ToObject()) < 0));
+            return LuaValue.NewCallback((_, args) =>
+                LuaValue.NewBoolean(PerformComparison(obj, args[0].ToObject(), args[1].ToObject()) < 0));
 
         return null;
     }
 
-    private DynValue TryDispatchLength(Script script, object obj)
+    private LuaValue TryDispatchLength(Script script, object obj)
     {
         if (obj == null) return null;
 
         var lenprop = m_Members.GetValueOrDefault("Length");
         if (lenprop != null && lenprop.CanRead() && !lenprop.CanExecute())
-            return lenprop.GetGetterCallbackAsDynValue(script, obj);
+            return lenprop.GetGetterCallbackAsLuaValue(script, obj);
 
         var countprop = m_Members.GetValueOrDefault("Count");
         if (countprop != null && countprop.CanRead() && !countprop.CanExecute())
-            return countprop.GetGetterCallbackAsDynValue(script, obj);
+            return countprop.GetGetterCallbackAsLuaValue(script, obj);
 
         return null;
     }
 
-    private DynValue MultiDispatchEqual(Script _, object obj)
+    private LuaValue MultiDispatchEqual(Script _, object obj)
     {
-        return DynValue.NewCallback((_, args) =>
-            DynValue.NewBoolean(CheckEquality(obj, args[0].ToObject(), args[1].ToObject())));
+        return LuaValue.NewCallback((_, args) =>
+            LuaValue.NewBoolean(CheckEquality(obj, args[0].ToObject(), args[1].ToObject())));
     }
 
     private bool CheckEquality(object obj, object p1, object p2)
@@ -582,14 +582,14 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
         return true;
     }
 
-    private DynValue DispatchMetaOnMethod(Script script, object obj, string methodName)
+    private LuaValue DispatchMetaOnMethod(Script script, object obj, string methodName)
     {
         var desc = m_Members.GetValueOrDefault(methodName);
 
         return desc?.GetValue(script, obj);
     }
 
-    private DynValue TryDispatchToNumber(Script script, object obj)
+    private LuaValue TryDispatchToNumber(Script script, object obj)
     {
         foreach (var t in NumericConversions.NumericTypesOrdered)
         {
@@ -602,7 +602,7 @@ public abstract class DispatchingUserDataDescriptor : IUserDataDescriptor, IOpti
     }
 
 
-    private DynValue TryDispatchToBool(Script script, object obj)
+    private LuaValue TryDispatchToBool(Script script, object obj)
     {
         var name = typeof(bool).GetConversionMethodName();
         var v = DispatchMetaOnMethod(script, obj, name);

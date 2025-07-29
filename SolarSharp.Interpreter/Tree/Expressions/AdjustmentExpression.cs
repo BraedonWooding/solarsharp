@@ -20,7 +20,7 @@ internal class AdjustmentExpression : Expression
         bc.Emit_Scalar();
     }
 
-    public override DynValue Eval(ScriptExecutionContext context)
+    public override LuaValue Eval(ScriptExecutionContext context)
     {
         return expression.Eval(context).ToScalar();
     }

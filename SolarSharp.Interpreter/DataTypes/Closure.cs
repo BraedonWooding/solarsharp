@@ -43,7 +43,7 @@ public class Closure : RefIdObject, IScriptPrivateResource
     /// <param name="idx">The index.</param>
     /// <param name="symbols">The symbols.</param>
     /// <param name="resolvedLocals">The resolved locals.</param>
-    internal Closure(Script script, int idx, SymbolRef[] symbols, IEnumerable<DynValue> resolvedLocals)
+    internal Closure(Script script, int idx, SymbolRef[] symbols, IEnumerable<LuaValue> resolvedLocals)
     {
         OwnerScript = script;
 
@@ -74,7 +74,7 @@ public class Closure : RefIdObject, IScriptPrivateResource
     /// </summary>
     /// <returns></returns>
     /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
-    public DynValue Call()
+    public LuaValue Call()
     {
         return OwnerScript.Call(this);
     }
@@ -85,7 +85,7 @@ public class Closure : RefIdObject, IScriptPrivateResource
     /// <param name="args">The arguments to pass to the function.</param>
     /// <returns></returns>
     /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
-    public DynValue Call(params object[] args)
+    public LuaValue Call(params object[] args)
     {
         return OwnerScript.Call(this, args);
     }
@@ -96,7 +96,7 @@ public class Closure : RefIdObject, IScriptPrivateResource
     /// <param name="args">The arguments to pass to the function.</param>
     /// <returns></returns>
     /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
-    public DynValue Call(params DynValue[] args)
+    public LuaValue Call(params LuaValue[] args)
     {
         return OwnerScript.Call(this, args);
     }
@@ -145,7 +145,7 @@ public class Closure : RefIdObject, IScriptPrivateResource
     /// </summary>
     /// <param name="idx">The index of the upvalue.</param>
     /// <returns>The value of an upvalue </returns>
-    public DynValue GetUpvalue(int idx)
+    public LuaValue GetUpvalue(int idx)
     {
         return ClosureContext[idx];
     }

@@ -19,27 +19,27 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Script S = new();
 
             var globalCtx = S.Globals;
-            globalCtx.Set(DynValue.NewString("xassert"), DynValue.NewCallback(new CallbackFunction((_, a) =>
+            globalCtx.Set(LuaValue.NewString("xassert"), LuaValue.NewCallback(new CallbackFunction((_, a) =>
             {
                 if (!a[1].CastToBool())
                     failedTests.Add(a[0].String);
 
-                return DynValue.Nil;
+                return LuaValue.Nil;
             })));
-            globalCtx.Set(DynValue.NewString("assert"), DynValue.NewCallback(new CallbackFunction((_, a) =>
+            globalCtx.Set(LuaValue.NewString("assert"), LuaValue.NewCallback(new CallbackFunction((_, a) =>
             {
                 ++i;
 
                 if (!a[0].CastToBool())
                     failedTests.Add($"assert #{i}");
 
-                return DynValue.Nil;
+                return LuaValue.Nil;
             })));
 
-            globalCtx.Set(DynValue.NewString("print"), DynValue.NewCallback(new CallbackFunction((_, _) =>
+            globalCtx.Set(LuaValue.NewString("print"), LuaValue.NewCallback(new CallbackFunction((_, _) =>
             {
                 // Debug.WriteLine(string.Join(" ", a.Select(v => v.AsString()).ToArray()));
-                return DynValue.Nil;
+                return LuaValue.Nil;
             })));
 
 

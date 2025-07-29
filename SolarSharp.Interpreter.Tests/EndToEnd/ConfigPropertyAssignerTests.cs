@@ -25,7 +25,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             [SolarSharpProperty] internal Table SomeTable { get; private set; }
 
-            [SolarSharpProperty] public DynValue NativeValue { get; private set; }
+            [SolarSharpProperty] public LuaValue NativeValue { get; private set; }
 
             [SolarSharpProperty] public MySubclass SubObj { get; private set; }
         }

@@ -29,16 +29,16 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void CSharpStaticFunctionCallStatement()
         {
-            IList<DynValue> args = null;
+            IList<LuaValue> args = null;
 
             var script = "print(\"hello\", \"world\");";
 
             Script S = new();
 
-            S.Globals.Set("print", DynValue.NewCallback(new CallbackFunction((_, a) =>
+            S.Globals.Set("print", LuaValue.NewCallback(new CallbackFunction((_, a) =>
             {
                 args = a.GetArray();
-                return DynValue.NewNumber(1234.0);
+                return LuaValue.NewNumber(1234.0);
             })));
 
             var res = S.DoString(script);
@@ -60,15 +60,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void CSharpStaticFunctionCallRedef()
         {
-            IList<DynValue> args = null;
+            IList<LuaValue> args = null;
 
             var script = "local print = print; print(\"hello\", \"world\");";
 
             var S = new Script();
-            S.Globals.Set("print", DynValue.NewCallback(new CallbackFunction((_, a) =>
+            S.Globals.Set("print", LuaValue.NewCallback(new CallbackFunction((_, a) =>
             {
                 args = a.GetArray();
-                return DynValue.NewNumber(1234.0);
+                return LuaValue.NewNumber(1234.0);
             })));
 
             var res = S.DoString(script);
@@ -90,8 +90,8 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             var script = "return callback()();";
 
             var callback2 =
-                DynValue.NewCallback(new CallbackFunction((_, _) => { return DynValue.NewNumber(1234.0); }));
-            var callback = DynValue.NewCallback(new CallbackFunction((_, _) => { return callback2; }));
+                LuaValue.NewCallback(new CallbackFunction((_, _) => { return LuaValue.NewNumber(1234.0); }));
+            var callback = LuaValue.NewCallback(new CallbackFunction((_, _) => { return callback2; }));
 
             var S = new Script();
             S.Globals.Set("callback", callback);
@@ -110,9 +110,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             var script = "return callback();";
 
-            var callback = DynValue.NewCallback(new CallbackFunction((_, _) =>
+            var callback = LuaValue.NewCallback(new CallbackFunction((_, _) =>
             {
-                return DynValue.NewNumber(1234.0);
+                return LuaValue.NewNumber(1234.0);
             }));
 
             var S = new Script();
@@ -130,15 +130,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void CSharpStaticFunctionCall2()
         {
-            IList<DynValue> args = null;
+            IList<LuaValue> args = null;
 
             var script = "return callback 'hello';";
 
             var S = new Script();
-            S.Globals.Set("callback", DynValue.NewCallback(new CallbackFunction((_, a) =>
+            S.Globals.Set("callback", LuaValue.NewCallback(new CallbackFunction((_, a) =>
             {
                 args = a.GetArray();
-                return DynValue.NewNumber(1234.0);
+                return LuaValue.NewNumber(1234.0);
             })));
 
             var res = S.DoString(script);
@@ -156,15 +156,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void CSharpStaticFunctionCall()
         {
-            IList<DynValue> args = null;
+            IList<LuaValue> args = null;
 
             var script = "return print(\"hello\", \"world\");";
 
             var S = new Script();
-            S.Globals.Set("print", DynValue.NewCallback(new CallbackFunction((_, a) =>
+            S.Globals.Set("print", LuaValue.NewCallback(new CallbackFunction((_, a) =>
             {
                 args = a.GetArray();
-                return DynValue.NewNumber(1234.0);
+                return LuaValue.NewNumber(1234.0);
             })));
 
             var res = S.DoString(script);
@@ -378,7 +378,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Script S = new();
             S.Globals.Set("crash",
-                DynValue.NewCallback(new CallbackFunction((_, _) => { throw new Exception("FAIL!"); })));
+                LuaValue.NewCallback(new CallbackFunction((_, _) => { throw new Exception("FAIL!"); })));
 
             S.DoString(script);
         }

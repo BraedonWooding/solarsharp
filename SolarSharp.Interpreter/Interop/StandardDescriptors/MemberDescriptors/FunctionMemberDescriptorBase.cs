@@ -63,7 +63,7 @@ public abstract class FunctionMemberDescriptorBase : IOverloadableMemberDescript
     /// <param name="context">The context.</param>
     /// <param name="args">The arguments.</param>
     /// <returns></returns>
-    public abstract DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args);
+    public abstract LuaValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args);
 
 
     /// <summary>
@@ -72,17 +72,17 @@ public abstract class FunctionMemberDescriptorBase : IOverloadableMemberDescript
     public MemberDescriptorAccess MemberAccess => MemberDescriptorAccess.CanRead | MemberDescriptorAccess.CanExecute;
 
     /// <summary>
-    ///     Gets the value of this member as a <see cref="DynValue" /> to be exposed to scripts.
+    ///     Gets the value of this member as a <see cref="LuaValue" /> to be exposed to scripts.
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object owning this member, or null if static.</param>
     /// <returns>
-    ///     The value of this member as a <see cref="DynValue" />.
+    ///     The value of this member as a <see cref="LuaValue" />.
     /// </returns>
-    public virtual DynValue GetValue(Script script, object obj)
+    public virtual LuaValue GetValue(Script script, object obj)
     {
         this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
-        return GetCallbackAsDynValue(script, obj);
+        return GetCallbackAsLuaValue(script, obj);
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ public abstract class FunctionMemberDescriptorBase : IOverloadableMemberDescript
     /// <param name="obj">The object.</param>
     /// <param name="v">The v.</param>
     /// <exception cref="NotImplementedException"></exception>
-    public virtual void SetValue(Script script, object obj, DynValue v)
+    public virtual void SetValue(Script script, object obj, LuaValue v)
     {
         this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
     }
@@ -130,7 +130,7 @@ public abstract class FunctionMemberDescriptorBase : IOverloadableMemberDescript
     /// <param name="script">The script for which the callback must be generated.</param>
     /// <param name="obj">The object (null for static).</param>
     /// <returns></returns>
-    public Func<ScriptExecutionContext, CallbackArguments, DynValue> GetCallback(Script script, object obj = null)
+    public Func<ScriptExecutionContext, CallbackArguments, LuaValue> GetCallback(Script script, object obj = null)
     {
         return (c, a) => Execute(script, obj, c, a);
     }
@@ -147,27 +147,27 @@ public abstract class FunctionMemberDescriptorBase : IOverloadableMemberDescript
     }
 
     /// <summary>
-    ///     Gets the callback function as a DynValue.
+    ///     Gets the callback function as a LuaValue.
     /// </summary>
     /// <param name="script">The script for which the callback must be generated.</param>
     /// <param name="obj">The object (null for static).</param>
     /// <returns></returns>
-    public DynValue GetCallbackAsDynValue(Script script, object obj = null)
+    public LuaValue GetCallbackAsLuaValue(Script script, object obj = null)
     {
-        return DynValue.NewCallback(GetCallbackFunction(script, obj));
+        return LuaValue.NewCallback(GetCallbackFunction(script, obj));
     }
 
     /// <summary>
-    ///     Creates a callback DynValue starting from a MethodInfo.
+    ///     Creates a callback LuaValue starting from a MethodInfo.
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="mi">The mi.</param>
     /// <param name="obj">The object.</param>
     /// <returns></returns>
-    public static DynValue CreateCallbackDynValue(Script script, MethodInfo mi, object obj = null)
+    public static LuaValue CreateCallbackLuaValue(Script script, MethodInfo mi, object obj = null)
     {
         var desc = new MethodMemberDescriptor(mi);
-        return desc.GetCallbackAsDynValue(script, obj);
+        return desc.GetCallbackAsLuaValue(script, obj);
     }
 
 
@@ -229,7 +229,7 @@ public abstract class FunctionMemberDescriptorBase : IOverloadableMemberDescript
             }
             else if (i == parameters.Length - 1 && VarArgsArrayType != null)
             {
-                List<DynValue> extraArgs = new();
+                List<LuaValue> extraArgs = new();
 
                 while (true)
                 {
@@ -260,7 +260,7 @@ public abstract class FunctionMemberDescriptorBase : IOverloadableMemberDescript
                 var vararg = Array.CreateInstance(VarArgsElementType, extraArgs.Count);
 
                 for (var ii = 0; ii < extraArgs.Count; ii++)
-                    vararg.SetValue(ScriptToClrConversions.DynValueToObjectOfType(extraArgs[ii], VarArgsElementType,
+                    vararg.SetValue(ScriptToClrConversions.LuaValueToObjectOfType(extraArgs[ii], VarArgsElementType,
                         null, false), ii);
 
                 pars[i] = vararg;
@@ -268,8 +268,8 @@ public abstract class FunctionMemberDescriptorBase : IOverloadableMemberDescript
             // else, convert it
             else
             {
-                var arg = args.RawGet(j, false) ?? DynValue.Void;
-                pars[i] = ScriptToClrConversions.DynValueToObjectOfType(arg, parameters[i].Type,
+                var arg = args.RawGet(j, false) ?? LuaValue.Void;
+                pars[i] = ScriptToClrConversions.LuaValueToObjectOfType(arg, parameters[i].Type,
                     parameters[i].DefaultValue, parameters[i].HasDefaultValue);
                 j += 1;
             }
@@ -284,21 +284,21 @@ public abstract class FunctionMemberDescriptorBase : IOverloadableMemberDescript
     /// <param name="script">The script.</param>
     /// <param name="outParams">The out parameters indices, or null. See <see cref="BuildArgumentList" />.</param>
     /// <param name="pars">The parameters passed to the function.</param>
-    /// <param name="retv">The return value from the function. Use DynValue.Void if the function returned no value.</param>
-    /// <returns>A DynValue to be returned to scripts</returns>
-    protected static DynValue BuildReturnValue(Script script, List<int> outParams, object[] pars, object retv)
+    /// <param name="retv">The return value from the function. Use LuaValue.Void if the function returned no value.</param>
+    /// <returns>A LuaValue to be returned to scripts</returns>
+    protected static LuaValue BuildReturnValue(Script script, List<int> outParams, object[] pars, object retv)
     {
-        if (outParams == null) return ClrToScriptConversions.ObjectToDynValue(script, retv);
+        if (outParams == null) return ClrToScriptConversions.ObjectToLuaValue(script, retv);
 
-        var rets = new DynValue[outParams.Count + 1];
+        var rets = new LuaValue[outParams.Count + 1];
 
-        rets[0] = retv is DynValue value && value.IsVoid()
-            ? DynValue.Nil
-            : ClrToScriptConversions.ObjectToDynValue(script, retv);
+        rets[0] = retv is LuaValue value && value.IsVoid()
+            ? LuaValue.Nil
+            : ClrToScriptConversions.ObjectToLuaValue(script, retv);
 
         for (var i = 0; i < outParams.Count; i++)
-            rets[i + 1] = ClrToScriptConversions.ObjectToDynValue(script, pars[outParams[i]]);
+            rets[i + 1] = ClrToScriptConversions.ObjectToLuaValue(script, pars[outParams[i]]);
 
-        return DynValue.NewTuple(rets);
+        return LuaValue.NewTuple(rets);
     }
 }

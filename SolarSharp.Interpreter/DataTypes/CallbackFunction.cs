@@ -20,7 +20,7 @@ public sealed class CallbackFunction : RefIdObject
     /// </summary>
     /// <param name="callBack">The callback function to be called.</param>
     /// <param name="name">The callback name, used in stacktraces, debugger, etc..</param>
-    public CallbackFunction(Func<ScriptExecutionContext, CallbackArguments, DynValue> callBack, string name = null)
+    public CallbackFunction(Func<ScriptExecutionContext, CallbackArguments, LuaValue> callBack, string name = null)
     {
         ClrCallback = callBack;
         Name = name;
@@ -37,7 +37,7 @@ public sealed class CallbackFunction : RefIdObject
     /// <value>
     ///     The call back.
     /// </value>
-    public Func<ScriptExecutionContext, CallbackArguments, DynValue> ClrCallback { get; }
+    public Func<ScriptExecutionContext, CallbackArguments, LuaValue> ClrCallback { get; }
 
     /// <summary>
     ///     Gets or sets the default access mode used when marshalling delegates
@@ -66,7 +66,7 @@ public sealed class CallbackFunction : RefIdObject
     /// <param name="args">The arguments.</param>
     /// <param name="isMethodCall">if set to <c>true</c> this is a method call.</param>
     /// <returns></returns>
-    public DynValue Invoke(ScriptExecutionContext executionContext, IList<DynValue> args, bool isMethodCall = false)
+    public LuaValue Invoke(ScriptExecutionContext executionContext, IList<LuaValue> args, bool isMethodCall = false)
     {
         if (isMethodCall)
         {
@@ -131,6 +131,6 @@ public sealed class CallbackFunction : RefIdObject
 
         return pi.Length == 2 && pi[0].ParameterType == typeof(ScriptExecutionContext)
                               && pi[1].ParameterType == typeof(CallbackArguments) &&
-                              mi.ReturnType == typeof(DynValue) && (requirePublicVisibility || mi.IsPublic);
+                              mi.ReturnType == typeof(LuaValue) && (requirePublicVisibility || mi.IsPublic);
     }
 }

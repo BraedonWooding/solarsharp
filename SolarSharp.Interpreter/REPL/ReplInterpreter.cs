@@ -55,7 +55,7 @@ public class ReplInterpreter
     /// </summary>
     /// <param name="input">The input.</param>
     /// <returns>This method returns the result of the computation, or null if more input is needed for a computation.</returns>
-    public virtual DynValue Evaluate(string input)
+    public virtual LuaValue Evaluate(string input)
     {
         var isFirstLine = !HasPendingCommand;
 
@@ -64,13 +64,13 @@ public class ReplInterpreter
         m_CurrentCommand += input;
 
         if (m_CurrentCommand.Length == 0)
-            return DynValue.Void;
+            return LuaValue.Void;
 
         m_CurrentCommand += "\n";
 
         try
         {
-            DynValue result = null;
+            LuaValue result = null;
 
             if (isFirstLine && HandleClassicExprsSyntax && m_CurrentCommand.StartsWith("="))
                 m_CurrentCommand = "return " + m_CurrentCommand[1..];

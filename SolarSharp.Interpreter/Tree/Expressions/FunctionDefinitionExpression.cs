@@ -178,7 +178,7 @@ internal class FunctionDefinitionExpression : Expression, IClosureBuilder
         return ret;
     }
 
-    public override DynValue Eval(ScriptExecutionContext context)
+    public override LuaValue Eval(ScriptExecutionContext context)
     {
         throw new DynamicExpressionException("Dynamic Expressions cannot define new functions.");
     }

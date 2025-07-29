@@ -61,7 +61,7 @@ public class ScriptRuntimeException : InterpreterException
     /// <param name="r">The right operand (or null).</param>
     /// <returns>The exception to be raised.</returns>
     /// <exception cref="InternalErrorException">If both are numbers</exception>
-    public static ScriptRuntimeException ArithmeticOnNonNumber(DynValue l, DynValue r = null)
+    public static ScriptRuntimeException ArithmeticOnNonNumber(LuaValue l, LuaValue r = null)
     {
         if (l.Type != DataType.Number && l.Type != DataType.String)
             return new ScriptRuntimeException("attempt to perform arithmetic on a {0} value", l.Type.ToLuaTypeString());
@@ -80,7 +80,7 @@ public class ScriptRuntimeException : InterpreterException
     /// <param name="r">The right operand.</param>
     /// <returns>The exception to be raised.</returns>
     /// <exception cref="InternalErrorException">If both are numbers or strings</exception>
-    public static ScriptRuntimeException ConcatOnNonString(DynValue l, DynValue r)
+    public static ScriptRuntimeException ConcatOnNonString(LuaValue l, LuaValue r)
     {
         if (l.Type != DataType.Number && l.Type != DataType.String)
             return new ScriptRuntimeException("attempt to concatenate a {0} value", l.Type.ToLuaTypeString());
@@ -95,7 +95,7 @@ public class ScriptRuntimeException : InterpreterException
     /// </summary>
     /// <param name="r">The operand.</param>
     /// <returns>The exception to be raised.</returns>
-    public static ScriptRuntimeException LenOnInvalidType(DynValue r)
+    public static ScriptRuntimeException LenOnInvalidType(LuaValue r)
     {
         return new ScriptRuntimeException("attempt to get length of a {0} value", r.Type.ToLuaTypeString());
     }
@@ -107,7 +107,7 @@ public class ScriptRuntimeException : InterpreterException
     /// <param name="l">The left operand.</param>
     /// <param name="r">The right operand.</param>
     /// <returns>The exception to be raised.</returns>
-    public static ScriptRuntimeException CompareInvalidType(DynValue l, DynValue r)
+    public static ScriptRuntimeException CompareInvalidType(LuaValue l, LuaValue r)
     {
         if (l.Type.ToLuaTypeString() == r.Type.ToLuaTypeString())
             return new ScriptRuntimeException("attempt to compare two {0} values", l.Type.ToLuaTypeString());
@@ -262,7 +262,7 @@ public class ScriptRuntimeException : InterpreterException
     /// <returns>
     ///     The exception to be raised.
     /// </returns>
-    public static ScriptRuntimeException IndexType(DynValue obj)
+    public static ScriptRuntimeException IndexType(LuaValue obj)
     {
         return new ScriptRuntimeException("attempt to index a {0} value", obj.Type.ToLuaTypeString());
     }

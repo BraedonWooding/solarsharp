@@ -13,19 +13,19 @@ internal sealed partial class Processor
 
     public Coroutine AssociatedCoroutine { get; set; }
 
-    public DynValue Coroutine_Create(Closure closure)
+    public LuaValue Coroutine_Create(Closure closure)
     {
         // create a processor instance
         Processor P = new(this);
 
         // Put the closure as first value on the stack, for future reference
-        P.m_ValueStack.Push(DynValue.NewClosure(closure));
+        P.m_ValueStack.Push(LuaValue.NewClosure(closure));
 
         // Return the coroutine handle
-        return DynValue.NewCoroutine(new Coroutine(P));
+        return LuaValue.NewCoroutine(new Coroutine(P));
     }
 
-    public DynValue Coroutine_Recycle(Processor mainProcessor, Closure closure)
+    public LuaValue Coroutine_Recycle(Processor mainProcessor, Closure closure)
     {
         // Clear the used parts of the stacks to prep for reuse
         m_ValueStack.ClearUsed();
@@ -35,13 +35,13 @@ internal sealed partial class Processor
         Processor P = new(mainProcessor, this);
 
         // Put the closure as first value on the stack, for future reference
-        P.m_ValueStack.Push(DynValue.NewClosure(closure));
+        P.m_ValueStack.Push(LuaValue.NewClosure(closure));
 
         // Return the coroutine handle
-        return DynValue.NewCoroutine(new Coroutine(P));
+        return LuaValue.NewCoroutine(new Coroutine(P));
     }
 
-    public DynValue Coroutine_Resume(DynValue[] args)
+    public LuaValue Coroutine_Resume(LuaValue[] args)
     {
         EnterProcessor();
 
@@ -60,7 +60,7 @@ internal sealed partial class Processor
             }
             else if (State == CoroutineState.Suspended)
             {
-                m_ValueStack.Push(DynValue.NewTuple(args));
+                m_ValueStack.Push(LuaValue.NewTuple(args));
                 entrypoint = m_SavedInstructionPtr;
             }
 
@@ -70,7 +70,7 @@ internal sealed partial class Processor
             if (retVal.Type == DataType.YieldRequest)
             {
                 State = CoroutineState.Suspended;
-                return DynValue.NewTuple(retVal.YieldRequest.ReturnValues);
+                return LuaValue.NewTuple(retVal.YieldRequest.ReturnValues);
             }
             else
             {

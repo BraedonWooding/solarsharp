@@ -140,7 +140,7 @@ public class StandardUserDataDescriptor : DispatchingUserDataDescriptor
                     var descr = UserData.RegisterType(nestedType, AccessMode);
 
                     if (descr != null)
-                        AddDynValue(nestedType.Name, UserData.CreateStatic(nestedType));
+                        AddLuaValue(nestedType.Name, UserData.CreateStatic(nestedType));
                 }
         }
 

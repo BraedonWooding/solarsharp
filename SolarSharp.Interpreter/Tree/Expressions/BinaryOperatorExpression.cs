@@ -258,7 +258,7 @@ internal class BinaryOperatorExpression : Expression
             bc.Emit_Operator(OpCode.Not);
     }
 
-    public override DynValue Eval(ScriptExecutionContext context)
+    public override LuaValue Eval(ScriptExecutionContext context)
     {
         var v1 = m_Exp1.Eval(context).ToScalar();
 
@@ -278,7 +278,7 @@ internal class BinaryOperatorExpression : Expression
 
         var v2 = m_Exp2.Eval(context).ToScalar();
 
-        if ((m_Operator & COMPARES) != 0) return DynValue.NewBoolean(EvalComparison(v1, v2, m_Operator));
+        if ((m_Operator & COMPARES) != 0) return LuaValue.NewBoolean(EvalComparison(v1, v2, m_Operator));
 
         if (m_Operator == Operator.StrConcat)
         {
@@ -288,13 +288,13 @@ internal class BinaryOperatorExpression : Expression
             if (s1 == null || s2 == null)
                 throw new DynamicExpressionException("Attempt to perform concatenation on non-strings.");
 
-            return DynValue.NewString(s1 + s2);
+            return LuaValue.NewString(s1 + s2);
         }
 
-        return DynValue.NewNumber(EvalArithmetic(v1, v2));
+        return LuaValue.NewNumber(EvalArithmetic(v1, v2));
     }
 
-    private double EvalArithmetic(DynValue v1, DynValue v2)
+    private double EvalArithmetic(LuaValue v1, LuaValue v2)
     {
         var nd1 = v1.CastToNumber();
         var nd2 = v2.CastToNumber();
@@ -326,7 +326,7 @@ internal class BinaryOperatorExpression : Expression
         }
     }
 
-    private bool EvalComparison(DynValue l, DynValue r, Operator op)
+    private bool EvalComparison(LuaValue l, LuaValue r, Operator op)
     {
         switch (op)
         {

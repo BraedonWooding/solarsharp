@@ -20,12 +20,12 @@ public class BasicModule
     //Returns the type of its only argument, coded as a string. The possible results of this function are "nil" 
     //(a string, not the value nil), "number", "string", "boolean", "table", "function", "thread", and "userdata". 
     [SolarSharpModuleMethod]
-    public static DynValue type(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue type(ScriptExecutionContext _, CallbackArguments args)
     {
         if (args.Count < 1) throw ScriptRuntimeException.BadArgumentValueExpected(0, "type");
 
         var v = args[0];
-        return DynValue.NewString(v.Type.ToLuaTypeString());
+        return LuaValue.NewString(v.Type.ToLuaTypeString());
     }
 
     //assert (v [, message])
@@ -33,7 +33,7 @@ public class BasicModule
     //Issues an error when the value of its argument v is false (i.e., nil or false); 
     //otherwise, returns all its arguments. message is an error message; when absent, it defaults to "assertion failed!" 
     [SolarSharpModuleMethod]
-    public static DynValue assert(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue assert(ScriptExecutionContext _, CallbackArguments args)
     {
         var v = args[0];
         var message = args[1];
@@ -45,14 +45,14 @@ public class BasicModule
             throw new ScriptRuntimeException(message.ToPrintString()); // { DoNotDecorateMessage = true };
         }
 
-        return DynValue.NewTupleNested(args.GetArray());
+        return LuaValue.NewTupleNested(args.GetArray());
     }
 
     // collectgarbage  ([opt [, arg]])
     // ----------------------------------------------------------------------------------------------------------------
     // This function is mostly a stub towards the CLR GC. If mode is nil, "collect" or "restart", a GC is forced.
     [SolarSharpModuleMethod]
-    public static DynValue collectgarbage(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue collectgarbage(ScriptExecutionContext _, CallbackArguments args)
     {
         var opt = args[0];
 
@@ -67,7 +67,7 @@ public class BasicModule
 #endif
         }
 
-        return DynValue.Nil;
+        return LuaValue.Nil;
     }
 
     // error (message [, level])
@@ -79,7 +79,7 @@ public class BasicModule
     // Level 2 points the error to where the function that called error was called; and so on. 
     // Passing a level 0 avoids the addition of error position information to the message. 
     [SolarSharpModuleMethod]
-    public static DynValue error(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue error(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var message = args.AsType(0, "error", DataType.String);
         var level = args.AsType(1, "error", DataType.Number, true);
@@ -90,7 +90,7 @@ public class BasicModule
 
         var e = new ScriptRuntimeException(message.String);
 
-        if (level.IsNil()) level = DynValue.NewNumber(1); // Default
+        if (level.IsNil()) level = LuaValue.NewNumber(1); // Default
 
         if (level.Number > 0 && level.Number < stacktrace.Length)
         {
@@ -117,7 +117,7 @@ public class BasicModule
     // If the metatable of v has a "__tostring" field, then tostring calls the corresponding value with v as argument, 
     // and uses the result of the call as its result. 
     [SolarSharpModuleMethod]
-    public static DynValue tostring(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue tostring(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         if (args.Count < 1) throw ScriptRuntimeException.BadArgumentValueExpected(0, "tostring");
 
@@ -125,14 +125,14 @@ public class BasicModule
         var tail = executionContext.GetMetamethodTailCall(v, "__tostring", v);
 
         if (tail == null || tail.IsNil())
-            return DynValue.NewString(v.ToPrintString());
+            return LuaValue.NewString(v.ToPrintString());
 
         tail.TailCallData.Continuation = new CallbackFunction(__tostring_continuation, "__tostring");
 
         return tail;
     }
 
-    private static DynValue __tostring_continuation(ScriptExecutionContext executionContext, CallbackArguments args)
+    private static LuaValue __tostring_continuation(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var b = args[0].ToScalar();
 
@@ -152,19 +152,19 @@ public class BasicModule
     // the end (-1 is the last argument). Otherwise, index must be the string "#", and select returns the total
     // number of extra arguments it received. 
     [SolarSharpModuleMethod]
-    public static DynValue select(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue select(ScriptExecutionContext _, CallbackArguments args)
     {
         if (args[0].Type == DataType.String && args[0].String == "#")
         {
-            if (args[^1].Type == DataType.Tuple) return DynValue.NewNumber(args.Count - 1 + args[^1].Tuple.Length);
+            if (args[^1].Type == DataType.Tuple) return LuaValue.NewNumber(args.Count - 1 + args[^1].Tuple.Length);
 
-            return DynValue.NewNumber(args.Count - 1);
+            return LuaValue.NewNumber(args.Count - 1);
         }
 
         var v_num = args.AsType(0, "select", DataType.Number);
         var num = (int)v_num.Number;
 
-        List<DynValue> values = new();
+        List<LuaValue> values = new();
 
         if (num > 0)
         {
@@ -186,7 +186,7 @@ public class BasicModule
             throw ScriptRuntimeException.BadArgumentIndexOutOfRange("select", 0);
         }
 
-        return DynValue.NewTupleNested(values.ToArray());
+        return LuaValue.NewTupleNested(values.ToArray());
     }
 
 
@@ -201,7 +201,7 @@ public class BasicModule
     // upper or lower case) represents 10, 'B' represents 11, and so forth, with 'Z' representing 35. If the 
     // string e is not a valid numeral in the given base, the function returns nil. 
     [SolarSharpModuleMethod]
-    public static DynValue tonumber(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue tonumber(ScriptExecutionContext _, CallbackArguments args)
     {
         if (args.Count < 1) throw ScriptRuntimeException.BadArgumentValueExpected(0, "tonumber");
 
@@ -214,18 +214,18 @@ public class BasicModule
                 return e;
 
             if (e.Type != DataType.String)
-                return DynValue.Nil;
+                return LuaValue.Nil;
 
             if (double.TryParse(e.String, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
-                return DynValue.NewNumber(d);
-            return DynValue.Nil;
+                return LuaValue.NewNumber(d);
+            return LuaValue.Nil;
         }
 
         //!COMPAT: tonumber supports only 2,8,10 or 16 as base
         //UPDATE: added support for 3-9 base numbers
         var ee = args[0].Type != DataType.Number
             ? args.AsType(0, "tonumber", DataType.String)
-            : DynValue.NewString(args[0].Number.ToString(CultureInfo.InvariantCulture));
+            : LuaValue.NewString(args[0].Number.ToString(CultureInfo.InvariantCulture));
 
         var bb = (int)b.Number;
 
@@ -244,11 +244,11 @@ public class BasicModule
         else
             throw new ScriptRuntimeException("bad argument #2 to 'tonumber' (base out of range)");
 
-        return DynValue.NewNumber(uiv);
+        return LuaValue.NewNumber(uiv);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue print(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue print(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         StringBuilder sb = new();
 
@@ -265,6 +265,6 @@ public class BasicModule
 
         executionContext.GetScript().Options.DebugPrint(sb.ToString());
 
-        return DynValue.Nil;
+        return LuaValue.Nil;
     }
 }

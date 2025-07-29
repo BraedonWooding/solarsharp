@@ -55,7 +55,7 @@ internal class SymbolRefExpression : Expression, IVariable
         bc.Emit_Load(m_Ref);
     }
 
-    public override DynValue Eval(ScriptExecutionContext context)
+    public override LuaValue Eval(ScriptExecutionContext context)
     {
         return context.EvaluateSymbolByName(m_VarName);
     }

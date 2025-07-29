@@ -614,33 +614,33 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             Assert.That(T, Is.Empty, "A");
 
-            T.Set(1, DynValue.True);
+            T.Set(1, LuaValue.True);
 
             Assert.That(T, Has.Length.EqualTo(1), "B");
 
-            T.Set(2, DynValue.True);
-            T.Set(3, DynValue.True);
-            T.Set(4, DynValue.True);
+            T.Set(2, LuaValue.True);
+            T.Set(3, LuaValue.True);
+            T.Set(4, LuaValue.True);
 
             Assert.That(T, Has.Length.EqualTo(4), "C");
 
-            T.Set(3, DynValue.Nil);
+            T.Set(3, LuaValue.Nil);
 
             Assert.That(T, Has.Length.EqualTo(2), "D");
 
-            T.Set(3, DynValue.True);
+            T.Set(3, LuaValue.True);
 
             Assert.That(T, Has.Length.EqualTo(4), "E");
 
-            T.Set(3, DynValue.Nil);
+            T.Set(3, LuaValue.Nil);
 
             Assert.That(T, Has.Length.EqualTo(2), "F");
 
-            T.Append(DynValue.True);
+            T.Append(LuaValue.True);
 
             Assert.That(T, Has.Length.EqualTo(4), "G");
 
-            T.Append(DynValue.True);
+            T.Append(LuaValue.True);
 
             Assert.That(T, Has.Length.EqualTo(5), "H");
         }

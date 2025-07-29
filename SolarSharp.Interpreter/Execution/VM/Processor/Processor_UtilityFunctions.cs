@@ -5,7 +5,7 @@ namespace SolarSharp.Interpreter.Execution.VM;
 
 internal sealed partial class Processor
 {
-    private DynValue[] Internal_AdjustTuple(IList<DynValue> values)
+    private LuaValue[] Internal_AdjustTuple(IList<LuaValue> values)
     {
         if (values == null || values.Count == 0)
             return [];
@@ -13,7 +13,7 @@ internal sealed partial class Processor
         if (values[values.Count - 1].Type == DataType.Tuple)
         {
             var baseLen = values.Count - 1 + values[values.Count - 1].Tuple.Length;
-            var result = new DynValue[baseLen];
+            var result = new LuaValue[baseLen];
 
             for (var i = 0; i < values.Count - 1; i++) result[i] = values[i].ToScalar();
 
@@ -26,7 +26,7 @@ internal sealed partial class Processor
         }
         else
         {
-            var result = new DynValue[values.Count];
+            var result = new LuaValue[values.Count];
 
             for (var i = 0; i < values.Count; i++) result[i] = values[i].ToScalar();
 
@@ -34,9 +34,9 @@ internal sealed partial class Processor
         }
     }
 
-    private int Internal_InvokeUnaryMetaMethod(DynValue op1, string eventName, int instructionPtr)
+    private int Internal_InvokeUnaryMetaMethod(LuaValue op1, string eventName, int instructionPtr)
     {
-        DynValue m = null;
+        LuaValue m = null;
 
         if (op1.Type == DataType.UserData)
             m = op1.UserData.Descriptor.MetaIndex(m_Script, op1.UserData.Object, eventName);
@@ -63,8 +63,8 @@ internal sealed partial class Processor
         return -1;
     }
 
-    private int Internal_InvokeBinaryMetaMethod(DynValue l, DynValue r, string eventName, int instructionPtr,
-        DynValue extraPush = null)
+    private int Internal_InvokeBinaryMetaMethod(LuaValue l, LuaValue r, string eventName, int instructionPtr,
+        LuaValue extraPush = null)
     {
         var m = GetBinaryMetamethod(l, r, eventName);
 

@@ -5,7 +5,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     public static class Utils
     {
-        public static void DynAssert(DynValue result, params object[] args)
+        public static void DynAssert(LuaValue result, params object[] args)
         {
             if (args == null)
                 args = new object[1] { DataType.Void };
@@ -28,29 +28,29 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
         }
 
-        private static void DynAssertValue(object reference, DynValue dynValue)
+        private static void DynAssertValue(object reference, LuaValue LuaValue)
         {
             if (reference == (object)DataType.Void)
-                Assert.That(dynValue.Type, Is.EqualTo(DataType.Void));
+                Assert.That(LuaValue.Type, Is.EqualTo(DataType.Void));
             else if (reference == null)
-                Assert.That(dynValue.Type, Is.EqualTo(DataType.Nil));
+                Assert.That(LuaValue.Type, Is.EqualTo(DataType.Nil));
             else if (reference is double)
                 Assert.Multiple(() =>
                 {
-                    Assert.That(dynValue.Type, Is.EqualTo(DataType.Number));
-                    Assert.That(dynValue.Number, Is.EqualTo((double)reference));
+                    Assert.That(LuaValue.Type, Is.EqualTo(DataType.Number));
+                    Assert.That(LuaValue.Number, Is.EqualTo((double)reference));
                 });
             else if (reference is int)
                 Assert.Multiple(() =>
                 {
-                    Assert.That(dynValue.Type, Is.EqualTo(DataType.Number));
-                    Assert.That(dynValue.Number, Is.EqualTo((int)reference));
+                    Assert.That(LuaValue.Type, Is.EqualTo(DataType.Number));
+                    Assert.That(LuaValue.Number, Is.EqualTo((int)reference));
                 });
             else if (reference is string)
                 Assert.Multiple(() =>
                 {
-                    Assert.That(dynValue.Type, Is.EqualTo(DataType.String));
-                    Assert.That(dynValue.String, Is.EqualTo((string)reference));
+                    Assert.That(LuaValue.Type, Is.EqualTo(DataType.String));
+                    Assert.That(LuaValue.String, Is.EqualTo((string)reference));
                 });
         }
     }

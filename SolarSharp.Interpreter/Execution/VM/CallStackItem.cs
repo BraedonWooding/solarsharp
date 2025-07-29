@@ -16,9 +16,9 @@ internal class CallStackItem
     public int Debug_EntryPoint;
     public SymbolRef[] Debug_Symbols;
     public CallbackFunction ErrorHandler;
-    public DynValue ErrorHandlerBeforeUnwind;
+    public LuaValue ErrorHandlerBeforeUnwind;
 
     public CallStackItemFlags Flags;
-    public DynValue[] LocalScope;
+    public LuaValue[] LocalScope;
     public int ReturnAddress;
 }

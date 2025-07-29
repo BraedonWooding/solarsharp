@@ -51,7 +51,7 @@ namespace SolarSharp.Interpreter.Tests
                 }
             };
 
-            S.Globals.Set("arg", DynValue.NewTable(S));
+            S.Globals.Set("arg", LuaValue.NewTable(S));
 
             ((ScriptLoaderBase)S.Options.ScriptLoader).ModulePaths =
                 new[] { "TestMore/Modules/?", "TestMore/Modules/?.lua" };

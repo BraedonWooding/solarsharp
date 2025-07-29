@@ -84,19 +84,19 @@ public class FieldMemberDescriptor : IMemberDescriptor, IOptimizableDescriptor
     /// <param name="script">The script.</param>
     /// <param name="obj">The object.</param>
     /// <returns></returns>
-    public DynValue GetValue(Script script, object obj)
+    public LuaValue GetValue(Script script, object obj)
     {
         this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
 
         // optimization+workaround of Unity bug.. 
         if (IsConst)
-            return ClrToScriptConversions.ObjectToDynValue(script, m_ConstValue);
+            return ClrToScriptConversions.ObjectToLuaValue(script, m_ConstValue);
 
         if (AccessMode == InteropAccessMode.LazyOptimized && m_OptimizedGetter == null)
             OptimizeGetter();
 
         var result = m_OptimizedGetter != null ? m_OptimizedGetter(obj) : FieldInfo.GetValue(obj);
-        return ClrToScriptConversions.ObjectToDynValue(script, result);
+        return ClrToScriptConversions.ObjectToLuaValue(script, result);
     }
 
     /// <summary>
@@ -105,7 +105,7 @@ public class FieldMemberDescriptor : IMemberDescriptor, IOptimizableDescriptor
     /// <param name="script">The script.</param>
     /// <param name="obj">The object.</param>
     /// <param name="v">The value to set.</param>
-    public void SetValue(Script script, object obj, DynValue v)
+    public void SetValue(Script script, object obj, LuaValue v)
     {
         this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
 
@@ -113,7 +113,7 @@ public class FieldMemberDescriptor : IMemberDescriptor, IOptimizableDescriptor
             throw new ScriptRuntimeException("userdata field '{0}.{1}' cannot be written to.",
                 FieldInfo.DeclaringType.Name, Name);
 
-        var value = ScriptToClrConversions.DynValueToObjectOfType(v, FieldInfo.FieldType, null, false);
+        var value = ScriptToClrConversions.LuaValueToObjectOfType(v, FieldInfo.FieldType, null, false);
 
         try
         {

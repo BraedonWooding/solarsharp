@@ -9,12 +9,12 @@ public class TailCallData
     /// <summary>
     ///     Gets or sets the function to call
     /// </summary>
-    public DynValue Function { get; set; }
+    public LuaValue Function { get; set; }
 
     /// <summary>
     ///     Gets or sets the arguments to the function
     /// </summary>
-    public DynValue[] Args { get; set; }
+    public LuaValue[] Args { get; set; }
 
     /// <summary>
     ///     Gets or sets the callback to be used as a continuation.
@@ -29,5 +29,5 @@ public class TailCallData
     /// <summary>
     ///     Gets or sets the error handler to be called before stack unwinding
     /// </summary>
-    public DynValue ErrorHandlerBeforeUnwind { get; set; }
+    public LuaValue ErrorHandlerBeforeUnwind { get; set; }
 }

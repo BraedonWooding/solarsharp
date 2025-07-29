@@ -7,9 +7,9 @@ namespace SolarSharp.Interpreter.Execution.Scopes;
 /// <summary>
 ///     The scope of a closure (container of upvalues)
 /// </summary>
-internal class ClosureContext : List<DynValue>
+internal class ClosureContext : List<LuaValue>
 {
-    internal ClosureContext(SymbolRef[] symbols, IEnumerable<DynValue> values)
+    internal ClosureContext(SymbolRef[] symbols, IEnumerable<LuaValue> values)
     {
         Symbols = symbols.Select(s => s.i_Name).ToArray();
         AddRange(values);

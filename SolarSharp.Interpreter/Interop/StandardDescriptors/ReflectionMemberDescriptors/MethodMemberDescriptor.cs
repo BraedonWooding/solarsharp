@@ -226,7 +226,7 @@ public class MethodMemberDescriptor : FunctionMemberDescriptorBase, IOptimizable
     /// <param name="context">The context.</param>
     /// <param name="args">The arguments.</param>
     /// <returns></returns>
-    public override DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
+    public override LuaValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
     {
         this.CheckAccess(MemberDescriptorAccess.CanExecute, obj);
 
@@ -244,12 +244,12 @@ public class MethodMemberDescriptor : FunctionMemberDescriptorBase, IOptimizable
         else if (m_OptimizedAction != null)
         {
             m_OptimizedAction(obj, pars);
-            retv = DynValue.Void;
+            retv = LuaValue.Void;
         }
         else if (m_IsAction)
         {
             MethodInfo.Invoke(obj, pars);
-            retv = DynValue.Void;
+            retv = LuaValue.Void;
         }
         else
         {

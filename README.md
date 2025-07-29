@@ -56,7 +56,7 @@ double Factorial()
 
 	return fact(5)";
 
-	DynValue res = Script.RunString(script);
+	LuaValue res = Script.RunString(script);
 	return res.Number;
 }
 ```

@@ -22,7 +22,7 @@ internal class Instruction
     internal SourceRef SourceCodeRef;
     internal SymbolRef Symbol;
     internal SymbolRef[] SymbolList;
-    internal DynValue Value;
+    internal LuaValue Value;
 
     internal Instruction(SourceRef sourceref)
     {
@@ -62,7 +62,7 @@ internal class Instruction
         return append;
     }
 
-    private string PurifyFromNewLines(DynValue Value)
+    private string PurifyFromNewLines(LuaValue Value)
     {
         if (Value == null)
             return "";
@@ -161,7 +161,7 @@ internal class Instruction
         return that;
     }
 
-    private static DynValue ReadValue(BinaryReader rd, Table envTable)
+    private static LuaValue ReadValue(BinaryReader rd, Table envTable)
     {
         var isnull = !rd.ReadBoolean();
 
@@ -172,24 +172,24 @@ internal class Instruction
         switch (dt)
         {
             case DataType.Nil:
-                return DynValue.NewNil();
+                return LuaValue.NewNil();
             case DataType.Void:
-                return DynValue.Void;
+                return LuaValue.Void;
             case DataType.Boolean:
-                return DynValue.NewBoolean(rd.ReadBoolean());
+                return LuaValue.NewBoolean(rd.ReadBoolean());
             case DataType.Number:
-                return DynValue.NewNumber(rd.ReadDouble());
+                return LuaValue.NewNumber(rd.ReadDouble());
             case DataType.String:
-                return DynValue.NewString(rd.ReadString());
+                return LuaValue.NewString(rd.ReadString());
             case DataType.Table:
-                return DynValue.NewTable(envTable);
+                return LuaValue.NewTable(envTable);
             default:
                 throw new NotSupportedException($"Unsupported type in chunk dump : {dt}");
         }
     }
 
 
-    private void DumpValue(BinaryWriter wr, DynValue value)
+    private void DumpValue(BinaryWriter wr, LuaValue value)
     {
         if (value == null)
         {

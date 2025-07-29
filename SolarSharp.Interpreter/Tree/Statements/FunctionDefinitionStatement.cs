@@ -91,7 +91,7 @@ internal class FunctionDefinitionStatement : Statement
         {
             if (m_Local)
             {
-                bc.Emit_Literal(DynValue.Nil);
+                bc.Emit_Literal(LuaValue.Nil);
                 bc.Emit_Store(m_FuncSymbol, 0, 0);
                 m_FuncDef.Compile(bc, () => SetFunction(bc, 2), m_FriendlyName);
             }
@@ -114,11 +114,11 @@ internal class FunctionDefinitionStatement : Statement
 
         foreach (var str in m_TableAccessors)
         {
-            bc.Emit_Index(DynValue.NewString(str), true);
+            bc.Emit_Index(LuaValue.NewString(str), true);
             cnt += 1;
         }
 
-        bc.Emit_IndexSet(0, 0, DynValue.NewString(m_MethodName), true);
+        bc.Emit_IndexSet(0, 0, LuaValue.NewString(m_MethodName), true);
 
         return 1 + cnt;
     }

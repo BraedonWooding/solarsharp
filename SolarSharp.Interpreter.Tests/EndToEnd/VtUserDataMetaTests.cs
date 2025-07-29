@@ -163,11 +163,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             [SolarSharpUserDataMetamethod("__ipairs")]
             public IEnumerator Pairs()
             {
-                return new List<DynValue>
+                return new List<LuaValue>
                 {
-                    DynValue.NewTuple(DynValue.NewString("a"), DynValue.NewString("A")),
-                    DynValue.NewTuple(DynValue.NewString("b"), DynValue.NewString("B")),
-                    DynValue.NewTuple(DynValue.NewString("c"), DynValue.NewString("C"))
+                    LuaValue.NewTuple(LuaValue.NewString("a"), LuaValue.NewString("A")),
+                    LuaValue.NewTuple(LuaValue.NewString("b"), LuaValue.NewString("B")),
+                    LuaValue.NewTuple(LuaValue.NewString("c"), LuaValue.NewString("C"))
                 }.GetEnumerator();
             }
 

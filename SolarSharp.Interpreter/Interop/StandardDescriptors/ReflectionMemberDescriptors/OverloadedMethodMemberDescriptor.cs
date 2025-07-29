@@ -100,26 +100,26 @@ public class OverloadedMethodMemberDescriptor : IOptimizableDescriptor, IMemberD
     public MemberDescriptorAccess MemberAccess => MemberDescriptorAccess.CanExecute | MemberDescriptorAccess.CanRead;
 
     /// <summary>
-    ///     Gets the value of this member as a <see cref="DynValue" /> to be exposed to scripts.
+    ///     Gets the value of this member as a <see cref="LuaValue" /> to be exposed to scripts.
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object owning this member, or null if static.</param>
     /// <returns>
-    ///     The value of this member as a <see cref="DynValue" />.
+    ///     The value of this member as a <see cref="LuaValue" />.
     /// </returns>
-    public DynValue GetValue(Script script, object obj)
+    public LuaValue GetValue(Script script, object obj)
     {
-        return DynValue.NewCallback(GetCallbackFunction(script, obj));
+        return LuaValue.NewCallback(GetCallbackFunction(script, obj));
     }
 
     /// <summary>
-    ///     Sets the value of this member from a <see cref="DynValue" />.
+    ///     Sets the value of this member from a <see cref="LuaValue" />.
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object owning this member, or null if static.</param>
     /// <param name="value">The value to be set.</param>
     /// <exception cref="NotImplementedException"></exception>
-    public void SetValue(Script script, object obj, DynValue value)
+    public void SetValue(Script script, object obj, LuaValue value)
     {
         this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
     }
@@ -160,7 +160,7 @@ public class OverloadedMethodMemberDescriptor : IOptimizableDescriptor, IMemberD
     /// <param name="args">The arguments.</param>
     /// <returns></returns>
     /// <exception cref="ScriptRuntimeException">function call doesn't match any overload</exception>
-    private DynValue PerformOverloadedCall(Script script, object obj, ScriptExecutionContext context,
+    private LuaValue PerformOverloadedCall(Script script, object obj, ScriptExecutionContext context,
         CallbackArguments args)
     {
         var extMethodCacheNotExpired = IgnoreExtensionMethods || obj == null ||
@@ -332,7 +332,7 @@ public class OverloadedMethodMemberDescriptor : IOptimizableDescriptor, IMemberD
             if (i == method.Parameters.Length - 1 && method.VarArgsArrayType != null)
             {
                 var varargCnt = 0;
-                DynValue firstArg = null;
+                LuaValue firstArg = null;
                 var scoreBeforeVargars = totalScore;
 
                 // update score for varargs
@@ -368,7 +368,7 @@ public class OverloadedMethodMemberDescriptor : IOptimizableDescriptor, IMemberD
             }
             else
             {
-                var arg = args.RawGet(argsCnt, false) ?? DynValue.Void;
+                var arg = args.RawGet(argsCnt, false) ?? LuaValue.Void;
 
                 var score = CalcScoreForSingleArgument(method.Parameters[i], parameterType, arg,
                     method.Parameters[i].HasDefaultValue);
@@ -406,10 +406,10 @@ public class OverloadedMethodMemberDescriptor : IOptimizableDescriptor, IMemberD
         return totalScore;
     }
 
-    private static int CalcScoreForSingleArgument(ParameterDescriptor desc, Type parameterType, DynValue arg,
+    private static int CalcScoreForSingleArgument(ParameterDescriptor desc, Type parameterType, LuaValue arg,
         bool isOptional)
     {
-        var score = ScriptToClrConversions.DynValueToObjectOfTypeWeight(arg,
+        var score = ScriptToClrConversions.LuaValueToObjectOfTypeWeight(arg,
             parameterType, isOptional);
 
         if (parameterType.IsByRef || desc.IsOut || desc.IsRef)
@@ -424,7 +424,7 @@ public class OverloadedMethodMemberDescriptor : IOptimizableDescriptor, IMemberD
     /// <param name="script">The script for which the callback must be generated.</param>
     /// <param name="obj">The object (null for static).</param>
     /// <returns></returns>
-    public Func<ScriptExecutionContext, CallbackArguments, DynValue> GetCallback(Script script, object obj)
+    public Func<ScriptExecutionContext, CallbackArguments, LuaValue> GetCallback(Script script, object obj)
     {
         return (context, args) => PerformOverloadedCall(script, obj, context, args);
     }

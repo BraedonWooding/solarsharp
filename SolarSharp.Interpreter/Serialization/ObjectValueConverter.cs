@@ -8,25 +8,25 @@ namespace SolarSharp.Interpreter.Serialization;
 
 public static class ObjectValueConverter
 {
-    public static DynValue SerializeObjectToDynValue(Script script, object o, DynValue valueForNulls = null)
+    public static LuaValue SerializeObjectToLuaValue(Script script, object o, LuaValue valueForNulls = null)
     {
         if (o == null)
-            return valueForNulls ?? DynValue.Nil;
+            return valueForNulls ?? LuaValue.Nil;
 
-        var v = ClrToScriptConversions.TryObjectToTrivialDynValue(script, o);
+        var v = ClrToScriptConversions.TryObjectToTrivialLuaValue(script, o);
 
         if (v != null)
             return v;
 
         if (o is Enum)
-            return DynValue.NewNumber(NumericConversions.TypeToDouble(Enum.GetUnderlyingType(o.GetType()), o));
+            return LuaValue.NewNumber(NumericConversions.TypeToDouble(Enum.GetUnderlyingType(o.GetType()), o));
 
         Table t = new(script);
 
 
         if (o is IEnumerable ienum)
         {
-            foreach (var obj in ienum) t.Append(SerializeObjectToDynValue(script, obj, valueForNulls));
+            foreach (var obj in ienum) t.Append(SerializeObjectToLuaValue(script, obj, valueForNulls));
         }
         else
         {
@@ -39,10 +39,10 @@ public static class ObjectValueConverter
                 var obj = getter.Invoke(isStatic ? null : o,
                     null); // convoluted workaround for --full-aot Mono execution
 
-                t.Set(pi.Name, SerializeObjectToDynValue(script, obj, valueForNulls));
+                t.Set(pi.Name, SerializeObjectToLuaValue(script, obj, valueForNulls));
             }
         }
 
-        return DynValue.NewTable(t);
+        return LuaValue.NewTable(t);
     }
 }

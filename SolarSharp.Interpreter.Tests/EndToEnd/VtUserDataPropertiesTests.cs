@@ -841,7 +841,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             Script s = new();
             var big = long.MaxValue;
-            var v = DynValue.FromObject(s, big);
+            var v = LuaValue.FromObject(s, big);
             Assert.That(v, Is.Not.Null);
         }
     }

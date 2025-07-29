@@ -33,9 +33,9 @@ internal static class ScriptToClrConversions
     internal const int WEIGHT_VARARGS_EMPTY = 40;
 
     /// <summary>
-    ///     Converts a DynValue to a CLR object [simple conversion]
+    ///     Converts a LuaValue to a CLR object [simple conversion]
     /// </summary>
-    internal static object DynValueToObject(DynValue value)
+    internal static object LuaValueToObject(LuaValue value)
     {
         var converter =
             Script.GlobalOptions.CustomConverters.GetScriptToClrCustomConversion(value.Type, typeof(object));
@@ -72,9 +72,9 @@ internal static class ScriptToClrConversions
     }
 
     /// <summary>
-    ///     Converts a DynValue to a CLR object of a specific type
+    ///     Converts a LuaValue to a CLR object of a specific type
     /// </summary>
-    internal static object DynValueToObjectOfType(DynValue value, Type desiredType, object defaultValue,
+    internal static object LuaValueToObjectOfType(LuaValue value, Type desiredType, object defaultValue,
         bool isOptional)
     {
         if (desiredType.IsByRef)
@@ -84,11 +84,11 @@ internal static class ScriptToClrConversions
         var v = converter?.Invoke(value);
         if (v != null) return v;
 
-        if (desiredType == typeof(DynValue))
+        if (desiredType == typeof(LuaValue))
             return value;
 
         if (desiredType == typeof(object))
-            return DynValueToObject(value);
+            return LuaValueToObject(value);
 
         var stringSubType = StringConversions.GetStringSubtype(desiredType);
         string str = null;
@@ -160,7 +160,7 @@ internal static class ScriptToClrConversions
                 break;
             case DataType.ClrFunction:
                 if (desiredType == typeof(CallbackFunction)) return value.Callback;
-                if (desiredType == typeof(Func<ScriptExecutionContext, CallbackArguments, DynValue>))
+                if (desiredType == typeof(Func<ScriptExecutionContext, CallbackArguments, LuaValue>))
                     return value.Callback.ClrCallback;
                 break;
             case DataType.UserData:
@@ -196,10 +196,10 @@ internal static class ScriptToClrConversions
 
     /// <summary>
     ///     Gets a relative weight of how much the conversion is matching the given types.
-    ///     Implementation must follow that of DynValueToObjectOfType.. it's not very DRY in that sense.
+    ///     Implementation must follow that of LuaValueToObjectOfType.. it's not very DRY in that sense.
     ///     However here we are in perf-sensitive path.. TODO : double-check the gain and see if a DRY impl is better.
     /// </summary>
-    internal static int DynValueToObjectOfTypeWeight(DynValue value, Type desiredType, bool isOptional)
+    internal static int LuaValueToObjectOfTypeWeight(LuaValue value, Type desiredType, bool isOptional)
     {
         if (desiredType.IsByRef)
             desiredType = desiredType.GetElementType();
@@ -209,7 +209,7 @@ internal static class ScriptToClrConversions
         if (customConverter != null)
             return WEIGHT_CUSTOM_CONVERTER_MATCH;
 
-        if (desiredType == typeof(DynValue))
+        if (desiredType == typeof(LuaValue))
             return WEIGHT_EXACT_MATCH;
 
         if (desiredType == typeof(object))
@@ -278,7 +278,7 @@ internal static class ScriptToClrConversions
                 break;
             case DataType.ClrFunction:
                 if (desiredType == typeof(CallbackFunction)) return WEIGHT_EXACT_MATCH;
-                if (desiredType == typeof(Func<ScriptExecutionContext, CallbackArguments, DynValue>))
+                if (desiredType == typeof(Func<ScriptExecutionContext, CallbackArguments, LuaValue>))
                     return WEIGHT_EXACT_MATCH;
                 break;
             case DataType.UserData:

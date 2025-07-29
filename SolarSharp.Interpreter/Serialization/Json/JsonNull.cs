@@ -14,7 +14,7 @@ public sealed class JsonNull
     }
 
     [SolarSharpHidden]
-    public static bool IsJsonNull(DynValue v)
+    public static bool IsJsonNull(LuaValue v)
     {
         return v.Type == DataType.UserData &&
                v.UserData.Descriptor != null &&
@@ -22,7 +22,7 @@ public sealed class JsonNull
     }
 
     [SolarSharpHidden]
-    public static DynValue Create()
+    public static LuaValue Create()
     {
         return UserData.CreateStatic<JsonNull>();
     }

@@ -48,5 +48,5 @@ public interface IOverloadableMemberDescriptor : IMemberDescriptor
     /// <param name="context">The context.</param>
     /// <param name="args">The arguments.</param>
     /// <returns></returns>
-    DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args);
+    LuaValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args);
 }

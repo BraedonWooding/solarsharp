@@ -19,7 +19,7 @@ internal abstract class Expression : NodeBase
         return null;
     }
 
-    public abstract DynValue Eval(ScriptExecutionContext context);
+    public abstract LuaValue Eval(ScriptExecutionContext context);
 
     public virtual SymbolRef FindDynamic(ScriptExecutionContext context)
     {

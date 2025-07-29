@@ -39,14 +39,14 @@ internal class UnaryOperatorExpression : Expression
         }
     }
 
-    public override DynValue Eval(ScriptExecutionContext context)
+    public override LuaValue Eval(ScriptExecutionContext context)
     {
         var v = m_Exp.Eval(context).ToScalar();
 
         switch (m_OpText)
         {
             case "not":
-                return DynValue.NewBoolean(!v.CastToBool());
+                return LuaValue.NewBoolean(!v.CastToBool());
             case "#":
                 return v.GetLength();
             case "-":
@@ -54,7 +54,7 @@ internal class UnaryOperatorExpression : Expression
                 var d = v.CastToNumber();
 
                 if (d.HasValue)
-                    return DynValue.NewNumber(-d.Value);
+                    return LuaValue.NewNumber(-d.Value);
 
                 throw new DynamicExpressionException("Attempt to perform arithmetic on non-numbers.");
             }

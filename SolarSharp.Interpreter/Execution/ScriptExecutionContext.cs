@@ -32,7 +32,7 @@ public struct ScriptExecutionContext : IScriptPrivateResource
     /// </summary>
     /// <param name="value">The value.</param>
     /// <returns></returns>
-    public Table GetMetatable(DynValue value)
+    public Table GetMetatable(LuaValue value)
     {
         return m_Processor.GetMetatable(value);
     }
@@ -43,7 +43,7 @@ public struct ScriptExecutionContext : IScriptPrivateResource
     /// <param name="value">The value.</param>
     /// <param name="metamethod">The metamethod name.</param>
     /// <returns></returns>
-    public DynValue GetMetamethod(DynValue value, string metamethod)
+    public LuaValue GetMetamethod(LuaValue value, string metamethod)
     {
         return m_Processor.GetMetamethod(value, metamethod);
     }
@@ -51,17 +51,17 @@ public struct ScriptExecutionContext : IScriptPrivateResource
     /// <summary>
     ///     prepares a tail call request for the specified metamethod, or null if no metamethod is found.
     /// </summary>
-    public DynValue GetMetamethodTailCall(DynValue value, string metamethod, params DynValue[] args)
+    public LuaValue GetMetamethodTailCall(LuaValue value, string metamethod, params LuaValue[] args)
     {
         var meta = GetMetamethod(value, metamethod);
         if (meta == null) return null;
-        return DynValue.NewTailCallReq(meta, args);
+        return LuaValue.NewTailCallReq(meta, args);
     }
 
     /// <summary>
     ///     Gets the metamethod to be used for a binary operation using op1 and op2.
     /// </summary>
-    public DynValue GetBinaryMetamethod(DynValue op1, DynValue op2, string eventName)
+    public LuaValue GetBinaryMetamethod(LuaValue op1, LuaValue op2, string eventName)
     {
         return m_Processor.GetBinaryMetamethod(op1, op2, eventName);
     }
@@ -94,7 +94,7 @@ public struct ScriptExecutionContext : IScriptPrivateResource
     /// <param name="functionName">Name of the function - for error messages.</param>
     /// <param name="callback">The callback.</param>
     /// <returns></returns>
-    public DynValue EmulateClassicCall(CallbackArguments args, string functionName, Func<LuaState, int> callback)
+    public LuaValue EmulateClassicCall(CallbackArguments args, string functionName, Func<LuaState, int> callback)
     {
         LuaState L = new(this, args, functionName);
         var retvals = callback(L);
@@ -111,7 +111,7 @@ public struct ScriptExecutionContext : IScriptPrivateResource
     ///     If the function yields, returns a tail call request with
     ///     continuations/handlers or, of course, if it encounters errors.
     /// </exception>
-    public DynValue Call(DynValue func, params DynValue[] args)
+    public LuaValue Call(LuaValue func, params LuaValue[] args)
     {
         if (func.Type == DataType.Function) return GetScript().Call(func, args);
 
@@ -158,10 +158,10 @@ public struct ScriptExecutionContext : IScriptPrivateResource
     /// <summary>
     ///     Tries to get the reference of a symbol in the current execution state
     /// </summary>
-    public DynValue EvaluateSymbol(SymbolRef symref)
+    public LuaValue EvaluateSymbol(SymbolRef symref)
     {
         if (symref == null)
-            return DynValue.Nil;
+            return LuaValue.Nil;
 
         return m_Processor.GetGenericSymbol(symref);
     }
@@ -169,7 +169,7 @@ public struct ScriptExecutionContext : IScriptPrivateResource
     /// <summary>
     ///     Tries to get the value of a symbol in the current execution state
     /// </summary>
-    public DynValue EvaluateSymbolByName(string symbol)
+    public LuaValue EvaluateSymbolByName(string symbol)
     {
         return EvaluateSymbol(FindSymbolByName(symbol));
     }
@@ -203,7 +203,7 @@ public struct ScriptExecutionContext : IScriptPrivateResource
     /// </summary>
     /// <param name="messageHandler">The message handler.</param>
     /// <param name="exception">The exception.</param>
-    public void PerformMessageDecorationBeforeUnwind(DynValue messageHandler, ScriptRuntimeException exception)
+    public void PerformMessageDecorationBeforeUnwind(LuaValue messageHandler, ScriptRuntimeException exception)
     {
         exception.DecoratedMessage = messageHandler != null
             ? m_Processor.PerformMessageDecorationBeforeUnwind(messageHandler, exception.Message, CallingLocation)

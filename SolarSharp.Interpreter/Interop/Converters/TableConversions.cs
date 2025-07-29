@@ -15,7 +15,7 @@ internal static class TableConversions
     internal static Table ConvertIListToTable(Script script, IList list)
     {
         Table t = new(script);
-        for (var i = 0; i < list.Count; i++) t[i + 1] = ClrToScriptConversions.ObjectToDynValue(script, list[i]);
+        for (var i = 0; i < list.Count; i++) t[i + 1] = ClrToScriptConversions.ObjectToLuaValue(script, list[i]);
         return t;
     }
 
@@ -28,8 +28,8 @@ internal static class TableConversions
 
         foreach (DictionaryEntry kvp in dict)
         {
-            var key = ClrToScriptConversions.ObjectToDynValue(script, kvp.Key);
-            var val = ClrToScriptConversions.ObjectToDynValue(script, kvp.Value);
+            var key = ClrToScriptConversions.ObjectToLuaValue(script, kvp.Key);
+            var val = ClrToScriptConversions.ObjectToLuaValue(script, kvp.Value);
             t.Set(key, val);
         }
 
@@ -46,15 +46,15 @@ internal static class TableConversions
     {
         if (Framework.Do.IsAssignableFrom(t, typeof(Dictionary<object, object>)))
             return true;
-        if (Framework.Do.IsAssignableFrom(t, typeof(Dictionary<DynValue, DynValue>)))
+        if (Framework.Do.IsAssignableFrom(t, typeof(Dictionary<LuaValue, LuaValue>)))
             return true;
         if (Framework.Do.IsAssignableFrom(t, typeof(List<object>)))
             return true;
-        if (Framework.Do.IsAssignableFrom(t, typeof(List<DynValue>)))
+        if (Framework.Do.IsAssignableFrom(t, typeof(List<LuaValue>)))
             return true;
         if (Framework.Do.IsAssignableFrom(t, typeof(object[])))
             return true;
-        if (Framework.Do.IsAssignableFrom(t, typeof(DynValue[])))
+        if (Framework.Do.IsAssignableFrom(t, typeof(LuaValue[])))
             return true;
 
         if (Framework.Do.IsGenericType(t))
@@ -86,15 +86,15 @@ internal static class TableConversions
     {
         if (Framework.Do.IsAssignableFrom(t, typeof(Dictionary<object, object>)))
             return TableToDictionary(table, v => v.ToObject(), v => v.ToObject());
-        if (Framework.Do.IsAssignableFrom(t, typeof(Dictionary<DynValue, DynValue>)))
+        if (Framework.Do.IsAssignableFrom(t, typeof(Dictionary<LuaValue, LuaValue>)))
             return TableToDictionary(table, v => v, v => v);
         if (Framework.Do.IsAssignableFrom(t, typeof(List<object>)))
             return TableToList(table, v => v.ToObject());
-        if (Framework.Do.IsAssignableFrom(t, typeof(List<DynValue>)))
+        if (Framework.Do.IsAssignableFrom(t, typeof(List<LuaValue>)))
             return TableToList(table, v => v);
         if (Framework.Do.IsAssignableFrom(t, typeof(object[])))
             return TableToList(table, v => v.ToObject()).ToArray();
-        if (Framework.Do.IsAssignableFrom(t, typeof(DynValue[])))
+        if (Framework.Do.IsAssignableFrom(t, typeof(LuaValue[])))
             return TableToList(table, v => v).ToArray();
 
         if (Framework.Do.IsGenericType(t))
@@ -136,8 +136,8 @@ internal static class TableConversions
 
         foreach (var kvp in table)
         {
-            var key = ScriptToClrConversions.DynValueToObjectOfType(kvp.Key, keyType, null, false);
-            var val = ScriptToClrConversions.DynValueToObjectOfType(kvp.Value, valueType, null, false);
+            var key = ScriptToClrConversions.LuaValueToObjectOfType(kvp.Key, keyType, null, false);
+            var val = ScriptToClrConversions.LuaValueToObjectOfType(kvp.Value, valueType, null, false);
 
             dic.Add(key, val);
         }
@@ -155,7 +155,7 @@ internal static class TableConversions
         for (int i = 1, l = table.Length; i <= l; i++)
         {
             var v = table.Get(i);
-            var o = ScriptToClrConversions.DynValueToObjectOfType(v, itemType, null, false);
+            var o = ScriptToClrConversions.LuaValueToObjectOfType(v, itemType, null, false);
             lst.Add(o);
         }
 
@@ -184,7 +184,7 @@ internal static class TableConversions
         for (int i = 1, l = table.Length; i <= l; i++)
         {
             var v = table.Get(i);
-            var o = ScriptToClrConversions.DynValueToObjectOfType(v, itemType, null, false);
+            var o = ScriptToClrConversions.LuaValueToObjectOfType(v, itemType, null, false);
             lst.Add(o);
         }
 
@@ -194,7 +194,7 @@ internal static class TableConversions
     /// <summary>
     ///     Converts a table to a <see cref="List{T}" />, known in advance
     /// </summary>
-    internal static List<T> TableToList<T>(Table table, Func<DynValue, T> converter)
+    internal static List<T> TableToList<T>(Table table, Func<LuaValue, T> converter)
     {
         List<T> lst = new();
 
@@ -211,8 +211,8 @@ internal static class TableConversions
     /// <summary>
     ///     Converts a table to a Dictionary, known in advance
     /// </summary>
-    internal static Dictionary<TK, TV> TableToDictionary<TK, TV>(Table table, Func<DynValue, TK> keyconverter,
-        Func<DynValue, TV> valconverter)
+    internal static Dictionary<TK, TV> TableToDictionary<TK, TV>(Table table, Func<LuaValue, TK> keyconverter,
+        Func<LuaValue, TV> valconverter)
     {
         Dictionary<TK, TV> dict = new();
 

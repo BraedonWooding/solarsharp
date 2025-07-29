@@ -78,7 +78,7 @@ internal class FunctionCallExpression : Expression
         if (!string.IsNullOrEmpty(m_Name))
         {
             bc.Emit_Copy(0);
-            bc.Emit_Index(DynValue.NewString(m_Name), true);
+            bc.Emit_Index(LuaValue.NewString(m_Name), true);
             bc.Emit_Swap(0, 1);
             ++argslen;
         }
@@ -92,7 +92,7 @@ internal class FunctionCallExpression : Expression
             bc.Emit_Call(argslen, m_DebugErr);
     }
 
-    public override DynValue Eval(ScriptExecutionContext context)
+    public override LuaValue Eval(ScriptExecutionContext context)
     {
         throw new DynamicExpressionException("Dynamic Expressions cannot call functions.");
     }

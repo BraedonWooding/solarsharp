@@ -16,27 +16,27 @@ internal static class ClrToScriptConversions
     ///     Skips on custom conversions, etc.
     ///     Does NOT throw on failure.
     /// </summary>
-    internal static DynValue TryObjectToTrivialDynValue(Script script, object obj)
+    internal static LuaValue TryObjectToTrivialLuaValue(Script script, object obj)
     {
         if (obj == null)
-            return DynValue.Nil;
+            return LuaValue.Nil;
 
-        if (obj is DynValue)
-            return (DynValue)obj;
+        if (obj is LuaValue)
+            return (LuaValue)obj;
 
         var t = obj.GetType();
 
         if (obj is bool)
-            return DynValue.NewBoolean((bool)obj);
+            return LuaValue.NewBoolean((bool)obj);
 
         if (obj is string || obj is StringBuilder || obj is char)
-            return DynValue.NewString(obj.ToString());
+            return LuaValue.NewString(obj.ToString());
 
         if (NumericConversions.NumericTypes.Contains(t))
-            return DynValue.NewNumber(NumericConversions.TypeToDouble(t, obj));
+            return LuaValue.NewNumber(NumericConversions.TypeToDouble(t, obj));
 
         if (obj is Table)
-            return DynValue.NewTable((Table)obj);
+            return LuaValue.NewTable((Table)obj);
 
         return null;
     }
@@ -46,13 +46,13 @@ internal static class ClrToScriptConversions
     ///     Tries to convert a CLR object to a SolarSharp value, using "simple" logic.
     ///     Does NOT throw on failure.
     /// </summary>
-    internal static DynValue TryObjectToSimpleDynValue(Script script, object obj)
+    internal static LuaValue TryObjectToSimpleLuaValue(Script script, object obj)
     {
         if (obj == null)
-            return DynValue.Nil;
+            return LuaValue.Nil;
 
-        if (obj is DynValue)
-            return (DynValue)obj;
+        if (obj is LuaValue)
+            return (LuaValue)obj;
 
 
         var converter = Script.GlobalOptions.CustomConverters.GetClrToScriptCustomConversion(obj.GetType());
@@ -63,22 +63,22 @@ internal static class ClrToScriptConversions
         var t = obj.GetType();
 
         if (obj is bool)
-            return DynValue.NewBoolean((bool)obj);
+            return LuaValue.NewBoolean((bool)obj);
 
         if (obj is string || obj is StringBuilder || obj is char)
-            return DynValue.NewString(obj.ToString());
+            return LuaValue.NewString(obj.ToString());
 
         if (obj is Closure)
-            return DynValue.NewClosure((Closure)obj);
+            return LuaValue.NewClosure((Closure)obj);
 
         if (NumericConversions.NumericTypes.Contains(t))
-            return DynValue.NewNumber(NumericConversions.TypeToDouble(t, obj));
+            return LuaValue.NewNumber(NumericConversions.TypeToDouble(t, obj));
 
         if (obj is Table)
-            return DynValue.NewTable((Table)obj);
+            return LuaValue.NewTable((Table)obj);
 
         if (obj is CallbackFunction)
-            return DynValue.NewCallback((CallbackFunction)obj);
+            return LuaValue.NewCallback((CallbackFunction)obj);
 
         if (obj is Delegate)
         {
@@ -92,7 +92,7 @@ internal static class ClrToScriptConversions
 #endif
 
             if (CallbackFunction.CheckCallbackSignature(mi, false))
-                return DynValue.NewCallback((Func<ScriptExecutionContext, CallbackArguments, DynValue>)d);
+                return LuaValue.NewCallback((Func<ScriptExecutionContext, CallbackArguments, LuaValue>)d);
         }
 
         return null;
@@ -102,9 +102,9 @@ internal static class ClrToScriptConversions
     /// <summary>
     ///     Tries to convert a CLR object to a SolarSharp value, using more in-depth analysis
     /// </summary>
-    internal static DynValue ObjectToDynValue(Script script, object obj)
+    internal static LuaValue ObjectToLuaValue(Script script, object obj)
     {
-        var v = TryObjectToSimpleDynValue(script, obj);
+        var v = TryObjectToSimpleLuaValue(script, obj);
 
         if (v != null) return v;
 
@@ -116,33 +116,33 @@ internal static class ClrToScriptConversions
 
         // unregistered enums go as integers
         if (obj is Enum)
-            return DynValue.NewNumber(NumericConversions.TypeToDouble(Enum.GetUnderlyingType(obj.GetType()), obj));
+            return LuaValue.NewNumber(NumericConversions.TypeToDouble(Enum.GetUnderlyingType(obj.GetType()), obj));
 
         if (v != null) return v;
 
         if (obj is Delegate)
-            return DynValue.NewCallback(CallbackFunction.FromDelegate(script, (Delegate)obj));
+            return LuaValue.NewCallback(CallbackFunction.FromDelegate(script, (Delegate)obj));
 
         if (obj is MethodInfo)
         {
             var mi = (MethodInfo)obj;
 
-            if (mi.IsStatic) return DynValue.NewCallback(CallbackFunction.FromMethodInfo(script, mi));
+            if (mi.IsStatic) return LuaValue.NewCallback(CallbackFunction.FromMethodInfo(script, mi));
         }
 
         if (obj is IList)
         {
             var t = TableConversions.ConvertIListToTable(script, (IList)obj);
-            return DynValue.NewTable(t);
+            return LuaValue.NewTable(t);
         }
 
         if (obj is IDictionary)
         {
             var t = TableConversions.ConvertIDictionaryToTable(script, (IDictionary)obj);
-            return DynValue.NewTable(t);
+            return LuaValue.NewTable(t);
         }
 
-        var enumerator = EnumerationToDynValue(script, obj);
+        var enumerator = EnumerationToLuaValue(script, obj);
         if (enumerator != null) return enumerator;
 
 
@@ -150,12 +150,12 @@ internal static class ClrToScriptConversions
     }
 
     /// <summary>
-    ///     Converts an IEnumerable or IEnumerator to a DynValue
+    ///     Converts an IEnumerable or IEnumerator to a LuaValue
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object.</param>
     /// <returns></returns>
-    public static DynValue EnumerationToDynValue(Script script, object obj)
+    public static LuaValue EnumerationToLuaValue(Script script, object obj)
     {
         if (obj is IEnumerable)
         {

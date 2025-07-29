@@ -12,7 +12,7 @@ namespace SolarSharp.Interpreter.DataTypes;
 /// <summary>
 ///     A class representing a value in a Lua/SolarSharp script.
 /// </summary>
-public sealed class DynValue
+public sealed class LuaValue
 {
     private static int s_RefIDCounter;
 
@@ -20,17 +20,17 @@ public sealed class DynValue
 
     private object m_Object;
 
-    static DynValue()
+    static LuaValue()
     {
-        Nil = new DynValue { Type = DataType.Nil }.AsReadOnly();
-        Void = new DynValue { Type = DataType.Void }.AsReadOnly();
+        Nil = new LuaValue { Type = DataType.Nil }.AsReadOnly();
+        Void = new LuaValue { Type = DataType.Void }.AsReadOnly();
         True = NewBoolean(true).AsReadOnly();
         False = NewBoolean(false).AsReadOnly();
     }
 
 
     /// <summary>
-    ///     Gets a unique reference identifier. This is guaranteed to be unique only for dynvalues created in a single thread
+    ///     Gets a unique reference identifier. This is guaranteed to be unique only for LuaValues created in a single thread
     ///     as it's not thread-safe.
     /// </summary>
     public int ReferenceID { get; } = ++s_RefIDCounter;
@@ -55,7 +55,7 @@ public sealed class DynValue
     ///     This field is currently also used to hold arguments in values whose <see cref="Type" /> is
     ///     <see cref="DataType.TailCallRequest" />.
     /// </summary>
-    public DynValue[] Tuple => m_Object as DynValue[];
+    public LuaValue[] Tuple => m_Object as LuaValue[];
 
     /// <summary>
     ///     Gets the coroutine handle. (valid only if the <see cref="Type" /> is Thread).
@@ -100,37 +100,37 @@ public sealed class DynValue
     /// <summary>
     ///     A preinitialized, readonly instance, equaling Void
     /// </summary>
-    public static DynValue Void { get; }
+    public static LuaValue Void { get; }
 
     /// <summary>
     ///     A preinitialized, readonly instance, equaling Nil
     /// </summary>
-    public static DynValue Nil { get; private set; }
+    public static LuaValue Nil { get; private set; }
 
     /// <summary>
     ///     A preinitialized, readonly instance, equaling True
     /// </summary>
-    public static DynValue True { get; private set; }
+    public static LuaValue True { get; private set; }
 
     /// <summary>
     ///     A preinitialized, readonly instance, equaling False
     /// </summary>
-    public static DynValue False { get; private set; }
+    public static LuaValue False { get; private set; }
 
     /// <summary>
     ///     Creates a new writable value initialized to Nil.
     /// </summary>
-    public static DynValue NewNil()
+    public static LuaValue NewNil()
     {
-        return new DynValue();
+        return new LuaValue();
     }
 
     /// <summary>
     ///     Creates a new writable value initialized to the specified boolean.
     /// </summary>
-    public static DynValue NewBoolean(bool v)
+    public static LuaValue NewBoolean(bool v)
     {
-        return new DynValue
+        return new LuaValue
         {
             Number = v ? 1 : 0,
             Type = DataType.Boolean
@@ -140,9 +140,9 @@ public sealed class DynValue
     /// <summary>
     ///     Creates a new writable value initialized to the specified number.
     /// </summary>
-    public static DynValue NewNumber(double num)
+    public static LuaValue NewNumber(double num)
     {
-        return new DynValue
+        return new LuaValue
         {
             Number = num,
             Type = DataType.Number
@@ -152,9 +152,9 @@ public sealed class DynValue
     /// <summary>
     ///     Creates a new writable value initialized to the specified string.
     /// </summary>
-    public static DynValue NewString(string str)
+    public static LuaValue NewString(string str)
     {
-        return new DynValue
+        return new LuaValue
         {
             m_Object = str,
             Type = DataType.String
@@ -164,9 +164,9 @@ public sealed class DynValue
     /// <summary>
     ///     Creates a new writable value initialized to the specified StringBuilder.
     /// </summary>
-    public static DynValue NewString(StringBuilder sb)
+    public static LuaValue NewString(StringBuilder sb)
     {
-        return new DynValue
+        return new LuaValue
         {
             m_Object = sb.ToString(),
             Type = DataType.String
@@ -176,9 +176,9 @@ public sealed class DynValue
     /// <summary>
     ///     Creates a new writable value initialized to the specified string using String.Format like syntax
     /// </summary>
-    public static DynValue NewString(string format, params object[] args)
+    public static LuaValue NewString(string format, params object[] args)
     {
-        return new DynValue
+        return new LuaValue
         {
             m_Object = string.Format(format, args),
             Type = DataType.String
@@ -191,9 +191,9 @@ public sealed class DynValue
     /// </summary>
     /// <param name="coroutine">The coroutine object.</param>
     /// <returns></returns>
-    public static DynValue NewCoroutine(Coroutine coroutine)
+    public static LuaValue NewCoroutine(Coroutine coroutine)
     {
-        return new DynValue
+        return new LuaValue
         {
             m_Object = coroutine,
             Type = DataType.Thread
@@ -203,9 +203,9 @@ public sealed class DynValue
     /// <summary>
     ///     Creates a new writable value initialized to the specified closure (function).
     /// </summary>
-    public static DynValue NewClosure(Closure function)
+    public static LuaValue NewClosure(Closure function)
     {
-        return new DynValue
+        return new LuaValue
         {
             m_Object = function,
             Type = DataType.Function
@@ -215,10 +215,10 @@ public sealed class DynValue
     /// <summary>
     ///     Creates a new writable value initialized to the specified CLR callback.
     /// </summary>
-    public static DynValue NewCallback(Func<ScriptExecutionContext, CallbackArguments, DynValue> callBack,
+    public static LuaValue NewCallback(Func<ScriptExecutionContext, CallbackArguments, LuaValue> callBack,
         string name = null)
     {
-        return new DynValue
+        return new LuaValue
         {
             m_Object = new CallbackFunction(callBack, name),
             Type = DataType.ClrFunction
@@ -229,9 +229,9 @@ public sealed class DynValue
     ///     Creates a new writable value initialized to the specified CLR callback.
     ///     See also CallbackFunction.FromDelegate and CallbackFunction.FromMethodInfo factory methods.
     /// </summary>
-    public static DynValue NewCallback(CallbackFunction function)
+    public static LuaValue NewCallback(CallbackFunction function)
     {
-        return new DynValue
+        return new LuaValue
         {
             m_Object = function,
             Type = DataType.ClrFunction
@@ -241,9 +241,9 @@ public sealed class DynValue
     /// <summary>
     ///     Creates a new writable value initialized to the specified table.
     /// </summary>
-    public static DynValue NewTable(Table table)
+    public static LuaValue NewTable(Table table)
     {
-        return new DynValue
+        return new LuaValue
         {
             m_Object = table,
             Type = DataType.Table
@@ -255,7 +255,7 @@ public sealed class DynValue
     ///     prime table is a table made only of numbers, strings, booleans and other
     ///     prime tables).
     /// </summary>
-    public static DynValue NewPrimeTable()
+    public static LuaValue NewPrimeTable()
     {
         return NewTable(new Table(null));
     }
@@ -263,7 +263,7 @@ public sealed class DynValue
     /// <summary>
     ///     Creates a new writable value initialized to an empty table.
     /// </summary>
-    public static DynValue NewTable(Script script, int arraySizeHint = 0, int associativeSizeHint = 0)
+    public static LuaValue NewTable(Script script, int arraySizeHint = 0, int associativeSizeHint = 0)
     {
         return NewTable(new Table(script, arraySizeHint, associativeSizeHint));
     }
@@ -271,7 +271,7 @@ public sealed class DynValue
     /// <summary>
     ///     Creates a new writable value initialized to with array contents.
     /// </summary>
-    public static DynValue NewTable(Script script, params DynValue[] arrayValues)
+    public static LuaValue NewTable(Script script, params LuaValue[] arrayValues)
     {
         return NewTable(new Table(script, arrayValues));
     }
@@ -286,9 +286,9 @@ public sealed class DynValue
     /// <param name="tailFn">The function to be called.</param>
     /// <param name="args">The arguments.</param>
     /// <returns></returns>
-    public static DynValue NewTailCallReq(DynValue tailFn, params DynValue[] args)
+    public static LuaValue NewTailCallReq(LuaValue tailFn, params LuaValue[] args)
     {
-        return new DynValue
+        return new LuaValue
         {
             m_Object = new TailCallData
             {
@@ -308,9 +308,9 @@ public sealed class DynValue
     /// </summary>
     /// <param name="tailCallData">The data for the tail call.</param>
     /// <returns></returns>
-    public static DynValue NewTailCallReq(TailCallData tailCallData)
+    public static LuaValue NewTailCallReq(TailCallData tailCallData)
     {
-        return new DynValue
+        return new LuaValue
         {
             m_Object = tailCallData,
             Type = DataType.TailCallRequest
@@ -323,9 +323,9 @@ public sealed class DynValue
     /// </summary>
     /// <param name="args">The yield argumenst.</param>
     /// <returns></returns>
-    public static DynValue NewYieldReq(DynValue[] args)
+    public static LuaValue NewYieldReq(LuaValue[] args)
     {
-        return new DynValue
+        return new LuaValue
         {
             m_Object = new YieldRequest { ReturnValues = args },
             Type = DataType.YieldRequest
@@ -335,7 +335,7 @@ public sealed class DynValue
     /// <summary>
     ///     Creates a new tuple initialized to the specified values.
     /// </summary>
-    public static DynValue NewTuple(params DynValue[] values)
+    public static LuaValue NewTuple(params LuaValue[] values)
     {
         if (values.Length == 0)
             return NewNil();
@@ -343,7 +343,7 @@ public sealed class DynValue
         if (values.Length == 1)
             return values[0];
 
-        return new DynValue
+        return new LuaValue
         {
             m_Object = values,
             Type = DataType.Tuple
@@ -353,7 +353,7 @@ public sealed class DynValue
     /// <summary>
     ///     Creates a new tuple initialized to the specified values - which can be potentially other tuples
     /// </summary>
-    public static DynValue NewTupleNested(params DynValue[] values)
+    public static LuaValue NewTupleNested(params LuaValue[] values)
     {
         if (!values.Any(v => v.Type == DataType.Tuple))
             return NewTuple(values);
@@ -361,7 +361,7 @@ public sealed class DynValue
         if (values.Length == 1)
             return values[0];
 
-        List<DynValue> vals = new();
+        List<LuaValue> vals = new();
 
         foreach (var v in values)
             if (v.Type == DataType.Tuple)
@@ -369,7 +369,7 @@ public sealed class DynValue
             else
                 vals.Add(v);
 
-        return new DynValue
+        return new LuaValue
         {
             m_Object = vals.ToArray(),
             Type = DataType.Tuple
@@ -380,9 +380,9 @@ public sealed class DynValue
     /// <summary>
     ///     Creates a new userdata value
     /// </summary>
-    public static DynValue NewUserData(UserData userData)
+    public static LuaValue NewUserData(UserData userData)
     {
-        return new DynValue
+        return new LuaValue
         {
             m_Object = userData,
             Type = DataType.UserData
@@ -392,7 +392,7 @@ public sealed class DynValue
     /// <summary>
     ///     Returns this value as readonly - eventually cloning it in the process if it isn't readonly to start with.
     /// </summary>
-    public DynValue AsReadOnly()
+    public LuaValue AsReadOnly()
     {
         return Clone();
     }
@@ -402,9 +402,9 @@ public sealed class DynValue
     /// </summary>
     /// <param name="readOnly">if set to <c>true</c> the new instance is set as readonly, or writeable otherwise.</param>
     /// <returns></returns>
-    public DynValue Clone()
+    public LuaValue Clone()
     {
-        DynValue v = new()
+        LuaValue v = new()
         {
             m_Object = m_Object,
             Number = Number,
@@ -418,7 +418,7 @@ public sealed class DynValue
     ///     Clones this instance, returning a writable copy.
     /// </summary>
     /// <exception cref="ArgumentException">Can't clone Symbol values</exception>
-    public DynValue CloneAsWritable()
+    public LuaValue CloneAsWritable()
     {
         return Clone();
     }
@@ -559,7 +559,7 @@ public sealed class DynValue
     /// </returns>
     public override bool Equals(object obj)
     {
-        if (obj is not DynValue other)
+        if (obj is not LuaValue other)
             switch (Type)
             {
                 case DataType.Void:
@@ -627,7 +627,7 @@ public sealed class DynValue
 
 
     /// <summary>
-    ///     Casts this DynValue to string, using coercion if the type is number.
+    ///     Casts this LuaValue to string, using coercion if the type is number.
     /// </summary>
     /// <returns>The string representation, or null if not number, not string.</returns>
     public string CastToString()
@@ -640,7 +640,7 @@ public sealed class DynValue
     }
 
     /// <summary>
-    ///     Casts this DynValue to a double, using coercion if the type is string.
+    ///     Casts this LuaValue to a double, using coercion if the type is string.
     /// </summary>
     /// <returns>The string representation, or null if not number, not string or non-convertible-string.</returns>
     public double? CastToNumber()
@@ -656,7 +656,7 @@ public sealed class DynValue
 
 
     /// <summary>
-    ///     Casts this DynValue to a bool
+    ///     Casts this LuaValue to a bool
     /// </summary>
     /// <returns>False if value is false or nil, true otherwise.</returns>
     public bool CastToBool()
@@ -668,7 +668,7 @@ public sealed class DynValue
     }
 
     /// <summary>
-    ///     Returns this DynValue as an instance of <see cref="IScriptPrivateResource" />, if possible,
+    ///     Returns this LuaValue as an instance of <see cref="IScriptPrivateResource" />, if possible,
     ///     null otherwise
     /// </summary>
     /// <returns>False if value is false or nil, true otherwise.</returns>
@@ -680,7 +680,7 @@ public sealed class DynValue
     /// <summary>
     ///     Converts a tuple to a scalar value. If it's already a scalar value, this function returns "this".
     /// </summary>
-    public DynValue ToScalar()
+    public LuaValue ToScalar()
     {
         if (Type != DataType.Tuple)
             return this;
@@ -696,7 +696,7 @@ public sealed class DynValue
     /// </summary>
     /// <param name="value">The value.</param>
     /// <exception cref="ScriptRuntimeException">If the value is readonly.</exception>
-    public void Assign(DynValue value)
+    public void Assign(LuaValue value)
     {
         Number = value.Number;
         m_Object = value.m_Object;
@@ -712,7 +712,7 @@ public sealed class DynValue
     /// </summary>
     /// <returns></returns>
     /// <exception cref="ScriptRuntimeException">Value is not a table or string.</exception>
-    public DynValue GetLength()
+    public LuaValue GetLength()
     {
         if (Type == DataType.Table)
             return NewNumber(Table.Length);
@@ -763,7 +763,7 @@ public sealed class DynValue
     }
 
     /// <summary>
-    ///     Changes the numeric value of a number DynValue.
+    ///     Changes the numeric value of a number LuaValue.
     /// </summary>
     internal void AssignNumber(double num)
     {
@@ -774,35 +774,35 @@ public sealed class DynValue
     }
 
     /// <summary>
-    ///     Creates a new DynValue from a CLR object
+    ///     Creates a new LuaValue from a CLR object
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object.</param>
     /// <returns></returns>
-    public static DynValue FromObject(Script script, object obj)
+    public static LuaValue FromObject(Script script, object obj)
     {
-        return ClrToScriptConversions.ObjectToDynValue(script, obj);
+        return ClrToScriptConversions.ObjectToLuaValue(script, obj);
     }
 
     /// <summary>
-    ///     Converts this SolarSharp DynValue to a CLR object.
+    ///     Converts this SolarSharp LuaValue to a CLR object.
     /// </summary>
     public object ToObject()
     {
-        return ScriptToClrConversions.DynValueToObject(this);
+        return ScriptToClrConversions.LuaValueToObject(this);
     }
 
     /// <summary>
-    ///     Converts this SolarSharp DynValue to a CLR object of the specified type.
+    ///     Converts this SolarSharp LuaValue to a CLR object of the specified type.
     /// </summary>
     public object ToObject(Type desiredType)
     {
         //Contract.Requires(desiredType != null);
-        return ScriptToClrConversions.DynValueToObjectOfType(this, desiredType, null, false);
+        return ScriptToClrConversions.LuaValueToObjectOfType(this, desiredType, null, false);
     }
 
     /// <summary>
-    ///     Converts this SolarSharp DynValue to a CLR object of the specified type.
+    ///     Converts this SolarSharp LuaValue to a CLR object of the specified type.
     /// </summary>
     public T ToObject<T>()
     {
@@ -813,11 +813,11 @@ public sealed class DynValue
     }
 
     /// <summary>
-    ///     Converts this SolarSharp DynValue to a CLR object, marked as dynamic
+    ///     Converts this SolarSharp LuaValue to a CLR object, marked as dynamic
     /// </summary>
     public dynamic ToDynamic()
     {
-        return ScriptToClrConversions.DynValueToObject(this);
+        return ScriptToClrConversions.LuaValueToObject(this);
     }
 
     /// <summary>
@@ -835,7 +835,7 @@ public sealed class DynValue
     ///     if the value is not of the specified type or - considering the TypeValidationFlags - is not convertible
     ///     to the specified type.
     /// </exception>
-    public DynValue CheckType(string funcName, DataType desiredType, int argNum = -1,
+    public LuaValue CheckType(string funcName, DataType desiredType, int argNum = -1,
         TypeValidationFlags flags = TypeValidationFlags.Default)
     {
         if (Type == desiredType)

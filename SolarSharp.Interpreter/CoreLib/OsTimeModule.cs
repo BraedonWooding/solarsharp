@@ -17,14 +17,14 @@ public class OsTimeModule
     private static readonly DateTime Time0 = DateTime.UtcNow;
     private static readonly DateTime Epoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-    private static DynValue GetUnixTime(DateTime dateTime, DateTime? epoch = null)
+    private static LuaValue GetUnixTime(DateTime dateTime, DateTime? epoch = null)
     {
         var time = (dateTime - (epoch ?? Epoch)).TotalSeconds;
 
         if (time < 0.0)
-            return DynValue.Nil;
+            return LuaValue.Nil;
 
-        return DynValue.NewNumber(time);
+        return LuaValue.NewNumber(time);
     }
 
     private static DateTime FromUnixTime(double unixtime)
@@ -35,28 +35,28 @@ public class OsTimeModule
 
     [SolarSharpModuleMethod]
 #pragma warning disable IDE0060 // Remove unused parameter
-    public static DynValue clock(ScriptExecutionContext _, CallbackArguments _args)
+    public static LuaValue clock(ScriptExecutionContext _, CallbackArguments _args)
 #pragma warning restore IDE0060 // Remove unused parameter
     {
         var t = GetUnixTime(DateTime.UtcNow, Time0);
-        if (t.IsNil()) return DynValue.NewNumber(0.0);
+        if (t.IsNil()) return LuaValue.NewNumber(0.0);
         return t;
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue difftime(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue difftime(ScriptExecutionContext _, CallbackArguments args)
     {
         var t2 = args.AsType(0, "difftime", DataType.Number);
         var t1 = args.AsType(1, "difftime", DataType.Number, true);
 
         if (t1.IsNil())
-            return DynValue.NewNumber(t2.Number);
+            return LuaValue.NewNumber(t2.Number);
 
-        return DynValue.NewNumber(t2.Number - t1.Number);
+        return LuaValue.NewNumber(t2.Number - t1.Number);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue time(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue time(ScriptExecutionContext _, CallbackArguments args)
     {
         var date = DateTime.UtcNow;
 
@@ -104,7 +104,7 @@ public class OsTimeModule
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue date(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue date(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var reference = DateTime.UtcNow;
 
@@ -144,20 +144,20 @@ public class OsTimeModule
         {
             Table t = new(executionContext.GetScript());
 
-            t.Set("year", DynValue.NewNumber(reference.Year));
-            t.Set("month", DynValue.NewNumber(reference.Month));
-            t.Set("day", DynValue.NewNumber(reference.Day));
-            t.Set("hour", DynValue.NewNumber(reference.Hour));
-            t.Set("min", DynValue.NewNumber(reference.Minute));
-            t.Set("sec", DynValue.NewNumber(reference.Second));
-            t.Set("wday", DynValue.NewNumber((int)reference.DayOfWeek + 1));
-            t.Set("yday", DynValue.NewNumber(reference.DayOfYear));
-            t.Set("isdst", DynValue.NewBoolean(isDst));
+            t.Set("year", LuaValue.NewNumber(reference.Year));
+            t.Set("month", LuaValue.NewNumber(reference.Month));
+            t.Set("day", LuaValue.NewNumber(reference.Day));
+            t.Set("hour", LuaValue.NewNumber(reference.Hour));
+            t.Set("min", LuaValue.NewNumber(reference.Minute));
+            t.Set("sec", LuaValue.NewNumber(reference.Second));
+            t.Set("wday", LuaValue.NewNumber((int)reference.DayOfWeek + 1));
+            t.Set("yday", LuaValue.NewNumber(reference.DayOfYear));
+            t.Set("isdst", LuaValue.NewBoolean(isDst));
 
-            return DynValue.NewTable(t);
+            return LuaValue.NewTable(t);
         }
 
-        return DynValue.NewString(StrFTime(format, reference));
+        return LuaValue.NewString(StrFTime(format, reference));
     }
 
     private static string StrFTime(string format, DateTime d)

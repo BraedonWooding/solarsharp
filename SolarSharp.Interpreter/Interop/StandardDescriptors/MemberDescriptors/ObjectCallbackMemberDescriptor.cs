@@ -20,7 +20,7 @@ public class ObjectCallbackMemberDescriptor : FunctionMemberDescriptorBase
     /// </summary>
     /// <param name="funcName">Name of the function.</param>
     public ObjectCallbackMemberDescriptor(string funcName)
-        : this(funcName, (_, _, _) => DynValue.Void, [])
+        : this(funcName, (_, _, _) => LuaValue.Void, [])
     {
     }
 
@@ -61,14 +61,14 @@ public class ObjectCallbackMemberDescriptor : FunctionMemberDescriptorBase
     /// <param name="context">The context.</param>
     /// <param name="args">The arguments.</param>
     /// <returns></returns>
-    public override DynValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
+    public override LuaValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args)
     {
         if (m_CallbackFunc != null)
         {
             var retv = m_CallbackFunc(obj, context, args);
-            return ClrToScriptConversions.ObjectToDynValue(script, retv);
+            return ClrToScriptConversions.ObjectToLuaValue(script, retv);
         }
 
-        return DynValue.Void;
+        return LuaValue.Void;
     }
 }

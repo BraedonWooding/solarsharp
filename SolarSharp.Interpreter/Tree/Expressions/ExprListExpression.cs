@@ -30,11 +30,11 @@ internal class ExprListExpression : Expression
             bc.Emit_MkTuple(expressions.Count);
     }
 
-    public override DynValue Eval(ScriptExecutionContext context)
+    public override LuaValue Eval(ScriptExecutionContext context)
     {
         if (expressions.Count >= 1)
             return expressions[0].Eval(context);
 
-        return DynValue.Void;
+        return LuaValue.Void;
     }
 }

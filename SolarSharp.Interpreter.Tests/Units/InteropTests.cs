@@ -8,7 +8,7 @@ namespace SolarSharp.Interpreter.Tests.Units
         [Test]
         public void Converter_FromObject()
         {
-            //DynValue v;
+            //LuaValue v;
             //int? x = 3;
             //int? y = null;
 

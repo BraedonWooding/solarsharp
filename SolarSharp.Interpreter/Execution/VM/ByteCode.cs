@@ -109,7 +109,7 @@ internal class ByteCode : RefIdObject
             { OpCode = OpCode.ThisCall, NumVal = argCount, Name = debugName });
     }
 
-    public Instruction Emit_Literal(DynValue value)
+    public Instruction Emit_Literal(LuaValue value)
     {
         return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.Literal, Value = value });
     }
@@ -218,7 +218,7 @@ internal class ByteCode : RefIdObject
         return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.IterUpd });
     }
 
-    public Instruction Emit_Meta(string funcName, OpCodeMetadataType metaType, DynValue value = null)
+    public Instruction Emit_Meta(string funcName, OpCodeMetadataType metaType, LuaValue value = null)
     {
         return AppendInstruction(new Instruction(m_CurrentSourceRef)
         {
@@ -253,7 +253,7 @@ internal class ByteCode : RefIdObject
             case SymbolRefType.Global:
                 Emit_Load(sym.i_Env);
                 AppendInstruction(new Instruction(m_CurrentSourceRef)
-                    { OpCode = OpCode.Index, Value = DynValue.NewString(sym.i_Name) });
+                    { OpCode = OpCode.Index, Value = LuaValue.NewString(sym.i_Name) });
                 return 2;
             case SymbolRefType.Local:
                 AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.Local, Symbol = sym });
@@ -275,7 +275,7 @@ internal class ByteCode : RefIdObject
                 AppendInstruction(new Instruction(m_CurrentSourceRef)
                 {
                     OpCode = OpCode.IndexSet, Symbol = sym, NumVal = stackofs, NumVal2 = tupleidx,
-                    Value = DynValue.NewString(sym.i_Name)
+                    Value = LuaValue.NewString(sym.i_Name)
                 });
                 return 2;
             case SymbolRefType.Local:
@@ -301,7 +301,7 @@ internal class ByteCode : RefIdObject
         return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = OpCode.TblInitI, NumVal = idx });
     }
 
-    public Instruction Emit_Index(DynValue index = null, bool isNameIndex = false, bool isExpList = false)
+    public Instruction Emit_Index(LuaValue index = null, bool isNameIndex = false, bool isExpList = false)
     {
         OpCode o;
         if (isNameIndex) o = OpCode.IndexN;
@@ -310,7 +310,7 @@ internal class ByteCode : RefIdObject
         return AppendInstruction(new Instruction(m_CurrentSourceRef) { OpCode = o, Value = index });
     }
 
-    public Instruction Emit_IndexSet(int stackofs, int tupleidx, DynValue index = null, bool isNameIndex = false,
+    public Instruction Emit_IndexSet(int stackofs, int tupleidx, LuaValue index = null, bool isNameIndex = false,
         bool isExpList = false)
     {
         OpCode o;

@@ -13,7 +13,7 @@ namespace SolarSharp.Interpreter.CoreLib;
 public class CoroutineModule
 {
     [SolarSharpModuleMethod]
-    public static DynValue create(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue create(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         if (args[0].Type != DataType.Function && args[0].Type != DataType.ClrFunction)
             args.AsType(0, "create", DataType.Function); // this throws
@@ -22,18 +22,18 @@ public class CoroutineModule
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue wrap(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue wrap(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         if (args[0].Type != DataType.Function && args[0].Type != DataType.ClrFunction)
             args.AsType(0, "wrap", DataType.Function); // this throws
 
         var v = create(executionContext, args);
-        var c = DynValue.NewCallback((_, args) => v.Coroutine.Resume(args.GetArray()));
+        var c = LuaValue.NewCallback((_, args) => v.Coroutine.Resume(args.GetArray()));
         return c;
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue resume(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue resume(ScriptExecutionContext _, CallbackArguments args)
     {
         var handle = args.AsType(0, "resume", DataType.Thread);
 
@@ -41,7 +41,7 @@ public class CoroutineModule
         {
             var ret = handle.Coroutine.Resume(args.GetArray(1));
 
-            List<DynValue> retval = [DynValue.True];
+            List<LuaValue> retval = [LuaValue.True];
 
             if (ret.Type == DataType.Tuple)
                 for (var i = 0; i < ret.Tuple.Length; i++)
@@ -56,31 +56,31 @@ public class CoroutineModule
             else
                 retval.Add(ret);
 
-            return DynValue.NewTuple(retval.ToArray());
+            return LuaValue.NewTuple(retval.ToArray());
         }
         catch (ScriptRuntimeException ex)
         {
-            return DynValue.NewTuple(
-                DynValue.False,
-                DynValue.NewString(ex.Message));
+            return LuaValue.NewTuple(
+                LuaValue.False,
+                LuaValue.NewString(ex.Message));
         }
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue yield(ScriptExecutionContext _, CallbackArguments args)
+    public static LuaValue yield(ScriptExecutionContext _, CallbackArguments args)
     {
-        return DynValue.NewYieldReq(args.GetArray());
+        return LuaValue.NewYieldReq(args.GetArray());
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue running(ScriptExecutionContext executionContext, CallbackArguments _)
+    public static LuaValue running(ScriptExecutionContext executionContext, CallbackArguments _)
     {
         var C = executionContext.GetCallingCoroutine();
-        return DynValue.NewTuple(DynValue.NewCoroutine(C), DynValue.NewBoolean(C.State == CoroutineState.Main));
+        return LuaValue.NewTuple(LuaValue.NewCoroutine(C), LuaValue.NewBoolean(C.State == CoroutineState.Main));
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue status(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue status(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var handle = args.AsType(0, "status", DataType.Thread);
         var running = executionContext.GetCallingCoroutine();
@@ -90,12 +90,12 @@ public class CoroutineModule
         {
             case CoroutineState.Main:
             case CoroutineState.Running:
-                return handle.Coroutine == running ? DynValue.NewString("running") : DynValue.NewString("normal");
+                return handle.Coroutine == running ? LuaValue.NewString("running") : LuaValue.NewString("normal");
             case CoroutineState.NotStarted:
             case CoroutineState.Suspended:
-                return DynValue.NewString("suspended");
+                return LuaValue.NewString("suspended");
             case CoroutineState.Dead:
-                return DynValue.NewString("dead");
+                return LuaValue.NewString("dead");
             default:
                 throw new InternalErrorException("Unexpected coroutine state {0}", cs);
         }

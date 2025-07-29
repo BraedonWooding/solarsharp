@@ -58,12 +58,12 @@ public class EventMemberDescriptor : IMemberDescriptor
     public bool IsStatic { get; }
 
     /// <summary>
-    ///     Gets a dynvalue which is a facade supporting add/remove methods which is callable from scripts
+    ///     Gets a LuaValue which is a facade supporting add/remove methods which is callable from scripts
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object for which the facade should be written.</param>
     /// <returns></returns>
-    public DynValue GetValue(Script script, object obj)
+    public LuaValue GetValue(Script script, object obj)
     {
         this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
 
@@ -90,7 +90,7 @@ public class EventMemberDescriptor : IMemberDescriptor
     /// <param name="script">The script.</param>
     /// <param name="obj">The object.</param>
     /// <param name="v">The v.</param>
-    public void SetValue(Script script, object obj, DynValue v)
+    public void SetValue(Script script, object obj, LuaValue v)
     {
         this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
     }
@@ -202,7 +202,7 @@ public class EventMemberDescriptor : IMemberDescriptor
     }
 
 
-    internal DynValue AddCallback(object o, ScriptExecutionContext _, CallbackArguments args)
+    internal LuaValue AddCallback(object o, ScriptExecutionContext _, CallbackArguments args)
     {
         lock (m_Lock)
         {
@@ -213,11 +213,11 @@ public class EventMemberDescriptor : IMemberDescriptor
             if (m_Callbacks.Add(o, closure))
                 RegisterCallback(o);
 
-            return DynValue.Void;
+            return LuaValue.Void;
         }
     }
 
-    internal DynValue RemoveCallback(object o, ScriptExecutionContext _, CallbackArguments args)
+    internal LuaValue RemoveCallback(object o, ScriptExecutionContext _, CallbackArguments args)
     {
         lock (m_Lock)
         {
@@ -228,7 +228,7 @@ public class EventMemberDescriptor : IMemberDescriptor
             if (m_Callbacks.RemoveValue(o, closure))
                 UnregisterCallback(o);
 
-            return DynValue.Void;
+            return LuaValue.Void;
         }
     }
 

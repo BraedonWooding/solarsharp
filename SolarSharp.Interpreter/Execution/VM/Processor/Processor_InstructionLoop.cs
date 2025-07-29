@@ -13,7 +13,7 @@ internal sealed partial class Processor
 {
     private const int YIELD_SPECIAL_TRAP = -99;
 
-    private DynValue Processing_Loop(int instructionPtr)
+    private LuaValue Processing_Loop(int instructionPtr)
     {
         // This is the main loop of the processor, has a weird control flow and needs to be as fast as possible.
         // This sentence is just a convoluted way to say "don't complain about gotos".
@@ -132,7 +132,7 @@ internal sealed partial class Processor
                         ExecBeginFn(i);
                         break;
                     case OpCode.ToBool:
-                        m_ValueStack.Push(DynValue.NewBoolean(m_ValueStack.Pop().ToScalar().CastToBool()));
+                        m_ValueStack.Push(LuaValue.NewBoolean(m_ValueStack.Pop().ToScalar().CastToBool()));
                         break;
                     case OpCode.Args:
                         ExecArgs(i);
@@ -154,7 +154,7 @@ internal sealed partial class Processor
                         break;
                     case OpCode.NewTable:
                         // we pass the hints we got from the instruction args
-                        m_ValueStack.Push(DynValue.NewTable(m_Script, i.NumVal, i.NumVal2));
+                        m_ValueStack.Push(LuaValue.NewTable(m_Script, i.NumVal, i.NumVal2));
                         break;
                     case OpCode.IterPrep:
                         ExecIterPrep();
@@ -257,7 +257,7 @@ internal sealed partial class Processor
                         m_ValueStack.RemoveLast(argscnt + 1);
                     }
 
-                    DynValue[] cbargs = [DynValue.NewString(ex.DecoratedMessage)];
+                    LuaValue[] cbargs = [LuaValue.NewString(ex.DecoratedMessage)];
 
                     var handled =
                         csi.ErrorHandler.Invoke(new ScriptExecutionContext(this, GetCurrentSourceRef(instructionPtr)),
@@ -283,13 +283,13 @@ internal sealed partial class Processor
         return m_ValueStack.Pop();
     }
 
-    internal string PerformMessageDecorationBeforeUnwind(DynValue messageHandler, string decoratedMessage,
+    internal string PerformMessageDecorationBeforeUnwind(LuaValue messageHandler, string decoratedMessage,
         SourceRef sourceRef)
     {
         try
         {
-            DynValue[] args = [DynValue.NewString(decoratedMessage)];
-            var ret = DynValue.Nil;
+            LuaValue[] args = [LuaValue.NewString(decoratedMessage)];
+            var ret = LuaValue.Nil;
 
             if (messageHandler.Type == DataType.Function)
             {
@@ -317,13 +317,13 @@ internal sealed partial class Processor
         return decoratedMessage;
     }
 
-    private void AssignLocal(SymbolRef symref, DynValue value)
+    private void AssignLocal(SymbolRef symref, LuaValue value)
     {
         var stackframe = m_ExecutionStack.Peek();
 
         var v = stackframe.LocalScope[symref.i_Index];
         if (v == null)
-            stackframe.LocalScope[symref.i_Index] = v = DynValue.NewNil();
+            stackframe.LocalScope[symref.i_Index] = v = LuaValue.NewNil();
 
         v.Assign(value);
     }
@@ -345,7 +345,7 @@ internal sealed partial class Processor
 
         var v = stackframe.ClosureScope[symref.i_Index];
         if (v == null)
-            stackframe.ClosureScope[symref.i_Index] = v = DynValue.NewNil();
+            stackframe.ClosureScope[symref.i_Index] = v = LuaValue.NewNil();
 
         v.Assign(value);
     }
@@ -359,16 +359,16 @@ internal sealed partial class Processor
         m_ValueStack.Set(i.NumVal2, v1);
     }
 
-    private DynValue GetStoreValue(Instruction i)
+    private LuaValue GetStoreValue(Instruction i)
     {
         var stackofs = i.NumVal;
         var tupleidx = i.NumVal2;
 
         var v = m_ValueStack.Peek(stackofs);
 
-        if (v.Type == DataType.Tuple) return tupleidx < v.Tuple.Length ? v.Tuple[tupleidx] : DynValue.NewNil();
+        if (v.Type == DataType.Tuple) return tupleidx < v.Tuple.Length ? v.Tuple[tupleidx] : LuaValue.NewNil();
 
-        return tupleidx == 0 ? v : DynValue.NewNil();
+        return tupleidx == 0 ? v : LuaValue.NewNil();
     }
 
     private void ExecClosure(Instruction i)
@@ -376,10 +376,10 @@ internal sealed partial class Processor
         Closure c = new(m_Script, i.NumVal, i.SymbolList,
             i.SymbolList.Select(GetUpvalueSymbol).ToList());
 
-        m_ValueStack.Push(DynValue.NewClosure(c));
+        m_ValueStack.Push(LuaValue.NewClosure(c));
     }
 
-    private DynValue GetUpvalueSymbol(SymbolRef s)
+    private LuaValue GetUpvalueSymbol(SymbolRef s)
     {
         if (s.Type == SymbolRefType.Local)
             return m_ExecutionStack.Peek().LocalScope[s.i_Index];
@@ -390,18 +390,18 @@ internal sealed partial class Processor
 
     private void ExecMkTuple(Instruction i)
     {
-        Slice<DynValue> slice = new(m_ValueStack.Storage, m_ValueStack.Count - i.NumVal, i.NumVal, false);
+        Slice<LuaValue> slice = new(m_ValueStack.Storage, m_ValueStack.Count - i.NumVal, i.NumVal, false);
 
         var v = Internal_AdjustTuple(slice);
         m_ValueStack.RemoveLast(i.NumVal);
-        m_ValueStack.Push(DynValue.NewTuple(v));
+        m_ValueStack.Push(LuaValue.NewTuple(v));
     }
 
     private void ExecToNum(Instruction i)
     {
         var v = m_ValueStack.Pop().ToScalar().CastToNumber();
         if (v.HasValue)
-            m_ValueStack.Push(DynValue.NewNumber(v.Value));
+            m_ValueStack.Push(LuaValue.NewNumber(v.Value));
         else
             throw ScriptRuntimeException.ConvertToNumberFailed(i.NumVal);
     }
@@ -429,11 +429,11 @@ internal sealed partial class Processor
     {
         var v = m_ValueStack.Pop();
 
-        if (v.Type != DataType.Tuple) v = DynValue.NewTuple(v, DynValue.Nil, DynValue.Nil);
+        if (v.Type != DataType.Tuple) v = LuaValue.NewTuple(v, LuaValue.Nil, LuaValue.Nil);
 
-        var f = v.Tuple.Length >= 1 ? v.Tuple[0] : DynValue.Nil;
-        var s = v.Tuple.Length >= 2 ? v.Tuple[1] : DynValue.Nil;
-        var var = v.Tuple.Length >= 3 ? v.Tuple[2] : DynValue.Nil;
+        var f = v.Tuple.Length >= 1 ? v.Tuple[0] : LuaValue.Nil;
+        var s = v.Tuple.Length >= 2 ? v.Tuple[1] : LuaValue.Nil;
+        var var = v.Tuple.Length >= 3 ? v.Tuple[2] : LuaValue.Nil;
 
         // SolarSharp additions - given f, s, var
         // 1) if f is not a function and has a __iterator metamethod, call __iterator to get the triplet
@@ -447,11 +447,11 @@ internal sealed partial class Processor
             {
                 v = meta.Type != DataType.Tuple ? GetScript().Call(meta, f, s, var) : meta;
 
-                f = v.Tuple.Length >= 1 ? v.Tuple[0] : DynValue.Nil;
-                s = v.Tuple.Length >= 2 ? v.Tuple[1] : DynValue.Nil;
-                var = v.Tuple.Length >= 3 ? v.Tuple[2] : DynValue.Nil;
+                f = v.Tuple.Length >= 1 ? v.Tuple[0] : LuaValue.Nil;
+                s = v.Tuple.Length >= 2 ? v.Tuple[1] : LuaValue.Nil;
+                var = v.Tuple.Length >= 3 ? v.Tuple[2] : LuaValue.Nil;
 
-                m_ValueStack.Push(DynValue.NewTuple(f, s, var));
+                m_ValueStack.Push(LuaValue.NewTuple(f, s, var));
                 return;
             }
 
@@ -467,7 +467,7 @@ internal sealed partial class Processor
             }
         }
 
-        m_ValueStack.Push(DynValue.NewTuple(f, s, var));
+        m_ValueStack.Push(LuaValue.NewTuple(f, s, var));
     }
 
     private int ExecJFor(Instruction i, int instructionPtr)
@@ -504,15 +504,15 @@ internal sealed partial class Processor
             throw new InternalErrorException("CNOT had non-bool arg");
 
         if (not.CastToBool())
-            m_ValueStack.Push(DynValue.NewBoolean(!v.CastToBool()));
+            m_ValueStack.Push(LuaValue.NewBoolean(!v.CastToBool()));
         else
-            m_ValueStack.Push(DynValue.NewBoolean(v.CastToBool()));
+            m_ValueStack.Push(LuaValue.NewBoolean(v.CastToBool()));
     }
 
     private void ExecNot()
     {
         var v = m_ValueStack.Pop().ToScalar();
-        m_ValueStack.Push(DynValue.NewBoolean(!v.CastToBool()));
+        m_ValueStack.Push(LuaValue.NewBoolean(!v.CastToBool()));
     }
 
     private void ExecBeginFn(Instruction i)
@@ -520,7 +520,7 @@ internal sealed partial class Processor
         var cur = m_ExecutionStack.Peek();
 
         cur.Debug_Symbols = i.SymbolList;
-        cur.LocalScope = new DynValue[i.NumVal];
+        cur.LocalScope = new LuaValue[i.NumVal];
 
         ClearBlockData(i);
     }
@@ -533,7 +533,7 @@ internal sealed partial class Processor
         return csi;
     }
 
-    private IList<DynValue> CreateArgsListForFunctionCall(int numargs, int offsFromTop)
+    private IList<LuaValue> CreateArgsListForFunctionCall(int numargs, int offsFromTop)
     {
         if (numargs == 0) return [];
 
@@ -541,7 +541,7 @@ internal sealed partial class Processor
 
         if (lastParam.Type == DataType.Tuple && lastParam.Tuple.Length > 1)
         {
-            List<DynValue> values = [];
+            List<LuaValue> values = [];
 
             for (var idx = 0; idx < numargs - 1; idx++)
                 values.Add(m_ValueStack.Peek(numargs - idx - 1 + offsFromTop));
@@ -552,7 +552,7 @@ internal sealed partial class Processor
             return values;
         }
 
-        return new Slice<DynValue>(m_ValueStack.Storage, m_ValueStack.Count - numargs - offsFromTop, numargs, false);
+        return new Slice<LuaValue>(m_ValueStack.Storage, m_ValueStack.Count - numargs - offsFromTop, numargs, false);
     }
 
     private void ExecArgs(Instruction I)
@@ -565,16 +565,16 @@ internal sealed partial class Processor
         for (var i = 0; i < I.SymbolList.Length; i++)
             if (i >= argsList.Count)
             {
-                AssignLocal(I.SymbolList[i], DynValue.NewNil());
+                AssignLocal(I.SymbolList[i], LuaValue.NewNil());
             }
             else if (i == I.SymbolList.Length - 1 && I.SymbolList[i].i_Name == WellKnownSymbols.VARARGS)
             {
                 var len = argsList.Count - i;
-                var varargs = new DynValue[len];
+                var varargs = new LuaValue[len];
 
                 for (var ii = 0; ii < len; ii++, i++) varargs[ii] = argsList[i].ToScalar().CloneAsWritable();
 
-                AssignLocal(I.SymbolList[^1], DynValue.NewTuple(Internal_AdjustTuple(varargs)));
+                AssignLocal(I.SymbolList[^1], LuaValue.NewTuple(Internal_AdjustTuple(varargs)));
             }
             else
             {
@@ -584,7 +584,7 @@ internal sealed partial class Processor
 
     private int Internal_ExecCall(int argsCount, int instructionPtr, CallbackFunction handler = null,
         CallbackFunction continuation = null, bool thisCall = false, string debugText = null,
-        DynValue unwindHandler = null)
+        LuaValue unwindHandler = null)
     {
         var fn = m_ValueStack.Peek(argsCount);
         var flags = thisCall ? CallStackItemFlags.MethodCall : CallStackItemFlags.None;
@@ -616,10 +616,10 @@ internal sealed partial class Processor
 
         if (fn.Type == DataType.ClrFunction)
         {
-            //IList<DynValue> args = new Slice<DynValue>(m_ValueStack, m_ValueStack.Count - argsCount, argsCount, false);
+            //IList<LuaValue> args = new Slice<LuaValue>(m_ValueStack, m_ValueStack.Count - argsCount, argsCount, false);
             var args = CreateArgsListForFunctionCall(argsCount, 0);
             // we expand tuples before callbacks
-            // args = DynValue.ExpandArgumentsToList(args);
+            // args = LuaValue.ExpandArgumentsToList(args);
 
             // instructionPtr - 1: instructionPtr already points to the next instruction at this moment
             // but we need the current instruction here
@@ -648,7 +648,7 @@ internal sealed partial class Processor
 
         if (fn.Type == DataType.Function)
         {
-            m_ValueStack.Push(DynValue.NewNumber(argsCount));
+            m_ValueStack.Push(LuaValue.NewNumber(argsCount));
             m_ExecutionStack.Push(new CallStackItem
             {
                 BasePointer = m_ValueStack.Count,
@@ -671,7 +671,7 @@ internal sealed partial class Processor
 
         if (m != null && m.IsNotNil())
         {
-            var tmp = new DynValue[argsCount + 1];
+            var tmp = new LuaValue[argsCount + 1];
             for (var i = 0; i < argsCount + 1; i++)
                 tmp[i] = m_ValueStack.Pop();
 
@@ -688,7 +688,7 @@ internal sealed partial class Processor
 
     private int PerformTCO(int argsCount)
     {
-        var args = new DynValue[argsCount + 1];
+        var args = new LuaValue[argsCount + 1];
 
         // Remove all cur args and func ptr
         for (var i = 0; i <= argsCount; i++)
@@ -717,7 +717,7 @@ internal sealed partial class Processor
             retpoint = csi.ReturnAddress;
             var argscnt = (int)m_ValueStack.Pop().Number;
             m_ValueStack.RemoveLast(argscnt + 1);
-            m_ValueStack.Push(DynValue.Void);
+            m_ValueStack.Push(LuaValue.Void);
         }
         else if (i.NumVal == 1)
         {
@@ -802,7 +802,7 @@ internal sealed partial class Processor
 
         if (ln.HasValue && rn.HasValue)
         {
-            m_ValueStack.Push(DynValue.NewNumber(ln.Value + rn.Value));
+            m_ValueStack.Push(LuaValue.NewNumber(ln.Value + rn.Value));
             return instructionPtr;
         }
 
@@ -821,7 +821,7 @@ internal sealed partial class Processor
 
         if (ln.HasValue && rn.HasValue)
         {
-            m_ValueStack.Push(DynValue.NewNumber(ln.Value - rn.Value));
+            m_ValueStack.Push(LuaValue.NewNumber(ln.Value - rn.Value));
             return instructionPtr;
         }
 
@@ -840,7 +840,7 @@ internal sealed partial class Processor
 
         if (ln.HasValue && rn.HasValue)
         {
-            m_ValueStack.Push(DynValue.NewNumber(ln.Value * rn.Value));
+            m_ValueStack.Push(LuaValue.NewNumber(ln.Value * rn.Value));
             return instructionPtr;
         }
 
@@ -861,7 +861,7 @@ internal sealed partial class Processor
         {
             var mod = Math.IEEERemainder(ln.Value, rn.Value);
             if (mod < 0) mod += rn.Value;
-            m_ValueStack.Push(DynValue.NewNumber(mod));
+            m_ValueStack.Push(LuaValue.NewNumber(mod));
             return instructionPtr;
         }
 
@@ -880,7 +880,7 @@ internal sealed partial class Processor
 
         if (ln.HasValue && rn.HasValue)
         {
-            m_ValueStack.Push(DynValue.NewNumber(ln.Value / rn.Value));
+            m_ValueStack.Push(LuaValue.NewNumber(ln.Value / rn.Value));
             return instructionPtr;
         }
 
@@ -899,7 +899,7 @@ internal sealed partial class Processor
 
         if (ln.HasValue && rn.HasValue)
         {
-            m_ValueStack.Push(DynValue.NewNumber(Math.Pow(ln.Value, rn.Value)));
+            m_ValueStack.Push(LuaValue.NewNumber(Math.Pow(ln.Value, rn.Value)));
             return instructionPtr;
         }
 
@@ -915,7 +915,7 @@ internal sealed partial class Processor
 
         if (rn.HasValue)
         {
-            m_ValueStack.Push(DynValue.NewNumber(-rn.Value));
+            m_ValueStack.Push(LuaValue.NewNumber(-rn.Value));
             return instructionPtr;
         }
 
@@ -932,7 +932,7 @@ internal sealed partial class Processor
         // first we do a brute force equals over the references
         if (ReferenceEquals(r, l))
         {
-            m_ValueStack.Push(DynValue.True);
+            m_ValueStack.Push(LuaValue.True);
             return instructionPtr;
         }
 
@@ -948,9 +948,9 @@ internal sealed partial class Processor
         {
             if ((l.Type == DataType.Nil && r.Type == DataType.Void) ||
                 (l.Type == DataType.Void && r.Type == DataType.Nil))
-                m_ValueStack.Push(DynValue.True);
+                m_ValueStack.Push(LuaValue.True);
             else
-                m_ValueStack.Push(DynValue.False);
+                m_ValueStack.Push(LuaValue.False);
 
             return instructionPtr;
         }
@@ -963,7 +963,7 @@ internal sealed partial class Processor
         }
 
         // else perform standard comparison
-        m_ValueStack.Push(DynValue.NewBoolean(r.Equals(l)));
+        m_ValueStack.Push(LuaValue.NewBoolean(r.Equals(l)));
         return instructionPtr;
     }
 
@@ -974,11 +974,11 @@ internal sealed partial class Processor
 
         if (l.Type == DataType.Number && r.Type == DataType.Number)
         {
-            m_ValueStack.Push(DynValue.NewBoolean(l.Number < r.Number));
+            m_ValueStack.Push(LuaValue.NewBoolean(l.Number < r.Number));
         }
         else if (l.Type == DataType.String && r.Type == DataType.String)
         {
-            m_ValueStack.Push(DynValue.NewBoolean(l.String.CompareTo(r.String) < 0));
+            m_ValueStack.Push(LuaValue.NewBoolean(l.String.CompareTo(r.String) < 0));
         }
         else
         {
@@ -998,20 +998,20 @@ internal sealed partial class Processor
 
         if (l.Type == DataType.Number && r.Type == DataType.Number)
         {
-            m_ValueStack.Push(DynValue.False);
-            m_ValueStack.Push(DynValue.NewBoolean(l.Number <= r.Number));
+            m_ValueStack.Push(LuaValue.False);
+            m_ValueStack.Push(LuaValue.NewBoolean(l.Number <= r.Number));
         }
         else if (l.Type == DataType.String && r.Type == DataType.String)
         {
-            m_ValueStack.Push(DynValue.False);
-            m_ValueStack.Push(DynValue.NewBoolean(l.String.CompareTo(r.String) <= 0));
+            m_ValueStack.Push(LuaValue.False);
+            m_ValueStack.Push(LuaValue.NewBoolean(l.String.CompareTo(r.String) <= 0));
         }
         else
         {
-            var ip = Internal_InvokeBinaryMetaMethod(l, r, "__le", instructionPtr, DynValue.False);
+            var ip = Internal_InvokeBinaryMetaMethod(l, r, "__le", instructionPtr, LuaValue.False);
             if (ip < 0)
             {
-                ip = Internal_InvokeBinaryMetaMethod(r, l, "__lt", instructionPtr, DynValue.True);
+                ip = Internal_InvokeBinaryMetaMethod(r, l, "__lt", instructionPtr, LuaValue.True);
 
                 if (ip < 0)
                     throw ScriptRuntimeException.CompareInvalidType(l, r);
@@ -1029,7 +1029,7 @@ internal sealed partial class Processor
 
         if (r.Type == DataType.String)
         {
-            m_ValueStack.Push(DynValue.NewNumber(r.String.Length));
+            m_ValueStack.Push(LuaValue.NewNumber(r.String.Length));
         }
         else
         {
@@ -1037,7 +1037,7 @@ internal sealed partial class Processor
             if (ip >= 0)
                 return ip;
             if (r.Type == DataType.Table)
-                m_ValueStack.Push(DynValue.NewNumber(r.Table.Length));
+                m_ValueStack.Push(LuaValue.NewNumber(r.Table.Length));
             else throw ScriptRuntimeException.LenOnInvalidType(r);
         }
 
@@ -1054,7 +1054,7 @@ internal sealed partial class Processor
 
         if (rs != null && ls != null)
         {
-            m_ValueStack.Push(DynValue.NewString(ls + rs));
+            m_ValueStack.Push(LuaValue.NewString(ls + rs));
             return instructionPtr;
         }
 
@@ -1099,7 +1099,7 @@ internal sealed partial class Processor
         // max 100 ops to prevent infinite recursion
         for (var op = 0; op < 100; op++)
         {
-            DynValue newIndexMethod;
+            LuaValue newIndexMethod;
             if (obj.Type == DataType.Table)
             {
                 // if the meta method was invoked it returns the value of it for us to actually invoke
@@ -1151,7 +1151,7 @@ internal sealed partial class Processor
         // max 100 ops to prevent infinite recursion
         for (var op = 0; op < 100; op++)
         {
-            DynValue newIndexMethod;
+            LuaValue newIndexMethod;
             if (obj.Type == DataType.UserData)
             {
                 var ud = obj.UserData;
@@ -1189,7 +1189,7 @@ internal sealed partial class Processor
         // max 100 ops to prevent infinite recursion
         for (var op = 0; op < 100; op++)
         {
-            DynValue indexMethod;
+            LuaValue indexMethod;
             if (obj.Type == DataType.Table)
             {
                 // if the meta method was invoked it returns the value of it for us to actually invoke
@@ -1207,7 +1207,7 @@ internal sealed partial class Processor
                 indexMethod = GetMetamethodRaw(obj, "__index");
                 if (indexMethod == null || indexMethod.IsNil())
                 {
-                    m_ValueStack.Push(DynValue.Nil);
+                    m_ValueStack.Push(LuaValue.Nil);
                     return instructionPtr;
                 }
             }
@@ -1249,7 +1249,7 @@ internal sealed partial class Processor
         // max 100 ops to prevent infinite recursion
         for (var op = 0; op < 100; op++)
         {
-            DynValue indexMethod;
+            LuaValue indexMethod;
             if (obj.Type == DataType.UserData)
             {
                 var ud = obj.UserData;

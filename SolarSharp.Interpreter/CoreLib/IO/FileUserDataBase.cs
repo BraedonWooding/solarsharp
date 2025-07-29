@@ -13,11 +13,11 @@ namespace SolarSharp.Interpreter.CoreLib.IO;
 /// </summary>
 internal abstract class FileUserDataBase : RefIdObject
 {
-    public DynValue lines(ScriptExecutionContext executionContext, CallbackArguments args)
+    public LuaValue lines(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        List<DynValue> readLines = new();
+        List<LuaValue> readLines = new();
 
-        DynValue readValue = null;
+        LuaValue readValue = null;
 
         do
         {
@@ -25,37 +25,37 @@ internal abstract class FileUserDataBase : RefIdObject
             readLines.Add(readValue);
         } while (readValue.IsNotNil());
 
-        return DynValue.FromObject(executionContext.GetScript(), readLines.Select(s => s));
+        return LuaValue.FromObject(executionContext.GetScript(), readLines.Select(s => s));
     }
 
-    public DynValue read(ScriptExecutionContext executionContext, CallbackArguments args)
+    public LuaValue read(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         if (args.Count == 0)
         {
             var str = ReadLine();
 
             if (str == null)
-                return DynValue.Nil;
+                return LuaValue.Nil;
 
             str = str.TrimEnd('\n', '\r');
-            return DynValue.NewString(str);
+            return LuaValue.NewString(str);
         }
 
-        List<DynValue> rets = new();
+        List<LuaValue> rets = new();
 
         for (var i = 0; i < args.Count; i++)
         {
-            DynValue v;
+            LuaValue v;
 
             if (args[i].Type == DataType.Number)
             {
                 if (Eof())
-                    return DynValue.Nil;
+                    return LuaValue.Nil;
 
                 var howmany = (int)args[i].Number;
 
                 var str = ReadBuffer(howmany);
-                v = DynValue.NewString(str);
+                v = LuaValue.NewString(str);
             }
             else
             {
@@ -63,24 +63,24 @@ internal abstract class FileUserDataBase : RefIdObject
 
                 if (Eof())
                 {
-                    v = opt.StartsWith("*a") ? DynValue.NewString("") : DynValue.Nil;
+                    v = opt.StartsWith("*a") ? LuaValue.NewString("") : LuaValue.Nil;
                 }
                 else if (opt.StartsWith("*n"))
                 {
                     var d = ReadNumber();
 
-                    v = d.HasValue ? DynValue.NewNumber(d.Value) : DynValue.Nil;
+                    v = d.HasValue ? LuaValue.NewNumber(d.Value) : LuaValue.Nil;
                 }
                 else if (opt.StartsWith("*a"))
                 {
                     var str = ReadToEnd();
-                    v = DynValue.NewString(str);
+                    v = LuaValue.NewString(str);
                 }
                 else if (opt.StartsWith("*l"))
                 {
                     var str = ReadLine();
                     str = str.TrimEnd('\n', '\r');
-                    v = DynValue.NewString(str);
+                    v = LuaValue.NewString(str);
                 }
                 else if (opt.StartsWith("*L"))
                 {
@@ -89,7 +89,7 @@ internal abstract class FileUserDataBase : RefIdObject
                     str = str.TrimEnd('\n', '\r');
                     str += "\n";
 
-                    v = DynValue.NewString(str);
+                    v = LuaValue.NewString(str);
                 }
                 else
                 {
@@ -100,11 +100,11 @@ internal abstract class FileUserDataBase : RefIdObject
             rets.Add(v);
         }
 
-        return DynValue.NewTuple(rets.ToArray());
+        return LuaValue.NewTuple(rets.ToArray());
     }
 
 
-    public DynValue write(ScriptExecutionContext executionContext, CallbackArguments args)
+    public LuaValue write(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         try
         {
@@ -123,18 +123,18 @@ internal abstract class FileUserDataBase : RefIdObject
         }
         catch (Exception ex)
         {
-            return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(ex.Message));
+            return LuaValue.NewTuple(LuaValue.Nil, LuaValue.NewString(ex.Message));
         }
     }
 
-    public DynValue close(ScriptExecutionContext executionContext, CallbackArguments args)
+    public LuaValue close(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         try
         {
             var msg = Close();
             if (msg == null)
-                return DynValue.True;
-            return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(msg));
+                return LuaValue.True;
+            return LuaValue.NewTuple(LuaValue.Nil, LuaValue.NewString(msg));
         }
         catch (ScriptRuntimeException)
         {
@@ -142,7 +142,7 @@ internal abstract class FileUserDataBase : RefIdObject
         }
         catch (Exception ex)
         {
-            return DynValue.NewTuple(DynValue.Nil, DynValue.NewString(ex.Message));
+            return LuaValue.NewTuple(LuaValue.Nil, LuaValue.NewString(ex.Message));
         }
     }
 

@@ -3,7 +3,7 @@
 namespace SolarSharp.Interpreter.DataTypes;
 
 /// <summary>
-///     Flags to alter the way the DynValue.CheckType and other related functions operate on data types for
+///     Flags to alter the way the LuaValue.CheckType and other related functions operate on data types for
 ///     validation.
 /// </summary>
 [Flags]

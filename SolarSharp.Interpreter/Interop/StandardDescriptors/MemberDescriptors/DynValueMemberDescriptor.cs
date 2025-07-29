@@ -5,21 +5,21 @@ using SolarSharp.Interpreter.Interop.BasicDescriptors;
 namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
 
 /// <summary>
-///     Class providing a simple descriptor for constant DynValues in userdata
+///     Class providing a simple descriptor for constant LuaValues in userdata
 /// </summary>
-public sealed class DynValueMemberDescriptor : IMemberDescriptor
+public sealed class LuaValueMemberDescriptor : IMemberDescriptor
 {
-    private readonly DynValue m_Value;
+    private readonly LuaValue m_Value;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="DynValueMemberDescriptor" /> class.
+    ///     Initializes a new instance of the <see cref="LuaValueMemberDescriptor" /> class.
     /// </summary>
     /// <param name="name">The name.</param>
     /// <param name="serializedTableValue">
-    ///     A string containing a table whose first member is the dynvalue to be deserialized
+    ///     A string containing a table whose first member is the LuaValue to be deserialized
     ///     (convoluted...).
     /// </param>
-    private DynValueMemberDescriptor(string name, string serializedTableValue)
+    private LuaValueMemberDescriptor(string name, string serializedTableValue)
     {
         Script s = new();
         var exp = s.CreateDynamicExpression(serializedTableValue);
@@ -31,10 +31,10 @@ public sealed class DynValueMemberDescriptor : IMemberDescriptor
     }
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="DynValueMemberDescriptor" /> class.
+    ///     Initializes a new instance of the <see cref="LuaValueMemberDescriptor" /> class.
     /// </summary>
     /// <param name="name">The name.</param>
-    private DynValueMemberDescriptor(string name)
+    private LuaValueMemberDescriptor(string name)
     {
         MemberAccess = MemberDescriptorAccess.CanRead;
         m_Value = null;
@@ -43,11 +43,11 @@ public sealed class DynValueMemberDescriptor : IMemberDescriptor
 
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="DynValueMemberDescriptor" /> class.
+    ///     Initializes a new instance of the <see cref="LuaValueMemberDescriptor" /> class.
     /// </summary>
     /// <param name="name">The name.</param>
     /// <param name="value">The value.</param>
-    public DynValueMemberDescriptor(string name, DynValue value)
+    public LuaValueMemberDescriptor(string name, LuaValue value)
     {
         m_Value = value;
         Name = name;
@@ -61,7 +61,7 @@ public sealed class DynValueMemberDescriptor : IMemberDescriptor
     /// <summary>
     ///     Gets the value wrapped by this descriptor
     /// </summary>
-    public DynValue Value => m_Value;
+    public LuaValue Value => m_Value;
 
     /// <summary>
     ///     Gets a value indicating whether the described member is static.
@@ -79,26 +79,26 @@ public sealed class DynValueMemberDescriptor : IMemberDescriptor
     public MemberDescriptorAccess MemberAccess { get; }
 
     /// <summary>
-    ///     Gets the value of this member as a <see cref="DynValue" /> to be exposed to scripts.
+    ///     Gets the value of this member as a <see cref="LuaValue" /> to be exposed to scripts.
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object owning this member, or null if static.</param>
     /// <returns>
-    ///     The value of this member as a <see cref="DynValue" />.
+    ///     The value of this member as a <see cref="LuaValue" />.
     /// </returns>
-    public DynValue GetValue(Script script, object obj)
+    public LuaValue GetValue(Script script, object obj)
     {
         return Value;
     }
 
     /// <summary>
-    ///     Sets the value of this member from a <see cref="DynValue" />.
+    ///     Sets the value of this member from a <see cref="LuaValue" />.
     /// </summary>
     /// <param name="script">The script.</param>
     /// <param name="obj">The object owning this member, or null if static.</param>
     /// <param name="value">The value to be set.</param>
     /// <exception cref="ScriptRuntimeException">userdata '{0}' cannot be written to.</exception>
-    public void SetValue(Script script, object obj, DynValue value)
+    public void SetValue(Script script, object obj, LuaValue value)
     {
         throw new ScriptRuntimeException("userdata '{0}' cannot be written to.", Name);
     }

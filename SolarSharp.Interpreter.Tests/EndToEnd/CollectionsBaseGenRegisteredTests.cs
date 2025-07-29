@@ -57,7 +57,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
         }
 
-        private static void Do(string code, Action<DynValue> asserts)
+        private static void Do(string code, Action<LuaValue> asserts)
         {
             // useless ops, to trick AOT to include the extension methods..
             List<int> lst = new() { 1, 1, 1, 1 };
@@ -67,7 +67,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Do(code, (d, _) => asserts(d));
         }
 
-        private static void Do(string code, Action<DynValue, RegCollMethods> asserts)
+        private static void Do(string code, Action<LuaValue, RegCollMethods> asserts)
         {
             try
             {

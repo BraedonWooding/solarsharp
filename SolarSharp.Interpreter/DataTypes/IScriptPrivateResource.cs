@@ -18,14 +18,14 @@ public interface IScriptPrivateResource
 
 internal static class ScriptPrivateResource_Extension
 {
-    public static void CheckScriptOwnership(this IScriptPrivateResource containingResource, DynValue[] values)
+    public static void CheckScriptOwnership(this IScriptPrivateResource containingResource, LuaValue[] values)
     {
         foreach (var v in values)
             containingResource.CheckScriptOwnership(v);
     }
 
 
-    public static void CheckScriptOwnership(this IScriptPrivateResource containingResource, DynValue value)
+    public static void CheckScriptOwnership(this IScriptPrivateResource containingResource, LuaValue value)
     {
         var otherResource = value?.GetAsPrivateResource();
 

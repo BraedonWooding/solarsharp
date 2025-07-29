@@ -150,9 +150,9 @@ public class Script : IScriptPrivateResource
     /// <param name="globalTable">The global table to bind to this chunk.</param>
     /// <param name="funcFriendlyName">Name of the function used to report errors, etc.</param>
     /// <returns>
-    ///     A DynValue containing a function which will execute the loaded code.
+    ///     A LuaValue containing a function which will execute the loaded code.
     /// </returns>
-    public DynValue LoadFunction(string code, Table globalTable = null, string funcFriendlyName = null)
+    public LuaValue LoadFunction(string code, Table globalTable = null, string funcFriendlyName = null)
     {
         this.CheckScriptOwnership(globalTable);
 
@@ -191,9 +191,9 @@ public class Script : IScriptPrivateResource
     ///     original source file.
     /// </param>
     /// <returns>
-    ///     A DynValue containing a function which will execute the loaded code.
+    ///     A LuaValue containing a function which will execute the loaded code.
     /// </returns>
-    public DynValue LoadString(string code, Table globalTable = null, string codeFriendlyName = null)
+    public LuaValue LoadString(string code, Table globalTable = null, string codeFriendlyName = null)
     {
         this.CheckScriptOwnership(globalTable);
 
@@ -228,9 +228,9 @@ public class Script : IScriptPrivateResource
     /// <param name="globalTable">The global table to bind to this chunk.</param>
     /// <param name="codeFriendlyName">Name of the code - used to report errors, etc.</param>
     /// <returns>
-    ///     A DynValue containing a function which will execute the loaded code.
+    ///     A LuaValue containing a function which will execute the loaded code.
     /// </returns>
-    public DynValue LoadStream(Stream stream, Table globalTable = null, string codeFriendlyName = null)
+    public LuaValue LoadStream(Stream stream, Table globalTable = null, string codeFriendlyName = null)
     {
         this.CheckScriptOwnership(globalTable);
 
@@ -274,7 +274,7 @@ public class Script : IScriptPrivateResource
     ///     or
     ///     function arg has upvalues other than _ENV
     /// </exception>
-    public void Dump(DynValue function, Stream stream)
+    public void Dump(LuaValue function, Stream stream)
     {
         this.CheckScriptOwnership(function);
 
@@ -302,9 +302,9 @@ public class Script : IScriptPrivateResource
     /// <param name="globalContext">The global table to bind to this chunk.</param>
     /// <param name="friendlyFilename">The filename to be used in error messages.</param>
     /// <returns>
-    ///     A DynValue containing a function which will execute the loaded code.
+    ///     A LuaValue containing a function which will execute the loaded code.
     /// </returns>
-    public DynValue LoadFile(string filename, Table globalContext = null, string friendlyFilename = null)
+    public LuaValue LoadFile(string filename, Table globalContext = null, string friendlyFilename = null)
     {
         this.CheckScriptOwnership(globalContext);
 
@@ -344,9 +344,9 @@ public class Script : IScriptPrivateResource
     ///     original source file.
     /// </param>
     /// <returns>
-    ///     A DynValue containing the result of the processing of the loaded chunk.
+    ///     A LuaValue containing the result of the processing of the loaded chunk.
     /// </returns>
-    public DynValue DoString(string code, Table globalContext = null, string codeFriendlyName = null)
+    public LuaValue DoString(string code, Table globalContext = null, string codeFriendlyName = null)
     {
         var func = LoadString(code, globalContext, codeFriendlyName);
         return Call(func);
@@ -363,9 +363,9 @@ public class Script : IScriptPrivateResource
     ///     original source file.
     /// </param>
     /// <returns>
-    ///     A DynValue containing the result of the processing of the loaded chunk.
+    ///     A LuaValue containing the result of the processing of the loaded chunk.
     /// </returns>
-    public DynValue DoStream(Stream stream, Table globalContext = null, string codeFriendlyName = null)
+    public LuaValue DoStream(Stream stream, Table globalContext = null, string codeFriendlyName = null)
     {
         var func = LoadStream(stream, globalContext, codeFriendlyName);
         return Call(func);
@@ -382,9 +382,9 @@ public class Script : IScriptPrivateResource
     ///     original source file.
     /// </param>
     /// <returns>
-    ///     A DynValue containing the result of the processing of the loaded chunk.
+    ///     A LuaValue containing the result of the processing of the loaded chunk.
     /// </returns>
-    public DynValue DoFile(string filename, Table globalContext = null, string codeFriendlyName = null)
+    public LuaValue DoFile(string filename, Table globalContext = null, string codeFriendlyName = null)
     {
         var func = LoadFile(filename, globalContext, codeFriendlyName);
         return Call(func);
@@ -395,8 +395,8 @@ public class Script : IScriptPrivateResource
     ///     Runs the specified file with all possible defaults for quick experimenting.
     /// </summary>
     /// <param name="filename">The filename.</param>
-    /// A DynValue containing the result of the processing of the executed script.
-    public static DynValue RunFile(string filename)
+    /// A LuaValue containing the result of the processing of the executed script.
+    public static LuaValue RunFile(string filename)
     {
         Script S = new();
         return S.DoFile(filename);
@@ -406,8 +406,8 @@ public class Script : IScriptPrivateResource
     ///     Runs the specified code with all possible defaults for quick experimenting.
     /// </summary>
     /// <param name="code">The Lua/SolarSharp code.</param>
-    /// A DynValue containing the result of the processing of the executed script.
-    public static DynValue RunString(string code)
+    /// A LuaValue containing the result of the processing of the executed script.
+    public static LuaValue RunString(string code)
     {
         Script S = new();
         return S.DoString(code);
@@ -419,7 +419,7 @@ public class Script : IScriptPrivateResource
     /// <param name="address">The address.</param>
     /// <param name="envTable">The env table to create a 0-upvalue</param>
     /// <returns></returns>
-    private DynValue MakeClosure(int address, Table envTable = null)
+    private LuaValue MakeClosure(int address, Table envTable = null)
     {
         this.CheckScriptOwnership(envTable);
         Closure c;
@@ -442,15 +442,15 @@ public class Script : IScriptPrivateResource
                 new() { i_Env = null, i_Index = 0, i_Name = WellKnownSymbols.ENV, i_Type = SymbolRefType.DefaultEnv }
             ];
 
-            DynValue[] vals =
+            LuaValue[] vals =
             [
-                DynValue.NewTable(envTable)
+                LuaValue.NewTable(envTable)
             ];
 
             c = new Closure(this, address, syms, vals);
         }
 
-        return DynValue.NewClosure(c);
+        return LuaValue.NewClosure(c);
     }
 
     /// <summary>
@@ -461,7 +461,7 @@ public class Script : IScriptPrivateResource
     ///     The return value(s) of the function call.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
-    public DynValue Call(DynValue function)
+    public LuaValue Call(LuaValue function)
     {
         return Call(function, []);
     }
@@ -475,7 +475,7 @@ public class Script : IScriptPrivateResource
     ///     The return value(s) of the function call.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
-    public DynValue Call(DynValue function, params DynValue[] args)
+    public LuaValue Call(LuaValue function, params LuaValue[] args)
     {
         this.CheckScriptOwnership(function);
         this.CheckScriptOwnership(args);
@@ -486,7 +486,7 @@ public class Script : IScriptPrivateResource
 
             if (metafunction != null)
             {
-                var metaargs = new DynValue[args.Length + 1];
+                var metaargs = new LuaValue[args.Length + 1];
                 metaargs[0] = function;
                 for (var i = 0; i < args.Length; i++)
                     metaargs[i + 1] = args[i];
@@ -516,12 +516,12 @@ public class Script : IScriptPrivateResource
     ///     The return value(s) of the function call.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
-    public DynValue Call(DynValue function, params object[] args)
+    public LuaValue Call(LuaValue function, params object[] args)
     {
-        var dargs = new DynValue[args.Length];
+        var dargs = new LuaValue[args.Length];
 
         for (var i = 0; i < dargs.Length; i++)
-            dargs[i] = DynValue.FromObject(this, args[i]);
+            dargs[i] = LuaValue.FromObject(this, args[i]);
 
         return Call(function, dargs);
     }
@@ -532,9 +532,9 @@ public class Script : IScriptPrivateResource
     /// <param name="function">The Lua/SolarSharp function to be called</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
-    public DynValue Call(object function)
+    public LuaValue Call(object function)
     {
-        return Call(DynValue.FromObject(this, function));
+        return Call(LuaValue.FromObject(this, function));
     }
 
     /// <summary>
@@ -544,9 +544,9 @@ public class Script : IScriptPrivateResource
     /// <param name="args">The arguments to pass to the function.</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
-    public DynValue Call(object function, params object[] args)
+    public LuaValue Call(object function, params object[] args)
     {
-        return Call(DynValue.FromObject(this, function), args);
+        return Call(LuaValue.FromObject(this, function), args);
     }
 
     /// <summary>
@@ -557,14 +557,14 @@ public class Script : IScriptPrivateResource
     ///     The coroutine handle.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function or DataType.ClrFunction</exception>
-    public DynValue CreateCoroutine(DynValue function)
+    public LuaValue CreateCoroutine(LuaValue function)
     {
         this.CheckScriptOwnership(function);
 
         if (function.Type == DataType.Function)
             return m_MainProcessor.Coroutine_Create(function.Function);
         if (function.Type == DataType.ClrFunction)
-            return DynValue.NewCoroutine(new Coroutine(function.Callback));
+            return LuaValue.NewCoroutine(new Coroutine(function.Callback));
         throw new ArgumentException("function is not of DataType.Function or DataType.ClrFunction");
     }
 
@@ -579,7 +579,7 @@ public class Script : IScriptPrivateResource
     /// <returns>
     ///     The new coroutine handle.
     /// </returns>
-    public DynValue RecycleCoroutine(Coroutine coroutine, DynValue function)
+    public LuaValue RecycleCoroutine(Coroutine coroutine, LuaValue function)
     {
         this.CheckScriptOwnership(coroutine);
         this.CheckScriptOwnership(function);
@@ -602,9 +602,9 @@ public class Script : IScriptPrivateResource
     ///     The coroutine handle.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function or DataType.ClrFunction</exception>
-    public DynValue CreateCoroutine(object function)
+    public LuaValue CreateCoroutine(object function)
     {
-        return CreateCoroutine(DynValue.FromObject(this, function));
+        return CreateCoroutine(LuaValue.FromObject(this, function));
     }
 
 
@@ -642,7 +642,7 @@ public class Script : IScriptPrivateResource
     /// <param name="globalContext">The global context.</param>
     /// <returns></returns>
     /// <exception cref="ScriptRuntimeException">Raised if module is not found</exception>
-    public DynValue RequireModule(string modname, Table globalContext = null)
+    public LuaValue RequireModule(string modname, Table globalContext = null)
     {
         this.CheckScriptOwnership(globalContext);
 
@@ -713,7 +713,7 @@ public class Script : IScriptPrivateResource
     /// <param name="code">The code of the not-so-dynamic expression.</param>
     /// <param name="constant">The constant to return.</param>
     /// <returns></returns>
-    public DynamicExpression CreateConstantDynamicExpression(string code, DynValue constant)
+    public DynamicExpression CreateConstantDynamicExpression(string code, LuaValue constant)
     {
         this.CheckScriptOwnership(constant);
 

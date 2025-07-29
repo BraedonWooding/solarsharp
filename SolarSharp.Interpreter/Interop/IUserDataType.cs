@@ -19,7 +19,7 @@ public interface IUserDataType
     /// <param name="index">The index.</param>
     /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
     /// <returns></returns>
-    DynValue Index(Script script, DynValue index, bool isDirectIndexing);
+    LuaValue Index(Script script, LuaValue index, bool isDirectIndexing);
 
     /// <summary>
     ///     Performs an "index" "set" operation.
@@ -29,7 +29,7 @@ public interface IUserDataType
     /// <param name="value">The value to be set</param>
     /// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
     /// <returns></returns>
-    bool SetIndex(Script script, DynValue index, DynValue value, bool isDirectIndexing);
+    bool SetIndex(Script script, LuaValue index, LuaValue value, bool isDirectIndexing);
 
     /// <summary>
     ///     Gets a "meta" operation on this userdata. If a descriptor does not support this functionality,
@@ -44,5 +44,5 @@ public interface IUserDataType
     /// <param name="script">The script originating the request</param>
     /// <param name="metaname">The name of the metamember.</param>
     /// <returns></returns>
-    DynValue MetaIndex(Script script, string metaname);
+    LuaValue MetaIndex(Script script, string metaname);
 }

@@ -14,7 +14,7 @@ namespace SolarSharp.Interpreter.CoreLib;
 public class TableModule
 {
     [SolarSharpModuleMethod]
-    public static DynValue unpack(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue unpack(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var s = args.AsType(0, "unpack", DataType.Table);
         var vi = args.AsType(1, "unpack", DataType.Number, true);
@@ -25,31 +25,31 @@ public class TableModule
 
         var t = s.Table;
 
-        var v = new DynValue[ij - ii + 1];
+        var v = new LuaValue[ij - ii + 1];
 
         var tidx = 0;
         for (var i = ii; i <= ij; i++)
             v[tidx++] = t.Get(i);
 
-        return DynValue.NewTuple(v);
+        return LuaValue.NewTuple(v);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue pack(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue pack(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         Table t = new(executionContext.GetScript());
-        var v = DynValue.NewTable(t);
+        var v = LuaValue.NewTable(t);
 
         for (var i = 0; i < args.Count; i++)
             t.Set(i + 1, args[i]);
 
-        t.Set("n", DynValue.NewNumber(args.Count));
+        t.Set("n", LuaValue.NewNumber(args.Count));
 
         return v;
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue sort(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue sort(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var vlist = args.AsType(0, "sort", DataType.Table);
         var lt = args[1];
@@ -62,11 +62,11 @@ public class TableModule
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue insert(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue insert(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var vlist = args.AsType(0, "table.insert", DataType.Table);
         var table = vlist.Table;
-        DynValue vvalue;
+        LuaValue vvalue;
 
         if (args.Count > 3)
             throw new ScriptRuntimeException("wrong number of arguments to 'insert'");
@@ -97,11 +97,11 @@ public class TableModule
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue remove(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue remove(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var vlist = args.AsType(0, "table.remove", DataType.Table);
         var vpos = args.AsType(1, "table.remove", DataType.Number, true);
-        var ret = DynValue.Nil;
+        var ret = LuaValue.Nil;
 
         if (args.Count > 2)
             throw new ScriptRuntimeException("wrong number of arguments to 'remove'");
@@ -130,7 +130,7 @@ public class TableModule
     //The default value for sep is the empty string, the default for i is 1, and the default for j is #list. If i is greater 
     //than j, returns the empty string. 
     [SolarSharpModuleMethod]
-    public static DynValue concat(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue concat(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         var vlist = args.AsType(0, "concat", DataType.Table);
         var vsep = args.AsType(1, "concat", DataType.String, true);
@@ -142,7 +142,7 @@ public class TableModule
         var start = vstart.IsNilOrNan() ? 1 : (int)vstart.Number;
         var end = vend.IsNilOrNan() ? GetTableLength(executionContext, vlist) : (int)vend.Number;
         if (end < start)
-            return DynValue.NewString(string.Empty);
+            return LuaValue.NewString(string.Empty);
 
         StringBuilder sb = new();
 
@@ -162,10 +162,10 @@ public class TableModule
             sb.Append(s);
         }
 
-        return DynValue.NewString(sb.ToString());
+        return LuaValue.NewString(sb.ToString());
     }
 
-    private static int GetTableLength(ScriptExecutionContext executionContext, DynValue vlist)
+    private static int GetTableLength(ScriptExecutionContext executionContext, LuaValue vlist)
     {
         var __len = executionContext.GetMetamethod(vlist, "__len");
 
@@ -179,18 +179,18 @@ public class TableModule
         return vlist.Table.Length;
     }
 
-    private class Comparer : IComparer<DynValue>
+    private class Comparer : IComparer<LuaValue>
     {
-        private readonly DynValue _comparer;
+        private readonly LuaValue _comparer;
         private ScriptExecutionContext _executionContext;
 
-        public Comparer(ScriptExecutionContext executionContext, DynValue lt)
+        public Comparer(ScriptExecutionContext executionContext, LuaValue lt)
         {
             _executionContext = executionContext;
             _comparer = lt;
         }
 
-        public int Compare(DynValue a, DynValue b)
+        public int Compare(LuaValue a, LuaValue b)
         {
             if (_comparer == null || _comparer.IsNil())
             {
@@ -211,7 +211,7 @@ public class TableModule
             return LuaComparerToClrComparer(_comparer, a, b);
         }
 
-        private int LuaComparerToClrComparer(DynValue comparer, DynValue a, DynValue b)
+        private int LuaComparerToClrComparer(LuaValue comparer, LuaValue a, LuaValue b)
         {
             // sadly we have to make 2 calls for each one.
             // since we can do a non-stable sort, maybe it's worth looking at implementing that?
@@ -232,13 +232,13 @@ public class TableModule
 public class TableModule_Globals
 {
     [SolarSharpModuleMethod]
-    public static DynValue unpack(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue unpack(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return TableModule.unpack(executionContext, args);
     }
 
     [SolarSharpModuleMethod]
-    public static DynValue pack(ScriptExecutionContext executionContext, CallbackArguments args)
+    public static LuaValue pack(ScriptExecutionContext executionContext, CallbackArguments args)
     {
         return TableModule.pack(executionContext, args);
     }

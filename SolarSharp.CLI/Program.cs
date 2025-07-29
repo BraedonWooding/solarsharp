@@ -22,7 +22,7 @@ internal class Program
         {
             Globals =
             {
-                ["makestatic"] = (Func<string, DynValue>)MakeStatic
+                ["makestatic"] = (Func<string, LuaValue>)MakeStatic
             }
         };
 
@@ -41,7 +41,7 @@ internal class Program
         while (true) InterpreterLoop(interpreter, new ShellContext(script));
     }
 
-    private static DynValue MakeStatic(string type)
+    private static LuaValue MakeStatic(string type)
     {
         var tt = Type.GetType(type);
         if (tt == null)
@@ -49,7 +49,7 @@ internal class Program
         else
             return UserData.CreateStatic(tt);
 
-        return DynValue.Nil;
+        return LuaValue.Nil;
     }
 
     private static void InterpreterLoop(ReplInterpreter interpreter, ShellContext shellContext)

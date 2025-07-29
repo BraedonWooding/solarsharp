@@ -97,7 +97,7 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
         Type = CoroutineType.ClrCallbackDead;
     }
 
-    internal DynValue Recycle(Processor mainProcessor, Closure closure)
+    internal LuaValue Recycle(Processor mainProcessor, Closure closure)
     {
         Type = CoroutineType.Recycled;
         return m_Processor.Coroutine_Recycle(mainProcessor, closure);
@@ -105,14 +105,14 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
 
     /// <summary>
     ///     Gets this coroutine as a typed enumerable which can be looped over for resuming.
-    ///     Returns its result as DynValue(s)
+    ///     Returns its result as LuaValue(s)
     /// </summary>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException">
     ///     Only non-CLR coroutines can be resumed with this overload of the Resume
     ///     method. Use the overload accepting a ScriptExecutionContext instead
     /// </exception>
-    public IEnumerable<DynValue> AsTypedEnumerable()
+    public IEnumerable<LuaValue> AsTypedEnumerable()
     {
         if (Type != CoroutineType.Coroutine)
             throw new InvalidOperationException(
@@ -185,7 +185,7 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
     ///     Only non-CLR coroutines can be resumed with this overload of the Resume
     ///     method. Use the overload accepting a ScriptExecutionContext instead
     /// </exception>
-    public DynValue Resume(params DynValue[] args)
+    public LuaValue Resume(params LuaValue[] args)
     {
         this.CheckScriptOwnership(args);
 
@@ -202,7 +202,7 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
     /// <param name="context">The ScriptExecutionContext.</param>
     /// <param name="args">The arguments.</param>
     /// <returns></returns>
-    public DynValue Resume(ScriptExecutionContext context, params DynValue[] args)
+    public LuaValue Resume(ScriptExecutionContext context, params LuaValue[] args)
     {
         this.CheckScriptOwnership(context);
         this.CheckScriptOwnership(args);
@@ -229,7 +229,7 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
     ///     Only non-CLR coroutines can be resumed with this overload of the Resume
     ///     method. Use the overload accepting a ScriptExecutionContext instead
     /// </exception>
-    public DynValue Resume()
+    public LuaValue Resume()
     {
         return Resume([]);
     }
@@ -240,7 +240,7 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
     /// </summary>
     /// <param name="context">The ScriptExecutionContext.</param>
     /// <returns></returns>
-    public DynValue Resume(ScriptExecutionContext context)
+    public LuaValue Resume(ScriptExecutionContext context)
     {
         return Resume(context, []);
     }
@@ -256,16 +256,16 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
     ///     Only non-CLR coroutines can be resumed with this overload of the Resume
     ///     method. Use the overload accepting a ScriptExecutionContext instead.
     /// </exception>
-    public DynValue Resume(params object[] args)
+    public LuaValue Resume(params object[] args)
     {
         if (Type != CoroutineType.Coroutine)
             throw new InvalidOperationException(
                 "Only non-CLR coroutines can be resumed with this overload of the Resume method. Use the overload accepting a ScriptExecutionContext instead");
 
-        var dargs = new DynValue[args.Length];
+        var dargs = new LuaValue[args.Length];
 
         for (var i = 0; i < dargs.Length; i++)
-            dargs[i] = DynValue.FromObject(OwnerScript, args[i]);
+            dargs[i] = LuaValue.FromObject(OwnerScript, args[i]);
 
         return Resume(dargs);
     }
@@ -277,12 +277,12 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
     /// <param name="context">The ScriptExecutionContext.</param>
     /// <param name="args">The arguments.</param>
     /// <returns></returns>
-    public DynValue Resume(ScriptExecutionContext context, params object[] args)
+    public LuaValue Resume(ScriptExecutionContext context, params object[] args)
     {
-        var dargs = new DynValue[args.Length];
+        var dargs = new LuaValue[args.Length];
 
         for (var i = 0; i < dargs.Length; i++)
-            dargs[i] = DynValue.FromObject(context.GetScript(), args[i]);
+            dargs[i] = LuaValue.FromObject(context.GetScript(), args[i]);
 
         return Resume(context, dargs);
     }
