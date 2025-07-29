@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753630190243,
+  "lastUpdate": 1753754830504,
   "repoUrl": "https://github.com/BraedonWooding/solarsharp",
   "entries": {
     "Benchmark": [
@@ -4908,6 +4908,828 @@ window.BENCHMARK_DATA = {
             "value": 28053765.925,
             "unit": "ns",
             "range": "± 490857.9578213491"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "Braedonww@gmail.com",
+            "name": "Braedon",
+            "username": "BraedonWooding"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0d4dbe29ed38070607913b281cc8936433f60851",
+          "message": "Merge pull request #21 from BraedonWooding/solarsharp-simplify-repo\n\nSolarsharp simplify repo.\n\nRemoves debugger, hardwiring, manifests & some sandboxing (to be reintroduced later) and does some renaming.\n\nAiming to get a clean baseground.",
+          "timestamp": "2025-07-29T11:00:46+10:00",
+          "tree_id": "7f106dd2ddbdafd1f62cb03819a3771496a3331f",
+          "url": "https://github.com/BraedonWooding/solarsharp/commit/0d4dbe29ed38070607913b281cc8936433f60851"
+        },
+        "date": 1753754829847,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: ack.lua)",
+            "value": 184891666.43589747,
+            "unit": "ns",
+            "range": "± 489005.366900002"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 1626230.5821614584,
+            "unit": "ns",
+            "range": "± 19493.552451986314"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: empty_test.lua)",
+            "value": 4981.382266235351,
+            "unit": "ns",
+            "range": "± 806.4533867608362"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: heapsort.lua)",
+            "value": 76187691.57142857,
+            "unit": "ns",
+            "range": "± 81279.51196564939"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: mandel.lua)",
+            "value": 6010925037.153846,
+            "unit": "ns",
+            "range": "± 13867513.330609994"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: queen.lua)",
+            "value": 8635796.088541666,
+            "unit": "ns",
+            "range": "± 36183.85151569783"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: regexredux.lua-2.lua)",
+            "value": 152621.86458333334,
+            "unit": "ns",
+            "range": "± 10165.043463265212"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: sieve.lua)",
+            "value": 105405412.10666667,
+            "unit": "ns",
+            "range": "± 1172982.096913386"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: startup.lua)",
+            "value": 109561.77510253906,
+            "unit": "ns",
+            "range": "± 2921.3521776279376"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_array_insert_function.lua)",
+            "value": 402577.71630859375,
+            "unit": "ns",
+            "range": "± 5203.487373809329"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_array_insert_indexed.lua)",
+            "value": 1981596.7385416667,
+            "unit": "ns",
+            "range": "± 14831.22634177472"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_array_insert_remove_end.lua)",
+            "value": 4639907.836495535,
+            "unit": "ns",
+            "range": "± 13110.102127892864"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_array_insert_remove_start.lua)",
+            "value": 1329587433.5333333,
+            "unit": "ns",
+            "range": "± 2147665.717020853"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_array_ipairs.lua)",
+            "value": 1236558.5790364584,
+            "unit": "ns",
+            "range": "± 8575.62947927087"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_array_ipairs_remove.lua)",
+            "value": 1424945.5697916667,
+            "unit": "ns",
+            "range": "± 11117.899438356053"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_array_next.lua)",
+            "value": 7116338.55703125,
+            "unit": "ns",
+            "range": "± 39449.82385752022"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_array_next_remove.lua)",
+            "value": 2071651.2979166666,
+            "unit": "ns",
+            "range": "± 8367.653838206905"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_array_remove.lua)",
+            "value": 636368.298828125,
+            "unit": "ns",
+            "range": "± 4010.936597498381"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_array_remove_then_add.lua)",
+            "value": 965821.5892783717,
+            "unit": "ns",
+            "range": "± 21040.90688075991"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_array_remove_then_add_immediate.lua)",
+            "value": 838801.4773888221,
+            "unit": "ns",
+            "range": "± 4918.586826199496"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_map_insert.lua)",
+            "value": 5339402.661979167,
+            "unit": "ns",
+            "range": "± 23846.98901311549"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_map_next.lua)",
+            "value": 7253411.109114584,
+            "unit": "ns",
+            "range": "± 41260.75368110378"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_map_next_remove.lua)",
+            "value": 9262588.49330357,
+            "unit": "ns",
+            "range": "± 21037.606744230477"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_map_pairs.lua)",
+            "value": 6617176.716517857,
+            "unit": "ns",
+            "range": "± 28391.081629497105"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_map_pairs_remove.lua)",
+            "value": 6831361.976004465,
+            "unit": "ns",
+            "range": "± 17639.652766189054"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_map_remove.lua)",
+            "value": 8632580.901785715,
+            "unit": "ns",
+            "range": "± 11749.091182921466"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_map_remove_then_add.lua)",
+            "value": 12324646.081473215,
+            "unit": "ns",
+            "range": "± 35008.57995132608"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: KeraImplementation, Test: table_map_remove_then_add_immediate.lua)",
+            "value": 11568864.59375,
+            "unit": "ns",
+            "range": "± 57024.902002269526"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: ack.lua)",
+            "value": 1318138168.4666667,
+            "unit": "ns",
+            "range": "± 9705420.15622303"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 4142193.8135416666,
+            "unit": "ns",
+            "range": "± 70760.72522044042"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: empty_test.lua)",
+            "value": 9973.800585516568,
+            "unit": "ns",
+            "range": "± 704.9749185298521"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: heapsort.lua)",
+            "value": 707975010.6666666,
+            "unit": "ns",
+            "range": "± 7564141.959944081"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: mandel.lua)",
+            "value": 12563753518.8,
+            "unit": "ns",
+            "range": "± 87788245.39094248"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: queen.lua)",
+            "value": 41422796.16410256,
+            "unit": "ns",
+            "range": "± 312483.40817915206"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: sieve.lua)",
+            "value": 675800686.2666667,
+            "unit": "ns",
+            "range": "± 4252775.392270701"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: startup.lua)",
+            "value": 1875673.6187220982,
+            "unit": "ns",
+            "range": "± 82013.71303902812"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_array_insert_function.lua)",
+            "value": 5575082.349479167,
+            "unit": "ns",
+            "range": "± 491621.71104031615"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_array_insert_indexed.lua)",
+            "value": 581600634.0714285,
+            "unit": "ns",
+            "range": "± 7245316.808222127"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_array_insert_remove_end.lua)",
+            "value": 1169722373.3846154,
+            "unit": "ns",
+            "range": "± 6139371.211440326"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_array_insert_remove_start.lua)",
+            "value": 2769309764.230769,
+            "unit": "ns",
+            "range": "± 7859533.117803808"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_array_ipairs.lua)",
+            "value": 9289804.847916666,
+            "unit": "ns",
+            "range": "± 138417.1172342714"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_array_ipairs_remove.lua)",
+            "value": 11100987.319711538,
+            "unit": "ns",
+            "range": "± 336383.52279176295"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_array_next.lua)",
+            "value": 16925536.733333334,
+            "unit": "ns",
+            "range": "± 310710.65319836704"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_array_next_remove.lua)",
+            "value": 12135205.01875,
+            "unit": "ns",
+            "range": "± 131783.79149193244"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_array_remove.lua)",
+            "value": 7781827.135416667,
+            "unit": "ns",
+            "range": "± 163874.57037513755"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_array_remove_then_add.lua)",
+            "value": 10789816.434151785,
+            "unit": "ns",
+            "range": "± 187806.15660540748"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_array_remove_then_add_immediate.lua)",
+            "value": 538421748.2,
+            "unit": "ns",
+            "range": "± 4159807.7146436404"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_map_insert.lua)",
+            "value": 12520425.055288462,
+            "unit": "ns",
+            "range": "± 151966.9085305935"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_map_next.lua)",
+            "value": 16492345.7,
+            "unit": "ns",
+            "range": "± 278614.213842121"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_map_next_remove.lua)",
+            "value": 21516189.546875,
+            "unit": "ns",
+            "range": "± 187134.91754573403"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_map_pairs.lua)",
+            "value": 15458190.75,
+            "unit": "ns",
+            "range": "± 163022.7592831437"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_map_pairs_remove.lua)",
+            "value": 17361803.375,
+            "unit": "ns",
+            "range": "± 275969.37424441415"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_map_remove.lua)",
+            "value": 20446675.079166666,
+            "unit": "ns",
+            "range": "± 689383.1661711903"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_map_remove_then_add.lua)",
+            "value": 28203727.6875,
+            "unit": "ns",
+            "range": "± 366423.95193324896"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: MoonSharpImplementation, Test: table_map_remove_then_add_immediate.lua)",
+            "value": 519082597.4285714,
+            "unit": "ns",
+            "range": "± 1774855.1177621281"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: ack.lua)",
+            "value": 183986602.07692307,
+            "unit": "ns",
+            "range": "± 292128.0853527015"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 1718414.4889973958,
+            "unit": "ns",
+            "range": "± 70527.18236695592"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: empty_test.lua)",
+            "value": 4698.629431915283,
+            "unit": "ns",
+            "range": "± 479.05129482746645"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: heapsort.lua)",
+            "value": 76147093.66666669,
+            "unit": "ns",
+            "range": "± 131957.60436320552"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: mandel.lua)",
+            "value": 6028309979.857142,
+            "unit": "ns",
+            "range": "± 8313127.582517515"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: queen.lua)",
+            "value": 8637332.130580356,
+            "unit": "ns",
+            "range": "± 23997.298189976096"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: sieve.lua)",
+            "value": 105196630.88000001,
+            "unit": "ns",
+            "range": "± 622848.3399632222"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: startup.lua)",
+            "value": 228020.80432942708,
+            "unit": "ns",
+            "range": "± 11168.3918064477"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_array_insert_function.lua)",
+            "value": 407398.8711263021,
+            "unit": "ns",
+            "range": "± 5924.496514716831"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_array_insert_indexed.lua)",
+            "value": 2006646.8671875,
+            "unit": "ns",
+            "range": "± 9689.839089118548"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_array_insert_remove_end.lua)",
+            "value": 4568135.486458333,
+            "unit": "ns",
+            "range": "± 26230.607953018643"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_array_insert_remove_start.lua)",
+            "value": 1326601269.8,
+            "unit": "ns",
+            "range": "± 1032264.6638110928"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_array_ipairs.lua)",
+            "value": 1231654.1948567708,
+            "unit": "ns",
+            "range": "± 7050.608693448363"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_array_ipairs_remove.lua)",
+            "value": 1415303.0326822917,
+            "unit": "ns",
+            "range": "± 7773.7357238024515"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_array_next.lua)",
+            "value": 7305696.6703125,
+            "unit": "ns",
+            "range": "± 32403.63342678094"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_array_next_remove.lua)",
+            "value": 2119661.871875,
+            "unit": "ns",
+            "range": "± 10133.983126610188"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_array_remove.lua)",
+            "value": 641884.7682942708,
+            "unit": "ns",
+            "range": "± 5667.494628242105"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_array_remove_then_add.lua)",
+            "value": 955005.028889974,
+            "unit": "ns",
+            "range": "± 9292.360582393952"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_array_remove_then_add_immediate.lua)",
+            "value": 846230.6061848958,
+            "unit": "ns",
+            "range": "± 13027.992891285441"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_map_insert.lua)",
+            "value": 5309658.697916667,
+            "unit": "ns",
+            "range": "± 17988.742391105392"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_map_next.lua)",
+            "value": 7222933.486607143,
+            "unit": "ns",
+            "range": "± 31910.36113805575"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_map_next_remove.lua)",
+            "value": 9283821.761458334,
+            "unit": "ns",
+            "range": "± 40204.27171489822"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_map_pairs.lua)",
+            "value": 6562968.865104167,
+            "unit": "ns",
+            "range": "± 25462.985578486165"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_map_pairs_remove.lua)",
+            "value": 6905393.037760417,
+            "unit": "ns",
+            "range": "± 31340.332835827005"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_map_remove.lua)",
+            "value": 8674299.635044644,
+            "unit": "ns",
+            "range": "± 26520.69957981873"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_map_remove_then_add.lua)",
+            "value": 12082013.703125,
+            "unit": "ns",
+            "range": "± 40188.411592948636"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NLuaImplementation, Test: table_map_remove_then_add_immediate.lua)",
+            "value": 11846500.19375,
+            "unit": "ns",
+            "range": "± 49338.0737855803"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: ack.lua)",
+            "value": 201284417.35555553,
+            "unit": "ns",
+            "range": "± 1513248.260573752"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: empty_test.lua)",
+            "value": 107861.81053059896,
+            "unit": "ns",
+            "range": "± 835.0062631509394"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: heapsort.lua)",
+            "value": 180612859.53333333,
+            "unit": "ns",
+            "range": "± 1922762.9024021544"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: queen.lua)",
+            "value": 12370619.85576923,
+            "unit": "ns",
+            "range": "± 51849.71903862395"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: sieve.lua)",
+            "value": 251801379.97333336,
+            "unit": "ns",
+            "range": "± 5925229.344895507"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: startup.lua)",
+            "value": 111426.64752604166,
+            "unit": "ns",
+            "range": "± 917.2223815417063"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_array_insert_function.lua)",
+            "value": 1665994.775607639,
+            "unit": "ns",
+            "range": "± 35311.13934616085"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_array_insert_indexed.lua)",
+            "value": 2055241.5596354166,
+            "unit": "ns",
+            "range": "± 14650.023162068468"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_array_insert_remove_end.lua)",
+            "value": 2388074.5114397323,
+            "unit": "ns",
+            "range": "± 15937.968856700047"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_array_insert_remove_start.lua)",
+            "value": 12148255.82142857,
+            "unit": "ns",
+            "range": "± 25874.731433825556"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_array_ipairs.lua)",
+            "value": 3549164.5340401786,
+            "unit": "ns",
+            "range": "± 33034.04826205905"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_array_ipairs_remove.lua)",
+            "value": 2293569.7662259615,
+            "unit": "ns",
+            "range": "± 14291.505400644575"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_array_next.lua)",
+            "value": 5161348.745833334,
+            "unit": "ns",
+            "range": "± 65280.976216613635"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_array_next_remove.lua)",
+            "value": 2707696.5598958335,
+            "unit": "ns",
+            "range": "± 23536.114050770815"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_array_remove.lua)",
+            "value": 1341673.33671875,
+            "unit": "ns",
+            "range": "± 10002.30621283234"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_array_remove_then_add.lua)",
+            "value": 2562529.4833333334,
+            "unit": "ns",
+            "range": "± 24503.257920381595"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_array_remove_then_add_immediate.lua)",
+            "value": 44169938.43333333,
+            "unit": "ns",
+            "range": "± 118612.45068247245"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_map_insert.lua)",
+            "value": 3298022.0638020835,
+            "unit": "ns",
+            "range": "± 15650.107918026953"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_map_next.lua)",
+            "value": 5162815.573958334,
+            "unit": "ns",
+            "range": "± 40797.36910064674"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_map_next_remove.lua)",
+            "value": 4304328.441145834,
+            "unit": "ns",
+            "range": "± 51467.15068544261"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_map_pairs.lua)",
+            "value": 4813962.666666667,
+            "unit": "ns",
+            "range": "± 48211.60317974276"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_map_remove.lua)",
+            "value": 5428443.752083333,
+            "unit": "ns",
+            "range": "± 85989.50681234535"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_map_remove_then_add.lua)",
+            "value": 8120602.012019231,
+            "unit": "ns",
+            "range": "± 60500.65972549809"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: NeoImplementation, Test: table_map_remove_then_add_immediate.lua)",
+            "value": 8647311.474330356,
+            "unit": "ns",
+            "range": "± 49540.542898421285"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: ack.lua)",
+            "value": 1107699224.7142856,
+            "unit": "ns",
+            "range": "± 4925758.312240968"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: binarytrees.lua-2.lua)",
+            "value": 3295405.3543526786,
+            "unit": "ns",
+            "range": "± 33525.205924520706"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: empty_test.lua)",
+            "value": 9546.08723364936,
+            "unit": "ns",
+            "range": "± 477.62694013764565"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: heapsort.lua)",
+            "value": 446843369.0714286,
+            "unit": "ns",
+            "range": "± 4175128.714750194"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: mandel.lua)",
+            "value": 10425327519,
+            "unit": "ns",
+            "range": "± 59156284.57801146"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: queen.lua)",
+            "value": 34977066.66190476,
+            "unit": "ns",
+            "range": "± 146054.20673581847"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: sieve.lua)",
+            "value": 524906118.1333333,
+            "unit": "ns",
+            "range": "± 1912559.6019116023"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: startup.lua)",
+            "value": 1770995.376171875,
+            "unit": "ns",
+            "range": "± 111985.80262125452"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_array_insert_function.lua)",
+            "value": 2992152.0102864583,
+            "unit": "ns",
+            "range": "± 114135.06690513204"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_array_insert_indexed.lua)",
+            "value": 4530326.977941177,
+            "unit": "ns",
+            "range": "± 87994.38169260095"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_array_insert_remove_end.lua)",
+            "value": 6204777.334375,
+            "unit": "ns",
+            "range": "± 38944.355409830554"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_array_insert_remove_start.lua)",
+            "value": 2301269831.133333,
+            "unit": "ns",
+            "range": "± 9304440.96297906"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_array_ipairs.lua)",
+            "value": 5096624.136160715,
+            "unit": "ns",
+            "range": "± 32544.352670389264"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_array_ipairs_remove.lua)",
+            "value": 4455595.412946428,
+            "unit": "ns",
+            "range": "± 31049.534390714514"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_array_next.lua)",
+            "value": 13299360.248958332,
+            "unit": "ns",
+            "range": "± 248996.73299666835"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_array_next_remove.lua)",
+            "value": 5101019.990625,
+            "unit": "ns",
+            "range": "± 52969.056990088"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_array_remove.lua)",
+            "value": 2975981.6940104165,
+            "unit": "ns",
+            "range": "± 127372.93239198839"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_array_remove_then_add.lua)",
+            "value": 5798486.349479167,
+            "unit": "ns",
+            "range": "± 68775.71084072984"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_array_remove_then_add_immediate.lua)",
+            "value": 5311627.578683035,
+            "unit": "ns",
+            "range": "± 56775.74253295004"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_map_insert.lua)",
+            "value": 9346287.95078125,
+            "unit": "ns",
+            "range": "± 208256.18527359443"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_map_next.lua)",
+            "value": 13490969.216796875,
+            "unit": "ns",
+            "range": "± 254677.26470738006"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_map_next_remove.lua)",
+            "value": 16791291.866666667,
+            "unit": "ns",
+            "range": "± 294449.2287171902"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_map_pairs.lua)",
+            "value": 12404354.44375,
+            "unit": "ns",
+            "range": "± 514235.1093818867"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_map_pairs_remove.lua)",
+            "value": 13441561.329613095,
+            "unit": "ns",
+            "range": "± 311848.39191872906"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_map_remove.lua)",
+            "value": 15044508.5671875,
+            "unit": "ns",
+            "range": "± 330384.91824637237"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_map_remove_then_add.lua)",
+            "value": 22411265.4875,
+            "unit": "ns",
+            "range": "± 131098.149063135"
+          },
+          {
+            "name": "Benchmark.Benchmarks.Benchmark(Implementation: SolarSharpImplementation, Test: table_map_remove_then_add_immediate.lua)",
+            "value": 22178897.98046875,
+            "unit": "ns",
+            "range": "± 409471.4883474474"
           }
         ]
       }
