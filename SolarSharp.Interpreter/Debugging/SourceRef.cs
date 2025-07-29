@@ -7,22 +7,6 @@ namespace SolarSharp.Interpreter.Debugging;
 /// </summary>
 public class SourceRef
 {
-    /// <summary>
-    ///     Gets a value indicating whether this instance is a breakpoint
-    /// </summary>
-    public bool Breakpoint;
-
-    public SourceRef(SourceRef src, bool isStepStop)
-    {
-        SourceIdx = src.SourceIdx;
-        FromChar = src.FromChar;
-        ToChar = src.ToChar;
-        FromLine = src.FromLine;
-        ToLine = src.ToLine;
-        IsStepStop = isStepStop;
-    }
-
-
     public SourceRef(int sourceIdx, int from, int to, int fromline, int toline, bool isStepStop)
     {
         SourceIdx = sourceIdx;
@@ -67,11 +51,6 @@ public class SourceRef
     ///     Gets a value indicating whether this instance is a stop "step" in source mode
     /// </summary>
     public bool IsStepStop { get; }
-
-    /// <summary>
-    ///     Gets a value indicating whether this instance cannot be set as a breakpoint
-    /// </summary>
-    public bool CannotBreakpoint { get; private set; }
 
     internal static SourceRef GetClrLocation()
     {
@@ -151,16 +130,6 @@ public class SourceRef
             return col <= ToChar;
 
         return true;
-    }
-
-    /// <summary>
-    ///     Sets the CannotBreakpoint flag.
-    /// </summary>
-    /// <returns></returns>
-    public SourceRef SetNoBreakPoint()
-    {
-        CannotBreakpoint = true;
-        return this;
     }
 
     /// <summary>

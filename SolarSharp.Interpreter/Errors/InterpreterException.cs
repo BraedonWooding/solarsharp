@@ -57,7 +57,7 @@ public class InterpreterException : Exception
     /// <summary>
     ///     Gets the interpreter call stack.
     /// </summary>
-    public IList<WatchItem> CallStack { get; internal set; }
+    public IList<StackFrame> CallStack { get; internal set; }
 
     /// <summary>
     ///     Gets the decorated message (error message plus error location in script) if possible.

@@ -293,7 +293,7 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
     /// <param name="skip">The skip.</param>
     /// <param name="entrySourceRef">The entry source reference.</param>
     /// <returns></returns>
-    public WatchItem[] GetStackTrace(int skip, SourceRef entrySourceRef = null)
+    public StackFrame[] GetStackTrace(int skip, SourceRef entrySourceRef = null)
     {
         if (State != CoroutineState.Running) entrySourceRef = m_Processor.GetCoroutineSuspendedLocation();
 

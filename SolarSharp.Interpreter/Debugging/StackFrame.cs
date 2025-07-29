@@ -6,7 +6,7 @@ namespace SolarSharp.Interpreter.Debugging;
 ///     A watch item for the debugger to consume.
 ///     Most properties make or not sense depending on the WatchType.
 /// </summary>
-public class WatchItem
+public class StackFrame
 {
     /// <summary>
     ///     Gets or sets the address of the item

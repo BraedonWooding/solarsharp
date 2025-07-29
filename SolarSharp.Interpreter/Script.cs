@@ -38,7 +38,6 @@ public class Script : IScriptPrivateResource
     private readonly Processor m_MainProcessor;
     private readonly List<SourceCode> m_Sources = [];
     private readonly Table[] m_TypeMetatables = new Table[(int)LuaTypeExtensions.MaxMetaTypes];
-    private IDebugger m_Debugger;
 
     /// <summary>
     ///     Initializes the <see cref="Script" /> class.
@@ -110,20 +109,6 @@ public class Script : IScriptPrivateResource
     public Table Globals { get; }
 
     /// <summary>
-    ///     Gets or sets a value indicating whether the debugger is enabled.
-    ///     Note that unless a debugger attached, this property returns a
-    ///     value which might not reflect the real status of the debugger.
-    ///     Use this property if you want to disable the debugger for some
-    ///     executions.
-    /// </summary>
-    public bool DebuggerEnabled
-    {
-        get => m_MainProcessor.DebuggerEnabled;
-        set => m_MainProcessor.DebuggerEnabled = value;
-    }
-
-
-    /// <summary>
     ///     Gets the source code count.
     /// </summary>
     /// <value>
@@ -164,22 +149,8 @@ public class Script : IScriptPrivateResource
 
         var address = Loader_Fast.LoadFunction(this, source, m_ByteCode, globalTable != null || Globals != null);
 
-        SignalSourceCodeChange(source);
-        SignalByteCodeChange();
-
         return MakeClosure(address, globalTable ?? Globals);
     }
-
-    private void SignalByteCodeChange()
-    {
-        m_Debugger?.SetByteCode(m_ByteCode.Code.Select(s => s.ToString()).ToArray());
-    }
-
-    private void SignalSourceCodeChange(SourceCode source)
-    {
-        m_Debugger?.SetSourceCode(source);
-    }
-
 
     /// <summary>
     ///     Loads a string containing a Lua/SolarSharp script.
@@ -187,8 +158,7 @@ public class Script : IScriptPrivateResource
     /// <param name="code">The code.</param>
     /// <param name="globalTable">The global table to bind to this chunk.</param>
     /// <param name="codeFriendlyName">
-    ///     Name of the code - used to report errors, etc. Also used by debuggers to locate the
-    ///     original source file.
+    ///     Name of the code - used to report errors, etc.
     /// </param>
     /// <returns>
     ///     A LuaValue containing a function which will execute the loaded code.
@@ -214,9 +184,6 @@ public class Script : IScriptPrivateResource
         var address = Loader_Fast.LoadChunk(this,
             source,
             m_ByteCode);
-
-        SignalSourceCodeChange(source);
-        SignalByteCodeChange();
 
         return MakeClosure(address, globalTable ?? Globals);
     }
@@ -253,9 +220,6 @@ public class Script : IScriptPrivateResource
 
         var address =
             m_MainProcessor.Undump(codeStream, m_Sources.Count - 1, globalTable ?? Globals, out var hasUpvalues);
-
-        SignalSourceCodeChange(source);
-        SignalByteCodeChange();
 
         if (hasUpvalues)
             return MakeClosure(address, globalTable ?? Globals);
@@ -340,8 +304,7 @@ public class Script : IScriptPrivateResource
     /// <param name="code">The code.</param>
     /// <param name="globalContext">The global context.</param>
     /// <param name="codeFriendlyName">
-    ///     Name of the code - used to report errors, etc. Also used by debuggers to locate the
-    ///     original source file.
+    ///     Name of the code - used to report errors, etc.
     /// </param>
     /// <returns>
     ///     A LuaValue containing the result of the processing of the loaded chunk.
@@ -359,8 +322,7 @@ public class Script : IScriptPrivateResource
     /// <param name="stream">The stream.</param>
     /// <param name="globalContext">The global context.</param>
     /// <param name="codeFriendlyName">
-    ///     Name of the code - used to report errors, etc. Also used by debuggers to locate the
-    ///     original source file.
+    ///     Name of the code - used to report errors, etc.
     /// </param>
     /// <returns>
     ///     A LuaValue containing the result of the processing of the loaded chunk.
@@ -378,8 +340,7 @@ public class Script : IScriptPrivateResource
     /// <param name="filename">The filename.</param>
     /// <param name="globalContext">The global context.</param>
     /// <param name="codeFriendlyName">
-    ///     Name of the code - used to report errors, etc. Also used by debuggers to locate the
-    ///     original source file.
+    ///     Name of the code - used to report errors, etc.
     /// </param>
     /// <returns>
     ///     A LuaValue containing the result of the processing of the loaded chunk.
@@ -607,23 +568,6 @@ public class Script : IScriptPrivateResource
         return CreateCoroutine(LuaValue.FromObject(this, function));
     }
 
-
-    /// <summary>
-    ///     Attaches a debugger. This usually should be called by the debugger itself and not by user code.
-    /// </summary>
-    /// <param name="debugger">The debugger object.</param>
-    public void AttachDebugger(IDebugger debugger)
-    {
-        DebuggerEnabled = true;
-        m_Debugger = debugger;
-        m_MainProcessor.AttachDebugger(debugger);
-
-        foreach (var src in m_Sources)
-            SignalSourceCodeChange(src);
-
-        SignalByteCodeChange();
-    }
-
     /// <summary>
     ///     Gets the source code.
     /// </summary>
@@ -633,7 +577,6 @@ public class Script : IScriptPrivateResource
     {
         return m_Sources[sourceCodeID];
     }
-
 
     /// <summary>
     ///     Loads a module as per the "require" Lua function. http://www.lua.org/pil/8.1.html

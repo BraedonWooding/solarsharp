@@ -12,7 +12,6 @@ internal sealed partial class Processor
 {
     private const int STACK_SIZE = 131072;
     private readonly List<Processor> m_CoroutinesStack;
-    private readonly DebugContext m_Debug;
     private readonly FastStack<CallStackItem> m_ExecutionStack;
     private readonly Table m_GlobalTable;
     private readonly Processor m_Parent;
@@ -32,7 +31,6 @@ internal sealed partial class Processor
         m_ExecutionStack = new FastStack<CallStackItem>(STACK_SIZE);
         m_CoroutinesStack = new List<Processor>();
 
-        m_Debug = new DebugContext();
         m_RootChunk = byteCode;
         m_GlobalTable = globalContext;
         m_Script = script;
@@ -44,7 +42,6 @@ internal sealed partial class Processor
     {
         m_ValueStack = new FastStack<LuaValue>(STACK_SIZE);
         m_ExecutionStack = new FastStack<CallStackItem>(STACK_SIZE);
-        m_Debug = parentProcessor.m_Debug;
         m_RootChunk = parentProcessor.m_RootChunk;
         m_GlobalTable = parentProcessor.m_GlobalTable;
         m_Script = parentProcessor.m_Script;
@@ -58,7 +55,6 @@ internal sealed partial class Processor
         m_ValueStack = recycleProcessor.m_ValueStack;
         m_ExecutionStack = recycleProcessor.m_ExecutionStack;
 
-        m_Debug = parentProcessor.m_Debug;
         m_RootChunk = parentProcessor.m_RootChunk;
         m_GlobalTable = parentProcessor.m_GlobalTable;
         m_Script = parentProcessor.m_Script;
@@ -134,10 +130,6 @@ internal sealed partial class Processor
         m_OwningThreadID = -1;
 
         m_Parent?.m_CoroutinesStack.RemoveAt(m_Parent.m_CoroutinesStack.Count - 1);
-
-        if (m_ExecutionNesting == 0 && m_Debug != null && m_Debug.DebuggerEnabled
-            && m_Debug.DebuggerAttached != null)
-            m_Debug.DebuggerAttached.SignalExecutionEnded();
     }
 
     private int GetThreadId()

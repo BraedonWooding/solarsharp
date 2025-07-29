@@ -26,14 +26,6 @@ namespace SolarSharp.Interpreter.CoreLib.IO
     internal static class NamespaceDoc;
 }
 
-namespace SolarSharp.Interpreter.Debugging
-{
-    /// <summary>
-    ///     Namespace containing classes used to support debuggers
-    /// </summary>
-    internal static class NamespaceDoc;
-}
-
 namespace SolarSharp.Interpreter.Diagnostics
 {
     /// <summary>

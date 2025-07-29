@@ -229,11 +229,6 @@ internal sealed partial class Processor
                 throw;
             }
 
-            if (m_Debug.DebuggerAttached != null)
-                if (m_Debug.DebuggerAttached.SignalRuntimeException((ScriptRuntimeException)ex))
-                    if (instructionPtr >= 0 && instructionPtr < m_RootChunk.Code.Count)
-                        ListenDebugger(m_RootChunk.Code[instructionPtr], instructionPtr);
-
             for (var i = 0; i < m_ExecutionStack.Count; i++)
             {
                 var c = m_ExecutionStack.Peek(i);

@@ -189,7 +189,6 @@ public static class LuaTypeExtensions
         return type.ToString().ToLowerInvariant();
     }
 
-
     /// <summary>
     ///     Converts the DataType to the string returned by the "type(...)" Lua function
     /// </summary>

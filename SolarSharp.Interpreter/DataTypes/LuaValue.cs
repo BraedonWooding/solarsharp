@@ -14,8 +14,6 @@ namespace SolarSharp.Interpreter.DataTypes;
 /// </summary>
 public sealed class LuaValue
 {
-    private static int s_RefIDCounter;
-
     private int m_HashCode = -1;
 
     private object m_Object;
