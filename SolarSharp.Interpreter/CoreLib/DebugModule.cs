@@ -143,7 +143,8 @@ public class DebugModule
         if (index < 0 || index >= closure.Count)
             return LuaValue.Nil;
 
-        return LuaValue.NewNumber(closure[index].ReferenceID);
+        // TODO: Lua uses light user data for this, we might want to follow suit.
+        return LuaValue.NewNumber(closure[index].GetHashCode());
     }
 
 

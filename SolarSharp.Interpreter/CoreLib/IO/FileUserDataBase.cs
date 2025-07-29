@@ -209,7 +209,7 @@ internal abstract class FileUserDataBase : RefIdObject
     public override string ToString()
     {
         if (isopen())
-            return $"file ({ReferenceID:X8})";
+            return $"file ({GetHashCode():X8})";
         return "file (closed)";
     }
 }

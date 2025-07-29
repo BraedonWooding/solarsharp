@@ -2,23 +2,10 @@
 
 /// <summary>
 ///     A base class for many SolarSharp objects.
-///     Helds a ReferenceID property which gets a different value for every object instance, for debugging
-///     purposes. Note that the ID is not assigned in a thread safe manner for speed reason, so the IDs
-///     are guaranteed to be unique only if everything is running on one thread at a time.
 /// </summary>
+// TODO: Remove this class
 public class RefIdObject
 {
-    private static int s_RefIDCounter;
-
-    /// <summary>
-    ///     Gets the reference identifier.
-    /// </summary>
-    /// <value>
-    ///     The reference identifier.
-    /// </value>
-    public int ReferenceID { get; } = ++s_RefIDCounter;
-
-
     /// <summary>
     ///     Formats a string with a type name and a ref-id
     /// </summary>
@@ -26,6 +13,6 @@ public class RefIdObject
     /// <returns></returns>
     public string FormatTypeString(string typeString)
     {
-        return $"{typeString}: {ReferenceID:X8}";
+        return $"{typeString}: {GetHashCode():X8}";
     }
 }

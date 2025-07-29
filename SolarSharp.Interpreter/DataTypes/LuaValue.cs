@@ -28,13 +28,6 @@ public sealed class LuaValue
         False = NewBoolean(false).AsReadOnly();
     }
 
-
-    /// <summary>
-    ///     Gets a unique reference identifier. This is guaranteed to be unique only for LuaValues created in a single thread
-    ///     as it's not thread-safe.
-    /// </summary>
-    public int ReferenceID { get; } = ++s_RefIDCounter;
-
     /// <summary>
     ///     Gets the type of the value.
     /// </summary>
@@ -517,7 +510,7 @@ public sealed class LuaValue
             DataType.Tuple => string.Join(", ", Tuple.Select(t => t.ToString()).ToArray()),
             DataType.TailCallRequest => "Tail:(" + string.Join(", ", Tuple.Select(t => t.ToString()).ToArray()) + ")",
             DataType.UserData => "(UserData)",
-            DataType.Thread => $"(Coroutine {Coroutine.ReferenceID:X8})",
+            DataType.Thread => $"(Coroutine {Coroutine.GetHashCode():X8})",
             _ => "(???)"
         };
     }

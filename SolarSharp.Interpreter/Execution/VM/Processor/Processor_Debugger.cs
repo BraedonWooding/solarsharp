@@ -256,8 +256,6 @@ internal sealed partial class Processor
 
         return coroutinesStack.Select(c => new WatchItem
         {
-            Address = c.AssociatedCoroutine.ReferenceID,
-            Name = "coroutine #" + c.AssociatedCoroutine.ReferenceID
         }).ToList();
     }
 
