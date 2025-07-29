@@ -3,29 +3,29 @@
 using System;
 using SolarSharp.Interpreter.Compatibility.Frameworks.Base;
 
-namespace SolarSharp.Interpreter.Compatibility.Frameworks
+namespace SolarSharp.Interpreter.Compatibility.Frameworks;
+
+internal class FrameworkCurrent : FrameworkClrBase
 {
-    internal class FrameworkCurrent : FrameworkClrBase
+    public override Type GetTypeInfoFromType(Type t)
     {
-        public override Type GetTypeInfoFromType(Type t)
-        {
-            return t;
-        }
+        return t;
+    }
 
-        public override bool IsDbNull(object o)
-        {
-            return o != null && Convert.IsDBNull(o);
-        }
+    public override bool IsDbNull(object o)
+    {
+        return o != null && Convert.IsDBNull(o);
+    }
 
-        public override bool StringContainsChar(string str, char chr)
-        {
-            return str.Contains(chr);
-        }
 
-        public override Type GetInterface(Type type, string name)
-        {
-            return type.GetInterface(name);
-        }
+    public override bool StringContainsChar(string str, char chr)
+    {
+        return str.Contains(chr);
+    }
+
+    public override Type GetInterface(Type type, string name)
+    {
+        return type.GetInterface(name);
     }
 }
 

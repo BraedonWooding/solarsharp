@@ -45,255 +45,230 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
 using System.Diagnostics;
 using System.Text;
 
-namespace SolarSharp.Interpreter.Interop.LuaStateInterop
+namespace SolarSharp.Interpreter.Interop.LuaStateInterop;
+
+public class CharPtr
 {
-    public class CharPtr
+    public char[] chars;
+    public int index;
+
+    public CharPtr(string str)
     {
-        public char[] chars;
-        public int index;
+        chars = (str + '\0').ToCharArray();
+        index = 0;
+    }
 
-        public char this[int offset]
-        {
-            get { return chars[index + offset]; }
-            set { chars[index + offset] = value; }
-        }
+    public CharPtr(CharPtr ptr)
+    {
+        chars = ptr.chars;
+        index = ptr.index;
+    }
 
-        public char this[uint offset]
-        {
-            get { return chars[index + offset]; }
-            set { chars[index + offset] = value; }
-        }
-        public char this[long offset]
-        {
-            get { return chars[index + (int)offset]; }
-            set { chars[index + (int)offset] = value; }
-        }
+    public CharPtr(char[] chars)
+    {
+        this.chars = chars;
+        index = 0;
+    }
 
-        public static implicit operator CharPtr(string str)
-        {
-            return new CharPtr(str);
-        }
+    public CharPtr(char[] chars, int index)
+    {
+        this.chars = chars;
+        this.index = index;
+    }
 
-        public static implicit operator CharPtr(char[] chars)
-        {
-            return new CharPtr(chars);
-        }
+    public CharPtr(byte[] bytes)
+    {
+        chars = new char[bytes.Length];
+        for (var i = 0; i < bytes.Length; i++) chars[i] = (char)bytes[i];
 
-        public static implicit operator CharPtr(byte[] bytes)
-        {
-            return new CharPtr(bytes);
-        }
+        index = 0;
+    }
 
-        public CharPtr()
-        {
-            chars = null;
-            index = 0;
-        }
+    public char this[int offset]
+    {
+        get => chars[index + offset];
+        set => chars[index + offset] = value;
+    }
 
-        public CharPtr(string str)
-        {
-            chars = (str + '\0').ToCharArray();
-            index = 0;
-        }
+    public char this[uint offset]
+    {
+        get => chars[index + offset];
+        set => chars[index + offset] = value;
+    }
 
-        public CharPtr(CharPtr ptr)
-        {
-            chars = ptr.chars;
-            index = ptr.index;
-        }
+    public char this[long offset]
+    {
+        get => chars[index + (int)offset];
+        set => chars[index + (int)offset] = value;
+    }
 
-        public CharPtr(CharPtr ptr, int index)
-        {
-            chars = ptr.chars;
-            this.index = index;
-        }
+    public static implicit operator CharPtr(string str)
+    {
+        return new CharPtr(str);
+    }
 
-        public CharPtr(char[] chars)
-        {
-            this.chars = chars;
-            index = 0;
-        }
+    public static implicit operator CharPtr(char[] chars)
+    {
+        return new CharPtr(chars);
+    }
 
-        public CharPtr(char[] chars, int index)
-        {
-            this.chars = chars;
-            this.index = index;
-        }
+    public static implicit operator CharPtr(byte[] bytes)
+    {
+        return new CharPtr(bytes);
+    }
 
-        public CharPtr(byte[] bytes)
-        {
-            chars = new char[bytes.Length];
-            for (var i = 0; i < bytes.Length; i++)
-            {
-                chars[i] = (char)bytes[i];
-            }
+    public static CharPtr operator +(CharPtr ptr, int offset)
+    {
+        return new CharPtr(ptr.chars, ptr.index + offset);
+    }
 
-            index = 0;
-        }
+    public static CharPtr operator -(CharPtr ptr, int offset)
+    {
+        return new CharPtr(ptr.chars, ptr.index - offset);
+    }
 
-        public CharPtr(IntPtr ptr)
-        {
-            chars = new char[0];
-            index = 0;
-        }
+    public static CharPtr operator +(CharPtr ptr, uint offset)
+    {
+        return new CharPtr(ptr.chars, ptr.index + (int)offset);
+    }
 
-        public static CharPtr operator +(CharPtr ptr, int offset)
-        {
-            return new CharPtr(ptr.chars, ptr.index + offset);
-        }
+    public static CharPtr operator -(CharPtr ptr, uint offset)
+    {
+        return new CharPtr(ptr.chars, ptr.index - (int)offset);
+    }
 
-        public static CharPtr operator -(CharPtr ptr, int offset)
-        {
-            return new CharPtr(ptr.chars, ptr.index - offset);
-        }
+    public void inc()
+    {
+        index++;
+    }
 
-        public static CharPtr operator +(CharPtr ptr, uint offset)
-        {
-            return new CharPtr(ptr.chars, ptr.index + (int)offset);
-        }
+    public void dec()
+    {
+        index--;
+    }
 
-        public static CharPtr operator -(CharPtr ptr, uint offset)
-        {
-            return new CharPtr(ptr.chars, ptr.index - (int)offset);
-        }
+    public CharPtr next()
+    {
+        return new CharPtr(chars, index + 1);
+    }
 
-        public void inc()
-        {
-            index++;
-        }
+    public CharPtr prev()
+    {
+        return new CharPtr(chars, index - 1);
+    }
 
-        public void dec()
-        {
-            index--;
-        }
+    public CharPtr add(int ofs)
+    {
+        return new CharPtr(chars, index + ofs);
+    }
 
-        public CharPtr next()
-        {
-            return new CharPtr(chars, index + 1);
-        }
+    public CharPtr sub(int ofs)
+    {
+        return new CharPtr(chars, index - ofs);
+    }
 
-        public CharPtr prev()
-        {
-            return new CharPtr(chars, index - 1);
-        }
+    public static bool operator ==(CharPtr ptr, char ch)
+    {
+        return ptr[0] == ch;
+    }
 
-        public CharPtr add(int ofs)
-        {
-            return new CharPtr(chars, index + ofs);
-        }
+    public static bool operator ==(char ch, CharPtr ptr)
+    {
+        return ptr[0] == ch;
+    }
 
-        public CharPtr sub(int ofs)
-        {
-            return new CharPtr(chars, index - ofs);
-        }
+    public static bool operator !=(CharPtr ptr, char ch)
+    {
+        return ptr[0] != ch;
+    }
 
-        public static bool operator ==(CharPtr ptr, char ch)
-        {
-            return ptr[0] == ch;
-        }
+    public static bool operator !=(char ch, CharPtr ptr)
+    {
+        return ptr[0] != ch;
+    }
 
-        public static bool operator ==(char ch, CharPtr ptr)
-        {
-            return ptr[0] == ch;
-        }
+    public static CharPtr operator +(CharPtr ptr1, CharPtr ptr2)
+    {
+        var result = "";
+        for (var i = 0; ptr1[i] != '\0'; i++)
+            result += ptr1[i];
+        for (var i = 0; ptr2[i] != '\0'; i++)
+            result += ptr2[i];
+        return new CharPtr(result);
+    }
 
-        public static bool operator !=(CharPtr ptr, char ch)
-        {
-            return ptr[0] != ch;
-        }
+    public static int operator -(CharPtr ptr1, CharPtr ptr2)
+    {
+        Debug.Assert(ptr1.chars == ptr2.chars);
+        return ptr1.index - ptr2.index;
+    }
 
-        public static bool operator !=(char ch, CharPtr ptr)
-        {
-            return ptr[0] != ch;
-        }
+    public static bool operator <(CharPtr ptr1, CharPtr ptr2)
+    {
+        Debug.Assert(ptr1.chars == ptr2.chars);
+        return ptr1.index < ptr2.index;
+    }
 
-        public static CharPtr operator +(CharPtr ptr1, CharPtr ptr2)
-        {
-            var result = "";
-            for (var i = 0; ptr1[i] != '\0'; i++)
-                result += ptr1[i];
-            for (var i = 0; ptr2[i] != '\0'; i++)
-                result += ptr2[i];
-            return new CharPtr(result);
-        }
+    public static bool operator <=(CharPtr ptr1, CharPtr ptr2)
+    {
+        Debug.Assert(ptr1.chars == ptr2.chars);
+        return ptr1.index <= ptr2.index;
+    }
 
-        public static int operator -(CharPtr ptr1, CharPtr ptr2)
-        {
-            Debug.Assert(ptr1.chars == ptr2.chars);
-            return ptr1.index - ptr2.index;
-        }
+    public static bool operator >(CharPtr ptr1, CharPtr ptr2)
+    {
+        Debug.Assert(ptr1.chars == ptr2.chars);
+        return ptr1.index > ptr2.index;
+    }
 
-        public static bool operator <(CharPtr ptr1, CharPtr ptr2)
-        {
-            Debug.Assert(ptr1.chars == ptr2.chars);
-            return ptr1.index < ptr2.index;
-        }
+    public static bool operator >=(CharPtr ptr1, CharPtr ptr2)
+    {
+        Debug.Assert(ptr1.chars == ptr2.chars);
+        return ptr1.index >= ptr2.index;
+    }
 
-        public static bool operator <=(CharPtr ptr1, CharPtr ptr2)
-        {
-            Debug.Assert(ptr1.chars == ptr2.chars);
-            return ptr1.index <= ptr2.index;
-        }
+    public static bool operator ==(CharPtr ptr1, CharPtr ptr2)
+    {
+        object o1 = ptr1;
+        object o2 = ptr2;
+        if (o1 == null && o2 == null) return true;
+        if (o1 == null) return false;
+        if (o2 == null) return false;
+        return ptr1.chars == ptr2.chars && ptr1.index == ptr2.index;
+    }
 
-        public static bool operator >(CharPtr ptr1, CharPtr ptr2)
-        {
-            Debug.Assert(ptr1.chars == ptr2.chars);
-            return ptr1.index > ptr2.index;
-        }
+    public static bool operator !=(CharPtr ptr1, CharPtr ptr2)
+    {
+        return !(ptr1 == ptr2);
+    }
 
-        public static bool operator >=(CharPtr ptr1, CharPtr ptr2)
-        {
-            Debug.Assert(ptr1.chars == ptr2.chars);
-            return ptr1.index >= ptr2.index;
-        }
+    public override bool Equals(object o)
+    {
+        return this == o as CharPtr;
+    }
 
-        public static bool operator ==(CharPtr ptr1, CharPtr ptr2)
-        {
-            object o1 = ptr1;
-            object o2 = ptr2;
-            if (o1 == null && o2 == null)
-                return true;
-            if (o1 == null)
-                return false;
-            if (o2 == null)
-                return false;
-            return ptr1.chars == ptr2.chars && ptr1.index == ptr2.index;
-        }
+    public override int GetHashCode()
+    {
+        return 0;
+    }
 
-        public static bool operator !=(CharPtr ptr1, CharPtr ptr2)
-        {
-            return !(ptr1 == ptr2);
-        }
+    public override string ToString()
+    {
+        StringBuilder result = new();
+        for (var i = index; i < chars.Length && chars[i] != '\0'; i++)
+            result.Append(chars[i]);
 
-        public override bool Equals(object o)
-        {
-            return this == o as CharPtr;
-        }
+        return result.ToString();
+    }
 
-        public override int GetHashCode()
-        {
-            return 0;
-        }
-
-        public override string ToString()
-        {
-            var result = new StringBuilder();
-            for (var i = index; i < chars.Length && chars[i] != '\0'; i++)
-                result.Append(chars[i]);
-
-            return result.ToString();
-        }
-
-        public string ToString(int length)
-        {
-            var result = new StringBuilder();
-            for (var i = index; i < chars.Length && i < length + index; i++)
-                result.Append(chars[i]);
-            return result.ToString();
-        }
+    public string ToString(int length)
+    {
+        StringBuilder result = new();
+        for (var i = index; i < chars.Length && i < length + index; i++)
+            result.Append(chars[i]);
+        return result.ToString();
     }
 }

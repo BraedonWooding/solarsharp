@@ -1,15 +1,13 @@
 ﻿using System;
 using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
 #pragma warning disable 169 // unused private field
 
     [TestFixture]
-    [NonParallelizable] // Uses global UserData registration
-    [Category("VM.Integration")]
     public class UserDataEventsTests
     {
         public class SomeClass
@@ -40,6 +38,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
         }
 
+
         [Test]
         public void Interop_Event_Simple()
         {
@@ -47,27 +46,23 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script(Examples.DesktopBasePolicySet);
+            Script s = new(CoreModules.None);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback(
-                (c, a) =>
-                {
-                    invocationCount += 1;
-                    return DynValue.Void;
-                }
-            );
+            s.Globals["ext"] = LuaValue.NewCallback((_, _) =>
+            {
+                invocationCount += 1;
+                return LuaValue.Void;
+            });
 
-            s.DoString(
-                @"
+            s.DoString(@"
 				function handler(o, a)
 					ext();
 				end
 
 				myobj.MyEvent.add(handler);
-				"
-            );
+				");
 
             obj.Trigger_MyEvent();
 
@@ -81,35 +76,32 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script(Examples.DesktopBasePolicySet);
+            Script s = new(CoreModules.None);
 
             var obj = new SomeClass();
             var obj2 = new SomeClass();
             s.Globals["myobj"] = obj;
             s.Globals["myobj2"] = obj2;
-            s.Globals["ext"] = DynValue.NewCallback(
-                (c, a) =>
-                {
-                    invocationCount += 1;
-                    return DynValue.Void;
-                }
-            );
+            s.Globals["ext"] = LuaValue.NewCallback((_, _) =>
+            {
+                invocationCount += 1;
+                return LuaValue.Void;
+            });
 
-            s.DoString(
-                @"
+            s.DoString(@"
 				function handler(o, a)
 					ext();
 				end
 
 				myobj.MyEvent.add(handler);
-				"
-            );
+				");
 
             obj.Trigger_MyEvent();
             obj2.Trigger_MyEvent();
 
             Assert.That(invocationCount, Is.EqualTo(1));
         }
+
 
         [Test]
         public void Interop_Event_Multi()
@@ -118,28 +110,24 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script(Examples.DesktopBasePolicySet);
+            Script s = new(CoreModules.None);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback(
-                (c, a) =>
-                {
-                    invocationCount += 1;
-                    return DynValue.Void;
-                }
-            );
+            s.Globals["ext"] = LuaValue.NewCallback((_, _) =>
+            {
+                invocationCount += 1;
+                return LuaValue.Void;
+            });
 
-            s.DoString(
-                @"
+            s.DoString(@"
 				function handler(o, a)
 					ext();
 				end
 
 				myobj.MyEvent.add(handler);
 				myobj.MyEvent.add(handler);
-				"
-            );
+				");
 
             obj.Trigger_MyEvent();
 
@@ -153,20 +141,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script(Examples.DesktopBasePolicySet);
+            Script s = new(CoreModules.None);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback(
-                (c, a) =>
-                {
-                    invocationCount += 1;
-                    return DynValue.Void;
-                }
-            );
+            s.Globals["ext"] = LuaValue.NewCallback((_, _) =>
+            {
+                invocationCount += 1;
+                return LuaValue.Void;
+            });
 
-            s.DoString(
-                @"
+            s.DoString(@"
 				function handler(o, a)
 					ext();
 				end
@@ -176,8 +161,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj.Trigger_MyEvent();
 				myobj.MyEvent.remove(handler);
 				myobj.Trigger_MyEvent();
-				"
-            );
+				");
 
             Assert.That(invocationCount, Is.EqualTo(3));
         }
@@ -189,20 +173,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script(Examples.DesktopBasePolicySet);
+            Script s = new(CoreModules.None);
 
             var obj = new SomeClass();
             s.Globals["myobj"] = obj;
-            s.Globals["ext"] = DynValue.NewCallback(
-                (c, a) =>
-                {
-                    invocationCount += 1;
-                    return DynValue.Void;
-                }
-            );
+            s.Globals["ext"] = LuaValue.NewCallback((_, _) =>
+            {
+                invocationCount += 1;
+                return LuaValue.Void;
+            });
 
-            s.DoString(
-                @"
+            s.DoString(@"
 				function handler(o, a)
 					ext();
 				end
@@ -213,15 +194,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj.MyEvent.remove(handler);
 				myobj.Trigger_MyEvent();
 				myobj.MyEvent.remove(handler);
-				"
-            );
+				");
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(obj.Trigger_MyEvent(), Is.False, "deregistration");
-                Assert.That(invocationCount, Is.EqualTo(3));
-            });
+            Assert.That(obj.Trigger_MyEvent(), Is.False, "deregistration");
+            Assert.That(invocationCount, Is.EqualTo(3));
         }
+
 
         [Test]
         public void Interop_SEvent_DetachAndDeregister()
@@ -230,23 +208,20 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script(Examples.DesktopBasePolicySet)
+            Script s = new(CoreModules.None)
             {
-                Globals =
-                {
-                    ["myobj"] = typeof(SomeClass),
-                    ["ext"] = DynValue.NewCallback(
-                        (c, a) =>
-                        {
-                            invocationCount += 1;
-                            return DynValue.Void;
-                        }
-                    ),
-                },
+	            Globals =
+	            {
+		            ["myobj"] = typeof(SomeClass),
+		            ["ext"] = LuaValue.NewCallback((_, _) =>
+		            {
+			            invocationCount += 1;
+			            return LuaValue.Void;
+		            })
+	            }
             };
 
-            s.DoString(
-                @"
+            s.DoString(@"
 				function handler(o, a)
 					ext();
 				end
@@ -257,14 +232,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj.MySEvent.remove(handler);
 				myobj.Trigger_MySEvent();
 				myobj.MySEvent.remove(handler);
-				"
-            );
+				");
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(SomeClass.Trigger_MySEvent(), Is.False, "deregistration");
-                Assert.That(invocationCount, Is.EqualTo(3));
-            });
+            Assert.That(SomeClass.Trigger_MySEvent(), Is.False, "deregistration");
+            Assert.That(invocationCount, Is.EqualTo(3));
         }
 
         [Test]
@@ -274,23 +245,20 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<SomeClass>();
             UserData.RegisterType<EventArgs>();
 
-            var s = new Script(Examples.DesktopBasePolicySet)
+            Script s = new(CoreModules.None)
             {
-                Globals =
-                {
-                    ["myobj"] = typeof(SomeClass),
-                    ["ext"] = DynValue.NewCallback(
-                        (c, a) =>
-                        {
-                            invocationCount += 1;
-                            return DynValue.Void;
-                        }
-                    ),
-                },
+	            Globals =
+	            {
+		            ["myobj"] = typeof(SomeClass),
+		            ["ext"] = LuaValue.NewCallback((_, _) =>
+		            {
+			            invocationCount += 1;
+			            return LuaValue.Void;
+		            })
+	            }
             };
 
-            s.DoString(
-                @"
+            s.DoString(@"
 				function handler(o, a)
 					ext();
 				end
@@ -301,8 +269,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				myobj.Trigger_MySEvent();
 				myobj.MySEvent.add(handler);
 				myobj.Trigger_MySEvent();
-			"
-            );
+			");
 
             Assert.Multiple(() =>
             {

@@ -1,20 +1,19 @@
 ﻿using MoonSharp.Interpreter;
 
-namespace Benchmark.Implementations
+namespace Benchmark.Implementations;
+
+public class MoonSharpImplementation : AImplementation
 {
-    public class MoonSharpImplementation : AImplementation
+    public readonly Script script;
+
+    public MoonSharpImplementation()
     {
-        public readonly Script script;
+        Script.WarmUp();
+        script = new Script();
+    }
 
-        public MoonSharpImplementation()
-        {
-            Script.WarmUp();
-            script = new Script();
-        }
-
-        public override object Run(string file)
-        {
-            return script.DoString(file);
-        }
+    public override object Run(string file)
+    {
+        return script.DoString(file);
     }
 }

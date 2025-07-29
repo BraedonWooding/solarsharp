@@ -3,35 +3,34 @@ using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution.Scopes;
 using SolarSharp.Interpreter.Execution.VM;
 
-namespace SolarSharp.Interpreter.Tree
+namespace SolarSharp.Interpreter.Tree;
+
+internal class Loop : ILoop
 {
-    internal class Loop : ILoop
+    public List<Instruction> BreakJumps = [];
+    public RuntimeScopeBlock Scope;
+
+    public void CompileBreak(ByteCode bc)
     {
-        public RuntimeScopeBlock Scope;
-        public List<Instruction> BreakJumps = new List<Instruction>();
-
-        public void CompileBreak(ByteCode bc)
-        {
-            bc.Emit_Exit(Scope);
-            BreakJumps.Add(bc.Emit_Jump(OpCode.Jump, -1));
-        }
-
-        public bool IsBoundary()
-        {
-            return false;
-        }
+        bc.Emit_Exit(Scope);
+        BreakJumps.Add(bc.Emit_Jump(OpCode.Jump, -1));
     }
 
-    internal class LoopBoundary : ILoop
+    public bool IsBoundary()
     {
-        public void CompileBreak(ByteCode bc)
-        {
-            throw new InternalErrorException("CompileBreak called on LoopBoundary");
-        }
+        return false;
+    }
+}
 
-        public bool IsBoundary()
-        {
-            return true;
-        }
+internal class LoopBoundary : ILoop
+{
+    public void CompileBreak(ByteCode bc)
+    {
+        throw new InternalErrorException("CompileBreak called on LoopBoundary");
+    }
+
+    public bool IsBoundary()
+    {
+        return true;
     }
 }

@@ -1,21 +1,19 @@
 ﻿using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [Category("VM.Integration")]
     public class ErrorHandlingTests
     {
-        [Category("VM.E2E")]
         [Test]
         public void PCallMultipleReturns()
         {
-            var script = @"return pcall(function() return 1,2,3 end)";
+            var script = "return pcall(function() return 1,2,3 end)";
 
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
             var res = S.DoString(script);
 
             Assert.Multiple(() =>
@@ -35,13 +33,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Errors_PCall_ClrFunction()
         {
-            var script =
-                @"
+            var script = @"
 				r, msg = pcall(assert, false, 'catched')
 				return r, msg;
 								";
 
-            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -59,8 +56,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Errors_PCall_Multiples()
         {
-            var script =
-                @"
+            var script = @"
 function try(fn)
 	local x, y = pcall(fn)
 	
@@ -91,7 +87,7 @@ end
 return a()
 ";
 
-            var res = new Script(Examples.DesktopBasePolicySet).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -103,8 +99,7 @@ return a()
         [Test]
         public void Errors_TryCatch_Multiples()
         {
-            var script =
-                @"
+            var script = @"
 function a()
 	return try(b) .. 'a';
 end
@@ -124,26 +119,25 @@ end
 
 return a()
 ";
-            var S = new Script(Examples.DesktopBasePolicySet)
+            Script S = new(CoreModules.None)
             {
                 Globals =
                 {
-                    ["try"] = DynValue.NewCallback(
-                        (c, a) =>
+                    ["try"] = LuaValue.NewCallback((_, a) =>
+                    {
+                        try
                         {
-                            try
-                            {
-                                var v = a[0].Function.Call();
-                                return v;
-                            }
-                            catch (ScriptRuntimeException)
-                            {
-                                return DynValue.NewString("!");
-                            }
+                            var v = a[0].Function.Call();
+                            return v;
                         }
-                    ),
-                },
+                        catch (ScriptRuntimeException)
+                        {
+                            return LuaValue.NewString("!");
+                        }
+                    })
+                }
             };
+
 
             var res = S.DoString(script);
 

@@ -1,21 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Benchmark\Benchmark.csproj" />
-    <ProjectReference Include="..\SolarSharp.Hardwire\SolarSharp.Hardwire.csproj" />
-    <ProjectReference Include="..\SolarSharp.Interpreter\SolarSharp.Interpreter.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-	<None Update="Tests\specific_features\*.lua">
-		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	</None>
-	<None Update="Tests\*.lua">
-		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	</None>
-  </ItemGroup>
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Benchmark\Benchmark.csproj"/>
+        <ProjectReference Include="..\SolarSharp.Interpreter\SolarSharp.Interpreter.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="Tests\specific_features\*.lua">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Tests\*.lua">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
 </Project>

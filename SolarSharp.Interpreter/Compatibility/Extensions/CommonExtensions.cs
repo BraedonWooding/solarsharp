@@ -29,7 +29,7 @@ namespace System.Linq
         {
             return source == null
                 ? throw new ArgumentNullException(nameof(source))
-                : new HashSet<TSource>(source);
+                : [..source];
         }
 
         public static HashSet<TSource> ToHashSet<TSource>(this IEnumerable<TSource> source, IEqualityComparer<TSource>? comparer)
@@ -37,20 +37,6 @@ namespace System.Linq
             return source == null
                 ? throw new ArgumentNullException(nameof(source))
                 : new HashSet<TSource>(source, comparer);
-        }
-    }
-}
-
-namespace System.IO.Abstractions
-{
-    internal static class IFile_AsyncExtensions
-    {
-#pragma warning disable IDE0060 // Remove unused parameter, cancellation token is part of the parameters.
-        public static Task<string> ReadAllTextAsync(this IFile file, string path, CancellationToken cancellationToken = default)
-#pragma warning restore IDE0060 // Remove unused parameter
-        {
-            // Note: this could be implemented more efficiently using a FileStream, but this is fine.
-            return Task.FromResult(File.ReadAllText(path));
         }
     }
 }
@@ -129,7 +115,8 @@ namespace System
 {
     internal static class StringExtensions
     {
-        public static string[] Split(this string str, char separator, int count, StringSplitOptions options = StringSplitOptions.None)
+        public static string[] Split(this string str, char separator, int count, StringSplitOptions options =
+ StringSplitOptions.None)
         {
             return str.Split([separator], count, options);
         }
@@ -274,10 +261,7 @@ namespace System.Diagnostics
     {
         public static void AddArguments(this ProcessStartInfo info, string[] args)
         {
-            foreach (var arg in args)
-            {
-                info.ArgumentList.Add(arg);
-            }
+            foreach (var arg in args) info.ArgumentList.Add(arg);
         }
     }
 }

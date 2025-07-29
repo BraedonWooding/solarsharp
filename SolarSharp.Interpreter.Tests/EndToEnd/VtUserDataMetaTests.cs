@@ -5,30 +5,22 @@ using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Interop.Attributes;
-using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [NonParallelizable] // Uses global UserData registration
-    [Category("VM.Integration")]
     public class VtUserDataMetaTests
     {
         public struct ClassWithLength
         {
-            public int Length
-            {
-                get { return 55; }
-            }
+            public int Length => 55;
         }
 
         public struct ClassWithCount
         {
-            public int Count
-            {
-                get { return 123; }
-            }
+            public int Count => 123;
         }
+
 
         public struct ArithmOperatorsTestClass : IComparable, IEnumerable
         {
@@ -45,22 +37,22 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return new ArithmOperatorsTestClass(-o.Value);
             }
 
-            [MoonSharpUserDataMetamethod("__concat")]
-            [MoonSharpUserDataMetamethod("__pow")]
+            [SolarSharpUserDataMetamethod("__concat")]
+            [SolarSharpUserDataMetamethod("__pow")]
             public static int operator +(ArithmOperatorsTestClass o, int v)
             {
                 return o.Value + v;
             }
 
-            [MoonSharpUserDataMetamethod("__concat")]
-            [MoonSharpUserDataMetamethod("__pow")]
+            [SolarSharpUserDataMetamethod("__concat")]
+            [SolarSharpUserDataMetamethod("__pow")]
             public static int operator +(int v, ArithmOperatorsTestClass o)
             {
                 return o.Value + v;
             }
 
-            [MoonSharpUserDataMetamethod("__concat")]
-            [MoonSharpUserDataMetamethod("__pow")]
+            [SolarSharpUserDataMetamethod("__concat")]
+            [SolarSharpUserDataMetamethod("__pow")]
             public static int operator +(ArithmOperatorsTestClass o1, ArithmOperatorsTestClass o2)
             {
                 return o1.Value + o2.Value;
@@ -111,6 +103,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return o1.Value / o2.Value;
             }
 
+
             public static int operator %(ArithmOperatorsTestClass o, int v)
             {
                 return o.Value % v;
@@ -126,7 +119,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return o1.Value % o2.Value;
             }
 
-            public override readonly bool Equals(object obj)
+            public readonly override bool Equals(object obj)
             {
                 if (obj is double v)
                     return v == Value;
@@ -138,7 +131,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return Value == other.Value;
             }
 
-            public override readonly int GetHashCode()
+            public readonly override int GetHashCode()
             {
                 return Value.GetHashCode();
             }
@@ -160,68 +153,50 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 return new List<int> { 1, 2, 3 }.GetEnumerator();
             }
 
-            [MoonSharpUserDataMetamethod("__call")]
+            [SolarSharpUserDataMetamethod("__call")]
             public readonly int DefaultMethod()
             {
                 return -Value;
             }
 
-            [MoonSharpUserDataMetamethod("__pairs")]
-            [MoonSharpUserDataMetamethod("__ipairs")]
+            [SolarSharpUserDataMetamethod("__pairs")]
+            [SolarSharpUserDataMetamethod("__ipairs")]
             public IEnumerator Pairs()
             {
-                return new List<DynValue>
+                return new List<LuaValue>
                 {
-                    DynValue.NewTuple(DynValue.NewString("a"), DynValue.NewString("A")),
-                    DynValue.NewTuple(DynValue.NewString("b"), DynValue.NewString("B")),
-                    DynValue.NewTuple(DynValue.NewString("c"), DynValue.NewString("C")),
+                    LuaValue.NewTuple(LuaValue.NewString("a"), LuaValue.NewString("A")),
+                    LuaValue.NewTuple(LuaValue.NewString("b"), LuaValue.NewString("B")),
+                    LuaValue.NewTuple(LuaValue.NewString("c"), LuaValue.NewString("C"))
                 }.GetEnumerator();
             }
 
-            public static bool operator ==(
-                ArithmOperatorsTestClass left,
-                ArithmOperatorsTestClass right
-            )
+            public static bool operator ==(ArithmOperatorsTestClass left, ArithmOperatorsTestClass right)
             {
                 return left.Equals(right);
             }
 
-            public static bool operator !=(
-                ArithmOperatorsTestClass left,
-                ArithmOperatorsTestClass right
-            )
+            public static bool operator !=(ArithmOperatorsTestClass left, ArithmOperatorsTestClass right)
             {
                 return !(left == right);
             }
 
-            public static bool operator <(
-                ArithmOperatorsTestClass left,
-                ArithmOperatorsTestClass right
-            )
+            public static bool operator <(ArithmOperatorsTestClass left, ArithmOperatorsTestClass right)
             {
                 return left.CompareTo(right) < 0;
             }
 
-            public static bool operator <=(
-                ArithmOperatorsTestClass left,
-                ArithmOperatorsTestClass right
-            )
+            public static bool operator <=(ArithmOperatorsTestClass left, ArithmOperatorsTestClass right)
             {
                 return left.CompareTo(right) <= 0;
             }
 
-            public static bool operator >(
-                ArithmOperatorsTestClass left,
-                ArithmOperatorsTestClass right
-            )
+            public static bool operator >(ArithmOperatorsTestClass left, ArithmOperatorsTestClass right)
             {
                 return left.CompareTo(right) > 0;
             }
 
-            public static bool operator >=(
-                ArithmOperatorsTestClass left,
-                ArithmOperatorsTestClass right
-            )
+            public static bool operator >=(ArithmOperatorsTestClass left, ArithmOperatorsTestClass right)
             {
                 return left.CompareTo(right) >= 0;
             }
@@ -230,12 +205,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void VInterop_Meta_Pairs()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
             UserData.RegisterType<ArithmOperatorsTestClass>();
             S.Globals.Set("o", UserData.Create(new ArithmOperatorsTestClass(-5)));
 
-            var script =
-                @"
+            var script = @"
 				local str = ''
 				for k,v in pairs(o) do
 					str = str .. k .. v;
@@ -250,12 +224,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void VInterop_Meta_IPairs()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
             UserData.RegisterType<ArithmOperatorsTestClass>();
             S.Globals.Set("o", UserData.Create(new ArithmOperatorsTestClass(-5)));
 
-            var script =
-                @"
+            var script = @"
 				local str = ''
 				for k,v in ipairs(o) do
 					str = str .. k .. v;
@@ -267,15 +240,15 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.That(S.DoString(script).String, Is.EqualTo("aAbBcC"));
         }
 
+
         [Test]
         public void VInterop_Meta_Iterator()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
             UserData.RegisterType<ArithmOperatorsTestClass>();
             S.Globals.Set("o", UserData.Create(new ArithmOperatorsTestClass(-5)));
 
-            var script =
-                @"
+            var script = @"
 				local sum = 0
 				for i in o do
 					sum = sum + i
@@ -287,10 +260,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.That(S.DoString(script).Number, Is.EqualTo(6));
         }
 
+
         [Test]
         public void VInterop_Meta_Op_Len()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
             UserData.RegisterType<ArithmOperatorsTestClass>();
             UserData.RegisterType<ClassWithCount>();
             UserData.RegisterType<ClassWithLength>();
@@ -308,10 +282,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.Catch<ScriptRuntimeException>(() => S.DoString("return #o1"));
         }
 
+
         [Test]
         public void VInterop_Meta_Equality()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
             UserData.RegisterType<ArithmOperatorsTestClass>();
 
             S.Globals.Set("o1", UserData.Create(new ArithmOperatorsTestClass(5)));
@@ -336,7 +311,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void VInterop_Meta_Comparisons()
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
             UserData.RegisterType<ArithmOperatorsTestClass>();
 
             S.Globals.Set("o1", UserData.Create(new ArithmOperatorsTestClass(1)));
@@ -365,11 +340,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
+
         private static void OperatorTest(string code, int input, int output)
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
 
-            var obj = new ArithmOperatorsTestClass(input);
+            ArithmOperatorsTestClass obj = new(input);
 
             UserData.RegisterType<ArithmOperatorsTestClass>();
 
@@ -389,6 +365,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             OperatorTest("return o()", 5, -5);
         }
+
 
         [Test]
         public void VInterop_Meta_Op_Unm()
@@ -420,6 +397,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             OperatorTest("return o ^ o", 5, 10);
             OperatorTest("return 5 ^ o", 5, 10);
         }
+
 
         [Test]
         public void VInterop_Meta_Op_Sub()

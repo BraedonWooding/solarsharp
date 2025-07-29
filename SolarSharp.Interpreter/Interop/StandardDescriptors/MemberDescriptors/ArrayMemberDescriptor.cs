@@ -4,114 +4,77 @@ using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using SolarSharp.Interpreter.Interop.Converters;
 
-namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
+
+/// <summary>
+///     Member descriptor for indexer of array types
+/// </summary>
+public class ArrayMemberDescriptor : ObjectCallbackMemberDescriptor
 {
+    private readonly bool m_IsSetter;
+
     /// <summary>
-    /// Member descriptor for indexer of array types
+    ///     Initializes a new instance of the <see cref="ArrayMemberDescriptor" /> class.
     /// </summary>
-    public class ArrayMemberDescriptor : ObjectCallbackMemberDescriptor, IWireableDescriptor
+    /// <param name="name">The name.</param>
+    /// <param name="isSetter">if set to <c>true</c> is a setter indexer.</param>
+    /// <param name="indexerParams">The indexer parameters.</param>
+    public ArrayMemberDescriptor(string name, bool isSetter, ParameterDescriptor[] indexerParams)
+        : base(
+            name,
+            isSetter
+                ? ArrayIndexerSet
+                : (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerGet,
+            indexerParams)
     {
-        private readonly bool m_IsSetter;
+        m_IsSetter = isSetter;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ArrayMemberDescriptor"/> class.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="isSetter">if set to <c>true</c> is a setter indexer.</param>
-        /// <param name="indexerParams">The indexer parameters.</param>
-        public ArrayMemberDescriptor(
-            string name,
-            bool isSetter,
-            ParameterDescriptor[] indexerParams
-        )
-            : base(name, isSetter ? ArrayIndexerSet : ArrayIndexerGet, indexerParams)
-        {
-            m_IsSetter = isSetter;
-        }
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="ArrayMemberDescriptor" /> class.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="isSetter">if set to <c>true</c> [is setter].</param>
+    public ArrayMemberDescriptor(string name, bool isSetter)
+        : base(
+            name,
+            isSetter
+                ? ArrayIndexerSet
+                : (Func<object, ScriptExecutionContext, CallbackArguments, object>)ArrayIndexerGet)
+    {
+        m_IsSetter = isSetter;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ArrayMemberDescriptor"/> class.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="isSetter">if set to <c>true</c> [is setter].</param>
-        public ArrayMemberDescriptor(string name, bool isSetter)
-            : base(name, isSetter ? ArrayIndexerSet : ArrayIndexerGet)
-        {
-            m_IsSetter = isSetter;
-        }
+    private static int[] BuildArrayIndices(CallbackArguments args, int count)
+    {
+        var indices = new int[count];
 
-        /// <summary>
-        /// Prepares the descriptor for hard-wiring.
-        /// The descriptor fills the passed table with all the needed data for hardwire generators to generate the appropriate code.
-        /// </summary>
-        /// <param name="t">The table to be filled</param>
-        public void PrepareForWiring(Table t)
-        {
-            t.Set("class", DynValue.NewString(GetType().FullName));
-            t.Set("name", DynValue.NewString(Name));
-            t.Set("setter", DynValue.NewBoolean(m_IsSetter));
+        for (var i = 0; i < count; i++)
+            indices[i] = args.AsInt(i, "userdata_array_indexer");
 
-            if (Parameters != null)
-            {
-                var pars = DynValue.NewPrimeTable();
+        return indices;
+    }
 
-                t.Set("params", pars);
+    private static object ArrayIndexerSet(object arrayObj, ScriptExecutionContext ctx, CallbackArguments args)
+    {
+        var array = (Array)arrayObj;
+        var indices = BuildArrayIndices(args, args.Count - 1);
+        var value = args[^1];
 
-                var i = 0;
+        var elemType = array.GetType().GetElementType();
 
-                foreach (var p in Parameters)
-                {
-                    var pt = DynValue.NewPrimeTable();
-                    pars.Table.Set(++i, pt);
-                    p.PrepareForWiring(pt.Table);
-                }
-            }
-        }
+        var objValue = ScriptToClrConversions.LuaValueToObjectOfType(value, elemType, null, false);
 
-        private static int[] BuildArrayIndices(CallbackArguments args, int count)
-        {
-            var indices = new int[count];
+        array.SetValue(objValue, indices);
 
-            for (var i = 0; i < count; i++)
-                indices[i] = args.AsInt(i, "userdata_array_indexer");
+        return LuaValue.Void;
+    }
 
-            return indices;
-        }
+    private static object ArrayIndexerGet(object arrayObj, ScriptExecutionContext ctx, CallbackArguments args)
+    {
+        var array = (Array)arrayObj;
+        var indices = BuildArrayIndices(args, args.Count);
 
-        private static object ArrayIndexerSet(
-            object arrayObj,
-            ScriptExecutionContext ctx,
-            CallbackArguments args
-        )
-        {
-            var array = (Array)arrayObj;
-            var indices = BuildArrayIndices(args, args.Count - 1);
-            var value = args[^1];
-
-            var elemType = array.GetType().GetElementType();
-
-            var objValue = ScriptToClrConversions.DynValueToObjectOfType(
-                value,
-                elemType,
-                null,
-                false
-            );
-
-            array.SetValue(objValue, indices);
-
-            return DynValue.Void;
-        }
-
-        private static object ArrayIndexerGet(
-            object arrayObj,
-            ScriptExecutionContext ctx,
-            CallbackArguments args
-        )
-        {
-            var array = (Array)arrayObj;
-            var indices = BuildArrayIndices(args, args.Count);
-
-            return array.GetValue(indices);
-        }
+        return array.GetValue(indices);
     }
 }

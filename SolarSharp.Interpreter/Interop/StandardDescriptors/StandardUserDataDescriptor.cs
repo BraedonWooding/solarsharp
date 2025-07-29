@@ -8,253 +8,163 @@ using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
 using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
 
-namespace SolarSharp.Interpreter.Interop.StandardDescriptors
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors;
+
+/// <summary>
+///     Standard descriptor for userdata types.
+/// </summary>
+public class StandardUserDataDescriptor : DispatchingUserDataDescriptor
 {
     /// <summary>
-    /// Standard descriptor for userdata types.
+    ///     Initializes a new instance of the <see cref="StandardUserDataDescriptor" /> class.
     /// </summary>
-    public class StandardUserDataDescriptor : DispatchingUserDataDescriptor, IWireableDescriptor
+    /// <param name="type">The type this descriptor refers to.</param>
+    /// <param name="accessMode">The interop access mode this descriptor uses for members access</param>
+    /// <param name="friendlyName">A human readable friendly name of the descriptor.</param>
+    public StandardUserDataDescriptor(Type type, InteropAccessMode accessMode, string friendlyName = null)
+        : base(type, friendlyName)
     {
-        /// <summary>
-        /// Gets the interop access mode this descriptor uses for members access
-        /// </summary>
-        public InteropAccessMode AccessMode { get; private set; }
+        if (accessMode == InteropAccessMode.NoReflectionAllowed)
+            throw new ArgumentException(
+                "Can't create a StandardUserDataDescriptor under a NoReflectionAllowed access mode");
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="StandardUserDataDescriptor"/> class.
-        /// </summary>
-        /// <param name="type">The type this descriptor refers to.</param>
-        /// <param name="accessMode">The interop access mode this descriptor uses for members access</param>
-        /// <param name="friendlyName">A human readable friendly name of the descriptor.</param>
-        public StandardUserDataDescriptor(
-            Type type,
-            InteropAccessMode accessMode,
-            string friendlyName = null
-        )
-            : base(type, friendlyName)
+        if (Script.GlobalOptions.Platform.IsRunningOnAOT())
+            accessMode = InteropAccessMode.Reflection;
+
+        if (accessMode == InteropAccessMode.Default)
+            accessMode = UserData.DefaultAccessMode;
+
+        AccessMode = accessMode;
+
+        FillMemberList();
+    }
+
+    /// <summary>
+    ///     Gets the interop access mode this descriptor uses for members access
+    /// </summary>
+    public InteropAccessMode AccessMode { get; }
+
+    /// <summary>
+    ///     Fills the member list.
+    /// </summary>
+    private void FillMemberList()
+    {
+        HashSet<string> membersToIgnore = new(
+            Framework.Do.GetCustomAttributes(Type, typeof(SolarSharpHideMemberAttribute), true)
+                .OfType<SolarSharpHideMemberAttribute>()
+                .Select(a => a.MemberName)
+        );
+
+        var type = Type;
+
+        if (AccessMode == InteropAccessMode.HideMembers)
+            return;
+
+        if (!type.IsDelegateType())
         {
-            if (accessMode == InteropAccessMode.NoReflectionAllowed)
-                throw new ArgumentException(
-                    "Can't create a StandardUserDataDescriptor under a NoReflectionAllowed access mode"
-                );
+            // add declared constructors
+            foreach (var ci in Framework.Do.GetConstructors(type))
+            {
+                if (membersToIgnore.Contains("__new"))
+                    continue;
 
-            if (Script.GlobalOptions.Platform.IsRunningOnAOT())
-                accessMode = InteropAccessMode.Reflection;
+                AddMember("__new", MethodMemberDescriptor.TryCreateIfVisible(ci, AccessMode));
+            }
 
-            if (accessMode == InteropAccessMode.Default)
-                accessMode = UserData.DefaultAccessMode;
-
-            AccessMode = accessMode;
-
-            FillMemberList();
+            // valuetypes don't reflect their empty ctor.. actually empty ctors are a perversion, we don't care and implement ours
+            if (Framework.Do.IsValueType(type) && !membersToIgnore.Contains("__new"))
+                AddMember("__new", new ValueTypeDefaultCtorMemberDescriptor(type));
         }
 
-        /// <summary>
-        /// Fills the member list.
-        /// </summary>
-        private void FillMemberList()
+
+        // add methods to method list and metamethods
+        foreach (var mi in Framework.Do.GetMethods(type))
         {
-            var membersToIgnore = new HashSet<string>(
-                Framework
-                    .Do.GetCustomAttributes(Type, typeof(MoonSharpHideMemberAttribute), true)
-                    .OfType<MoonSharpHideMemberAttribute>()
-                    .Select(a => a.MemberName)
-            );
+            if (membersToIgnore.Contains(mi.Name)) continue;
 
-            var type = Type;
+            var md = MethodMemberDescriptor.TryCreateIfVisible(mi, AccessMode);
 
-            if (AccessMode == InteropAccessMode.HideMembers)
-                return;
-
-            if (!type.IsDelegateType())
+            if (md != null)
             {
-                // add declared constructors
-                foreach (var ci in Framework.Do.GetConstructors(type))
-                {
-                    if (membersToIgnore.Contains("__new"))
-                        continue;
-
-                    AddMember("__new", MethodMemberDescriptor.TryCreateIfVisible(ci, AccessMode));
-                }
-
-                // valuetypes don't reflect their empty ctor.. actually empty ctors are a perversion, we don't care and implement ours
-                if (Framework.Do.IsValueType(type) && !membersToIgnore.Contains("__new"))
-                    AddMember("__new", new ValueTypeDefaultCtorMemberDescriptor(type));
-            }
-
-            // add methods to method list and metamethods
-            foreach (var mi in Framework.Do.GetMethods(type))
-            {
-                if (membersToIgnore.Contains(mi.Name))
+                if (!MethodMemberDescriptor.CheckMethodIsCompatible(mi, false))
                     continue;
 
-                var md = MethodMemberDescriptor.TryCreateIfVisible(mi, AccessMode);
+                // transform explicit/implicit conversions to a friendlier name.
+                var name = mi.Name;
+                if (mi.IsSpecialName && (mi.Name == SPECIALNAME_CAST_EXPLICIT || mi.Name == SPECIALNAME_CAST_IMPLICIT))
+                    name = mi.ReturnType.GetConversionMethodName();
 
-                if (md != null)
-                {
-                    if (!MethodMemberDescriptor.CheckMethodIsCompatible(mi, false))
-                        continue;
+                AddMember(name, md);
 
-                    // transform explicit/implicit conversions to a friendlier name.
-                    var name = mi.Name;
-                    if (
-                        mi.IsSpecialName
-                        && mi.Name is SPECIALNAME_CAST_EXPLICIT or SPECIALNAME_CAST_IMPLICIT
-                    )
-                    {
-                        name = mi.ReturnType.GetConversionMethodName();
-                    }
-
-                    AddMember(name, md);
-
-                    foreach (var metaname in mi.GetMetaNamesFromAttributes())
-                    {
-                        AddMetaMember(metaname, md);
-                    }
-                }
-            }
-
-            // get properties
-            foreach (var pi in Framework.Do.GetProperties(type))
-            {
-                if (
-                    pi.IsSpecialName
-                    || pi.GetIndexParameters().Any()
-                    || membersToIgnore.Contains(pi.Name)
-                )
-                    continue;
-
-                AddMember(pi.Name, PropertyMemberDescriptor.TryCreateIfVisible(pi, AccessMode));
-            }
-
-            // get fields
-            foreach (var fi in Framework.Do.GetFields(type))
-            {
-                if (fi.IsSpecialName || membersToIgnore.Contains(fi.Name))
-                    continue;
-
-                AddMember(fi.Name, FieldMemberDescriptor.TryCreateIfVisible(fi, AccessMode));
-            }
-
-            // get events
-            foreach (var ei in Framework.Do.GetEvents(type))
-            {
-                if (ei.IsSpecialName || membersToIgnore.Contains(ei.Name))
-                    continue;
-
-                AddMember(ei.Name, EventMemberDescriptor.TryCreateIfVisible(ei, AccessMode));
-            }
-
-            // get nested types and create statics
-            foreach (var nestedType in Framework.Do.GetNestedTypes(type))
-            {
-                if (membersToIgnore.Contains(nestedType.Name))
-                    continue;
-
-                if (!Framework.Do.IsGenericTypeDefinition(nestedType))
-                {
-                    if (
-                        Framework.Do.IsNestedPublic(nestedType)
-                        || Framework
-                            .Do.GetCustomAttributes(
-                                nestedType,
-                                typeof(MoonSharpUserDataAttribute),
-                                true
-                            )
-                            .Length > 0
-                    )
-                    {
-                        var descr = UserData.RegisterType(nestedType, AccessMode);
-
-                        if (descr != null)
-                            AddDynValue(nestedType.Name, UserData.CreateStatic(nestedType));
-                    }
-                }
-            }
-
-            if (!membersToIgnore.Contains("[this]"))
-            {
-                if (Type.IsArray)
-                {
-                    var rank = Type.GetArrayRank();
-
-                    var get_pars = new ParameterDescriptor[rank];
-                    var set_pars = new ParameterDescriptor[rank + 1];
-
-                    for (var i = 0; i < rank; i++)
-                        get_pars[i] = set_pars[i] = new ParameterDescriptor("idx" + i, typeof(int));
-
-                    set_pars[rank] = new ParameterDescriptor("value", Type.GetElementType());
-
-                    AddMember(
-                        SPECIALNAME_INDEXER_SET,
-                        new ArrayMemberDescriptor(SPECIALNAME_INDEXER_SET, true, set_pars)
-                    );
-                    AddMember(
-                        SPECIALNAME_INDEXER_GET,
-                        new ArrayMemberDescriptor(SPECIALNAME_INDEXER_GET, false, get_pars)
-                    );
-                }
-                else if (Type == typeof(Array))
-                {
-                    AddMember(
-                        SPECIALNAME_INDEXER_SET,
-                        new ArrayMemberDescriptor(SPECIALNAME_INDEXER_SET, true)
-                    );
-                    AddMember(
-                        SPECIALNAME_INDEXER_GET,
-                        new ArrayMemberDescriptor(SPECIALNAME_INDEXER_GET, false)
-                    );
-                }
+                foreach (var metaname in mi.GetMetaNamesFromAttributes()) AddMetaMember(metaname, md);
             }
         }
 
-        public void PrepareForWiring(Table t)
+        // get properties
+        foreach (var pi in Framework.Do.GetProperties(type))
         {
-            if (
-                AccessMode == InteropAccessMode.HideMembers
-                || Framework.Do.GetAssembly(Type) == Framework.Do.GetAssembly(GetType())
-            )
-            {
-                t.Set("skip", DynValue.NewBoolean(true));
-            }
-            else
-            {
-                t.Set("visibility", DynValue.NewString(Type.GetClrVisibility()));
+            if (pi.IsSpecialName || pi.GetIndexParameters().Any() || membersToIgnore.Contains(pi.Name))
+                continue;
 
-                t.Set("class", DynValue.NewString(GetType().FullName));
-                var tm = DynValue.NewPrimeTable();
-                t.Set("members", tm);
-                var tmm = DynValue.NewPrimeTable();
-                t.Set("metamembers", tmm);
-
-                Serialize(tm.Table, Members);
-                Serialize(tmm.Table, MetaMembers);
-            }
+            AddMember(pi.Name, PropertyMemberDescriptor.TryCreateIfVisible(pi, AccessMode));
         }
 
-        private void Serialize(
-            Table t,
-            IEnumerable<KeyValuePair<string, IMemberDescriptor>> members
-        )
+        // get fields
+        foreach (var fi in Framework.Do.GetFields(type))
         {
-            foreach (var pair in members)
+            if (fi.IsSpecialName || membersToIgnore.Contains(fi.Name))
+                continue;
+
+            AddMember(fi.Name, FieldMemberDescriptor.TryCreateIfVisible(fi, AccessMode));
+        }
+
+        // get events
+        foreach (var ei in Framework.Do.GetEvents(type))
+        {
+            if (ei.IsSpecialName || membersToIgnore.Contains(ei.Name))
+                continue;
+
+            AddMember(ei.Name, EventMemberDescriptor.TryCreateIfVisible(ei, AccessMode));
+        }
+
+        // get nested types and create statics
+        foreach (var nestedType in Framework.Do.GetNestedTypes(type))
+        {
+            if (membersToIgnore.Contains(nestedType.Name))
+                continue;
+
+            if (!Framework.Do.IsGenericTypeDefinition(nestedType))
+                if (Framework.Do.IsNestedPublic(nestedType) || Framework.Do
+                        .GetCustomAttributes(nestedType, typeof(SolarSharpUserDataAttribute), true).Length > 0)
+                {
+                    var descr = UserData.RegisterType(nestedType, AccessMode);
+
+                    if (descr != null)
+                        AddLuaValue(nestedType.Name, UserData.CreateStatic(nestedType));
+                }
+        }
+
+        if (!membersToIgnore.Contains("[this]"))
+        {
+            if (Type.IsArray)
             {
-                if (pair.Value is IWireableDescriptor sd)
-                {
-                    var mt = DynValue.NewPrimeTable();
-                    t.Set(pair.Key, mt);
-                    sd.PrepareForWiring(mt.Table);
-                }
-                else
-                {
-                    t.Set(
-                        pair.Key,
-                        DynValue.NewString(
-                            "unsupported member type : " + pair.Value.GetType().FullName
-                        )
-                    );
-                }
+                var rank = Type.GetArrayRank();
+
+                var get_pars = new ParameterDescriptor[rank];
+                var set_pars = new ParameterDescriptor[rank + 1];
+
+                for (var i = 0; i < rank; i++)
+                    get_pars[i] = set_pars[i] = new ParameterDescriptor("idx" + i, typeof(int));
+
+                set_pars[rank] = new ParameterDescriptor("value", Type.GetElementType());
+
+                AddMember(SPECIALNAME_INDEXER_SET, new ArrayMemberDescriptor(SPECIALNAME_INDEXER_SET, true, set_pars));
+                AddMember(SPECIALNAME_INDEXER_GET, new ArrayMemberDescriptor(SPECIALNAME_INDEXER_GET, false, get_pars));
+            }
+            else if (Type == typeof(Array))
+            {
+                AddMember(SPECIALNAME_INDEXER_SET, new ArrayMemberDescriptor(SPECIALNAME_INDEXER_SET, true));
+                AddMember(SPECIALNAME_INDEXER_GET, new ArrayMemberDescriptor(SPECIALNAME_INDEXER_GET, false));
             }
         }
     }

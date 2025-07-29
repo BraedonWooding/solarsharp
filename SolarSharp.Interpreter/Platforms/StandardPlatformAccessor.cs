@@ -6,313 +6,278 @@ using System.Text;
 
 namespace SolarSharp.Interpreter.Platforms
 {
-    /// <summary>
-    /// Class providing the IPlatformAccessor interface for standard full-feaured implementations.
-    /// </summary>
-    public class StandardPlatformAccessor : PlatformAccessorBase
-    {
-        public override void DefaultPrint(string content)
-        {
-            throw new NotImplementedException();
-        }
+	/// <summary>
+	/// Class providing the IPlatformAccessor interface for standard full-feaured implementations.
+	/// </summary>
+	public class StandardPlatformAccessor : PlatformAccessorBase
+	{
+		public override void DefaultPrint(string content)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override CoreModules FilterSupportedCoreModules(CoreModules module)
-        {
-            throw new NotImplementedException();
-        }
+		public override CoreModules FilterSupportedCoreModules(CoreModules module)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override string GetEnvironmentVariable(string envvarname)
-        {
-            throw new NotImplementedException();
-        }
+		public override string GetEnvironmentVariable(string envvarname)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override string GetPlatformNamePrefix()
-        {
-            throw new NotImplementedException();
-        }
+		public override string GetPlatformNamePrefix()
+		{
+			throw new NotImplementedException();
+		}
 
-        public override Stream IO_GetStandardStream(StandardFileType type)
-        {
-            throw new NotImplementedException();
-        }
+		public override Stream IO_GetStandardStream(StandardFileType type)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override Stream IO_OpenFile(
-            Script script,
-            string filename,
-            Encoding encoding,
-            string mode
-        )
-        {
-            throw new NotImplementedException();
-        }
+		public override Stream IO_OpenFile(Script script, string filename, Encoding encoding, string mode)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override string IO_OS_GetTempFilename()
-        {
-            throw new NotImplementedException();
-        }
+		public override string IO_OS_GetTempFilename()
+		{
+			throw new NotImplementedException();
+		}
 
-        public override int OS_Execute(string cmdline)
-        {
-            throw new NotImplementedException();
-        }
+		public override int OS_Execute(string cmdline)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override void OS_ExitFast(int exitCode)
-        {
-            throw new NotImplementedException();
-        }
+		public override void OS_ExitFast(int exitCode)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override void OS_FileDelete(string file)
-        {
-            throw new NotImplementedException();
-        }
+		public override void OS_FileDelete(string file)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override bool OS_FileExists(string file)
-        {
-            throw new NotImplementedException();
-        }
+		public override bool OS_FileExists(string file)
+		{
+			throw new NotImplementedException();
+		}
 
-        public override void OS_FileMove(string src, string dst)
-        {
-            throw new NotImplementedException();
-        }
-    }
+		public override void OS_FileMove(string src, string dst)
+		{
+			throw new NotImplementedException();
+		}
+	}
 }
 #else
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Abstractions;
-using System.Text;
 using SolarSharp.Interpreter.Modules;
 
-namespace SolarSharp.Interpreter.Platforms
+namespace SolarSharp.Interpreter.Platforms;
+
+/// <summary>
+///     Class providing the IPlatformAccessor interface for standard full-feaured implementations.
+/// </summary>
+public class StandardPlatformAccessor : PlatformAccessorBase
 {
     /// <summary>
-    /// Class providing the IPlatformAccessor interface for standard full-feaured implementations.
+    ///     Converts a Lua string access mode to a FileAccess enum
     /// </summary>
-    public class StandardPlatformAccessor : PlatformAccessorBase
+    /// <param name="mode">The mode.</param>
+    /// <returns></returns>
+    public static FileAccess ParseFileAccess(string mode)
     {
-        private readonly IFileSystem _fileSystem;
+        mode = mode.Replace("b", "");
 
-        /// <summary>
-        /// Initializes a new instance of the StandardPlatformAccessor class
-        /// </summary>
-        /// <param name="fileSystem">The file system abstraction to use</param>
-        public StandardPlatformAccessor(IFileSystem fileSystem = null)
-        {
-            _fileSystem = fileSystem ?? new FileSystem();
-        }
-
-        /// <summary>
-        /// Gets the file system abstraction used by this platform accessor
-        /// </summary>
-        public override IFileSystem FileSystem
-        {
-            get { return _fileSystem; }
-        }
-
-        /// <summary>
-        /// Converts a Lua string access mode to a FileAccess enum
-        /// </summary>
-        /// <param name="mode">The mode.</param>
-        /// <returns></returns>
-        public static FileAccess ParseFileAccess(string mode)
-        {
-            mode = mode.Replace("b", "");
-
-            if (mode == "r")
-                return FileAccess.Read;
-            if (mode == "r+")
-                return FileAccess.ReadWrite;
-            if (mode == "w")
-                return FileAccess.Write;
-            if (mode == "w+")
-                return FileAccess.ReadWrite;
+        if (mode == "r")
+            return FileAccess.Read;
+        if (mode == "r+")
             return FileAccess.ReadWrite;
-        }
+        if (mode == "w")
+            return FileAccess.Write;
+        return FileAccess.ReadWrite;
+    }
 
-        /// <summary>
-        /// Converts a Lua string access mode to a ParseFileMode enum
-        /// </summary>
-        /// <param name="mode">The mode.</param>
-        /// <returns></returns>
-        public static FileMode ParseFileMode(string mode)
+    /// <summary>
+    ///     Converts a Lua string access mode to a ParseFileMode enum
+    /// </summary>
+    /// <param name="mode">The mode.</param>
+    /// <returns></returns>
+    public static FileMode ParseFileMode(string mode)
+    {
+        mode = mode.Replace("b", "");
+
+        if (mode == "r")
+            return FileMode.Open;
+        if (mode == "r+")
+            return FileMode.OpenOrCreate;
+        if (mode == "w")
+            return FileMode.Create;
+        if (mode == "w+")
+            return FileMode.Truncate;
+        return FileMode.Append;
+    }
+
+
+    /// <summary>
+    ///     A function used to open files in the 'io' module.
+    ///     Can have an invalid implementation if 'io' module is filtered out.
+    ///     It should return a correctly initialized Stream for the given file and access
+    /// </summary>
+    /// <param name="filename">The filename.</param>
+    /// <param name="mode">The mode (as per Lua usage - e.g. 'w+', 'rb', etc.).</param>
+    /// <returns></returns>
+    public override Stream IO_OpenFile(string filename, string mode)
+    {
+        return new FileStream(filename, ParseFileMode(mode), ParseFileAccess(mode),
+            FileShare.ReadWrite | FileShare.Delete);
+    }
+
+    /// <summary>
+    ///     Gets an environment variable. Must be implemented, but an implementation is allowed
+    ///     to always return null if a more meaningful implementation cannot be achieved or is
+    ///     not desired.
+    /// </summary>
+    /// <param name="envvarname">The envvarname.</param>
+    /// <returns>
+    ///     The environment variable value, or null if not found
+    /// </returns>
+    public override string GetEnvironmentVariable(string envvarname)
+    {
+        return Environment.GetEnvironmentVariable(envvarname);
+    }
+
+    /// <summary>
+    ///     Gets a standard stream (stdin, stdout, stderr).
+    /// </summary>
+    /// <param name="type">The type.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException">type</exception>
+    public override Stream IO_GetStandardStream(StandardFileType type)
+    {
+        switch (type)
         {
-            mode = mode.Replace("b", "");
-
-            if (mode == "r")
-                return FileMode.Open;
-            if (mode == "r+")
-                return FileMode.OpenOrCreate;
-            if (mode == "w")
-                return FileMode.Create;
-            if (mode == "w+")
-                return FileMode.Truncate;
-            return FileMode.Append;
+            case StandardFileType.StdIn:
+                return Console.OpenStandardInput();
+            case StandardFileType.StdOut:
+                return Console.OpenStandardOutput();
+            case StandardFileType.StdErr:
+                return Console.OpenStandardError();
+            default:
+                throw new ArgumentException("type");
         }
+    }
 
-        /// <summary>
-        /// A function used to open files in the 'io' module.
-        /// Can have an invalid implementation if 'io' module is filtered out.
-        /// It should return a correctly initialized Stream for the given file and access
-        /// </summary>
-        /// <param name="script"></param>
-        /// <param name="filename">The filename.</param>
-        /// <param name="encoding">The encoding.</param>
-        /// <param name="mode">The mode (as per Lua usage - e.g. 'w+', 'rb', etc.).</param>
-        /// <returns></returns>
-        public override Stream IO_OpenFile(
-            Script script,
-            string filename,
-            Encoding encoding,
-            string mode
-        )
-        {
-            return _fileSystem.FileStream.New(
-                filename,
-                ParseFileMode(mode),
-                ParseFileAccess(mode),
-                FileShare.ReadWrite | FileShare.Delete
-            );
-        }
+    /// <summary>
+    ///     Default handler for 'print' calls. Can be customized in ScriptOptions
+    /// </summary>
+    /// <param name="content">The content.</param>
+    public override void DefaultPrint(string content)
+    {
+        Console.WriteLine(content);
+    }
 
-        /// <summary>
-        /// Gets an environment variable. Must be implemented, but an implementation is allowed
-        /// to always return null if a more meaningful implementation cannot be achieved or is
-        /// not desired.
-        /// </summary>
-        /// <param name="envvarname">The envvarname.</param>
-        /// <returns>
-        /// The environment variable value, or null if not found
-        /// </returns>
-        public override string GetEnvironmentVariable(string envvarname)
-        {
-            return Environment.GetEnvironmentVariable(envvarname);
-        }
 
-        /// <summary>
-        /// Gets a standard stream (stdin, stdout, stderr).
-        /// </summary>
-        /// <param name="type">The type.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException">type</exception>
-        public override Stream IO_GetStandardStream(StandardFileType type)
-        {
-            switch (type)
-            {
-                case StandardFileType.StdIn:
-                    return Console.OpenStandardInput();
-                case StandardFileType.StdOut:
-                    return Console.OpenStandardOutput();
-                case StandardFileType.StdErr:
-                    return Console.OpenStandardError();
-                default:
-                    throw new ArgumentException("type");
-            }
-        }
+    /// <summary>
+    ///     Gets a temporary filename. Used in 'io' and 'os' modules.
+    ///     Can have an invalid implementation if 'io' and 'os' modules are filtered out.
+    /// </summary>
+    /// <returns></returns>
+    public override string IO_OS_GetTempFilename()
+    {
+        return Path.GetTempFileName();
+    }
 
-        /// <summary>
-        /// Default handler for 'print' calls. Can be customized in ScriptOptions
-        /// </summary>
-        /// <param name="content">The content.</param>
-        public override void DefaultPrint(string content)
-        {
-            Console.WriteLine(content);
-        }
+    /// <summary>
+    ///     Exits the process, returning the specified exit code.
+    ///     Can have an invalid implementation if the 'os' module is filtered out.
+    /// </summary>
+    /// <param name="exitCode">The exit code.</param>
+    public override void OS_ExitFast(int exitCode)
+    {
+        Environment.Exit(exitCode);
+    }
 
-        /// <summary>
-        /// Gets a temporary filename. Used in 'io' and 'os' modules.
-        /// Can have an invalid implementation if 'io' and 'os' modules are filtered out.
-        /// </summary>
-        /// <returns></returns>
-        public override string IO_OS_GetTempFilename()
-        {
-            return _fileSystem.Path.GetTempFileName();
-        }
+    /// <summary>
+    ///     Checks if a file exists. Used by the 'os' module.
+    ///     Can have an invalid implementation if the 'os' module is filtered out.
+    /// </summary>
+    /// <param name="file">The file.</param>
+    /// <returns>
+    ///     True if the file exists, false otherwise.
+    /// </returns>
+    public override bool OS_FileExists(string file)
+    {
+        return File.Exists(file);
+    }
 
-        /// <summary>
-        /// Exits the process, returning the specified exit code.
-        /// Can have an invalid implementation if the 'os' module is filtered out.
-        /// </summary>
-        /// <param name="exitCode">The exit code.</param>
-        public override void OS_ExitFast(int exitCode)
-        {
-            Environment.Exit(exitCode);
-        }
+    /// <summary>
+    ///     Deletes the specified file. Used by the 'os' module.
+    ///     Can have an invalid implementation if the 'os' module is filtered out.
+    /// </summary>
+    /// <param name="file">The file.</param>
+    public override void OS_FileDelete(string file)
+    {
+        File.Delete(file);
+    }
 
-        /// <summary>
-        /// Checks if a file exists. Used by the 'os' module.
-        /// Can have an invalid implementation if the 'os' module is filtered out.
-        /// </summary>
-        /// <param name="file">The file.</param>
-        /// <returns>
-        /// True if the file exists, false otherwise.
-        /// </returns>
-        public override bool OS_FileExists(string file)
-        {
-            return _fileSystem.File.Exists(file);
-        }
-
-        /// <summary>
-        /// Deletes the specified file. Used by the 'os' module.
-        /// Can have an invalid implementation if the 'os' module is filtered out.
-        /// </summary>
-        /// <param name="file">The file.</param>
-        public override void OS_FileDelete(string file)
-        {
-            _fileSystem.File.Delete(file);
-        }
-
-        /// <summary>
-        /// Moves the specified file. Used by the 'os' module.
-        /// Can have an invalid implementation if the 'os' module is filtered out.
-        /// </summary>
-        /// <param name="src">The source.</param>
-        /// <param name="dst">The DST.</param>
-        public override void OS_FileMove(string src, string dst)
-        {
+    /// <summary>
+    ///     Moves the specified file. Used by the 'os' module.
+    ///     Can have an invalid implementation if the 'os' module is filtered out.
+    /// </summary>
+    /// <param name="src">The source.</param>
+    /// <param name="dst">The DST.</param>
+    public override void OS_FileMove(string src, string dst)
+    {
 #if (!PCL) && ((!UNITY_5) || UNITY_STANDALONE)
-            _fileSystem.File.Move(src, dst);
+        File.Move(src, dst);
 #endif
-        }
+    }
 
-        /// <summary>
-        /// Executes the specified command line, returning the child process exit code and blocking in the meantime.
-        /// Can have an invalid implementation if the 'os' module is filtered out.
-        /// </summary>
-        /// <param name="cmdline">The cmdline.</param>
-        /// <returns></returns>
-        public override int OS_Execute(string cmdline)
+    /// <summary>
+    ///     Executes the specified command line, returning the child process exit code and blocking in the meantime.
+    ///     Can have an invalid implementation if the 'os' module is filtered out.
+    /// </summary>
+    /// <param name="cmdline">The cmdline.</param>
+    /// <returns></returns>
+    public override int OS_Execute(string cmdline)
+    {
+        // This is windows only!
+        ProcessStartInfo psi = new("cmd.exe", $"/C {cmdline}")
         {
-            // This is windows only!
-            var psi = new ProcessStartInfo("cmd.exe", $"/C {cmdline}") { ErrorDialog = false };
+            ErrorDialog = false
+        };
 
-            var proc = Process.Start(psi);
-            proc.WaitForExit();
-            return proc.ExitCode;
-        }
+        var proc = Process.Start(psi);
+        proc.WaitForExit();
+        return proc.ExitCode;
+    }
 
-        /// <summary>
-        /// Filters the CoreModules enumeration to exclude non-supported operations
-        /// </summary>
-        /// <param name="module">The requested modules.</param>
-        /// <returns>
-        /// The requested modules, with unsupported modules filtered out.
-        /// </returns>
-        public override CoreModules FilterSupportedCoreModules(CoreModules module)
-        {
-            return module;
-        }
+    /// <summary>
+    ///     Filters the CoreModules enumeration to exclude non-supported operations
+    /// </summary>
+    /// <param name="module">The requested modules.</param>
+    /// <returns>
+    ///     The requested modules, with unsupported modules filtered out.
+    /// </returns>
+    public override CoreModules FilterSupportedCoreModules(CoreModules module)
+    {
+        return module;
+    }
 
-        /// <summary>
-        /// Gets the platform name prefix
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public override string GetPlatformNamePrefix()
-        {
-            return "std";
-        }
+    /// <summary>
+    ///     Gets the platform name prefix
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public override string GetPlatformNamePrefix()
+    {
+        return "std";
     }
 }
 #endif

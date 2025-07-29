@@ -5,320 +5,288 @@ using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
-using SolarSharp.Interpreter.Security;
-using SolarSharp.Interpreter.Security.FunctionBinding;
 
-namespace SolarSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib;
+
+/// <summary>
+///     Class implementing time related Lua functions from the 'os' module.
+/// </summary>
+[SolarSharpModule(Namespace = "os")]
+public class OsTimeModule
 {
-    /// <summary>
-    /// Class implementing time related Lua functions from the 'os' module.
-    /// </summary>
-    [SolarSharpModule(Namespace = "os")]
-    public class OsTimeModule
+    private static readonly DateTime Time0 = DateTime.UtcNow;
+    private static readonly DateTime Epoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    private static LuaValue GetUnixTime(DateTime dateTime, DateTime? epoch = null)
     {
-        private static readonly DateTime Time0 = DateTime.UtcNow;
-        private static readonly DateTime Epoch = new DateTime(
-            1970,
-            1,
-            1,
-            0,
-            0,
-            0,
-            DateTimeKind.Utc
-        );
+        var time = (dateTime - (epoch ?? Epoch)).TotalSeconds;
 
-        private static DynValue GetUnixTime(DateTime dateTime, DateTime? epoch = null)
-        {
-            var time = (dateTime - (epoch ?? Epoch)).TotalSeconds;
+        if (time < 0.0)
+            return LuaValue.Nil;
 
-            if (time < 0.0)
-                return DynValue.Nil;
+        return LuaValue.NewNumber(time);
+    }
 
-            return DynValue.NewNumber(time);
-        }
+    private static DateTime FromUnixTime(double unixtime)
+    {
+        var ts = TimeSpan.FromSeconds(unixtime);
+        return Epoch + ts;
+    }
 
-        private static DateTime FromUnixTime(double unixtime)
-        {
-            var ts = TimeSpan.FromSeconds(unixtime);
-            return Epoch + ts;
-        }
-
-        [MoonSharpModuleMethod]
-        [SecurityBoundFunction(
-            requiredModule: CoreModules.OS_Time,
-            requiredCapabilities: ScriptCapabilities.None,
-            description: "Get elapsed time since script execution started"
-        )]
+    [SolarSharpModuleMethod]
 #pragma warning disable IDE0060 // Remove unused parameter
-        public static DynValue clock(ScriptExecutionContext _, CallbackArguments _args)
+    public static LuaValue clock(ScriptExecutionContext _, CallbackArguments _args)
 #pragma warning restore IDE0060 // Remove unused parameter
+    {
+        var t = GetUnixTime(DateTime.UtcNow, Time0);
+        if (t.IsNil()) return LuaValue.NewNumber(0.0);
+        return t;
+    }
+
+    [SolarSharpModuleMethod]
+    public static LuaValue difftime(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var t2 = args.AsType(0, "difftime", DataType.Number);
+        var t1 = args.AsType(1, "difftime", DataType.Number, true);
+
+        if (t1.IsNil())
+            return LuaValue.NewNumber(t2.Number);
+
+        return LuaValue.NewNumber(t2.Number - t1.Number);
+    }
+
+    [SolarSharpModuleMethod]
+    public static LuaValue time(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var date = DateTime.UtcNow;
+
+        if (args.Count > 0)
         {
-            var t = GetUnixTime(DateTime.UtcNow, Time0);
-            if (t.IsNil())
-                return DynValue.NewNumber(0.0);
-            return t;
+            var vt = args.AsType(0, "time", DataType.Table, true);
+            if (vt.Type == DataType.Table)
+                date = ParseTimeTable(vt.Table);
         }
 
-        [MoonSharpModuleMethod]
-        [SecurityBoundFunction(
-            requiredModule: CoreModules.OS_Time,
-            requiredCapabilities: ScriptCapabilities.None,
-            description: "Calculate difference between two timestamps"
-        )]
-        public static DynValue difftime(ScriptExecutionContext _, CallbackArguments args)
+        return GetUnixTime(date);
+    }
+
+    private static DateTime ParseTimeTable(Table t)
+    {
+        var sec = GetTimeTableField(t, "sec") ?? 0;
+        var min = GetTimeTableField(t, "min") ?? 0;
+        var hour = GetTimeTableField(t, "hour") ?? 12;
+        var day = GetTimeTableField(t, "day");
+        var month = GetTimeTableField(t, "month");
+        var year = GetTimeTableField(t, "year");
+
+        if (day == null)
+            throw new ScriptRuntimeException("field 'day' missing in date table");
+
+        if (month == null)
+            throw new ScriptRuntimeException("field 'month' missing in date table");
+
+        if (year == null)
+            throw new ScriptRuntimeException("field 'year' missing in date table");
+
+        return new DateTime(year.Value, month.Value, day.Value, hour, min, sec);
+    }
+
+
+    private static int? GetTimeTableField(Table t, string key)
+    {
+        var v = t.Get(key);
+        var d = v.CastToNumber();
+
+        if (d.HasValue)
+            return (int)d.Value;
+
+        return null;
+    }
+
+    [SolarSharpModuleMethod]
+    public static LuaValue date(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        var reference = DateTime.UtcNow;
+
+        var vformat = args.AsType(0, "date", DataType.String, true);
+        var vtime = args.AsType(1, "date", DataType.Number, true);
+
+        var format = vformat.IsNil() ? "%c" : vformat.String;
+
+        if (vtime.IsNotNil())
+            reference = FromUnixTime(vtime.Number);
+
+        var isDst = false;
+
+        if (format.StartsWith("!"))
         {
-            var t2 = args.AsType(0, "difftime", DataType.Number);
-            var t1 = args.AsType(1, "difftime", DataType.Number, true);
-
-            if (t1.IsNil())
-                return DynValue.NewNumber(t2.Number);
-
-            return DynValue.NewNumber(t2.Number - t1.Number);
+            format = format[1..];
         }
-
-        [MoonSharpModuleMethod]
-        [SecurityBoundFunction(
-            requiredModule: CoreModules.OS_Time,
-            requiredCapabilities: ScriptCapabilities.None,
-            description: "Get current time or convert time table to timestamp"
-        )]
-        public static DynValue time(ScriptExecutionContext _, CallbackArguments args)
+        else
         {
-            var date = DateTime.UtcNow;
-
-            if (args.Count > 0)
-            {
-                var vt = args.AsType(0, "time", DataType.Table, true);
-                if (vt.Type == DataType.Table)
-                    date = ParseTimeTable(vt.Table);
-            }
-
-            return GetUnixTime(date);
-        }
-
-        private static DateTime ParseTimeTable(Table t)
-        {
-            var sec = GetTimeTableField(t, "sec") ?? 0;
-            var min = GetTimeTableField(t, "min") ?? 0;
-            var hour = GetTimeTableField(t, "hour") ?? 12;
-            var day = GetTimeTableField(t, "day");
-            var month = GetTimeTableField(t, "month");
-            var year = GetTimeTableField(t, "year");
-
-            if (day == null)
-                throw new ScriptRuntimeException("field 'day' missing in date table");
-
-            if (month == null)
-                throw new ScriptRuntimeException("field 'month' missing in date table");
-
-            if (year == null)
-                throw new ScriptRuntimeException("field 'year' missing in date table");
-
-            return new DateTime(year.Value, month.Value, day.Value, hour, min, sec);
-        }
-
-        private static int? GetTimeTableField(Table t, string key)
-        {
-            var v = t.Get(key);
-            var d = v.CastToNumber();
-
-            if (d.HasValue)
-                return (int)d.Value;
-
-            return null;
-        }
-
-        [MoonSharpModuleMethod]
-        [SecurityBoundFunction(
-            requiredModule: CoreModules.OS_Time,
-            requiredCapabilities: ScriptCapabilities.None,
-            description: "Format timestamp as date string or table"
-        )]
-        public static DynValue date(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            var reference = DateTime.UtcNow;
-
-            var vformat = args.AsType(0, "date", DataType.String, true);
-            var vtime = args.AsType(1, "date", DataType.Number, true);
-
-            var format = vformat.IsNil() ? "%c" : vformat.String;
-
-            if (vtime.IsNotNil())
-                reference = FromUnixTime(vtime.Number);
-
-            var isDst = false;
-
-            if (format.StartsWith("!"))
-            {
-                format = format[1..];
-            }
-            else
-            {
 #if !(PCL || ENABLE_DOTNET || NETFX_CORE)
 
-                try
-                {
-                    reference = TimeZoneInfo.ConvertTimeFromUtc(reference, TimeZoneInfo.Local);
-                    isDst = reference.IsDaylightSavingTime();
-                }
-                catch (TimeZoneNotFoundException)
-                {
-                    // this catches a weird mono bug: https://bugzilla.xamarin.com/show_bug.cgi?id=11817
-                    // however the behaviour is definitely not correct.
-                }
-#endif
-            }
-
-            if (format == "*t")
+            try
             {
-                var t = new Table();
-
-                t.Set("year", DynValue.NewNumber(reference.Year));
-                t.Set("month", DynValue.NewNumber(reference.Month));
-                t.Set("day", DynValue.NewNumber(reference.Day));
-                t.Set("hour", DynValue.NewNumber(reference.Hour));
-                t.Set("min", DynValue.NewNumber(reference.Minute));
-                t.Set("sec", DynValue.NewNumber(reference.Second));
-                t.Set("wday", DynValue.NewNumber((int)reference.DayOfWeek + 1));
-                t.Set("yday", DynValue.NewNumber(reference.DayOfYear));
-                t.Set("isdst", DynValue.NewBoolean(isDst));
-
-                return DynValue.NewTable(t);
+                reference = TimeZoneInfo.ConvertTimeFromUtc(reference, TimeZoneInfo.Local);
+                isDst = reference.IsDaylightSavingTime();
             }
-            return DynValue.NewString(StrFTime(format, reference));
+            catch (TimeZoneNotFoundException)
+            {
+                // this catches a weird mono bug: https://bugzilla.xamarin.com/show_bug.cgi?id=11817
+                // however the behavior is definitely not correct. damn.
+            }
+#endif
         }
 
-        private static string StrFTime(string format, DateTime d)
+
+        if (format == "*t")
         {
-            // ref: http://www.cplusplus.com/reference/ctime/strftime/
+            Table t = new(executionContext.GetScript());
 
-            var STANDARD_PATTERNS = new Dictionary<char, string>
+            t.Set("year", LuaValue.NewNumber(reference.Year));
+            t.Set("month", LuaValue.NewNumber(reference.Month));
+            t.Set("day", LuaValue.NewNumber(reference.Day));
+            t.Set("hour", LuaValue.NewNumber(reference.Hour));
+            t.Set("min", LuaValue.NewNumber(reference.Minute));
+            t.Set("sec", LuaValue.NewNumber(reference.Second));
+            t.Set("wday", LuaValue.NewNumber((int)reference.DayOfWeek + 1));
+            t.Set("yday", LuaValue.NewNumber(reference.DayOfYear));
+            t.Set("isdst", LuaValue.NewBoolean(isDst));
+
+            return LuaValue.NewTable(t);
+        }
+
+        return LuaValue.NewString(StrFTime(format, reference));
+    }
+
+    private static string StrFTime(string format, DateTime d)
+    {
+        // ref: http://www.cplusplus.com/reference/ctime/strftime/
+
+        Dictionary<char, string> STANDARD_PATTERNS = new()
+        {
+            { 'a', "ddd" },
+            { 'A', "dddd" },
+            { 'b', "MMM" },
+            { 'B', "MMMM" },
+            { 'c', "f" },
+            { 'd', "dd" },
+            { 'D', "MM/dd/yy" },
+            { 'F', "yyyy-MM-dd" },
+            { 'g', "yy" },
+            { 'G', "yyyy" },
+            { 'h', "MMM" },
+            { 'H', "HH" },
+            { 'I', "hh" },
+            { 'm', "MM" },
+            { 'M', "mm" },
+            { 'p', "tt" },
+            { 'r', "h:mm:ss tt" },
+            { 'R', "HH:mm" },
+            { 'S', "ss" },
+            { 'T', "HH:mm:ss" },
+            { 'y', "yy" },
+            { 'Y', "yyyy" },
+            { 'x', "d" },
+            { 'X', "T" },
+            { 'z', "zzz" },
+            { 'Z', "zzz" }
+        };
+
+
+        StringBuilder sb = new();
+
+        var isEscapeSequence = false;
+
+        foreach (var c in format)
+        {
+            if (c == '%')
             {
-                { 'a', "ddd" },
-                { 'A', "dddd" },
-                { 'b', "MMM" },
-                { 'B', "MMMM" },
-                { 'c', "f" },
-                { 'd', "dd" },
-                { 'D', "MM/dd/yy" },
-                { 'F', "yyyy-MM-dd" },
-                { 'g', "yy" },
-                { 'G', "yyyy" },
-                { 'h', "MMM" },
-                { 'H', "HH" },
-                { 'I', "hh" },
-                { 'm', "MM" },
-                { 'M', "mm" },
-                { 'p', "tt" },
-                { 'r', "h:mm:ss tt" },
-                { 'R', "HH:mm" },
-                { 'S', "ss" },
-                { 'T', "HH:mm:ss" },
-                { 'y', "yy" },
-                { 'Y', "yyyy" },
-                { 'x', "d" },
-                { 'X', "T" },
-                { 'z', "zzz" },
-                { 'Z', "zzz" },
-            };
-
-            var sb = new StringBuilder();
-
-            var isEscapeSequence = false;
-
-            for (var i = 0; i < format.Length; i++)
-            {
-                var c = format[i];
-
-                if (c == '%')
+                if (isEscapeSequence)
                 {
-                    if (isEscapeSequence)
-                    {
-                        sb.Append('%');
-                        isEscapeSequence = false;
-                    }
-                    else
-                        isEscapeSequence = true;
-
-                    continue;
-                }
-
-                if (!isEscapeSequence)
-                {
-                    sb.Append(c);
-                    continue;
-                }
-
-                if (c is 'O' or 'E')
-                    continue; // no modifiers
-
-                isEscapeSequence = false;
-
-                if (STANDARD_PATTERNS.ContainsKey(c))
-                {
-                    sb.Append(d.ToString(STANDARD_PATTERNS[c]));
-                }
-                else if (c == 'e')
-                {
-                    var s = d.ToString("%d");
-                    if (s.Length < 2)
-                        s = " " + s;
-                    sb.Append(s);
-                }
-                else if (c == 'n')
-                {
-                    sb.Append('\n');
-                }
-                else if (c == 't')
-                {
-                    sb.Append('\t');
-                }
-                else if (c == 'C')
-                {
-                    sb.Append(d.Year / 100);
-                }
-                else if (c == 'j')
-                {
-                    sb.Append(d.DayOfYear.ToString("000"));
-                }
-                else if (c == 'u')
-                {
-                    var weekDay = (int)d.DayOfWeek;
-                    if (weekDay == 0)
-                        weekDay = 7;
-
-                    sb.Append(weekDay);
-                }
-                else if (c == 'w')
-                {
-                    var weekDay = (int)d.DayOfWeek;
-                    sb.Append(weekDay);
-                }
-                else if (c == 'U')
-                {
-                    // Week number with the first Sunday as the first day of week one (00-53)
-                    sb.Append("??");
-                }
-                else if (c == 'V')
-                {
-                    // ISO 8601 week number (00-53)
-                    sb.Append("??");
-                }
-                else if (c == 'W')
-                {
-                    // Week number with the first Monday as the first day of week one (00-53)
-                    sb.Append("??");
+                    sb.Append('%');
+                    isEscapeSequence = false;
                 }
                 else
                 {
-                    throw new ScriptRuntimeException(
-                        "bad argument #1 to 'date' (invalid conversion specifier '{0}')",
-                        format
-                    );
+                    isEscapeSequence = true;
                 }
+
+                continue;
             }
 
-            return sb.ToString();
+            if (!isEscapeSequence)
+            {
+                sb.Append(c);
+                continue;
+            }
+
+            if (c == 'O' || c == 'E') continue; // no modifiers
+
+            isEscapeSequence = false;
+
+            if (STANDARD_PATTERNS.TryGetValue(c, out var value))
+            {
+                sb.Append(d.ToString(value));
+            }
+            else if (c == 'e')
+            {
+                var s = d.ToString("%d");
+                if (s.Length < 2) s = " " + s;
+                sb.Append(s);
+            }
+            else if (c == 'n')
+            {
+                sb.Append('\n');
+            }
+            else if (c == 't')
+            {
+                sb.Append('\t');
+            }
+            else if (c == 'C')
+            {
+                sb.Append(d.Year / 100);
+            }
+            else if (c == 'j')
+            {
+                sb.Append(d.DayOfYear.ToString("000"));
+            }
+            else if (c == 'u')
+            {
+                var weekDay = (int)d.DayOfWeek;
+                if (weekDay == 0)
+                    weekDay = 7;
+
+                sb.Append(weekDay);
+            }
+            else if (c == 'w')
+            {
+                var weekDay = (int)d.DayOfWeek;
+                sb.Append(weekDay);
+            }
+            else if (c == 'U')
+            {
+                // Week number with the first Sunday as the first day of week one (00-53)
+                sb.Append("??");
+            }
+            else if (c == 'V')
+            {
+                // ISO 8601 week number (00-53)
+                sb.Append("??");
+            }
+            else if (c == 'W')
+            {
+                // Week number with the first Monday as the first day of week one (00-53)
+                sb.Append("??");
+            }
+            else
+            {
+                throw new ScriptRuntimeException("bad argument #1 to 'date' (invalid conversion specifier '{0}')",
+                    format);
+            }
         }
+
+        return sb.ToString();
     }
 }

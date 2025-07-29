@@ -4,57 +4,53 @@ using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.Serialization.Json;
 
-namespace SolarSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib;
+
+[SolarSharpModule(Namespace = "json")]
+public class JsonModule
 {
-    [SolarSharpModule(Namespace = "json")]
-    public class JsonModule
+    [SolarSharpModuleMethod]
+    public static LuaValue parse(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        [MoonSharpModuleMethod]
-        public static DynValue parse(
-            ScriptExecutionContext executionContext,
-            CallbackArguments args
-        )
+        try
         {
-            try
-            {
-                var vs = args.AsType(0, "parse", DataType.String);
-                var t = JsonTableConverter.JsonToTable(vs.String, executionContext.GetScript());
-                return DynValue.NewTable(t);
-            }
-            catch (SyntaxErrorException ex)
-            {
-                throw new ScriptRuntimeException(ex);
-            }
+            var vs = args.AsType(0, "parse", DataType.String);
+            var t = JsonTableConverter.JsonToTable(vs.String, executionContext.GetScript());
+            return LuaValue.NewTable(t);
         }
-
-        [MoonSharpModuleMethod]
-        public static DynValue serialize(ScriptExecutionContext _, CallbackArguments args)
+        catch (SyntaxErrorException ex)
         {
-            try
-            {
-                var vt = args.AsType(0, "serialize", DataType.Table);
-                var s = vt.Table.TableToJson();
-                return DynValue.NewString(s);
-            }
-            catch (SyntaxErrorException ex)
-            {
-                throw new ScriptRuntimeException(ex);
-            }
+            throw new ScriptRuntimeException(ex);
         }
+    }
 
-        [MoonSharpModuleMethod]
-        public static DynValue isnull(ScriptExecutionContext _, CallbackArguments args)
+    [SolarSharpModuleMethod]
+    public static LuaValue serialize(ScriptExecutionContext _, CallbackArguments args)
+    {
+        try
         {
-            var vs = args[0];
-            return DynValue.NewBoolean(JsonNull.IsJsonNull(vs) || vs.IsNil());
+            var vt = args.AsType(0, "serialize", DataType.Table);
+            var s = vt.Table.TableToJson();
+            return LuaValue.NewString(s);
         }
+        catch (SyntaxErrorException ex)
+        {
+            throw new ScriptRuntimeException(ex);
+        }
+    }
 
-        [MoonSharpModuleMethod]
+    [SolarSharpModuleMethod]
+    public static LuaValue isnull(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var vs = args[0];
+        return LuaValue.NewBoolean(JsonNull.IsJsonNull(vs) || vs.IsNil());
+    }
+
+    [SolarSharpModuleMethod]
 #pragma warning disable IDE0060 // Remove unused parameter
-        public static DynValue @null(ScriptExecutionContext _, CallbackArguments _args)
+    public static LuaValue @null(ScriptExecutionContext _, CallbackArguments _args)
 #pragma warning restore IDE0060 // Remove unused parameter
-        {
-            return JsonNull.Create();
-        }
+    {
+        return JsonNull.Create();
     }
 }

@@ -3,50 +3,50 @@ using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace SolarSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements;
+
+internal class GotoStatement : Statement
 {
-    internal class GotoStatement : Statement
+    private Instruction m_Jump;
+    private int m_LabelAddress = -1;
+
+    public GotoStatement(ScriptLoadingContext lcontext)
+        : base(lcontext)
     {
-        internal SourceRef SourceRef { get; private set; }
-        internal Token GotoToken { get; private set; }
-        public string Label { get; private set; }
+        GotoToken = CheckTokenType(lcontext, TokenType.Goto);
+        var name = CheckTokenType(lcontext, TokenType.Name);
 
-        internal int DefinedVarsCount { get; private set; }
-        internal string LastDefinedVarName { get; private set; }
+        SourceRef = GotoToken.GetSourceRef(name);
 
-        private Instruction m_Jump;
-        private int m_LabelAddress = -1;
+        Label = name.Text;
 
-        public GotoStatement(ScriptLoadingContext lcontext)
-            : base(lcontext)
-        {
-            GotoToken = CheckTokenType(lcontext, TokenType.Goto);
-            var name = CheckTokenType(lcontext, TokenType.Name);
+        lcontext.Scope.RegisterGoto(this);
+    }
 
-            SourceRef = GotoToken.GetSourceRef(name);
+    internal SourceRef SourceRef { get; private set; }
+    internal Token GotoToken { get; }
+    public string Label { get; private set; }
 
-            Label = name.Text;
+    internal int DefinedVarsCount { get; private set; }
+    internal string LastDefinedVarName { get; private set; }
 
-            lcontext.Scope.RegisterGoto(this);
-        }
+    public override void Compile(ByteCode bc)
+    {
+        m_Jump = bc.Emit_Jump(OpCode.Jump, m_LabelAddress);
+    }
 
-        public override void Compile(ByteCode bc)
-        {
-            m_Jump = bc.Emit_Jump(OpCode.Jump, m_LabelAddress);
-        }
+    internal void SetDefinedVars(int definedVarsCount, string lastDefinedVarsName)
+    {
+        DefinedVarsCount = definedVarsCount;
+        LastDefinedVarName = lastDefinedVarsName;
+    }
 
-        internal void SetDefinedVars(int definedVarsCount, string lastDefinedVarsName)
-        {
-            DefinedVarsCount = definedVarsCount;
-            LastDefinedVarName = lastDefinedVarsName;
-        }
 
-        internal void SetAddress(int labelAddress)
-        {
-            m_LabelAddress = labelAddress;
+    internal void SetAddress(int labelAddress)
+    {
+        m_LabelAddress = labelAddress;
 
-            if (m_Jump != null)
-                m_Jump.NumVal = labelAddress;
-        }
+        if (m_Jump != null)
+            m_Jump.NumVal = labelAddress;
     }
 }

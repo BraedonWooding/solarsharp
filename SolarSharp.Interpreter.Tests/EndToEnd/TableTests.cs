@@ -1,26 +1,23 @@
 ﻿using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [Category("VM.Integration")]
     public class TableTests
     {
-        [Category("VM.E2E")]
         [Test]
         public void TableAccessAndEmptyCtor()
         {
-            const string script =
-                @"
+            var script = @"
 						a = { }
 						
 						a[1] = 1;
 
 						return a[1]";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -32,8 +29,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableAccessAndCtor()
         {
-            var script =
-                @"
+            var script = @"
 						a = { 55, 2, 3, aurevoir=6, [false] = 7 }
 						
 						a[1] = 1;
@@ -42,7 +38,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return a[1], a[2], a[3], a['ciao'], a.hello, a.aurevoir, a[false]";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -68,8 +64,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableMethod1()
         {
-            var script =
-                @"
+            var script = @"
 						x = 0
 	
 						a = 
@@ -85,7 +80,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return x";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -97,8 +92,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableMethod2()
         {
-            var script =
-                @"
+            var script = @"
 						x = 0
 	
 						a = 
@@ -114,7 +108,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return x";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -126,8 +120,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableMethod3()
         {
-            var script =
-                @"
+            var script = @"
 						x = 0
 	
 						a = 
@@ -143,7 +136,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return x";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -152,11 +145,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
+
         [Test]
         public void TableMethod4()
         {
-            var script =
-                @"
+            var script = @"
 						x = 0
 	
 						local a = 
@@ -172,7 +165,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return x";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -184,8 +177,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableMethod5()
         {
-            var script =
-                @"
+            var script = @"
 						x = 0
 
 						a = 
@@ -204,7 +196,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 						return x";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -213,18 +205,18 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
+
         [Test]
         public void TableMethod6()
         {
-            var script =
-                @"
+            var script = @"
 						do
 						  local a = {x=0}
 						  function a:add (x) self.x, a.y = self.x+x, 20; return self end
 						  return (a:add(10):add(20):add(30).x == 60 and a.y == 20)
 						end";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -236,8 +228,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableNextWithChangeInCollection()
         {
-            var script =
-                @"
+            var script = @"
 				x = { }
 
 				function copy(k, v)
@@ -273,7 +264,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return s;";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -285,8 +276,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableWithArraysNextWithChangeInCollection()
         {
-            var script =
-                @"
+            var script = @"
 				x = { }
 
 				function copy(k, v)
@@ -341,25 +331,21 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return dump(x)";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
                 Assert.That(res.Type, Is.EqualTo(DataType.String));
-                Assert.That(
-                    res.String,
+                Assert.That(res.String,
                     Is.EqualTo(
-                        "{ [1] = A,[2] = B,[3] = C,[\"a\"] = 1,[\"b\"] = 2,[\"c\"] = 3,[\"d\"] = 4,[\"e\"] = 5,} "
-                    )
-                );
+                        "{ [1] = A,[2] = B,[3] = C,[\"a\"] = 1,[\"b\"] = 2,[\"c\"] = 3,[\"d\"] = 4,[\"e\"] = 5,} "));
             });
         }
 
         [Test]
         public void TablePairsWithoutMetatable()
         {
-            var script =
-                @"
+            var script = @"
 				V = 0
 				K = ''
 
@@ -379,7 +365,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
 				return K, V;";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -394,8 +380,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableIPairsWithoutMetatable()
         {
-            var script =
-                @"    
+            var script = @"    
 				x = 0
 				y = 0
 
@@ -412,7 +397,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
     
 				return x, y";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -431,8 +416,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TestLoadSyntaxError()
         {
-            const string script =
-                @"    
+            var script = @"    
 			function reader ()
 				i = i + 1
 				return t[i]
@@ -446,7 +430,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 			return f, msg;
 		";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -460,11 +444,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             });
         }
 
+
         [Test]
         public void TableSimplifiedAccess1()
         {
-            var script =
-                @"    
+            var script = @"    
 			t = {
 				ciao = 'hello'
 			}
@@ -472,7 +456,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 			return t;
 		";
 
-            var s = new Script(Examples.Common.Desktop);
+            Script s = new();
             var t = s.DoString(script);
 
             Assert.That(t.Table["ciao"], Is.EqualTo("hello"));
@@ -481,8 +465,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableSimplifiedAccess2()
         {
-            var script =
-                @"    
+            var script = @"    
 			t = {
 				ciao = x
 			}
@@ -490,7 +473,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 			return t;
 		";
 
-            var s = new Script(Examples.Common.Desktop) { Globals = { ["x"] = "hello" } };
+            Script s = new()
+            {
+	            Globals =
+	            {
+		            ["x"] = "hello"
+	            }
+            };
             var t = s.DoString(script);
 
             Assert.That(t.Table["ciao"], Is.EqualTo("hello"));
@@ -499,15 +488,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableSimplifiedAccess3()
         {
-            var script =
-                @"    
+            var script = @"    
 			t = {
 			}
 
 			return t;
 		";
 
-            var s = new Script(Examples.Common.Desktop);
+            Script s = new();
             var t = s.DoString(script);
 
             s.Globals["t", "ciao"] = "hello";
@@ -518,13 +506,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableSimplifiedAccess4()
         {
-            var script =
-                @"    
+            var script = @"    
 			t = {
 			}
 		";
 
-            var s = new Script(Examples.Common.Desktop);
+            Script s = new();
             s.DoString(script);
 
             s.Globals["t", "ciao"] = "hello";
@@ -532,17 +519,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             Assert.That(s.Globals["t", "ciao"], Is.EqualTo("hello"));
         }
 
+
         [Test]
         public void TableSimplifiedAccess5()
         {
-            var script =
-                @"    
+            var script = @"    
 			t = {
 				ciao = 'hello'
 			}
 		";
 
-            var s = new Script(Examples.Common.Desktop);
+            Script s = new();
             s.DoString(script);
 
             Assert.That(s.Globals["t", "ciao"], Is.EqualTo("hello"));
@@ -551,25 +538,24 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TableSimplifiedAccess6()
         {
-            var script =
-                @"    
+            var script = @"    
 			t = {
 				ciao = 
 				{	'hello' }
 			}
 		";
 
-            var s = new Script(Examples.Common.Desktop);
+            Script s = new(CoreModules.None);
             s.DoString(script);
 
             Assert.That(s.Globals["t", "ciao", 1], Is.EqualTo("hello"));
         }
 
+
         [Test]
         public void TestNilRemovesEntryForPairs()
         {
-            var script =
-                @"
+            var script = @"
 				str = ''
 
 				function showTable(t)
@@ -591,7 +577,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				return str
 			";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -603,12 +589,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void TestUnpack()
         {
-            var script =
-                @"
+            var script = @"
 				return unpack({3,4})
 			";
 
-            var res = new Script(Examples.Common.Desktop).DoString(script);
+            var res = Script.RunString(script);
 
             Assert.Multiple(() =>
             {
@@ -625,37 +610,37 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Table_Length_Calculations()
         {
-            var T = new Table(null);
+            Table T = new(null);
 
             Assert.That(T, Is.Empty, "A");
 
-            T.Set(1, DynValue.True);
+            T.Set(1, LuaValue.True);
 
             Assert.That(T, Has.Length.EqualTo(1), "B");
 
-            T.Set(2, DynValue.True);
-            T.Set(3, DynValue.True);
-            T.Set(4, DynValue.True);
+            T.Set(2, LuaValue.True);
+            T.Set(3, LuaValue.True);
+            T.Set(4, LuaValue.True);
 
             Assert.That(T, Has.Length.EqualTo(4), "C");
 
-            T.Set(3, DynValue.Nil);
+            T.Set(3, LuaValue.Nil);
 
             Assert.That(T, Has.Length.EqualTo(2), "D");
 
-            T.Set(3, DynValue.True);
+            T.Set(3, LuaValue.True);
 
             Assert.That(T, Has.Length.EqualTo(4), "E");
 
-            T.Set(3, DynValue.Nil);
+            T.Set(3, LuaValue.Nil);
 
             Assert.That(T, Has.Length.EqualTo(2), "F");
 
-            T.Append(DynValue.True);
+            T.Append(LuaValue.True);
 
             Assert.That(T, Has.Length.EqualTo(4), "G");
 
-            T.Append(DynValue.True);
+            T.Append(LuaValue.True);
 
             Assert.That(T, Has.Length.EqualTo(5), "H");
         }

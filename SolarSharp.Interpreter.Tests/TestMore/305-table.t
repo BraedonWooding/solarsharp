@@ -225,7 +225,7 @@ eq_array(output, {
 
 --[[
 
-MoonSharp: Sort callbacks work --]]
+SolarSharp: Sort callbacks work --]]
 
 -- We dont support this error message because we just presume that sorting functions are valid
 -- this is for performance (to save us calling both in half the cases)

@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [NonParallelizable] // Uses global UserData registration
-    [Category("VM.Integration")]
     public class CollectionsBaseGenRegisteredTests
     {
         public class RegCollItem
@@ -27,19 +25,11 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         {
             private readonly int[] m_Array = new int[3] { 2, 4, 6 };
 
-            private readonly List<RegCollItem> m_Items = new List<RegCollItem>
-            {
-                new RegCollItem(7),
-                new RegCollItem(8),
-                new RegCollItem(9),
-            };
+            private readonly List<RegCollItem> m_Items = new()
+                { new RegCollItem(7), new RegCollItem(8), new RegCollItem(9) };
 
-            private readonly List<int> m_List = new List<int> { 1, 2, 3 };
-            private readonly int[,] m_MultiArray = new int[2, 3]
-            {
-                { 2, 4, 6 },
-                { 7, 8, 9 },
-            };
+            private readonly List<int> m_List = new() { 1, 2, 3 };
+            private readonly int[,] m_MultiArray = new int[2, 3] { { 2, 4, 6 }, { 7, 8, 9 } };
 
             public int[,] GetMultiArray()
             {
@@ -67,17 +57,17 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
         }
 
-        private static void Do(string code, Action<DynValue> asserts)
+        private static void Do(string code, Action<LuaValue> asserts)
         {
             // useless ops, to trick AOT to include the extension methods..
-            var lst = new List<int> { 1, 1, 1, 1 };
+            List<int> lst = new() { 1, 1, 1, 1 };
             lst.Add(lst.Sum());
             lst.Add(lst.Last());
 
-            Do(code, (d, o) => asserts(d));
+            Do(code, (d, _) => asserts(d));
         }
 
-        private static void Do(string code, Action<DynValue, RegCollMethods> asserts)
+        private static void Do(string code, Action<LuaValue, RegCollMethods> asserts)
         {
             try
             {
@@ -87,7 +77,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 UserData.RegisterType(typeof(List<>));
                 UserData.RegisterExtensionType(typeof(Enumerable));
 
-                var s = new Script(Examples.DesktopBasePolicySet);
+                Script s = new();
 
                 var obj = new RegCollMethods();
                 s.Globals["o"] = obj;
@@ -99,7 +89,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             }
             catch (ScriptRuntimeException ex)
             {
-                // Debug: Log exception decorated message
+                Debug.WriteLine(ex.DecoratedMessage);
                 ex.Rethrow();
                 throw;
             }
@@ -118,8 +108,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void RegCollGen_List_ExtMeth_Last()
         {
-            Do(
-                @"
+            Do(@"
 				local list = o:GetList()
 				return list:Last();			
 			",
@@ -130,15 +119,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                         Assert.That(r.Type, Is.EqualTo(DataType.Number));
                         Assert.That(r.Number, Is.EqualTo(3));
                     });
-                }
-            );
+                });
         }
 
         [Test]
         public void RegCollGen_List_ExtMeth_Sum()
         {
-            Do(
-                @"
+            Do(@"
 				local list = o:GetList()
 				return list:Sum();			
 			",
@@ -149,15 +136,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                         Assert.That(r.Type, Is.EqualTo(DataType.Number));
                         Assert.That(r.Number, Is.EqualTo(6));
                     });
-                }
-            );
+                });
         }
+
 
         [Test]
         public void RegCollGen_IteratorOnList_Auto()
         {
-            Do(
-                @"
+            Do(@"
 				local list = o:GetList()
 
 				local x = 0;
@@ -173,15 +159,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                         Assert.That(r.Type, Is.EqualTo(DataType.Number));
                         Assert.That(r.Number, Is.EqualTo(6));
                     });
-                }
-            );
+                });
         }
+
 
         [Test]
         public void RegCollGen_IteratorOnList_Manual()
         {
-            Do(
-                @"
+            Do(@"
 				function each(obj)
 					local e = obj:GetEnumerator()
 					return function()
@@ -207,15 +192,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                         Assert.That(r.Type, Is.EqualTo(DataType.Number));
                         Assert.That(r.Number, Is.EqualTo(6));
                     });
-                }
-            );
+                });
         }
 
         [Test]
         public void RegCollGen_IteratorOnList_ChangeElem()
         {
-            Do(
-                @"
+            Do(@"
 				local list = o:GetList()
 
 				list[1] = list[2] + list[1];
@@ -236,15 +219,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                         Assert.That(o.GetList()[1], Is.EqualTo(5));
                         Assert.That(o.GetList()[2], Is.EqualTo(3));
                     });
-                }
-            );
+                });
         }
+
 
         [Test]
         public void RegCollGen_IteratorOnArray_Auto()
         {
-            Do(
-                @"
+            Do(@"
 				local array = o:GetArray()
 
 				local x = 0;
@@ -259,15 +241,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                         Assert.That(r.Type, Is.EqualTo(DataType.Number));
                         Assert.That(r.Number, Is.EqualTo(12));
                     });
-                }
-            );
+                });
         }
+
 
         [Test]
         public void RegCollGen_IteratorOnArray_ChangeElem()
         {
-            Do(
-                @"
+            Do(@"
 				local array = o:get_array()
 
 				array[1] = array[2] - 1;
@@ -288,15 +269,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                         Assert.That(o.GetArray()[1], Is.EqualTo(5));
                         Assert.That(o.GetArray()[2], Is.EqualTo(6));
                     });
-                }
-            );
+                });
         }
 
         [Test]
         public void RegCollGen_IteratorOnMultiDimArray_ChangeElem()
         {
-            Do(
-                @"
+            Do(@"
 				local array = o:GetMultiArray()
 
 				array[0, 1] = array[1, 2];
@@ -320,15 +299,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                         Assert.That(o.GetMultiArray()[1, 1], Is.EqualTo(8));
                         Assert.That(o.GetMultiArray()[1, 2], Is.EqualTo(9));
                     });
-                }
-            );
+                });
         }
+
 
         [Test]
         public void RegCollGen_IteratorOnObjList_Auto()
         {
-            Do(
-                @"
+            Do(@"
 				local list = o:GetItems()
 
 				local x = 0;
@@ -344,15 +322,14 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                         Assert.That(r.Type, Is.EqualTo(DataType.Number));
                         Assert.That(r.Number, Is.EqualTo(24));
                     });
-                }
-            );
+                });
         }
+
 
         [Test]
         public void RegCollGen_IteratorOnObjList_Manual()
         {
-            Do(
-                @"
+            Do(@"
 				function each(obj)
 					local e = obj:GetEnumerator()
 					return function()
@@ -378,15 +355,13 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                         Assert.That(r.Type, Is.EqualTo(DataType.Number));
                         Assert.That(r.Number, Is.EqualTo(24));
                     });
-                }
-            );
+                });
         }
 
         [Test]
         public void RegCollGen_IteratorOnObjList_ChangeElem()
         {
-            Do(
-                @"
+            Do(@"
 				local list = o:GetItems()
 
 				list[1] = ctor.__new(list[2].Value + list[1].Value);
@@ -407,8 +382,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                         Assert.That(o.GetItems()[1].Value, Is.EqualTo(17));
                         Assert.That(o.GetItems()[2].Value, Is.EqualTo(9));
                     });
-                }
-            );
+                });
         }
     }
 }

@@ -3,55 +3,47 @@ using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Interop;
 using SolarSharp.Interpreter.Interop.Attributes;
-using SolarSharp.Interpreter.Security;
+using SolarSharp.Interpreter.Modules;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [Category("VM.Integration")]
     public class ConfigPropertyAssignerTests
     {
         private class MySubclass
         {
-            [MoonSharpProperty]
-            public string MyString { get; set; }
+            [SolarSharpProperty] public string MyString { get; set; }
 
-            [MoonSharpProperty("number")]
-            public int MyNumber { get; private set; }
+            [SolarSharpProperty("number")] public int MyNumber { get; private set; }
         }
 
         private class MyClass
         {
-            [MoonSharpProperty]
-            public string MyString { get; set; }
+            [SolarSharpProperty] public string MyString { get; set; }
 
-            [MoonSharpProperty("number")]
-            public int MyNumber { get; private set; }
+            [SolarSharpProperty("number")] public int MyNumber { get; private set; }
 
-            [MoonSharpProperty]
-            internal Table SomeTable { get; private set; }
+            [SolarSharpProperty] internal Table SomeTable { get; private set; }
 
-            [MoonSharpProperty]
-            public DynValue NativeValue { get; private set; }
+            [SolarSharpProperty] public LuaValue NativeValue { get; private set; }
 
-            [MoonSharpProperty]
-            public MySubclass SubObj { get; private set; }
+            [SolarSharpProperty] public MySubclass SubObj { get; private set; }
         }
 
         private static MyClass Test(string tableDef)
         {
-            var s = new Script(Examples.DesktopBasePolicySet);
+            Script s = new(CoreModules.None);
 
             var table = s.DoString("return " + tableDef);
 
             Assert.That(table.Type, Is.EqualTo(DataType.Table));
 
-            var pta = new PropertyTableAssigner<MyClass>("class");
-            var pta2 = new PropertyTableAssigner<MySubclass>();
+            PropertyTableAssigner<MyClass> pta = new("class");
+            PropertyTableAssigner<MySubclass> pta2 = new();
 
             pta.SetSubassigner(pta2);
 
-            var o = new MyClass();
+            MyClass o = new();
 
             pta.AssignObject(o, table.Table);
 
@@ -61,8 +53,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void ConfigProp_SimpleAssign()
         {
-            var x = Test(
-                @"
+            var x = Test(@"
 				{
 				class = 'oohoh',
 				myString = 'ciao',
@@ -70,8 +61,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				some_table = {},
 				nativeValue = function() end,
 				subObj = { number = 15, myString = 'hi' },
-				}"
-            );
+				}");
 
             Assert.Multiple(() =>
             {
@@ -87,9 +77,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void ConfigProp_ThrowsOnInvalid()
         {
-            Assert.Throws<ScriptRuntimeException>(() =>
-                Test(
-                    @"
+            Assert.Throws<ScriptRuntimeException>(() => Test(@"
 				{
 				class = 'oohoh',
 				myString = 'ciao',
@@ -97,9 +85,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 				some_table = {},
 				invalid = 3,
 				nativeValue = function() end,
-				}"
-                )
-            );
+				}"));
         }
     }
 }

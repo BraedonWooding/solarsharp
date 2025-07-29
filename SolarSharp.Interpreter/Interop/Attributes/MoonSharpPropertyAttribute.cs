@@ -1,30 +1,31 @@
 ﻿using System;
 
-namespace SolarSharp.Interpreter.Interop.Attributes
+namespace SolarSharp.Interpreter.Interop.Attributes;
+
+/// <summary>
+///     Marks a property as a configruation property
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
+public sealed class SolarSharpPropertyAttribute : Attribute
 {
     /// <summary>
-    /// Marks a property as a configruation property
+    ///     Initializes a new instance of the <see cref="SolarSharpPropertyAttribute" /> class.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
-    public sealed class MoonSharpPropertyAttribute : Attribute
+    public SolarSharpPropertyAttribute()
     {
-        /// <summary>
-        /// The metamethod name (like '__div', '__ipairs', etc.)
-        /// </summary>
-        public string Name { get; private set; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MoonSharpPropertyAttribute"/> class.
-        /// </summary>
-        public MoonSharpPropertyAttribute() { }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MoonSharpPropertyAttribute"/> class.
-        /// </summary>
-        /// <param name="name">The name for this property</param>
-        public MoonSharpPropertyAttribute(string name)
-        {
-            Name = name;
-        }
     }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="SolarSharpPropertyAttribute" /> class.
+    /// </summary>
+    /// <param name="name">The name for this property</param>
+    public SolarSharpPropertyAttribute(string name)
+    {
+        Name = name;
+    }
+
+    /// <summary>
+    ///     The metamethod name (like '__div', '__ipairs', etc.)
+    /// </summary>
+    public string Name { get; private set; }
 }

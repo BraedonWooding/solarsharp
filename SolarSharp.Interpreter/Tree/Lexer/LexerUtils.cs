@@ -4,418 +4,364 @@ using System.Text;
 using SolarSharp.Interpreter.Compatibility;
 using SolarSharp.Interpreter.Errors;
 
-namespace SolarSharp.Interpreter.Tree.Lexer
+namespace SolarSharp.Interpreter.Tree.Lexer;
+
+internal static class LexerUtils
 {
-    internal static class LexerUtils
+    public static double ParseNumber(Token T)
     {
-        public static double ParseNumber(Token T)
+        var txt = T.Text;
+        if (!double.TryParse(txt, NumberStyles.Float, CultureInfo.InvariantCulture, out var res))
+            throw new SyntaxErrorException(T, "malformed number near '{0}'", txt);
+
+        return res;
+    }
+
+    public static double ParseHexInteger(Token T)
+    {
+        var txt = T.Text;
+        if (txt.Length < 2 || (txt[0] != '0' && char.ToUpper(txt[1]) != 'X'))
+            throw new InternalErrorException("hex numbers must start with '0x' near '{0}'.", txt);
+
+        if (!ulong.TryParse(txt[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var res))
+            throw new SyntaxErrorException(T, "malformed number near '{0}'", txt);
+
+        return res;
+    }
+
+    public static string ReadHexProgressive(string s, ref double d, out int digits)
+    {
+        digits = 0;
+
+        for (var i = 0; i < s.Length; i++)
         {
-            var txt = T.Text;
-            if (
-                !double.TryParse(txt, NumberStyles.Float, CultureInfo.InvariantCulture, out var res)
-            )
-                throw new SyntaxErrorException(T, "malformed number near '{0}'", txt);
+            var c = s[i];
 
-            return res;
-        }
-
-        public static double ParseHexInteger(Token T)
-        {
-            var txt = T.Text;
-            if (txt.Length < 2 || txt[0] != '0' && char.ToUpper(txt[1]) != 'X')
-                throw new InternalErrorException(
-                    "hex numbers must start with '0x' near '{0}'.",
-                    txt
-                );
-
-            if (
-                !ulong.TryParse(
-                    txt[2..],
-                    NumberStyles.HexNumber,
-                    CultureInfo.InvariantCulture,
-                    out var res
-                )
-            )
-                throw new SyntaxErrorException(T, "malformed number near '{0}'", txt);
-
-            return res;
-        }
-
-        public static string ReadHexProgressive(string s, ref double d, out int digits)
-        {
-            digits = 0;
-
-            for (var i = 0; i < s.Length; i++)
+            if (CharIsHexDigit(c))
             {
-                var c = s[i];
+                var v = HexDigit2Value(c);
+                d *= 16.0;
+                d += v;
+                ++digits;
+            }
+            else
+            {
+                return s[i..];
+            }
+        }
 
-                if (CharIsHexDigit(c))
+        return string.Empty;
+    }
+
+    public static double ParseHexFloat(Token T)
+    {
+        var s = T.Text;
+
+        try
+        {
+            if (s.Length < 2 || (s[0] != '0' && char.ToUpper(s[1]) != 'X'))
+                throw new InternalErrorException("hex float must start with '0x' near '{0}'", s);
+
+            s = s[2..];
+
+            var value = 0.0;
+            var exp = 0;
+
+            s = ReadHexProgressive(s, ref value, out var dummy);
+
+            if (s.Length > 0 && s[0] == '.')
+            {
+                s = s[1..];
+                s = ReadHexProgressive(s, ref value, out exp);
+            }
+
+            exp *= -4;
+
+            if (s.Length > 0 && char.ToUpper(s[0]) == 'P')
+            {
+                if (s.Length == 1)
+                    throw new SyntaxErrorException(T, "invalid hex float format near '{0}'", s);
+
+                s = s[(s[1] == '+' ? 2 : 1)..];
+
+                var exp1 = int.Parse(s, CultureInfo.InvariantCulture);
+
+                exp += exp1;
+            }
+
+            var result = value * Math.Pow(2, exp);
+            return result;
+        }
+        catch (FormatException)
+        {
+            throw new SyntaxErrorException(T, "malformed number near '{0}'", s);
+        }
+    }
+
+
+    public static int HexDigit2Value(char c)
+    {
+        if (c >= '0' && c <= '9')
+            return c - '0';
+        if (c >= 'A' && c <= 'F')
+            return 10 + (c - 'A');
+        if (c >= 'a' && c <= 'f')
+            return 10 + (c - 'a');
+        throw new InternalErrorException("invalid hex digit near '{0}'", c);
+    }
+
+    public static bool CharIsDigit(char c)
+    {
+        return c >= '0' && c <= '9';
+    }
+
+    public static bool CharIsHexDigit(char c)
+    {
+        return CharIsDigit(c) ||
+               c == 'a' || c == 'b' || c == 'c' || c == 'd' || c == 'e' || c == 'f' ||
+               c == 'A' || c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F';
+    }
+
+    public static string AdjustLuaLongString(string str)
+    {
+        if (str.StartsWith("\r\n"))
+            str = str[2..];
+        else if (str.StartsWith("\n"))
+            str = str[1..];
+
+        return str;
+    }
+
+    public static string UnescapeLuaString(Token token, string str)
+    {
+        if (!Framework.Do.StringContainsChar(str, '\\'))
+            return str;
+
+        StringBuilder sb = new();
+
+        var escape = false;
+        var hex = false;
+        var unicode_state = 0;
+        var hexprefix = "";
+        var val = "";
+        var zmode = false;
+
+        foreach (var c in str)
+        {
+            redo:
+            if (escape)
+            {
+                if (val.Length == 0 && !hex && unicode_state == 0)
                 {
-                    var v = HexDigit2Value(c);
-                    d *= 16.0;
-                    d += v;
-                    ++digits;
+                    if (c == 'a')
+                    {
+                        sb.Append('\a');
+                        escape = false;
+                        zmode = false;
+                    }
+                    else if (c == '\r')
+                    {
+                    } // this makes \\r\n -> \\n
+                    else if (c == '\n')
+                    {
+                        sb.Append('\n');
+                        escape = false;
+                    }
+                    else if (c == 'b')
+                    {
+                        sb.Append('\b');
+                        escape = false;
+                    }
+                    else if (c == 'f')
+                    {
+                        sb.Append('\f');
+                        escape = false;
+                    }
+                    else if (c == 'n')
+                    {
+                        sb.Append('\n');
+                        escape = false;
+                    }
+                    else if (c == 'r')
+                    {
+                        sb.Append('\r');
+                        escape = false;
+                    }
+                    else if (c == 't')
+                    {
+                        sb.Append('\t');
+                        escape = false;
+                    }
+                    else if (c == 'v')
+                    {
+                        sb.Append('\v');
+                        escape = false;
+                    }
+                    else if (c == '\\')
+                    {
+                        sb.Append('\\');
+                        escape = false;
+                        zmode = false;
+                    }
+                    else if (c == '"')
+                    {
+                        sb.Append('\"');
+                        escape = false;
+                        zmode = false;
+                    }
+                    else if (c == '\'')
+                    {
+                        sb.Append('\'');
+                        escape = false;
+                        zmode = false;
+                    }
+                    else if (c == '[')
+                    {
+                        sb.Append('[');
+                        escape = false;
+                        zmode = false;
+                    }
+                    else if (c == ']')
+                    {
+                        sb.Append(']');
+                        escape = false;
+                        zmode = false;
+                    }
+                    else if (c == '/')
+                    {
+                        sb.Append('/');
+                        escape = false;
+                        zmode = false;
+                    }
+                    else if (c == 'x')
+                    {
+                        hex = true;
+                    }
+                    else if (c == 'u')
+                    {
+                        unicode_state = 1;
+                    }
+                    else if (c == 'z')
+                    {
+                        zmode = true;
+                        escape = false;
+                    }
+                    else if (CharIsDigit(c))
+                    {
+                        val += c;
+                    }
+                    else
+                    {
+                        throw new SyntaxErrorException(token, "invalid escape sequence near '\\{0}'", c);
+                    }
                 }
                 else
                 {
-                    return s[i..];
-                }
-            }
-
-            return string.Empty;
-        }
-
-        public static double ParseHexFloat(Token T)
-        {
-            var s = T.Text;
-
-            try
-            {
-                if (s.Length < 2 || s[0] != '0' && char.ToUpper(s[1]) != 'X')
-                    throw new InternalErrorException(
-                        "hex float must start with '0x' near '{0}'",
-                        s
-                    );
-
-                s = s[2..];
-
-                var value = 0.0;
-                var exp = 0;
-
-                s = ReadHexProgressive(s, ref value, out var dummy);
-
-                if (s.Length > 0 && s[0] == '.')
-                {
-                    s = s[1..];
-                    s = ReadHexProgressive(s, ref value, out exp);
-                }
-
-                exp *= -4;
-
-                if (s.Length > 0 && char.ToUpper(s[0]) == 'P')
-                {
-                    if (s.Length == 1)
-                        throw new SyntaxErrorException(T, "invalid hex float format near '{0}'", s);
-
-                    s = s[(s[1] == '+' ? 2 : 1)..];
-
-                    var exp1 = int.Parse(s, CultureInfo.InvariantCulture);
-
-                    exp += exp1;
-                }
-
-                var result = value * Math.Pow(2, exp);
-                return result;
-            }
-            catch (FormatException)
-            {
-                throw new SyntaxErrorException(T, "malformed number near '{0}'", s);
-            }
-        }
-
-        public static int HexDigit2Value(char c)
-        {
-            if (c is >= '0' and <= '9')
-                return c - '0';
-            if (c is >= 'A' and <= 'F')
-                return 10 + (c - 'A');
-            if (c is >= 'a' and <= 'f')
-                return 10 + (c - 'a');
-            throw new InternalErrorException("invalid hex digit near '{0}'", c);
-        }
-
-        public static bool CharIsDigit(char c)
-        {
-            return c is >= '0' and <= '9';
-        }
-
-        public static bool CharIsHexDigit(char c)
-        {
-            return CharIsDigit(c)
-                || c == 'a'
-                || c == 'b'
-                || c == 'c'
-                || c == 'd'
-                || c == 'e'
-                || c == 'f'
-                || c == 'A'
-                || c == 'B'
-                || c == 'C'
-                || c == 'D'
-                || c == 'E'
-                || c == 'F';
-        }
-
-        public static string AdjustLuaLongString(string str)
-        {
-            if (str.StartsWith("\r\n"))
-                str = str[2..];
-            else if (str.StartsWith("\n"))
-                str = str[1..];
-
-            return str;
-        }
-
-        public static string UnescapeLuaString(Token token, string str)
-        {
-            if (!Framework.Do.StringContainsChar(str, '\\'))
-                return str;
-
-            var sb = new StringBuilder();
-
-            var escape = false;
-            var hex = false;
-            var unicode_state = 0;
-            var hexprefix = "";
-            var val = "";
-            var zmode = false;
-
-            foreach (var c in str)
-            {
-                redo:
-                if (escape)
-                {
-                    if (val.Length == 0 && !hex && unicode_state == 0)
+                    if (unicode_state == 1)
                     {
-                        if (c == 'a')
+                        if (c != '{')
+                            throw new SyntaxErrorException(token, "'{' expected near '\\u'");
+
+                        unicode_state = 2;
+                    }
+                    else if (unicode_state == 2)
+                    {
+                        if (c == '}')
                         {
-                            sb.Append('\a');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == '\r') { } // this makes \\r\n -> \\n
-                        else if (c == '\n')
-                        {
-                            sb.Append('\n');
-                            escape = false;
-                        }
-                        else if (c == 'b')
-                        {
-                            sb.Append('\b');
+                            var i = int.Parse(val, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                            sb.Append(ConvertUtf32ToChar(i));
+                            unicode_state = 0;
+                            val = string.Empty;
                             escape = false;
                         }
-                        else if (c == 'f')
+                        else if (val.Length >= 8)
                         {
-                            sb.Append('\f');
-                            escape = false;
+                            throw new SyntaxErrorException(token,
+                                "'}' missing, or unicode code point too large after '\\u'");
                         }
-                        else if (c == 'n')
-                        {
-                            sb.Append('\n');
-                            escape = false;
-                        }
-                        else if (c == 'r')
-                        {
-                            sb.Append('\r');
-                            escape = false;
-                        }
-                        else if (c == 't')
-                        {
-                            sb.Append('\t');
-                            escape = false;
-                        }
-                        else if (c == 'v')
-                        {
-                            sb.Append('\v');
-                            escape = false;
-                        }
-                        else if (c == '\\')
-                        {
-                            sb.Append('\\');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == '"')
-                        {
-                            sb.Append('\"');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == '\'')
-                        {
-                            sb.Append('\'');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == '[')
-                        {
-                            sb.Append('[');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == ']')
-                        {
-                            sb.Append(']');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == '/')
-                        {
-                            sb.Append('/');
-                            escape = false;
-                            zmode = false;
-                        }
-                        else if (c == 'x')
-                        {
-                            hex = true;
-                        }
-                        else if (c == 'u')
-                        {
-                            unicode_state = 1;
-                        }
-                        else if (c == 'z')
-                        {
-                            zmode = true;
-                            escape = false;
-                        }
-                        else if (CharIsDigit(c))
+                        else
                         {
                             val += c;
                         }
-                        else
-                            throw new SyntaxErrorException(
-                                token,
-                                "invalid escape sequence near '\\{0}'",
-                                c
-                            );
                     }
-                    else
+                    else if (hex)
                     {
-                        if (unicode_state == 1)
+                        if (CharIsHexDigit(c))
                         {
-                            if (c != '{')
-                                throw new SyntaxErrorException(token, "'{' expected near '\\u'");
-
-                            unicode_state = 2;
-                        }
-                        else if (unicode_state == 2)
-                        {
-                            if (c == '}')
+                            val += c;
+                            if (val.Length == 2)
                             {
-                                var i = int.Parse(
-                                    val,
-                                    NumberStyles.HexNumber,
-                                    CultureInfo.InvariantCulture
-                                );
+                                var i = int.Parse(val, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
                                 sb.Append(ConvertUtf32ToChar(i));
-                                unicode_state = 0;
-                                val = string.Empty;
-                                escape = false;
-                            }
-                            else if (val.Length >= 8)
-                            {
-                                throw new SyntaxErrorException(
-                                    token,
-                                    "'}' missing, or unicode code point too large after '\\u'"
-                                );
-                            }
-                            else
-                            {
-                                val += c;
-                            }
-                        }
-                        else if (hex)
-                        {
-                            if (CharIsHexDigit(c))
-                            {
-                                val += c;
-                                if (val.Length == 2)
-                                {
-                                    var i = int.Parse(
-                                        val,
-                                        NumberStyles.HexNumber,
-                                        CultureInfo.InvariantCulture
-                                    );
-                                    sb.Append(ConvertUtf32ToChar(i));
-                                    zmode = false;
-                                    escape = false;
-                                }
-                            }
-                            else
-                            {
-                                throw new SyntaxErrorException(
-                                    token,
-                                    "hexadecimal digit expected near '\\{0}{1}{2}'",
-                                    hexprefix,
-                                    val,
-                                    c
-                                );
-                            }
-                        }
-                        else if (val.Length > 0)
-                        {
-                            if (CharIsDigit(c))
-                            {
-                                val += c;
-                            }
-
-                            if (val.Length == 3 || !CharIsDigit(c))
-                            {
-                                var i = int.Parse(val, CultureInfo.InvariantCulture);
-
-                                if (i > 255)
-                                    throw new SyntaxErrorException(
-                                        token,
-                                        "decimal escape too large near '\\{0}'",
-                                        val
-                                    );
-
-                                sb.Append(ConvertUtf32ToChar(i));
-
                                 zmode = false;
                                 escape = false;
-
-                                if (!CharIsDigit(c))
-                                    goto redo;
                             }
                         }
+                        else
+                        {
+                            throw new SyntaxErrorException(token, "hexadecimal digit expected near '\\{0}{1}{2}'",
+                                hexprefix, val, c);
+                        }
                     }
+                    else if (val.Length > 0)
+                    {
+                        if (CharIsDigit(c)) val += c;
+
+                        if (val.Length == 3 || !CharIsDigit(c))
+                        {
+                            var i = int.Parse(val, CultureInfo.InvariantCulture);
+
+                            if (i > 255)
+                                throw new SyntaxErrorException(token, "decimal escape too large near '\\{0}'", val);
+
+                            sb.Append(ConvertUtf32ToChar(i));
+
+                            zmode = false;
+                            escape = false;
+
+                            if (!CharIsDigit(c))
+                                goto redo;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (c == '\\')
+                {
+                    escape = true;
+                    hex = false;
+                    val = "";
                 }
                 else
                 {
-                    if (c == '\\')
+                    if (!zmode || !char.IsWhiteSpace(c))
                     {
-                        escape = true;
-                        hex = false;
-                        val = "";
-                    }
-                    else
-                    {
-                        if (!zmode || !char.IsWhiteSpace(c))
-                        {
-                            sb.Append(c);
-                            zmode = false;
-                        }
+                        sb.Append(c);
+                        zmode = false;
                     }
                 }
             }
-
-            if (escape && !hex && val.Length > 0)
-            {
-                var i = int.Parse(val, CultureInfo.InvariantCulture);
-                sb.Append(ConvertUtf32ToChar(i));
-                escape = false;
-            }
-
-            if (escape)
-            {
-                throw new SyntaxErrorException(
-                    token,
-                    "unfinished string near '\"{0}\"'",
-                    sb.ToString()
-                );
-            }
-
-            return sb.ToString();
         }
 
-        private static string ConvertUtf32ToChar(int i)
+        if (escape && !hex && val.Length > 0)
         {
-#if PCL || ENABLE_DOTNET
-            return ((char)i).ToString();
-#else
-            return char.ConvertFromUtf32(i);
-#endif
+            var i = int.Parse(val, CultureInfo.InvariantCulture);
+            sb.Append(ConvertUtf32ToChar(i));
+            escape = false;
         }
+
+        if (escape) throw new SyntaxErrorException(token, "unfinished string near '\"{0}\"'", sb.ToString());
+
+        return sb.ToString();
+    }
+
+    private static string ConvertUtf32ToChar(int i)
+    {
+#if PCL || ENABLE_DOTNET
+			return ((char)i).ToString();
+#else
+        return char.ConvertFromUtf32(i);
+#endif
     }
 }

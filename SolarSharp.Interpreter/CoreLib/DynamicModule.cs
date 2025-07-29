@@ -4,70 +4,62 @@ using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Interop;
 using SolarSharp.Interpreter.Modules;
 
-namespace SolarSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib;
+
+/// <summary>
+///     Class implementing dynamic expression evaluations at runtime (a SolarSharp addition).
+/// </summary>
+[SolarSharpModule(Namespace = "dynamic")]
+public class DynamicModule
 {
-    /// <summary>
-    /// Class implementing dynamic expression evaluations at runtime (a MoonSharp addition).
-    /// </summary>
-    [SolarSharpModule(Namespace = "dynamic")]
-    public class DynamicModule
-    {
-        private class DynamicExprWrapper
-        {
-            public DynamicExpression Expr;
-        }
-
 #pragma warning disable IDE0060 // Remove unused parameter
-        public static void MoonSharpInit(Table globalTable, Table stringTable)
+    public static void SolarSharpInit(Table globalTable, Table stringTable)
 #pragma warning restore IDE0060 // Remove unused parameter
-        {
-            UserData.RegisterType<DynamicExprWrapper>(InteropAccessMode.HideMembers);
-        }
+    {
+        UserData.RegisterType<DynamicExprWrapper>(InteropAccessMode.HideMembers);
+    }
 
-        [MoonSharpModuleMethod]
-        public static DynValue eval(ScriptExecutionContext executionContext, CallbackArguments args)
+    [SolarSharpModuleMethod]
+    public static LuaValue eval(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        try
         {
-            try
+            if (args[0].Type == DataType.UserData)
             {
-                if (args[0].Type == DataType.UserData)
-                {
-                    var ud = args[0].UserData;
-                    if (ud.Object is DynamicExprWrapper wrapper)
-                    {
-                        return wrapper.Expr.Evaluate(executionContext);
-                    }
-                    throw ScriptRuntimeException.BadArgument(
-                        0,
-                        "dynamic.eval",
-                        "A userdata was passed, but was not a previously prepared expression."
-                    );
-                }
-                var vs = args.AsType(0, "dynamic.eval", DataType.String);
-                var expr = executionContext.GetScript().CreateDynamicExpression(vs.String);
-                return expr.Evaluate(executionContext);
-            }
-            catch (SyntaxErrorException ex)
-            {
-                throw new ScriptRuntimeException(ex);
-            }
-        }
+                var ud = args[0].UserData;
+                if (ud.Object is DynamicExprWrapper wrapper) return wrapper.Expr.Evaluate(executionContext);
 
-        [MoonSharpModuleMethod]
-        public static DynValue prepare(
-            ScriptExecutionContext executionContext,
-            CallbackArguments args
-        )
-        {
-            try
-            {
-                var vs = args.AsType(0, "dynamic.prepare", DataType.String);
-                var expr = executionContext.GetScript().CreateDynamicExpression(vs.String);
-                return UserData.Create(new DynamicExprWrapper { Expr = expr });
+                throw ScriptRuntimeException.BadArgument(0, "dynamic.eval",
+                    "A userdata was passed, but was not a previously prepared expression.");
             }
-            catch (SyntaxErrorException ex)
-            {
-                throw new ScriptRuntimeException(ex);
-            }
+
+            var vs = args.AsType(0, "dynamic.eval", DataType.String);
+            var expr = executionContext.GetScript().CreateDynamicExpression(vs.String);
+            return expr.Evaluate(executionContext);
         }
+        catch (SyntaxErrorException ex)
+        {
+            throw new ScriptRuntimeException(ex);
+        }
+    }
+
+    [SolarSharpModuleMethod]
+    public static LuaValue prepare(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        try
+        {
+            var vs = args.AsType(0, "dynamic.prepare", DataType.String);
+            var expr = executionContext.GetScript().CreateDynamicExpression(vs.String);
+            return UserData.Create(new DynamicExprWrapper { Expr = expr });
+        }
+        catch (SyntaxErrorException ex)
+        {
+            throw new ScriptRuntimeException(ex);
+        }
+    }
+
+    private class DynamicExprWrapper
+    {
+        public DynamicExpression Expr;
     }
 }

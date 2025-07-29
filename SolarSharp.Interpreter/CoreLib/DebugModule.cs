@@ -6,349 +6,330 @@ using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
 using SolarSharp.Interpreter.REPL;
 
-namespace SolarSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib;
+
+/// <summary>
+///     Class implementing debug Lua functions. Support for the debug module is partial.
+/// </summary>
+[SolarSharpModule(Namespace = "debug")]
+public class DebugModule
 {
-    /// <summary>
-    /// Class implementing debug Lua functions. Support for the debug module is partial.
-    /// </summary>
-    [SolarSharpModule(Namespace = "debug")]
-    public class DebugModule
+    [SolarSharpModuleMethod]
+    public static LuaValue debug(ScriptExecutionContext executionContext, CallbackArguments _)
     {
-        [MoonSharpModuleMethod]
-        public static DynValue debug(ScriptExecutionContext executionContext, CallbackArguments _)
+        var script = executionContext.GetScript();
+
+        if (script.Options.DebugInput == null)
+            throw new ScriptRuntimeException("debug.debug not supported on this platform/configuration");
+
+        ReplInterpreter interpreter = new(script)
         {
-            var script = executionContext.GetScript();
+            HandleDynamicExprs = false,
+            HandleClassicExprsSyntax = true
+        };
 
-            if (script.Options.DebugInput == null)
-                throw new ScriptRuntimeException(
-                    "debug.debug not supported on this platform/configuration"
-                );
+        while (true)
+        {
+            var s = script.Options.DebugInput(interpreter.ClassicPrompt + " ");
 
-            var interpreter = new ReplInterpreter(script)
+            try
             {
-                HandleDynamicExprs = false,
-                HandleClassicExprsSyntax = true,
-            };
+                var result = interpreter.Evaluate(s);
 
-            while (true)
+                if (result != null && result.Type != DataType.Void)
+                    script.Options.DebugPrint($"{result}");
+            }
+            catch (InterpreterException ex)
             {
-                var s = script.Options.DebugInput(interpreter.ClassicPrompt + " ");
-
-                try
-                {
-                    var result = interpreter.Evaluate(s);
-
-                    if (result != null && result.Type != DataType.Void)
-                        script.Options.DebugPrint($"{result}");
-                }
-                catch (InterpreterException ex)
-                {
-                    script.Options.DebugPrint($"{ex.DecoratedMessage ?? ex.Message}");
-                }
-                catch (Exception ex)
-                {
-                    script.Options.DebugPrint($"{ex.Message}");
-                }
+                script.Options.DebugPrint($"{ex.DecoratedMessage ?? ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                script.Options.DebugPrint($"{ex.Message}");
             }
         }
-
-        [MoonSharpModuleMethod]
-        public static DynValue getuservalue(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var v = args[0];
-
-            if (v.Type != DataType.UserData)
-                return DynValue.Nil;
-
-            return v.UserData.UserValue ?? DynValue.Nil;
-        }
-
-        [MoonSharpModuleMethod]
-        public static DynValue setuservalue(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var v = args.AsType(0, "setuservalue", DataType.UserData);
-            var t = args.AsType(1, "setuservalue", DataType.Table, true);
-
-            v.UserData.UserValue = t;
-            return v;
-        }
-
-        [MoonSharpModuleMethod]
-        public static DynValue getregistry(
-            ScriptExecutionContext executionContext,
-            CallbackArguments _
-        )
-        {
-            return DynValue.NewTable(executionContext.GetScript().Registry);
-        }
-
-        [MoonSharpModuleMethod]
-        public static DynValue getmetatable(
-            ScriptExecutionContext executionContext,
-            CallbackArguments args
-        )
-        {
-            var v = args[0];
-            var S = executionContext.GetScript();
-
-            if (v.Type.CanHaveTypeMetatables())
-                return DynValue.NewTable(S.GetTypeMetatable(v.Type));
-            if (v.Type == DataType.Table)
-                return DynValue.NewTable(v.Table.MetaTable);
-            return DynValue.Nil;
-        }
-
-        [MoonSharpModuleMethod]
-        public static DynValue setmetatable(
-            ScriptExecutionContext executionContext,
-            CallbackArguments args
-        )
-        {
-            var v = args[0];
-            var t = args.AsType(1, "setmetatable", DataType.Table, true);
-            var m = t.IsNil() ? null : t.Table;
-            var S = executionContext.GetScript();
-
-            if (v.Type.CanHaveTypeMetatables())
-                S.SetTypeMetatable(v.Type, m);
-            else
-                v.Table.MetaTable =
-                    v.Type == DataType.Table
-                        ? m
-                        : throw new ScriptRuntimeException(
-                            "cannot debug.setmetatable on type {0}",
-                            v.Type.ToErrorTypeString()
-                        );
-
-            return v;
-        }
-
-        [MoonSharpModuleMethod]
-        public static DynValue getupvalue(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var index = (int)args.AsType(1, "getupvalue", DataType.Number).Number - 1;
-
-            if (args[0].Type == DataType.ClrFunction)
-                return DynValue.Nil;
-
-            var fn = args.AsType(0, "getupvalue", DataType.Function).Function;
-
-            var closure = fn.ClosureContext;
-
-            if (index < 0 || index >= closure.Count)
-                return DynValue.Nil;
-
-            return DynValue.NewTuple(DynValue.NewString(closure.Symbols[index]), closure[index]);
-        }
-
-        [MoonSharpModuleMethod]
-        public static DynValue upvalueid(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var index = (int)args.AsType(1, "getupvalue", DataType.Number).Number - 1;
-
-            if (args[0].Type == DataType.ClrFunction)
-                return DynValue.Nil;
-
-            var fn = args.AsType(0, "getupvalue", DataType.Function).Function;
-
-            var closure = fn.ClosureContext;
-
-            if (index < 0 || index >= closure.Count)
-                return DynValue.Nil;
-
-            return DynValue.NewNumber(closure[index].ReferenceID);
-        }
-
-        [MoonSharpModuleMethod]
-        public static DynValue setupvalue(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var index = (int)args.AsType(1, "setupvalue", DataType.Number).Number - 1;
-
-            if (args[0].Type == DataType.ClrFunction)
-                return DynValue.Nil;
-
-            var fn = args.AsType(0, "setupvalue", DataType.Function).Function;
-
-            var closure = fn.ClosureContext;
-
-            if (index < 0 || index >= closure.Count)
-                return DynValue.Nil;
-
-            closure[index].Assign(args[2]);
-
-            return DynValue.NewString(closure.Symbols[index]);
-        }
-
-        [MoonSharpModuleMethod]
-        public static DynValue upvaluejoin(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var f1 = args.AsType(0, "upvaluejoin", DataType.Function);
-            var f2 = args.AsType(2, "upvaluejoin", DataType.Function);
-            var n1 = args.AsInt(1, "upvaluejoin") - 1;
-            var n2 = args.AsInt(3, "upvaluejoin") - 1;
-
-            var c1 = f1.Function;
-            var c2 = f2.Function;
-
-            if (n1 < 0 || n1 >= c1.ClosureContext.Count)
-                throw ScriptRuntimeException.BadArgument(1, "upvaluejoin", "invalid upvalue index");
-
-            if (n2 < 0 || n2 >= c2.ClosureContext.Count)
-                throw ScriptRuntimeException.BadArgument(3, "upvaluejoin", "invalid upvalue index");
-
-            c2.ClosureContext[n2] = c1.ClosureContext[n1];
-
-            return DynValue.Void;
-        }
-
-        [MoonSharpModuleMethod]
-        public static DynValue traceback(
-            ScriptExecutionContext executionContext,
-            CallbackArguments args
-        )
-        {
-            var sb = new StringBuilder();
-
-            var vmessage = args[0];
-            var vlevel = args[1];
-
-            var defaultSkip = 1.0;
-
-            var cor = executionContext.GetCallingCoroutine();
-
-            if (vmessage.Type == DataType.Thread)
-            {
-                cor = vmessage.Coroutine;
-                vmessage = args[1];
-                vlevel = args[2];
-                defaultSkip = 0.0;
-            }
-
-            if (
-                vmessage.IsNotNil()
-                && vmessage.Type != DataType.String
-                && vmessage.Type != DataType.Number
-            )
-            {
-                return vmessage;
-            }
-
-            var message = vmessage.CastToString();
-
-            var skip = (int)(vlevel.CastToNumber() ?? defaultSkip);
-
-            var stacktrace = cor.GetStackTrace(Math.Max(0, skip));
-
-            if (message != null)
-                sb.AppendLine(message);
-
-            sb.AppendLine("stack traceback:");
-
-            foreach (var wi in stacktrace)
-            {
-                string name;
-
-                if (wi.Name == null)
-                    name = wi.RetAddress < 0 ? "main chunk" : "?";
-                else
-                    name = "function '" + wi.Name + "'";
-
-                var loc =
-                    wi.Location != null
-                        ? wi.Location.FormatLocation(executionContext.GetScript())
-                        : "[clr]";
-                sb.AppendFormat("\t{0}: in {1}\n", loc, name);
-            }
-
-            return DynValue.NewString(sb);
-        }
-
-        //[MoonSharpModuleMethod]
-        //public static DynValue getlocal(ScriptExecutionContext executionContext, CallbackArguments args)
-        //{
-        //	Coroutine c;
-        //	int funcIdx;
-        //	Closure f;
-        //	int nextArg = ParseComplexArgs("getlocal", executionContext, args, out c, out f, out funcIdx);
-
-        //	int localIdx = args.AsInt(nextArg, "getlocal");
-
-        //	if (f != null)
-        //	{
-
-        //	}
-        //	else
-        //	{
-
-        //	}
-
-        //}
-
-        //private static int ParseComplexArgs(string funcname, ScriptExecutionContext executionContext, CallbackArguments args, out Coroutine c, out Closure f, out int funcIdx)
-        //{
-        //	DynValue arg1 = args[0];
-        //	int argbase = 0;
-        //	c = null;
-
-        //	if (arg1.Type == DataType.Thread)
-        //	{
-        //		c = arg1.Coroutine;
-        //		argbase = 1;
-        //	}
-
-        //	if (args[argbase].Type == DataType.Number)
-        //	{
-        //		funcIdx = (int)args[argbase].Number;
-        //		f = null;
-        //	}
-        //	else
-        //	{
-        //		funcIdx = -1;
-        //		f = args.AsType(argbase, funcname, DataType.Function, false).Function;
-        //	}
-
-        //	return argbase + 1;
-        //}
-
-        //[MoonSharpMethod]
-        //public static DynValue getinfo(ScriptExecutionContext executionContext, CallbackArguments args)
-        //{
-        //	Coroutine cor = executionContext.GetCallingCoroutine();
-        //	int vfArgIdx = 0;
-
-        //	if (args[0].Type == DataType.Thread)
-        //		cor = args[0].Coroutine;
-
-        //	DynValue vf = args[vfArgIdx+0];
-        //	DynValue vwhat = args[vfArgIdx+1];
-
-        //	args.AsType(vfArgIdx + 1, "getinfo", DataType.String, true);
-
-        //	string what = vwhat.CastToString() ?? "nfSlu";
-
-        //	DynValue vt = DynValue.NewTable(executionContext.GetScript());
-        //	Table t = vt.Table;
-
-        //	if (vf.Type == DataType.Function)
-        //	{
-        //		Closure f = vf.Function;
-        //		executionContext.GetInfoForFunction
-        //	}
-        //	else if (vf.Type == DataType.ClrFunction)
-        //	{
-
-        //	}
-        //	else if (vf.Type == DataType.Number || vf.Type == DataType.String)
-        //	{
-
-        //	}
-        //	else
-        //	{
-        //		args.AsType(vfArgIdx + 0, "getinfo", DataType.Number, true);
-        //	}
-
-        //	return vt;
-
-        //}
     }
+
+    [SolarSharpModuleMethod]
+    public static LuaValue getuservalue(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var v = args[0];
+
+        if (v.Type != DataType.UserData)
+            return LuaValue.Nil;
+
+        return v.UserData.UserValue ?? LuaValue.Nil;
+    }
+
+    [SolarSharpModuleMethod]
+    public static LuaValue setuservalue(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var v = args.AsType(0, "setuservalue", DataType.UserData);
+        var t = args.AsType(0, "setuservalue", DataType.Table, true);
+
+        return v.UserData.UserValue = t;
+    }
+
+    [SolarSharpModuleMethod]
+    public static LuaValue getregistry(ScriptExecutionContext executionContext, CallbackArguments _)
+    {
+        return LuaValue.NewTable(executionContext.GetScript().Registry);
+    }
+
+    [SolarSharpModuleMethod]
+    public static LuaValue getmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        var v = args[0];
+        var S = executionContext.GetScript();
+
+        if (v.Type.CanHaveTypeMetatables())
+            return LuaValue.NewTable(S.GetTypeMetatable(v.Type));
+        if (v.Type == DataType.Table)
+            return LuaValue.NewTable(v.Table.MetaTable);
+        return LuaValue.Nil;
+    }
+
+    [SolarSharpModuleMethod]
+    public static LuaValue setmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        var v = args[0];
+        var t = args.AsType(1, "setmetatable", DataType.Table, true);
+        var m = t.IsNil() ? null : t.Table;
+        var S = executionContext.GetScript();
+
+        if (v.Type.CanHaveTypeMetatables())
+            S.SetTypeMetatable(v.Type, m);
+        else
+            v.Table.MetaTable = v.Type == DataType.Table
+                ? m
+                : throw new ScriptRuntimeException("cannot debug.setmetatable on type {0}", v.Type.ToErrorTypeString());
+
+        return v;
+    }
+
+    [SolarSharpModuleMethod]
+    public static LuaValue getupvalue(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var index = (int)args.AsType(1, "getupvalue", DataType.Number).Number - 1;
+
+        if (args[0].Type == DataType.ClrFunction)
+            return LuaValue.Nil;
+
+        var fn = args.AsType(0, "getupvalue", DataType.Function).Function;
+
+        var closure = fn.ClosureContext;
+
+        if (index < 0 || index >= closure.Count)
+            return LuaValue.Nil;
+
+        return LuaValue.NewTuple(
+            LuaValue.NewString(closure.Symbols[index]),
+            closure[index]);
+    }
+
+
+    [SolarSharpModuleMethod]
+    public static LuaValue upvalueid(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var index = (int)args.AsType(1, "getupvalue", DataType.Number).Number - 1;
+
+        if (args[0].Type == DataType.ClrFunction)
+            return LuaValue.Nil;
+
+        var fn = args.AsType(0, "getupvalue", DataType.Function).Function;
+
+        var closure = fn.ClosureContext;
+
+        if (index < 0 || index >= closure.Count)
+            return LuaValue.Nil;
+
+        // TODO: Lua uses light user data for this, we might want to follow suit.
+        return LuaValue.NewNumber(closure[index].GetHashCode());
+    }
+
+
+    [SolarSharpModuleMethod]
+    public static LuaValue setupvalue(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var index = (int)args.AsType(1, "setupvalue", DataType.Number).Number - 1;
+
+        if (args[0].Type == DataType.ClrFunction)
+            return LuaValue.Nil;
+
+        var fn = args.AsType(0, "setupvalue", DataType.Function).Function;
+
+        var closure = fn.ClosureContext;
+
+        if (index < 0 || index >= closure.Count)
+            return LuaValue.Nil;
+
+        closure[index].Assign(args[2]);
+
+        return LuaValue.NewString(closure.Symbols[index]);
+    }
+
+
+    [SolarSharpModuleMethod]
+    public static LuaValue upvaluejoin(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var f1 = args.AsType(0, "upvaluejoin", DataType.Function);
+        var f2 = args.AsType(2, "upvaluejoin", DataType.Function);
+        var n1 = args.AsInt(1, "upvaluejoin") - 1;
+        var n2 = args.AsInt(3, "upvaluejoin") - 1;
+
+        var c1 = f1.Function;
+        var c2 = f2.Function;
+
+        if (n1 < 0 || n1 >= c1.ClosureContext.Count)
+            throw ScriptRuntimeException.BadArgument(1, "upvaluejoin", "invalid upvalue index");
+
+        if (n2 < 0 || n2 >= c2.ClosureContext.Count)
+            throw ScriptRuntimeException.BadArgument(3, "upvaluejoin", "invalid upvalue index");
+
+        c2.ClosureContext[n2] = c1.ClosureContext[n1];
+
+        return LuaValue.Void;
+    }
+
+
+    [SolarSharpModuleMethod]
+    public static LuaValue traceback(ScriptExecutionContext executionContext, CallbackArguments args)
+    {
+        StringBuilder sb = new();
+
+        var vmessage = args[0];
+        var vlevel = args[1];
+
+        var defaultSkip = 1.0;
+
+        var cor = executionContext.GetCallingCoroutine();
+
+        if (vmessage.Type == DataType.Thread)
+        {
+            cor = vmessage.Coroutine;
+            vmessage = args[1];
+            vlevel = args[2];
+            defaultSkip = 0.0;
+        }
+
+        if (vmessage.IsNotNil() && vmessage.Type != DataType.String && vmessage.Type != DataType.Number)
+            return vmessage;
+
+        var message = vmessage.CastToString();
+
+        var skip = (int)(vlevel.CastToNumber() ?? defaultSkip);
+
+        var stacktrace = cor.GetStackTrace(Math.Max(0, skip));
+
+        if (message != null)
+            sb.AppendLine(message);
+
+        sb.AppendLine("stack traceback:");
+
+        foreach (var wi in stacktrace)
+        {
+            string name;
+
+            if (wi.Name == null)
+                name = wi.RetAddress < 0 ? "main chunk" : "?";
+            else
+                name = "function '" + wi.Name + "'";
+
+            var loc = wi.Location != null ? wi.Location.FormatLocation(executionContext.GetScript()) : "[clr]";
+            sb.AppendFormat("\t{0}: in {1}\n", loc, name);
+        }
+
+        return LuaValue.NewString(sb);
+    }
+
+    //[SolarSharpModuleMethod]
+    //public static LuaValue getlocal(ScriptExecutionContext executionContext, CallbackArguments args)
+    //{
+    //	Coroutine c;
+    //	int funcIdx;
+    //	Closure f;
+    //	int nextArg = ParseComplexArgs("getlocal", executionContext, args, out c, out f, out funcIdx);
+
+    //	int localIdx = args.AsInt(nextArg, "getlocal");
+
+    //	if (f != null)
+    //	{
+
+    //	}
+    //	else
+    //	{
+
+    //	}
+
+
+    //}
+
+    //private static int ParseComplexArgs(string funcname, ScriptExecutionContext executionContext, CallbackArguments args, out Coroutine c, out Closure f, out int funcIdx)
+    //{
+    //	LuaValue arg1 = args[0];
+    //	int argbase = 0;
+    //	c = null;
+
+    //	if (arg1.Type == DataType.Thread)
+    //	{
+    //		c = arg1.Coroutine;
+    //		argbase = 1;
+    //	}
+
+    //	if (args[argbase].Type == DataType.Number)
+    //	{
+    //		funcIdx = (int)args[argbase].Number;
+    //		f = null;
+    //	}
+    //	else
+    //	{
+    //		funcIdx = -1;
+    //		f = args.AsType(argbase, funcname, DataType.Function, false).Function;
+    //	}
+
+    //	return argbase + 1;
+    //}
+
+
+    //[SolarSharpMethod]
+    //public static LuaValue getinfo(ScriptExecutionContext executionContext, CallbackArguments args)
+    //{
+    //	Coroutine cor = executionContext.GetCallingCoroutine();
+    //	int vfArgIdx = 0;
+
+    //	if (args[0].Type == DataType.Thread)
+    //		cor = args[0].Coroutine;
+
+    //	LuaValue vf = args[vfArgIdx+0];
+    //	LuaValue vwhat = args[vfArgIdx+1];
+
+    //	args.AsType(vfArgIdx + 1, "getinfo", DataType.String, true);
+
+    //	string what = vwhat.CastToString() ?? "nfSlu";
+
+    //	LuaValue vt = LuaValue.NewTable(executionContext.GetScript());
+    //	Table t = vt.Table;
+
+    //	if (vf.Type == DataType.Function)
+    //	{
+    //		Closure f = vf.Function;
+    //		executionContext.GetInfoForFunction
+    //	}
+    //	else if (vf.Type == DataType.ClrFunction)
+    //	{
+
+    //	}
+    //	else if (vf.Type == DataType.Number || vf.Type == DataType.String)
+    //	{
+
+    //	}
+    //	else
+    //	{
+    //		args.AsType(vfArgIdx + 0, "getinfo", DataType.Number, true);
+    //	}
+
+    //	return vt;
+
+
+    //}
 }

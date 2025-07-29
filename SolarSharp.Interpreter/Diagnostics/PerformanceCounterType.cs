@@ -1,18 +1,17 @@
-﻿namespace SolarSharp.Interpreter.Diagnostics
+﻿namespace SolarSharp.Interpreter.Diagnostics;
+
+/// <summary>
+///     Enumeration of unit of measures of the performance counters
+/// </summary>
+public enum PerformanceCounterType
 {
     /// <summary>
-    /// Enumeration of unit of measures of the performance counters
+    ///     The performance counter is specified in bytes (of memory)
     /// </summary>
-    public enum PerformanceCounterType
-    {
-        /// <summary>
-        /// The performance counter is specified in bytes (of memory)
-        /// </summary>
-        MemoryBytes,
+    MemoryBytes,
 
-        /// <summary>
-        /// The performance counter is specified in milliseconds
-        /// </summary>
-        TimeMilliseconds,
-    }
+    /// <summary>
+    ///     The performance counter is specified in milliseconds
+    /// </summary>
+    TimeMilliseconds
 }

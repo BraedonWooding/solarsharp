@@ -1,9 +1,8 @@
 ﻿using SolarSharp.Interpreter.DataTypes;
 
-namespace SolarSharp.Interpreter.Execution.Scopes
+namespace SolarSharp.Interpreter.Execution.Scopes;
+
+internal interface IClosureBuilder
 {
-    internal interface IClosureBuilder
-    {
-        SymbolRef CreateUpvalue(BuildTimeScope scope, SymbolRef symbol);
-    }
+    SymbolRef CreateUpvalue(BuildTimeScope scope, SymbolRef symbol);
 }

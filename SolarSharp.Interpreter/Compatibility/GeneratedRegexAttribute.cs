@@ -1,5 +1,4 @@
 ﻿#if NETSTANDARD
-
 namespace System.Text.RegularExpressions
 {
     internal class GeneratedRegexAttribute(string pattern, RegexOptions regexOptions) : Attribute

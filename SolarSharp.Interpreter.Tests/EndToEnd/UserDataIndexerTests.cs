@@ -1,24 +1,21 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Errors;
-using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [NonParallelizable] // Uses global UserData registration
-    [Category("VM.Integration")]
     public class UserDataIndexerTests
     {
         public class IndexerTestClass
         {
-            private readonly Dictionary<int, int> mymap = new Dictionary<int, int>();
+            private readonly Dictionary<int, int> mymap = new();
 
             public int this[int idx]
             {
-                get { return mymap[idx]; }
-                set { mymap[idx] = value; }
+                get => mymap[idx];
+                set => mymap[idx] = value;
             }
 
             public int this[int idx1, int idx2, int idx3]
@@ -38,9 +35,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         private static void IndexerTest(string code, int expected)
         {
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
 
-            var obj = new IndexerTestClass();
+            IndexerTestClass obj = new();
 
             UserData.RegisterType<IndexerTestClass>();
 
@@ -58,29 +55,29 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_SingleSetterOnly()
         {
-            var script = @"o[1] = 1; return 13";
+            var script = "o[1] = 1; return 13";
             IndexerTest(script, 13);
         }
+
 
         [Test]
         public void Interop_SingleIndexerGetSet()
         {
-            var script = @"o[5] = 19; return o[5];";
+            var script = "o[5] = 19; return o[5];";
             IndexerTest(script, 19);
         }
 
         [Test]
         public void Interop_MultiIndexerGetSet()
         {
-            var script = @"o[1,2,3] = 47; return o[1,2,3];";
+            var script = "o[1,2,3] = 47; return o[1,2,3];";
             IndexerTest(script, 47);
         }
 
         [Test]
         public void Interop_MultiIndexerMetatableGetSet()
         {
-            var script =
-                @"
+            var script = @"
 				m = { 
 					__index = o,
 					__newindex = o
@@ -97,8 +94,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_MultiIndexerMetamethodGetSet()
         {
-            var script =
-                @"
+            var script = @"
 				m = { 
 					__index = function() end,
 					__newindex = function() end
@@ -115,36 +111,30 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
         [Test]
         public void Interop_MixedIndexerGetSet()
         {
-            var script = @"o[3,2,3] = 119; return o[15];";
+            var script = "o[3,2,3] = 119; return o[15];";
             IndexerTest(script, 119);
         }
 
         [Test]
         public void Interop_ExpListIndexingCompilesButNotRun1()
         {
-            var script =
-                @"    
+            var script = @"    
 				x = { 99, 98, 97, 96 }				
 				return x[2,3];
 				";
 
-            Assert.Throws<ScriptRuntimeException>(() =>
-                new Script(Examples.DesktopBasePolicySet).DoString(script)
-            );
+            Assert.Throws<ScriptRuntimeException>(() => Script.RunString(script));
         }
 
         [Test]
         public void Interop_ExpListIndexingCompilesButNotRun2()
         {
-            var script =
-                @"    
+            var script = @"    
 				x = { 99, 98, 97, 96 }				
 				x[2,3] = 5;
 				";
 
-            Assert.Throws<ScriptRuntimeException>(() =>
-                new Script(Examples.DesktopBasePolicySet).DoString(script)
-            );
+            Assert.Throws<ScriptRuntimeException>(() => Script.RunString(script));
         }
     }
 }

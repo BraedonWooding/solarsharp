@@ -9,344 +9,296 @@ using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using SolarSharp.Interpreter.Interop.Converters;
 using SolarSharp.Interpreter.Interop.StandardDescriptors.ReflectionMemberDescriptors;
 
-namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors
+namespace SolarSharp.Interpreter.Interop.StandardDescriptors.MemberDescriptors;
+
+/// <summary>
+///     Class providing easier marshalling of CLR functions
+/// </summary>
+public abstract class FunctionMemberDescriptorBase : IOverloadableMemberDescriptor
 {
     /// <summary>
-    /// Class providing easier marshalling of CLR functions
+    ///     Gets a value indicating whether the described method is static.
     /// </summary>
-    public abstract class FunctionMemberDescriptorBase : IOverloadableMemberDescriptor
+    public bool IsStatic { get; private set; }
+
+    /// <summary>
+    ///     Gets the name of the described method
+    /// </summary>
+    public string Name { get; private set; }
+
+    /// <summary>
+    ///     Gets a sort discriminant to give consistent overload resolution matching in case of perfectly equal scores
+    /// </summary>
+    public string SortDiscriminant { get; private set; }
+
+    /// <summary>
+    ///     Gets the type of the arguments of the underlying CLR function
+    /// </summary>
+    public ParameterDescriptor[] Parameters { get; private set; }
+
+    /// <summary>
+    ///     Gets the type which this extension method extends, null if this is not an extension method.
+    /// </summary>
+    public Type ExtensionMethodType { get; private set; }
+
+    /// <summary>
+    ///     Gets a value indicating the type of the ParamArray parameter of a var-args function. If the function is not
+    ///     var-args,
+    ///     null is returned.
+    /// </summary>
+    public Type VarArgsArrayType { get; private set; }
+
+    /// <summary>
+    ///     Gets a value indicating the type of the elements of the ParamArray parameter of a var-args function. If the
+    ///     function is not var-args,
+    ///     null is returned.
+    /// </summary>
+    public Type VarArgsElementType { get; private set; }
+
+    /// <summary>
+    ///     The internal callback which actually executes the method
+    /// </summary>
+    /// <param name="script">The script.</param>
+    /// <param name="obj">The object.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns></returns>
+    public abstract LuaValue Execute(Script script, object obj, ScriptExecutionContext context, CallbackArguments args);
+
+
+    /// <summary>
+    ///     Gets the types of access supported by this member
+    /// </summary>
+    public MemberDescriptorAccess MemberAccess => MemberDescriptorAccess.CanRead | MemberDescriptorAccess.CanExecute;
+
+    /// <summary>
+    ///     Gets the value of this member as a <see cref="LuaValue" /> to be exposed to scripts.
+    /// </summary>
+    /// <param name="script">The script.</param>
+    /// <param name="obj">The object owning this member, or null if static.</param>
+    /// <returns>
+    ///     The value of this member as a <see cref="LuaValue" />.
+    /// </returns>
+    public virtual LuaValue GetValue(Script script, object obj)
     {
-        /// <summary>
-        /// Gets a value indicating whether the described method is static.
-        /// </summary>
-        public bool IsStatic { get; private set; }
+        this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
+        return GetCallbackAsLuaValue(script, obj);
+    }
 
-        /// <summary>
-        /// Gets the name of the described method
-        /// </summary>
-        public string Name { get; private set; }
+    /// <summary>
+    ///     Sets the value.
+    /// </summary>
+    /// <param name="script">The script.</param>
+    /// <param name="obj">The object.</param>
+    /// <param name="v">The v.</param>
+    /// <exception cref="NotImplementedException"></exception>
+    public virtual void SetValue(Script script, object obj, LuaValue v)
+    {
+        this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
+    }
 
-        /// <summary>
-        /// Gets a sort discriminant to give consistent overload resolution matching in case of perfectly equal scores
-        /// </summary>
-        public string SortDiscriminant { get; private set; }
+    /// <summary>
+    ///     Initializes this instance.
+    ///     This *MUST* be called by the constructors extending this class to complete initialization.
+    /// </summary>
+    /// <param name="funcName">Name of the function.</param>
+    /// <param name="isStatic">if set to <c>true</c> [is static].</param>
+    /// <param name="parameters">The parameters.</param>
+    /// <param name="isExtensionMethod">if set to <c>true</c> [is extension method].</param>
+    protected void Initialize(string funcName, bool isStatic, ParameterDescriptor[] parameters, bool isExtensionMethod)
+    {
+        Name = funcName;
+        IsStatic = isStatic;
+        Parameters = parameters;
 
-        /// <summary>
-        /// Gets the type of the arguments of the underlying CLR function
-        /// </summary>
-        public ParameterDescriptor[] Parameters { get; private set; }
+        if (isExtensionMethod)
+            ExtensionMethodType = Parameters[0].Type;
 
-        /// <summary>
-        /// Gets the type which this extension method extends, null if this is not an extension method.
-        /// </summary>
-        public Type ExtensionMethodType { get; private set; }
-
-        /// <summary>
-        /// Gets a value indicating the type of the ParamArray parameter of a var-args function. If the function is not var-args,
-        /// null is returned.
-        /// </summary>
-        public Type VarArgsArrayType { get; private set; }
-
-        /// <summary>
-        /// Gets a value indicating the type of the elements of the ParamArray parameter of a var-args function. If the function is not var-args,
-        /// null is returned.
-        /// </summary>
-        public Type VarArgsElementType { get; private set; }
-
-        /// <summary>
-        /// Initializes this instance.
-        /// This *MUST* be called by the constructors extending this class to complete initialization.
-        /// </summary>
-        /// <param name="funcName">Name of the function.</param>
-        /// <param name="isStatic">if set to <c>true</c> [is static].</param>
-        /// <param name="parameters">The parameters.</param>
-        /// <param name="isExtensionMethod">if set to <c>true</c> [is extension method].</param>
-        protected void Initialize(
-            string funcName,
-            bool isStatic,
-            ParameterDescriptor[] parameters,
-            bool isExtensionMethod
-        )
+        if (Parameters.Length > 0 && Parameters[^1].IsVarArgs)
         {
-            Name = funcName;
-            IsStatic = isStatic;
-            Parameters = parameters;
+            VarArgsArrayType = Parameters[^1].Type;
+            VarArgsElementType = Parameters[^1].Type.GetElementType();
+        }
 
-            if (isExtensionMethod)
-                ExtensionMethodType = Parameters[0].Type;
+        SortDiscriminant = string.Join(":", Parameters.Select(pi => pi.Type.FullName).ToArray());
+    }
 
-            if (Parameters.Length > 0 && Parameters[^1].IsVarArgs)
+
+    /// <summary>
+    ///     Gets a callback function as a delegate
+    /// </summary>
+    /// <param name="script">The script for which the callback must be generated.</param>
+    /// <param name="obj">The object (null for static).</param>
+    /// <returns></returns>
+    public Func<ScriptExecutionContext, CallbackArguments, LuaValue> GetCallback(Script script, object obj = null)
+    {
+        return (c, a) => Execute(script, obj, c, a);
+    }
+
+    /// <summary>
+    ///     Gets the callback function.
+    /// </summary>
+    /// <param name="script">The script for which the callback must be generated.</param>
+    /// <param name="obj">The object (null for static).</param>
+    /// <returns></returns>
+    public CallbackFunction GetCallbackFunction(Script script, object obj = null)
+    {
+        return new CallbackFunction(GetCallback(script, obj), Name);
+    }
+
+    /// <summary>
+    ///     Gets the callback function as a LuaValue.
+    /// </summary>
+    /// <param name="script">The script for which the callback must be generated.</param>
+    /// <param name="obj">The object (null for static).</param>
+    /// <returns></returns>
+    public LuaValue GetCallbackAsLuaValue(Script script, object obj = null)
+    {
+        return LuaValue.NewCallback(GetCallbackFunction(script, obj));
+    }
+
+    /// <summary>
+    ///     Creates a callback LuaValue starting from a MethodInfo.
+    /// </summary>
+    /// <param name="script">The script.</param>
+    /// <param name="mi">The mi.</param>
+    /// <param name="obj">The object.</param>
+    /// <returns></returns>
+    public static LuaValue CreateCallbackLuaValue(Script script, MethodInfo mi, object obj = null)
+    {
+        var desc = new MethodMemberDescriptor(mi);
+        return desc.GetCallbackAsLuaValue(script, obj);
+    }
+
+
+    /// <summary>
+    ///     Builds the argument list.
+    /// </summary>
+    /// <param name="script">The script.</param>
+    /// <param name="obj">The object.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="args">The arguments.</param>
+    /// <param name="outParams">
+    ///     Output: A list containing the indices of all "out" parameters, or null if no out parameters are
+    ///     specified.
+    /// </param>
+    /// <returns>The arguments, appropriately converted.</returns>
+    protected object[] BuildArgumentList(Script script, object obj, ScriptExecutionContext context,
+        CallbackArguments args,
+        out List<int> outParams)
+    {
+        var parameters = Parameters;
+
+        var pars = new object[parameters.Length];
+
+        var j = args.IsMethodCall ? 1 : 0;
+
+        outParams = null;
+
+        for (var i = 0; i < pars.Length; i++)
+        {
+            // keep track of out and ref params
+            if (parameters[i].Type.IsByRef)
             {
-                VarArgsArrayType = Parameters[^1].Type;
-                VarArgsElementType = Parameters[^1].Type.GetElementType();
+                outParams ??= new List<int>();
+                outParams.Add(i);
             }
 
-            SortDiscriminant = string.Join(
-                ":",
-                Parameters.Select(pi => pi.Type.FullName).ToArray()
-            );
-        }
-
-        /// <summary>
-        /// Gets a callback function as a delegate
-        /// </summary>
-        /// <param name="script">The script for which the callback must be generated.</param>
-        /// <param name="obj">The object (null for static).</param>
-        /// <returns></returns>
-        public Func<ScriptExecutionContext, CallbackArguments, DynValue> GetCallback(
-            Script script,
-            object obj = null
-        )
-        {
-            return (c, a) => Execute(script, obj, c, a);
-        }
-
-        /// <summary>
-        /// Gets the callback function.
-        /// </summary>
-        /// <param name="script">The script for which the callback must be generated.</param>
-        /// <param name="obj">The object (null for static).</param>
-        /// <returns></returns>
-        public CallbackFunction GetCallbackFunction(Script script, object obj = null)
-        {
-            return new CallbackFunction(GetCallback(script, obj), Name);
-        }
-
-        /// <summary>
-        /// Gets the callback function as a DynValue.
-        /// </summary>
-        /// <param name="script">The script for which the callback must be generated.</param>
-        /// <param name="obj">The object (null for static).</param>
-        /// <returns></returns>
-        public DynValue GetCallbackAsDynValue(Script script, object obj = null)
-        {
-            return DynValue.NewCallback(GetCallbackFunction(script, obj));
-        }
-
-        /// <summary>
-        /// Creates a callback DynValue starting from a MethodInfo.
-        /// </summary>
-        /// <param name="script">The script.</param>
-        /// <param name="mi">The mi.</param>
-        /// <param name="obj">The object.</param>
-        /// <returns></returns>
-        public static DynValue CreateCallbackDynValue(
-            Script script,
-            MethodInfo mi,
-            object obj = null
-        )
-        {
-            var desc = new MethodMemberDescriptor(mi);
-            return desc.GetCallbackAsDynValue(script, obj);
-        }
-
-        /// <summary>
-        /// Builds the argument list.
-        /// </summary>
-        /// <param name="script">The script.</param>
-        /// <param name="obj">The object.</param>
-        /// <param name="context">The context.</param>
-        /// <param name="args">The arguments.</param>
-        /// <param name="outParams">Output: A list containing the indices of all "out" parameters, or null if no out parameters are specified.</param>
-        /// <returns>The arguments, appropriately converted.</returns>
-        protected virtual object[] BuildArgumentList(
-            Script script,
-            object obj,
-            ScriptExecutionContext context,
-            CallbackArguments args,
-            out List<int> outParams
-        )
-        {
-            var parameters = Parameters;
-
-            var pars = new object[parameters.Length];
-
-            var j = args.IsMethodCall ? 1 : 0;
-
-            outParams = null;
-
-            for (var i = 0; i < pars.Length; i++)
+            // if an ext method, we have an obj -> fill the first param
+            if (ExtensionMethodType != null && obj != null && i == 0)
             {
-                // keep track of out and ref params
-                if (parameters[i].Type.IsByRef)
-                {
-                    outParams ??= new List<int>();
-                    outParams.Add(i);
-                }
+                pars[i] = obj;
+            }
+            // else, fill types with a supported type
+            else if (parameters[i].Type == typeof(Script))
+            {
+                pars[i] = script;
+            }
+            else if (parameters[i].Type == typeof(ScriptExecutionContext))
+            {
+                pars[i] = context;
+            }
+            else if (parameters[i].Type == typeof(CallbackArguments))
+            {
+                pars[i] = args.SkipMethodCall();
+            }
+            // else, ignore out params
+            else if (parameters[i].IsOut)
+            {
+                pars[i] = null;
+            }
+            else if (i == parameters.Length - 1 && VarArgsArrayType != null)
+            {
+                List<LuaValue> extraArgs = new();
 
-                // if an ext method, we have an obj -> fill the first param
-                if (ExtensionMethodType != null && obj != null && i == 0)
+                while (true)
                 {
-                    pars[i] = obj;
-                }
-                // else, fill types with a supported type
-                else if (parameters[i].Type == typeof(Script))
-                {
-                    pars[i] = script;
-                }
-                else if (parameters[i].Type == typeof(ScriptExecutionContext))
-                {
-                    pars[i] = context;
-                }
-                else if (parameters[i].Type == typeof(CallbackArguments))
-                {
-                    pars[i] = args.SkipMethodCall();
-                }
-                // else, ignore out params
-                else if (parameters[i].IsOut)
-                {
-                    pars[i] = null;
-                }
-                else if (i == parameters.Length - 1 && VarArgsArrayType != null)
-                {
-                    var extraArgs = new List<DynValue>();
-
-                    while (true)
-                    {
-                        var arg = args.RawGet(j, false);
-                        j += 1;
-                        if (arg != null)
-                            extraArgs.Add(arg);
-                        else
-                            break;
-                    }
-
-                    // here we have to worry we already have an array. We only support this for userdata.
-                    // remains to be analyzed what's the correct behaviour here. For example, let's take a params object[]..
-                    // given a single table parameter, should it use it as an array or as an object itself ?
-                    if (extraArgs.Count == 1)
-                    {
-                        var arg = extraArgs[0];
-
-                        if (arg.Type == DataType.UserData && arg.UserData.Object != null)
-                        {
-                            if (
-                                Framework.Do.IsAssignableFrom(
-                                    VarArgsArrayType,
-                                    arg.UserData.Object.GetType()
-                                )
-                            )
-                            {
-                                pars[i] = arg.UserData.Object;
-                                continue;
-                            }
-                        }
-                    }
-
-                    // ok let's create an array, and loop
-                    var vararg = Array.CreateInstance(VarArgsElementType, extraArgs.Count);
-
-                    for (var ii = 0; ii < extraArgs.Count; ii++)
-                    {
-                        vararg.SetValue(
-                            ScriptToClrConversions.DynValueToObjectOfType(
-                                extraArgs[ii],
-                                VarArgsElementType,
-                                null,
-                                false
-                            ),
-                            ii
-                        );
-                    }
-
-                    pars[i] = vararg;
-                }
-                // else, convert it
-                else
-                {
-                    var arg = args.RawGet(j, false) ?? DynValue.Void;
-                    pars[i] = ScriptToClrConversions.DynValueToObjectOfType(
-                        arg,
-                        parameters[i].Type,
-                        parameters[i].DefaultValue,
-                        parameters[i].HasDefaultValue
-                    );
+                    var arg = args.RawGet(j, false);
                     j += 1;
+                    if (arg != null)
+                        extraArgs.Add(arg);
+                    else
+                        break;
                 }
+
+                // here we have to worry we already have an array.. damn. We only support this for userdata.
+                // remains to be analyzed what's the correct behavior here. For example, let's take a params object[]..
+                // given a single table parameter, should it use it as an array or as an object itself ?
+                if (extraArgs.Count == 1)
+                {
+                    var arg = extraArgs[0];
+
+                    if (arg.Type == DataType.UserData && arg.UserData.Object != null)
+                        if (Framework.Do.IsAssignableFrom(VarArgsArrayType, arg.UserData.Object.GetType()))
+                        {
+                            pars[i] = arg.UserData.Object;
+                            continue;
+                        }
+                }
+
+                // ok let's create an array, and loop
+                var vararg = Array.CreateInstance(VarArgsElementType, extraArgs.Count);
+
+                for (var ii = 0; ii < extraArgs.Count; ii++)
+                    vararg.SetValue(ScriptToClrConversions.LuaValueToObjectOfType(extraArgs[ii], VarArgsElementType,
+                        null, false), ii);
+
+                pars[i] = vararg;
             }
-
-            return pars;
-        }
-
-        /// <summary>
-        /// Builds the return value of a call
-        /// </summary>
-        /// <param name="script">The script.</param>
-        /// <param name="outParams">The out parameters indices, or null. See <see cref="BuildArgumentList" />.</param>
-        /// <param name="pars">The parameters passed to the function.</param>
-        /// <param name="retv">The return value from the function. Use DynValue.Void if the function returned no value.</param>
-        /// <returns>A DynValue to be returned to scripts</returns>
-        protected static DynValue BuildReturnValue(
-            Script script,
-            List<int> outParams,
-            object[] pars,
-            object retv
-        )
-        {
-            if (outParams == null)
+            // else, convert it
+            else
             {
-                return ClrToScriptConversions.ObjectToDynValue(script, retv);
+                var arg = args.RawGet(j, false) ?? LuaValue.Void;
+                pars[i] = ScriptToClrConversions.LuaValueToObjectOfType(arg, parameters[i].Type,
+                    parameters[i].DefaultValue, parameters[i].HasDefaultValue);
+                j += 1;
             }
-            var rets = new DynValue[outParams.Count + 1];
-
-            rets[0] =
-                retv is DynValue value && value.IsVoid()
-                    ? DynValue.Nil
-                    : ClrToScriptConversions.ObjectToDynValue(script, retv);
-
-            for (var i = 0; i < outParams.Count; i++)
-                rets[i + 1] = ClrToScriptConversions.ObjectToDynValue(script, pars[outParams[i]]);
-
-            return DynValue.NewTuple(rets);
         }
 
-        /// <summary>
-        /// The internal callback which actually executes the method
-        /// </summary>
-        /// <param name="script">The script.</param>
-        /// <param name="obj">The object.</param>
-        /// <param name="context">The context.</param>
-        /// <param name="args">The arguments.</param>
-        /// <returns></returns>
-        public abstract DynValue Execute(
-            Script script,
-            object obj,
-            ScriptExecutionContext context,
-            CallbackArguments args
-        );
+        return pars;
+    }
 
-        /// <summary>
-        /// Gets the types of access supported by this member
-        /// </summary>
-        public MemberDescriptorAccess MemberAccess
-        {
-            get { return MemberDescriptorAccess.CanRead | MemberDescriptorAccess.CanExecute; }
-        }
+    /// <summary>
+    ///     Builds the return value of a call
+    /// </summary>
+    /// <param name="script">The script.</param>
+    /// <param name="outParams">The out parameters indices, or null. See <see cref="BuildArgumentList" />.</param>
+    /// <param name="pars">The parameters passed to the function.</param>
+    /// <param name="retv">The return value from the function. Use LuaValue.Void if the function returned no value.</param>
+    /// <returns>A LuaValue to be returned to scripts</returns>
+    protected static LuaValue BuildReturnValue(Script script, List<int> outParams, object[] pars, object retv)
+    {
+        if (outParams == null) return ClrToScriptConversions.ObjectToLuaValue(script, retv);
 
-        /// <summary>
-        /// Gets the value of this member as a <see cref="DynValue" /> to be exposed to scripts.
-        /// </summary>
-        /// <param name="script">The script.</param>
-        /// <param name="obj">The object owning this member, or null if static.</param>
-        /// <returns>
-        /// The value of this member as a <see cref="DynValue" />.
-        /// </returns>
-        public virtual DynValue GetValue(Script script, object obj)
-        {
-            this.CheckAccess(MemberDescriptorAccess.CanRead, obj);
-            return GetCallbackAsDynValue(script, obj);
-        }
+        var rets = new LuaValue[outParams.Count + 1];
 
-        /// <summary>
-        /// Sets the value.
-        /// </summary>
-        /// <param name="script">The script.</param>
-        /// <param name="obj">The object.</param>
-        /// <param name="v">The v.</param>
-        /// <exception cref="NotImplementedException"></exception>
-        public virtual void SetValue(Script script, object obj, DynValue v)
-        {
-            this.CheckAccess(MemberDescriptorAccess.CanWrite, obj);
-        }
+        rets[0] = retv is LuaValue value && value.IsVoid()
+            ? LuaValue.Nil
+            : ClrToScriptConversions.ObjectToLuaValue(script, retv);
+
+        for (var i = 0; i < outParams.Count; i++)
+            rets[i + 1] = ClrToScriptConversions.ObjectToLuaValue(script, pars[outParams[i]]);
+
+        return LuaValue.NewTuple(rets);
     }
 }

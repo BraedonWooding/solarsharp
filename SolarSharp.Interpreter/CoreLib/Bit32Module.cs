@@ -4,267 +4,232 @@ using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
 
-namespace SolarSharp.Interpreter.CoreLib
+namespace SolarSharp.Interpreter.CoreLib;
+
+/// <summary>
+///     Class implementing bit32 Lua functions
+/// </summary>
+[SolarSharpModule(Namespace = "bit32")]
+public class Bit32Module
 {
-    /// <summary>
-    /// Class implementing bit32 Lua functions
-    /// </summary>
-    [SolarSharpModule(Namespace = "bit32")]
-    public class Bit32Module
+    private static readonly uint[] MASKS =
+    [
+        0x1, 0x3, 0x7, 0xF,
+        0x1F, 0x3F, 0x7F, 0xFF,
+        0x1FF, 0x3FF, 0x7FF, 0xFFF,
+        0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF,
+        0x1FFFF, 0x3FFFF, 0x7FFFF, 0xFFFFF,
+        0x1FFFFF, 0x3FFFFF, 0x7FFFFF, 0xFFFFFF,
+        0x1FFFFFF, 0x3FFFFFF, 0x7FFFFFF, 0xFFFFFFF,
+        0x1FFFFFFF, 0x3FFFFFFF, 0x7FFFFFFF, 0xFFFFFFFF
+    ];
+
+    private static uint ToUInt32(LuaValue v)
     {
-        private static readonly uint[] MASKS =
-        {
-            0x1,
-            0x3,
-            0x7,
-            0xF,
-            0x1F,
-            0x3F,
-            0x7F,
-            0xFF,
-            0x1FF,
-            0x3FF,
-            0x7FF,
-            0xFFF,
-            0x1FFF,
-            0x3FFF,
-            0x7FFF,
-            0xFFFF,
-            0x1FFFF,
-            0x3FFFF,
-            0x7FFFF,
-            0xFFFFF,
-            0x1FFFFF,
-            0x3FFFFF,
-            0x7FFFFF,
-            0xFFFFFF,
-            0x1FFFFFF,
-            0x3FFFFFF,
-            0x7FFFFFF,
-            0xFFFFFFF,
-            0x1FFFFFFF,
-            0x3FFFFFFF,
-            0x7FFFFFFF,
-            0xFFFFFFFF,
-        };
+        var d = v.Number;
+        d = Math.IEEERemainder(d, Math.Pow(2.0, 32.0));
+        return (uint)d;
+    }
 
-        private static uint ToUInt32(DynValue v)
+    private static int ToInt32(LuaValue v)
+    {
+        var d = v.Number;
+        d = Math.IEEERemainder(d, Math.Pow(2.0, 32.0));
+        return (int)d;
+    }
+
+    private static uint NBitMask(int bits)
+    {
+        if (bits <= 0)
+            return 0;
+        if (bits >= 32)
+            return MASKS[31];
+
+        return MASKS[bits - 1];
+    }
+
+    public static uint Bitwise(string funcName, CallbackArguments args, Func<uint, uint, uint> accumFunc)
+    {
+        var accum = ToUInt32(args.AsType(0, funcName, DataType.Number));
+
+        for (var i = 1; i < args.Count; i++)
         {
-            var d = v.Number;
-            d = Math.IEEERemainder(d, Math.Pow(2.0, 32.0));
-            return (uint)d;
+            var vv = ToUInt32(args.AsType(i, funcName, DataType.Number));
+            accum = accumFunc(accum, vv);
         }
 
-        private static int ToInt32(DynValue v)
-        {
-            var d = v.Number;
-            d = Math.IEEERemainder(d, Math.Pow(2.0, 32.0));
-            return (int)d;
-        }
+        return accum;
+    }
 
-        private static uint NBitMask(int bits)
-        {
-            if (bits <= 0)
-                return 0;
-            if (bits >= 32)
-                return MASKS[31];
 
-            return MASKS[bits - 1];
-        }
+    [SolarSharpModuleMethod]
+    public static LuaValue extract(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var v_v = args.AsType(0, "extract", DataType.Number);
+        var v = ToUInt32(v_v);
 
-        public static uint Bitwise(
-            string funcName,
-            CallbackArguments args,
-            Func<uint, uint, uint> accumFunc
-        )
-        {
-            var accum = ToUInt32(args.AsType(0, funcName, DataType.Number));
+        var v_pos = args.AsType(1, "extract", DataType.Number);
+        var v_width = args.AsType(2, "extract", DataType.Number, true);
 
-            for (var i = 1; i < args.Count; i++)
-            {
-                var vv = ToUInt32(args.AsType(i, funcName, DataType.Number));
-                accum = accumFunc(accum, vv);
-            }
+        var pos = (int)v_pos.Number;
+        var width = v_width.IsNilOrNan() ? 1 : (int)v_width.Number;
 
-            return accum;
-        }
+        ValidatePosWidth("extract", 2, pos, width);
 
-        [MoonSharpModuleMethod]
-        public static DynValue extract(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var v_v = args.AsType(0, "extract", DataType.Number);
-            var v = ToUInt32(v_v);
+        var res = (v >> pos) & NBitMask(width);
+        return LuaValue.NewNumber(res);
+    }
 
-            var v_pos = args.AsType(1, "extract", DataType.Number);
-            var v_width = args.AsType(2, "extract", DataType.Number, true);
 
-            var pos = (int)v_pos.Number;
-            var width = v_width.IsNilOrNan() ? 1 : (int)v_width.Number;
+    [SolarSharpModuleMethod]
+    public static LuaValue replace(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var v_v = args.AsType(0, "replace", DataType.Number);
+        var v = ToUInt32(v_v);
 
-            ValidatePosWidth("extract", 2, pos, width);
+        var v_u = args.AsType(1, "replace", DataType.Number);
+        var u = ToUInt32(v_u);
+        var v_pos = args.AsType(2, "replace", DataType.Number);
+        var v_width = args.AsType(3, "replace", DataType.Number, true);
 
-            var res = v >> pos & NBitMask(width);
-            return DynValue.NewNumber(res);
-        }
+        var pos = (int)v_pos.Number;
+        var width = v_width.IsNilOrNan() ? 1 : (int)v_width.Number;
 
-        [MoonSharpModuleMethod]
-        public static DynValue replace(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var v_v = args.AsType(0, "replace", DataType.Number);
-            var v = ToUInt32(v_v);
+        ValidatePosWidth("replace", 3, pos, width);
 
-            var v_u = args.AsType(1, "replace", DataType.Number);
-            var u = ToUInt32(v_u);
-            var v_pos = args.AsType(2, "replace", DataType.Number);
-            var v_width = args.AsType(3, "replace", DataType.Number, true);
+        var mask = NBitMask(width) << pos;
+        v &= ~mask;
+        u &= mask;
+        v |= u;
 
-            var pos = (int)v_pos.Number;
-            var width = v_width.IsNilOrNan() ? 1 : (int)v_width.Number;
+        return LuaValue.NewNumber(v);
+    }
 
-            ValidatePosWidth("replace", 3, pos, width);
+    private static void ValidatePosWidth(string func, int argPos, int pos, int width)
+    {
+        if (pos > 31 || pos + width > 31)
+            throw new ScriptRuntimeException("trying to access non-existent bits");
 
-            var mask = NBitMask(width) << pos;
-            v &= ~mask;
-            u &= mask;
-            v |= u;
+        if (pos < 0)
+            throw new ScriptRuntimeException("bad argument #{1} to '{0}' (field cannot be negative)", func, argPos);
 
-            return DynValue.NewNumber(v);
-        }
+        if (width <= 0)
+            throw new ScriptRuntimeException("bad argument #{1} to '{0}' (width must be positive)", func, argPos + 1);
+    }
 
-        private static void ValidatePosWidth(string func, int argPos, int pos, int width)
-        {
-            if (pos > 31 || pos + width > 31)
-                throw new ScriptRuntimeException("trying to access non-existent bits");
+    [SolarSharpModuleMethod]
+    public static LuaValue arshift(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var v_v = args.AsType(0, "arshift", DataType.Number);
+        var v = ToInt32(v_v);
 
-            if (pos < 0)
-                throw new ScriptRuntimeException(
-                    "bad argument #{1} to '{0}' (field cannot be negative)",
-                    func,
-                    argPos
-                );
+        var v_a = args.AsType(1, "arshift", DataType.Number);
 
-            if (width <= 0)
-                throw new ScriptRuntimeException(
-                    "bad argument #{1} to '{0}' (width must be positive)",
-                    func,
-                    argPos + 1
-                );
-        }
+        var a = (int)v_a.Number;
 
-        [MoonSharpModuleMethod]
-        public static DynValue arshift(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var v_v = args.AsType(0, "arshift", DataType.Number);
-            var v = ToInt32(v_v);
+        if (a < 0)
+            v <<= -a;
+        else
+            v >>= a;
 
-            var v_a = args.AsType(1, "arshift", DataType.Number);
+        return LuaValue.NewNumber(v);
+    }
 
-            var a = (int)v_a.Number;
+    [SolarSharpModuleMethod]
+    public static LuaValue rshift(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var v_v = args.AsType(0, "rshift", DataType.Number);
+        var v = ToUInt32(v_v);
 
-            if (a < 0)
-                v <<= -a;
-            else
-                v >>= a;
+        var v_a = args.AsType(1, "rshift", DataType.Number);
 
-            return DynValue.NewNumber(v);
-        }
+        var a = (int)v_a.Number;
 
-        [MoonSharpModuleMethod]
-        public static DynValue rshift(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var v_v = args.AsType(0, "rshift", DataType.Number);
-            var v = ToUInt32(v_v);
+        if (a < 0)
+            v <<= -a;
+        else
+            v >>= a;
 
-            var v_a = args.AsType(1, "rshift", DataType.Number);
+        return LuaValue.NewNumber(v);
+    }
 
-            var a = (int)v_a.Number;
+    [SolarSharpModuleMethod]
+    public static LuaValue lshift(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var v_v = args.AsType(0, "lshift", DataType.Number);
+        var v = ToUInt32(v_v);
 
-            if (a < 0)
-                v <<= -a;
-            else
-                v >>= a;
+        var v_a = args.AsType(1, "lshift", DataType.Number);
 
-            return DynValue.NewNumber(v);
-        }
+        var a = (int)v_a.Number;
 
-        [MoonSharpModuleMethod]
-        public static DynValue lshift(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var v_v = args.AsType(0, "lshift", DataType.Number);
-            var v = ToUInt32(v_v);
+        if (a < 0)
+            v >>= -a;
+        else
+            v <<= a;
 
-            var v_a = args.AsType(1, "lshift", DataType.Number);
+        return LuaValue.NewNumber(v);
+    }
 
-            var a = (int)v_a.Number;
+    [SolarSharpModuleMethod]
+    public static LuaValue band(ScriptExecutionContext _, CallbackArguments args)
+    {
+        return LuaValue.NewNumber(Bitwise("band", args, (x, y) => x & y));
+    }
 
-            if (a < 0)
-                v >>= -a;
-            else
-                v <<= a;
+    [SolarSharpModuleMethod]
+    public static LuaValue btest(ScriptExecutionContext _, CallbackArguments args)
+    {
+        return LuaValue.NewBoolean(0 != Bitwise("btest", args, (x, y) => x & y));
+    }
 
-            return DynValue.NewNumber(v);
-        }
+    [SolarSharpModuleMethod]
+    public static LuaValue bor(ScriptExecutionContext _, CallbackArguments args)
+    {
+        return LuaValue.NewNumber(Bitwise("bor", args, (x, y) => x | y));
+    }
 
-        [MoonSharpModuleMethod]
-        public static DynValue band(ScriptExecutionContext _, CallbackArguments args)
-        {
-            return DynValue.NewNumber(Bitwise("band", args, (x, y) => x & y));
-        }
+    [SolarSharpModuleMethod]
+    public static LuaValue bnot(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var v_v = args.AsType(0, "bnot", DataType.Number);
+        var v = ToUInt32(v_v);
+        return LuaValue.NewNumber(~v);
+    }
 
-        [MoonSharpModuleMethod]
-        public static DynValue btest(ScriptExecutionContext _, CallbackArguments args)
-        {
-            return DynValue.NewBoolean(0 != Bitwise("btest", args, (x, y) => x & y));
-        }
+    [SolarSharpModuleMethod]
+    public static LuaValue bxor(ScriptExecutionContext _, CallbackArguments args)
+    {
+        return LuaValue.NewNumber(Bitwise("bxor", args, (x, y) => x ^ y));
+    }
 
-        [MoonSharpModuleMethod]
-        public static DynValue bor(ScriptExecutionContext _, CallbackArguments args)
-        {
-            return DynValue.NewNumber(Bitwise("bor", args, (x, y) => x | y));
-        }
+    [SolarSharpModuleMethod]
+    public static LuaValue lrotate(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var v_v = args.AsType(0, "lrotate", DataType.Number);
+        var v = ToUInt32(v_v);
 
-        [MoonSharpModuleMethod]
-        public static DynValue bnot(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var v_v = args.AsType(0, "bnot", DataType.Number);
-            var v = ToUInt32(v_v);
-            return DynValue.NewNumber(~v);
-        }
+        var v_a = args.AsType(1, "lrotate", DataType.Number);
 
-        [MoonSharpModuleMethod]
-        public static DynValue bxor(ScriptExecutionContext _, CallbackArguments args)
-        {
-            return DynValue.NewNumber(Bitwise("bxor", args, (x, y) => x ^ y));
-        }
+        var a = (int)v_a.Number % 32;
 
-        [MoonSharpModuleMethod]
-        public static DynValue lrotate(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var v_v = args.AsType(0, "lrotate", DataType.Number);
-            var v = ToUInt32(v_v);
+        v = a < 0 ? (v >> -a) | (v << (32 + a)) : (v << a) | (v >> (32 - a));
 
-            var v_a = args.AsType(1, "lrotate", DataType.Number);
+        return LuaValue.NewNumber(v);
+    }
 
-            var a = (int)v_a.Number % 32;
+    [SolarSharpModuleMethod]
+    public static LuaValue rrotate(ScriptExecutionContext _, CallbackArguments args)
+    {
+        var v_v = args.AsType(0, "rrotate", DataType.Number);
+        var v = ToUInt32(v_v);
 
-            v = a < 0 ? v >> -a | v << 32 + a : v << a | v >> 32 - a;
+        var v_a = args.AsType(1, "rrotate", DataType.Number);
 
-            return DynValue.NewNumber(v);
-        }
+        var a = (int)v_a.Number % 32;
 
-        [MoonSharpModuleMethod]
-        public static DynValue rrotate(ScriptExecutionContext _, CallbackArguments args)
-        {
-            var v_v = args.AsType(0, "rrotate", DataType.Number);
-            var v = ToUInt32(v_v);
+        v = a < 0 ? (v << -a) | (v >> (32 + a)) : (v >> a) | (v << (32 - a));
 
-            var v_a = args.AsType(1, "rrotate", DataType.Number);
-
-            var a = (int)v_a.Number % 32;
-
-            v = a < 0 ? v << -a | v >> 32 + a : v >> a | v << 32 - a;
-
-            return DynValue.NewNumber(v);
-        }
+        return LuaValue.NewNumber(v);
     }
 }

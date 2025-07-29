@@ -1,12 +1,9 @@
 ﻿using NUnit.Framework;
 using SolarSharp.Interpreter.DataTypes;
-using SolarSharp.Interpreter.Security;
 
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [NonParallelizable] // Uses global UserData registration
-    [Category("VM.Integration")]
     public class StructAssignmentTechnique
     {
         public struct Vector3
@@ -15,6 +12,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             public float Y;
             public float Z;
         }
+
 
         public class Transform
         {
@@ -32,24 +30,23 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
             public float X
             {
-                get { return transf.position.X; }
-                set { transf.position.X = value; }
+                get => transf.position.X;
+                set => transf.position.X = value;
             }
 
             public float Y
             {
-                get { return transf.position.Y; }
-                set { transf.position.Y = value; }
+                get => transf.position.Y;
+                set => transf.position.Y = value;
             }
 
             public float Z
             {
-                get { return transf.position.Z; }
-                set { transf.position.Z = value; }
+                get => transf.position.Z;
+                set => transf.position.Z = value;
             }
         }
 
-        //
         //[Test]
         //public void StructField_CanSetWithWorkaround()
         //{
@@ -58,9 +55,10 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         //	DispatchingUserDataDescriptor descr = (DispatchingUserDataDescriptor)UserData.RegisterType<Transform>();
 
-        //	descr.AddMember("Position", new
+        //	descr.AddMember("Position", new 
 
-        //	Script S = new Script(Examples.DesktopBasePolicySet);
+
+        //	Script S = new Script();
 
         //	Transform T = new Transform();
 
@@ -70,11 +68,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
         //	S.DoString("transform.position.X = 15;");
 
-        //	Assert.That(T.position.X, Is.EqualTo(3));
+        //	Assert.AreEqual(3, T.position.X);
         //	UserData.UnregisterType<Transform>();
         //	UserData.UnregisterType<Vector3>();
         //	UserData.UnregisterType<Vector3_Accessor>();
         //}
+
 
         [Test]
         public void StructField_CantSet()
@@ -82,9 +81,9 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             UserData.RegisterType<Transform>();
             UserData.RegisterType<Vector3>();
 
-            var S = new Script(Examples.DesktopBasePolicySet);
+            Script S = new();
 
-            var T = new Transform();
+            Transform T = new();
 
             T.position.X = 3;
 

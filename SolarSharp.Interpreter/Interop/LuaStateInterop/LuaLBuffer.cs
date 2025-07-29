@@ -1,19 +1,19 @@
 ﻿// Disable warnings about XML documentation
+
 #pragma warning disable 1591
 
 using System.Text;
 
-namespace SolarSharp.Interpreter.Interop.LuaStateInterop
-{
-    public class LuaLBuffer
-    {
-        public StringBuilder StringBuilder { get; private set; }
-        public LuaState LuaState { get; private set; }
+namespace SolarSharp.Interpreter.Interop.LuaStateInterop;
 
-        public LuaLBuffer(LuaState l)
-        {
-            StringBuilder = new StringBuilder();
-            LuaState = l;
-        }
+public class LuaLBuffer
+{
+    public LuaLBuffer(LuaState l)
+    {
+        StringBuilder = new StringBuilder();
+        LuaState = l;
     }
+
+    public StringBuilder StringBuilder { get; private set; }
+    public LuaState LuaState { get; private set; }
 }

@@ -1,20 +1,18 @@
 ﻿using System;
 
-namespace SolarSharp.Interpreter.Modules
+namespace SolarSharp.Interpreter.Modules;
+
+/// <summary>
+///     In a module type, mark methods or fields with this attribute to have them exposed as module functions.
+///     Methods must have the signature "public static LuaValue ...(ScriptExecutionContextCallbackArguments)".
+///     Fields must be static or const strings, with an anonymous Lua function inside.
+///     See <see cref="SolarSharpModuleAttribute" /> for more information about modules.
+/// </summary>
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Field, Inherited = false)]
+public sealed class SolarSharpModuleMethodAttribute : Attribute
 {
     /// <summary>
-    /// In a module type, mark methods or fields with this attribute to have them exposed as module functions.
-    /// Methods must have the signature "public static DynValue ...(ScriptExecutionContextCallbackArguments)".
-    /// Fields must be static or const strings, with an anonymous Lua function inside.
-    ///
-    /// See <see cref="SolarSharpModuleAttribute"/> for more information about modules.
+    ///     Gets or sets the name of the function in the module (defaults to member name)
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Field, Inherited = false)]
-    public sealed class MoonSharpModuleMethodAttribute : Attribute
-    {
-        /// <summary>
-        /// Gets or sets the name of the function in the module (defaults to member name)
-        /// </summary>
-        public string Name { get; set; }
-    }
+    public string Name { get; set; }
 }

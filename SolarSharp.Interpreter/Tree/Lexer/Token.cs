@@ -1,178 +1,159 @@
 ﻿using System;
 using SolarSharp.Interpreter.Debugging;
 
-namespace SolarSharp.Interpreter.Tree.Lexer
+namespace SolarSharp.Interpreter.Tree.Lexer;
+
+internal class Token
 {
-    internal class Token
+    public readonly int FromCol, ToCol, FromLine, ToLine, PrevCol, PrevLine;
+    public readonly int SourceId;
+    public readonly TokenType Type;
+
+    public Token(TokenType type, int sourceId, int fromLine, int fromCol, int toLine, int toCol, int prevLine,
+        int prevCol)
     {
-        public readonly int SourceId;
-        public readonly int FromCol,
-            ToCol,
-            FromLine,
-            ToLine,
-            PrevCol,
-            PrevLine;
-        public readonly TokenType Type;
+        Type = type;
 
-        public string Text { get; set; }
+        SourceId = sourceId;
+        FromLine = fromLine;
+        FromCol = fromCol;
+        ToCol = toCol;
+        ToLine = toLine;
+        PrevCol = prevCol;
+        PrevLine = prevLine;
+    }
 
-        public Token(
-            TokenType type,
-            int sourceId,
-            int fromLine,
-            int fromCol,
-            int toLine,
-            int toCol,
-            int prevLine,
-            int prevCol
-        )
+    public string Text { get; set; }
+
+
+    public override string ToString()
+    {
+        var tokenTypeString = (Type + "                                                      ")[..16];
+
+        var location = $"{FromLine}:{FromCol}-{ToLine}:{ToCol}";
+
+        location = (location + "                                                      ")[..10];
+
+        return $"{tokenTypeString}  - {location} - '{Text ?? ""}'";
+    }
+
+    public static TokenType? GetReservedTokenType(string reservedWord)
+    {
+        switch (reservedWord)
         {
-            Type = type;
-
-            SourceId = sourceId;
-            FromLine = fromLine;
-            FromCol = fromCol;
-            ToCol = toCol;
-            ToLine = toLine;
-            PrevCol = prevCol;
-            PrevLine = prevLine;
+            case "and":
+                return TokenType.And;
+            case "break":
+                return TokenType.Break;
+            case "do":
+                return TokenType.Do;
+            case "else":
+                return TokenType.Else;
+            case "elseif":
+                return TokenType.ElseIf;
+            case "end":
+                return TokenType.End;
+            case "false":
+                return TokenType.False;
+            case "for":
+                return TokenType.For;
+            case "function":
+                return TokenType.Function;
+            case "goto":
+                return TokenType.Goto;
+            case "if":
+                return TokenType.If;
+            case "in":
+                return TokenType.In;
+            case "local":
+                return TokenType.Local;
+            case "nil":
+                return TokenType.Nil;
+            case "not":
+                return TokenType.Not;
+            case "or":
+                return TokenType.Or;
+            case "repeat":
+                return TokenType.Repeat;
+            case "return":
+                return TokenType.Return;
+            case "then":
+                return TokenType.Then;
+            case "true":
+                return TokenType.True;
+            case "until":
+                return TokenType.Until;
+            case "while":
+                return TokenType.While;
+            default:
+                return null;
         }
+    }
 
-        public override string ToString()
+    public double GetNumberValue()
+    {
+        if (Type == TokenType.Number)
+            return LexerUtils.ParseNumber(this);
+        if (Type == TokenType.Number_Hex)
+            return LexerUtils.ParseHexInteger(this);
+        if (Type == TokenType.Number_HexFloat)
+            return LexerUtils.ParseHexFloat(this);
+        throw new NotSupportedException("GetNumberValue is supported only on numeric tokens");
+    }
+
+
+    public bool IsEndOfBlock()
+    {
+        return Type switch
         {
-            var tokenTypeString = (Type + "                                                      ")[
-                ..16
-            ];
+            TokenType.Else or TokenType.ElseIf or TokenType.End or TokenType.Until or TokenType.Eof => true,
+            _ => false
+        };
+    }
 
-            var location = $"{FromLine}:{FromCol}-{ToLine}:{ToCol}";
+    public bool IsUnaryOperator()
+    {
+        return Type == TokenType.Op_MinusOrSub || Type == TokenType.Not || Type == TokenType.Op_Len;
+    }
 
-            location = (location + "                                                      ")[..10];
-
-            return $"{tokenTypeString}  - {location} - '{Text ?? ""}'";
-        }
-
-        public static TokenType? GetReservedTokenType(string reservedWord)
+    public bool IsBinaryOperator()
+    {
+        switch (Type)
         {
-            switch (reservedWord)
-            {
-                case "and":
-                    return TokenType.And;
-                case "break":
-                    return TokenType.Break;
-                case "do":
-                    return TokenType.Do;
-                case "else":
-                    return TokenType.Else;
-                case "elseif":
-                    return TokenType.ElseIf;
-                case "end":
-                    return TokenType.End;
-                case "false":
-                    return TokenType.False;
-                case "for":
-                    return TokenType.For;
-                case "function":
-                    return TokenType.Function;
-                case "goto":
-                    return TokenType.Goto;
-                case "if":
-                    return TokenType.If;
-                case "in":
-                    return TokenType.In;
-                case "local":
-                    return TokenType.Local;
-                case "nil":
-                    return TokenType.Nil;
-                case "not":
-                    return TokenType.Not;
-                case "or":
-                    return TokenType.Or;
-                case "repeat":
-                    return TokenType.Repeat;
-                case "return":
-                    return TokenType.Return;
-                case "then":
-                    return TokenType.Then;
-                case "true":
-                    return TokenType.True;
-                case "until":
-                    return TokenType.Until;
-                case "while":
-                    return TokenType.While;
-                default:
-                    return null;
-            }
+            case TokenType.And:
+            case TokenType.Or:
+            case TokenType.Op_Equal:
+            case TokenType.Op_LessThan:
+            case TokenType.Op_LessThanEqual:
+            case TokenType.Op_GreaterThanEqual:
+            case TokenType.Op_GreaterThan:
+            case TokenType.Op_NotEqual:
+            case TokenType.Op_Concat:
+            case TokenType.Op_Pwr:
+            case TokenType.Op_Mod:
+            case TokenType.Op_Div:
+            case TokenType.Op_Mul:
+            case TokenType.Op_MinusOrSub:
+            case TokenType.Op_Add:
+                return true;
+            default:
+                return false;
         }
+    }
 
-        public double GetNumberValue()
-        {
-            if (Type == TokenType.Number)
-                return LexerUtils.ParseNumber(this);
-            if (Type == TokenType.Number_Hex)
-                return LexerUtils.ParseHexInteger(this);
-            if (Type == TokenType.Number_HexFloat)
-                return LexerUtils.ParseHexFloat(this);
-            throw new NotSupportedException("GetNumberValue is supported only on numeric tokens");
-        }
 
-        public bool IsEndOfBlock()
-        {
-            switch (Type)
-            {
-                case TokenType.Else:
-                case TokenType.ElseIf:
-                case TokenType.End:
-                case TokenType.Until:
-                case TokenType.Eof:
-                    return true;
-                default:
-                    return false;
-            }
-        }
+    internal SourceRef GetSourceRef(bool isStepStop = true)
+    {
+        return new SourceRef(SourceId, FromCol, ToCol, FromLine, ToLine, isStepStop);
+    }
 
-        public bool IsUnaryOperator()
-        {
-            return Type is TokenType.Op_MinusOrSub or TokenType.Not or TokenType.Op_Len;
-        }
+    internal SourceRef GetSourceRef(Token to, bool isStepStop = true)
+    {
+        return new SourceRef(SourceId, FromCol, to.ToCol, FromLine, to.ToLine, isStepStop);
+    }
 
-        public bool IsBinaryOperator()
-        {
-            switch (Type)
-            {
-                case TokenType.And:
-                case TokenType.Or:
-                case TokenType.Op_Equal:
-                case TokenType.Op_LessThan:
-                case TokenType.Op_LessThanEqual:
-                case TokenType.Op_GreaterThanEqual:
-                case TokenType.Op_GreaterThan:
-                case TokenType.Op_NotEqual:
-                case TokenType.Op_Concat:
-                case TokenType.Op_Pwr:
-                case TokenType.Op_Mod:
-                case TokenType.Op_Div:
-                case TokenType.Op_Mul:
-                case TokenType.Op_MinusOrSub:
-                case TokenType.Op_Add:
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        internal SourceRef GetSourceRef(bool isStepStop = true)
-        {
-            return new SourceRef(SourceId, FromCol, ToCol, FromLine, ToLine, isStepStop);
-        }
-
-        internal SourceRef GetSourceRef(Token to, bool isStepStop = true)
-        {
-            return new SourceRef(SourceId, FromCol, to.ToCol, FromLine, to.ToLine, isStepStop);
-        }
-
-        internal SourceRef GetSourceRefUpTo(Token to, bool isStepStop = true)
-        {
-            return new SourceRef(SourceId, FromCol, to.PrevCol, FromLine, to.PrevLine, isStepStop);
-        }
+    internal SourceRef GetSourceRefUpTo(Token to, bool isStepStop = true)
+    {
+        return new SourceRef(SourceId, FromCol, to.PrevCol, FromLine, to.PrevLine, isStepStop);
     }
 }

@@ -1,82 +1,891 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+using SolarSharp.Interpreter.Errors;
+using SolarSharp.Interpreter.Execution;
+using SolarSharp.Interpreter.Interop.Converters;
 
-namespace SolarSharp.Interpreter.DataTypes
+namespace SolarSharp.Interpreter.DataTypes;
+
+/// <summary>
+///     A class representing a value in a Lua/SolarSharp script.
+/// </summary>
+public sealed class LuaValue
 {
-    /// <summary>
-    /// Inspired by Lua's actual implementation of values, is a significantly more efficient
-    /// value than a <see cref="DynValue"/> since it's 1) a struct and 2) stores a lot less information
-    ///
-    /// Note: we may have to do some unsafe stuff like; https://stackoverflow.com/a/72507955 to make *some* writes performant
-    /// but I don't think the vast majority of this will be true.
-    /// </summary>
-    [StructLayout(LayoutKind.Explicit)]
-    public struct LuaValue
+    private int m_HashCode = -1;
+
+    private object m_Object;
+
+    static LuaValue()
     {
-        // Both none & nil don't have an explicit value here but they are zeroed out so effectively are "0"
+        Nil = new LuaValue { Type = DataType.Nil }.AsReadOnly();
+        Void = new LuaValue { Type = DataType.Void }.AsReadOnly();
+        True = NewBoolean(true).AsReadOnly();
+        False = NewBoolean(false).AsReadOnly();
+    }
 
-        /// <summary>
-        /// Bools are 0/1
-        /// </summary>
-        [FieldOffset(0)]
-        public bool BoolValue;
+    /// <summary>
+    ///     Gets the type of the value.
+    /// </summary>
+    public DataType Type { get; private set; }
 
-        /// <summary>
-        /// Is just a "ptr" or object reference.
-        ///
-        /// I may change this to dynamic just to allow for easier function calls.
-        /// </summary>
-        [FieldOffset(0)]
-        public object LightUserDataValue;
+    /// <summary>
+    ///     Gets the function (valid only if the <see cref="Type" /> is <see cref="DataType.Function" />)
+    /// </summary>
+    public Closure Function => m_Object as Closure;
 
-        /// <summary>
-        /// Numbers are all doubles (since we are Lua 5.2)
-        /// </summary>
-        [FieldOffset(0)]
-        public double NumberValue;
+    /// <summary>
+    ///     Gets the numeric value (valid only if the <see cref="Type" /> is <see cref="DataType.Number" />)
+    /// </summary>
+    public double Number { get; private set; }
 
-        /// <summary>
-        /// Avoid the cast to string by having a direct ref to it.
-        /// </summary>
-        [FieldOffset(0)]
-        public string StringValue;
+    /// <summary>
+    ///     Gets the values in the tuple (valid only if the <see cref="Type" /> is Tuple).
+    ///     This field is currently also used to hold arguments in values whose <see cref="Type" /> is
+    ///     <see cref="DataType.TailCallRequest" />.
+    /// </summary>
+    public LuaValue[] Tuple => m_Object as LuaValue[];
 
-        /// <summary>
-        /// Standard lua table
-        /// </summary>
-        [FieldOffset(0)]
-        public Table TableValue;
+    /// <summary>
+    ///     Gets the coroutine handle. (valid only if the <see cref="Type" /> is Thread).
+    /// </summary>
+    public Coroutine Coroutine => m_Object as Coroutine;
 
-        /// <summary>
-        /// A lua function!  This doesn't cover a CLR function
-        /// (for now) since I'll probably use a different type
-        /// just for more performant calls.
-        /// </summary>
-        [FieldOffset(0)]
-        public Closure FunctionValue;
+    /// <summary>
+    ///     Gets the table (valid only if the <see cref="Type" /> is <see cref="DataType.Table" />)
+    /// </summary>
+    public Table Table => m_Object as Table;
 
-        /// <summary>
-        /// User data.
-        /// </summary>
-        [FieldOffset(0)]
-        public UserData UserDataValue;
+    /// <summary>
+    ///     Gets the boolean value (valid only if the <see cref="Type" /> is <see cref="DataType.Boolean" />)
+    /// </summary>
+    public bool Boolean => Number != 0;
 
-        /// <summary>
-        /// A coroutine
-        /// </summary>
-        [FieldOffset(0)]
-        public Coroutine ThreadValue;
+    /// <summary>
+    ///     Gets the string value (valid only if the <see cref="Type" /> is <see cref="DataType.String" />)
+    /// </summary>
+    public string String => m_Object as string;
 
-        /// <summary>
-        /// The type of lua value
-        ///
-        /// In future I'm planning on using a NaN tagged value (potentially) to get better performance
-        /// </summary>
-        [FieldOffset(8)]
-        public LuaDataType Type;
+    /// <summary>
+    ///     Gets the CLR callback (valid only if the <see cref="Type" /> is <see cref="DataType.ClrFunction" />)
+    /// </summary>
+    public CallbackFunction Callback => m_Object as CallbackFunction;
 
-        /// <summary>
-        /// Create a new nil value.
-        /// </summary>
-        public static readonly LuaValue Nil = new LuaValue { Type = LuaDataType.Nil };
+    /// <summary>
+    ///     Gets the tail call data.
+    /// </summary>
+    public TailCallData TailCallData => m_Object as TailCallData;
+
+    /// <summary>
+    ///     Gets the yield request data.
+    /// </summary>
+    public YieldRequest YieldRequest => m_Object as YieldRequest;
+
+    /// <summary>
+    ///     Gets the user data.
+    /// </summary>
+    public UserData UserData => m_Object as UserData;
+
+    /// <summary>
+    ///     A preinitialized, readonly instance, equaling Void
+    /// </summary>
+    public static LuaValue Void { get; }
+
+    /// <summary>
+    ///     A preinitialized, readonly instance, equaling Nil
+    /// </summary>
+    public static LuaValue Nil { get; private set; }
+
+    /// <summary>
+    ///     A preinitialized, readonly instance, equaling True
+    /// </summary>
+    public static LuaValue True { get; private set; }
+
+    /// <summary>
+    ///     A preinitialized, readonly instance, equaling False
+    /// </summary>
+    public static LuaValue False { get; private set; }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to Nil.
+    /// </summary>
+    public static LuaValue NewNil()
+    {
+        return new LuaValue();
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to the specified boolean.
+    /// </summary>
+    public static LuaValue NewBoolean(bool v)
+    {
+        return new LuaValue
+        {
+            Number = v ? 1 : 0,
+            Type = DataType.Boolean
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to the specified number.
+    /// </summary>
+    public static LuaValue NewNumber(double num)
+    {
+        return new LuaValue
+        {
+            Number = num,
+            Type = DataType.Number
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to the specified string.
+    /// </summary>
+    public static LuaValue NewString(string str)
+    {
+        return new LuaValue
+        {
+            m_Object = str,
+            Type = DataType.String
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to the specified StringBuilder.
+    /// </summary>
+    public static LuaValue NewString(StringBuilder sb)
+    {
+        return new LuaValue
+        {
+            m_Object = sb.ToString(),
+            Type = DataType.String
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to the specified string using String.Format like syntax
+    /// </summary>
+    public static LuaValue NewString(string format, params object[] args)
+    {
+        return new LuaValue
+        {
+            m_Object = string.Format(format, args),
+            Type = DataType.String
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to the specified coroutine.
+    ///     Internal use only, for external use, see Script.CoroutineCreate
+    /// </summary>
+    /// <param name="coroutine">The coroutine object.</param>
+    /// <returns></returns>
+    public static LuaValue NewCoroutine(Coroutine coroutine)
+    {
+        return new LuaValue
+        {
+            m_Object = coroutine,
+            Type = DataType.Thread
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to the specified closure (function).
+    /// </summary>
+    public static LuaValue NewClosure(Closure function)
+    {
+        return new LuaValue
+        {
+            m_Object = function,
+            Type = DataType.Function
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to the specified CLR callback.
+    /// </summary>
+    public static LuaValue NewCallback(Func<ScriptExecutionContext, CallbackArguments, LuaValue> callBack,
+        string name = null)
+    {
+        return new LuaValue
+        {
+            m_Object = new CallbackFunction(callBack, name),
+            Type = DataType.ClrFunction
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to the specified CLR callback.
+    ///     See also CallbackFunction.FromDelegate and CallbackFunction.FromMethodInfo factory methods.
+    /// </summary>
+    public static LuaValue NewCallback(CallbackFunction function)
+    {
+        return new LuaValue
+        {
+            m_Object = function,
+            Type = DataType.ClrFunction
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to the specified table.
+    /// </summary>
+    public static LuaValue NewTable(Table table)
+    {
+        return new LuaValue
+        {
+            m_Object = table,
+            Type = DataType.Table
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to an empty prime table (a
+    ///     prime table is a table made only of numbers, strings, booleans and other
+    ///     prime tables).
+    /// </summary>
+    public static LuaValue NewPrimeTable()
+    {
+        return NewTable(new Table(null));
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to an empty table.
+    /// </summary>
+    public static LuaValue NewTable(Script script, int arraySizeHint = 0, int associativeSizeHint = 0)
+    {
+        return NewTable(new Table(script, arraySizeHint, associativeSizeHint));
+    }
+
+    /// <summary>
+    ///     Creates a new writable value initialized to with array contents.
+    /// </summary>
+    public static LuaValue NewTable(Script script, params LuaValue[] arrayValues)
+    {
+        return NewTable(new Table(script, arrayValues));
+    }
+
+    /// <summary>
+    ///     Creates a new request for a tail call. This is the preferred way to execute Lua/SolarSharp code from a callback,
+    ///     although it's not always possible to use it. When a function (callback or script closure) returns a
+    ///     TailCallRequest, the bytecode processor immediately executes the function contained in the request.
+    ///     By executing script in this way, a callback function ensures it's not on the stack anymore and thus a number
+    ///     of functionality (state savings, coroutines, etc) keeps working at full power.
+    /// </summary>
+    /// <param name="tailFn">The function to be called.</param>
+    /// <param name="args">The arguments.</param>
+    /// <returns></returns>
+    public static LuaValue NewTailCallReq(LuaValue tailFn, params LuaValue[] args)
+    {
+        return new LuaValue
+        {
+            m_Object = new TailCallData
+            {
+                Args = args,
+                Function = tailFn
+            },
+            Type = DataType.TailCallRequest
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new request for a tail call. This is the preferred way to execute Lua/SolarSharp code from a callback,
+    ///     although it's not always possible to use it. When a function (callback or script closure) returns a
+    ///     TailCallRequest, the bytecode processor immediately executes the function contained in the request.
+    ///     By executing script in this way, a callback function ensures it's not on the stack anymore and thus a number
+    ///     of functionality (state savings, coroutines, etc) keeps working at full power.
+    /// </summary>
+    /// <param name="tailCallData">The data for the tail call.</param>
+    /// <returns></returns>
+    public static LuaValue NewTailCallReq(TailCallData tailCallData)
+    {
+        return new LuaValue
+        {
+            m_Object = tailCallData,
+            Type = DataType.TailCallRequest
+        };
+    }
+
+
+    /// <summary>
+    ///     Creates a new request for a yield of the current coroutine.
+    /// </summary>
+    /// <param name="args">The yield argumenst.</param>
+    /// <returns></returns>
+    public static LuaValue NewYieldReq(LuaValue[] args)
+    {
+        return new LuaValue
+        {
+            m_Object = new YieldRequest { ReturnValues = args },
+            Type = DataType.YieldRequest
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new tuple initialized to the specified values.
+    /// </summary>
+    public static LuaValue NewTuple(params LuaValue[] values)
+    {
+        if (values.Length == 0)
+            return NewNil();
+
+        if (values.Length == 1)
+            return values[0];
+
+        return new LuaValue
+        {
+            m_Object = values,
+            Type = DataType.Tuple
+        };
+    }
+
+    /// <summary>
+    ///     Creates a new tuple initialized to the specified values - which can be potentially other tuples
+    /// </summary>
+    public static LuaValue NewTupleNested(params LuaValue[] values)
+    {
+        if (!values.Any(v => v.Type == DataType.Tuple))
+            return NewTuple(values);
+
+        if (values.Length == 1)
+            return values[0];
+
+        List<LuaValue> vals = new();
+
+        foreach (var v in values)
+            if (v.Type == DataType.Tuple)
+                vals.AddRange(v.Tuple);
+            else
+                vals.Add(v);
+
+        return new LuaValue
+        {
+            m_Object = vals.ToArray(),
+            Type = DataType.Tuple
+        };
+    }
+
+
+    /// <summary>
+    ///     Creates a new userdata value
+    /// </summary>
+    public static LuaValue NewUserData(UserData userData)
+    {
+        return new LuaValue
+        {
+            m_Object = userData,
+            Type = DataType.UserData
+        };
+    }
+
+    /// <summary>
+    ///     Returns this value as readonly - eventually cloning it in the process if it isn't readonly to start with.
+    /// </summary>
+    public LuaValue AsReadOnly()
+    {
+        return Clone();
+    }
+
+    /// <summary>
+    ///     Clones this instance, overriding the "readonly" status.
+    /// </summary>
+    /// <param name="readOnly">if set to <c>true</c> the new instance is set as readonly, or writeable otherwise.</param>
+    /// <returns></returns>
+    public LuaValue Clone()
+    {
+        LuaValue v = new()
+        {
+            m_Object = m_Object,
+            Number = Number,
+            m_HashCode = m_HashCode,
+            Type = Type
+        };
+        return v;
+    }
+
+    /// <summary>
+    ///     Clones this instance, returning a writable copy.
+    /// </summary>
+    /// <exception cref="ArgumentException">Can't clone Symbol values</exception>
+    public LuaValue CloneAsWritable()
+    {
+        return Clone();
+    }
+
+    /// <summary>
+    ///     Returns a string which is what it's expected to be output by the print function applied to this value.
+    /// </summary>
+    public string ToPrintString()
+    {
+        if (m_Object != null && m_Object is RefIdObject)
+        {
+            var refid = (RefIdObject)m_Object;
+
+            var typeString = Type.ToLuaTypeString();
+
+            if (m_Object is UserData)
+            {
+                var ud = (UserData)m_Object;
+                var str = ud.Descriptor.AsString(ud.Object);
+                if (str != null)
+                    return str;
+            }
+
+            return refid.FormatTypeString(typeString);
+        }
+
+        switch (Type)
+        {
+            case DataType.String:
+                return String;
+            case DataType.Tuple:
+                return string.Join("\t", Tuple.Select(t => t.ToPrintString()).ToArray());
+            case DataType.TailCallRequest:
+                return "(TailCallRequest -- INTERNAL!)";
+            case DataType.YieldRequest:
+                return "(YieldRequest -- INTERNAL!)";
+            default:
+                return ToString();
+        }
+    }
+
+    /// <summary>
+    ///     Returns a string which is what it's expected to be output by debuggers.
+    /// </summary>
+    public string ToDebugPrintString()
+    {
+        if (m_Object != null && m_Object is RefIdObject)
+        {
+            var refid = (RefIdObject)m_Object;
+
+            var typeString = Type.ToLuaTypeString();
+
+            if (m_Object is UserData)
+            {
+                var ud = (UserData)m_Object;
+                var str = ud.Descriptor.AsString(ud.Object);
+                if (str != null)
+                    return str;
+            }
+
+            return refid.FormatTypeString(typeString);
+        }
+
+        switch (Type)
+        {
+            case DataType.Tuple:
+                return string.Join("\t", Tuple.Select(t => t.ToPrintString()).ToArray());
+            case DataType.TailCallRequest:
+                return "(TailCallRequest)";
+            case DataType.YieldRequest:
+                return "(YieldRequest)";
+            default:
+                return ToString();
+        }
+    }
+
+
+    /// <summary>
+    ///     Returns a <see cref="string" /> that represents this instance.
+    /// </summary>
+    /// <returns>
+    ///     A <see cref="string" /> that represents this instance.
+    /// </returns>
+    public override string ToString()
+    {
+        return Type switch
+        {
+            DataType.Void => "void",
+            DataType.Nil => "nil",
+            DataType.Boolean => Boolean.ToString().ToLower(),
+            DataType.Number => Number.ToString(CultureInfo.InvariantCulture),
+            DataType.String => "\"" + String + "\"",
+            DataType.Function => $"(Function {Function.EntryPointByteCodeLocation:X8})",
+            DataType.ClrFunction => string.Format("(Function CLR)", Function),
+            DataType.Table => "(Table)",
+            DataType.Tuple => string.Join(", ", Tuple.Select(t => t.ToString()).ToArray()),
+            DataType.TailCallRequest => "Tail:(" + string.Join(", ", Tuple.Select(t => t.ToString()).ToArray()) + ")",
+            DataType.UserData => "(UserData)",
+            DataType.Thread => $"(Coroutine {Coroutine.GetHashCode():X8})",
+            _ => "(???)"
+        };
+    }
+
+    /// <summary>
+    ///     Returns a hash code for this instance.
+    /// </summary>
+    /// <returns>
+    ///     A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
+    /// </returns>
+    public override int GetHashCode()
+    {
+        if (m_HashCode != -1)
+            return m_HashCode;
+
+        var baseValue = (int)Type << 27;
+
+        m_HashCode = Type switch
+        {
+            DataType.Void or DataType.Nil => 0,
+            DataType.Boolean => Boolean ? 1 : 2,
+            DataType.Number => baseValue ^ Number.GetHashCode(),
+            DataType.String => baseValue ^ String.GetHashCode(),
+            DataType.Function => baseValue ^ Function.GetHashCode(),
+            DataType.ClrFunction => baseValue ^ Callback.GetHashCode(),
+            DataType.Table => baseValue ^ Table.GetHashCode(),
+            DataType.Tuple or DataType.TailCallRequest => baseValue ^ Tuple.GetHashCode(),
+            _ => 999
+        };
+        return m_HashCode;
+    }
+
+    /// <summary>
+    ///     Determines whether the specified <see cref="object" />, is equal to this instance.
+    /// </summary>
+    /// <param name="obj">The <see cref="object" /> to compare with this instance.</param>
+    /// <returns>
+    ///     <c>true</c> if the specified <see cref="object" /> is equal to this instance; otherwise, <c>false</c>.
+    /// </returns>
+    public override bool Equals(object obj)
+    {
+        if (obj is not LuaValue other)
+            switch (Type)
+            {
+                case DataType.Void:
+                case DataType.Nil:
+                    return obj == null;
+                case DataType.Boolean:
+                    return Boolean == (bool)obj;
+                case DataType.Number:
+                    return Number == (double)obj;
+                default:
+                    return m_Object == obj;
+            }
+
+        if ((other.Type == DataType.Nil && Type == DataType.Void)
+            || (other.Type == DataType.Void && Type == DataType.Nil))
+            return true;
+
+        if (other.Type != Type) return false;
+
+        switch (Type)
+        {
+            case DataType.Void:
+            case DataType.Nil:
+                return true;
+            case DataType.Boolean:
+                return Boolean == other.Boolean;
+            case DataType.Number:
+                return Number == other.Number;
+            case DataType.String:
+                return String == other.String;
+            case DataType.Function:
+                return Function == other.Function;
+            case DataType.ClrFunction:
+                return Callback == other.Callback;
+            case DataType.Table:
+                return Table == other.Table;
+            case DataType.Tuple:
+            case DataType.TailCallRequest:
+                return Tuple == other.Tuple;
+            case DataType.Thread:
+                return Coroutine == other.Coroutine;
+            case DataType.UserData:
+            {
+                var ud1 = UserData;
+                var ud2 = other.UserData;
+
+                if (ud1 == null || ud2 == null)
+                    return false;
+
+                if (ud1.Descriptor != ud2.Descriptor)
+                    return false;
+
+                if (ud1.Object == null && ud2.Object == null)
+                    return true;
+
+                if (ud1.Object != null && ud2.Object != null)
+                    return ud1.Object.Equals(ud2.Object);
+
+                return false;
+            }
+            default:
+                return ReferenceEquals(this, other);
+        }
+    }
+
+
+    /// <summary>
+    ///     Casts this LuaValue to string, using coercion if the type is number.
+    /// </summary>
+    /// <returns>The string representation, or null if not number, not string.</returns>
+    public string CastToString()
+    {
+        var rv = ToScalar();
+        if (rv.Type == DataType.Number) return rv.Number.ToString();
+
+        if (rv.Type == DataType.String) return rv.String;
+        return null;
+    }
+
+    /// <summary>
+    ///     Casts this LuaValue to a double, using coercion if the type is string.
+    /// </summary>
+    /// <returns>The string representation, or null if not number, not string or non-convertible-string.</returns>
+    public double? CastToNumber()
+    {
+        var rv = ToScalar();
+        if (rv.Type == DataType.Number) return rv.Number;
+
+        if (rv.Type == DataType.String)
+            if (double.TryParse(rv.String, NumberStyles.Any, CultureInfo.InvariantCulture, out var num))
+                return num;
+        return null;
+    }
+
+
+    /// <summary>
+    ///     Casts this LuaValue to a bool
+    /// </summary>
+    /// <returns>False if value is false or nil, true otherwise.</returns>
+    public bool CastToBool()
+    {
+        var rv = ToScalar();
+        if (rv.Type == DataType.Boolean)
+            return rv.Boolean;
+        return rv.Type != DataType.Nil && rv.Type != DataType.Void;
+    }
+
+    /// <summary>
+    ///     Returns this LuaValue as an instance of <see cref="IScriptPrivateResource" />, if possible,
+    ///     null otherwise
+    /// </summary>
+    /// <returns>False if value is false or nil, true otherwise.</returns>
+    public IScriptPrivateResource GetAsPrivateResource()
+    {
+        return m_Object as IScriptPrivateResource;
+    }
+
+    /// <summary>
+    ///     Converts a tuple to a scalar value. If it's already a scalar value, this function returns "this".
+    /// </summary>
+    public LuaValue ToScalar()
+    {
+        if (Type != DataType.Tuple)
+            return this;
+
+        if (Tuple.Length == 0)
+            return Void;
+
+        return Tuple[0].ToScalar();
+    }
+
+    /// <summary>
+    ///     Performs an assignment, overwriting the value with the specified one.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <exception cref="ScriptRuntimeException">If the value is readonly.</exception>
+    public void Assign(LuaValue value)
+    {
+        Number = value.Number;
+        m_Object = value.m_Object;
+        Type = value.Type;
+        // TODO: I'm not certain this is correct, this seems very odd
+        //       hashcodes should be preservable and we should be able to just
+        //       take the dyn value's hash code.
+        m_HashCode = -1;
+    }
+
+    /// <summary>
+    ///     Gets the length of a string or table value.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="ScriptRuntimeException">Value is not a table or string.</exception>
+    public LuaValue GetLength()
+    {
+        if (Type == DataType.Table)
+            return NewNumber(Table.Length);
+        if (Type == DataType.String)
+            return NewNumber(String.Length);
+
+        throw new ScriptRuntimeException("Can't get length of type {0}", Type);
+    }
+
+    /// <summary>
+    ///     Determines whether this instance is nil or void
+    /// </summary>
+    public bool IsNil()
+    {
+        return Type == DataType.Nil || Type == DataType.Void;
+    }
+
+    /// <summary>
+    ///     Determines whether this instance is not nil or void
+    /// </summary>
+    public bool IsNotNil()
+    {
+        return Type != DataType.Nil && Type != DataType.Void;
+    }
+
+    /// <summary>
+    ///     Determines whether this instance is void
+    /// </summary>
+    public bool IsVoid()
+    {
+        return Type == DataType.Void;
+    }
+
+    /// <summary>
+    ///     Determines whether this instance is not void
+    /// </summary>
+    public bool IsNotVoid()
+    {
+        return Type != DataType.Void;
+    }
+
+    /// <summary>
+    ///     Determines whether is nil, void or NaN (and thus unsuitable for using as a table key).
+    /// </summary>
+    public bool IsNilOrNan()
+    {
+        return Type == DataType.Nil || Type == DataType.Void || (Type == DataType.Number && double.IsNaN(Number));
+    }
+
+    /// <summary>
+    ///     Changes the numeric value of a number LuaValue.
+    /// </summary>
+    internal void AssignNumber(double num)
+    {
+        if (Type != DataType.Number)
+            throw new InternalErrorException("Can't assign number to type {0}", Type);
+
+        Number = num;
+    }
+
+    /// <summary>
+    ///     Creates a new LuaValue from a CLR object
+    /// </summary>
+    /// <param name="script">The script.</param>
+    /// <param name="obj">The object.</param>
+    /// <returns></returns>
+    public static LuaValue FromObject(Script script, object obj)
+    {
+        return ClrToScriptConversions.ObjectToLuaValue(script, obj);
+    }
+
+    /// <summary>
+    ///     Converts this SolarSharp LuaValue to a CLR object.
+    /// </summary>
+    public object ToObject()
+    {
+        return ScriptToClrConversions.LuaValueToObject(this);
+    }
+
+    /// <summary>
+    ///     Converts this SolarSharp LuaValue to a CLR object of the specified type.
+    /// </summary>
+    public object ToObject(Type desiredType)
+    {
+        //Contract.Requires(desiredType != null);
+        return ScriptToClrConversions.LuaValueToObjectOfType(this, desiredType, null, false);
+    }
+
+    /// <summary>
+    ///     Converts this SolarSharp LuaValue to a CLR object of the specified type.
+    /// </summary>
+    public T ToObject<T>()
+    {
+        var myObject = (T)ToObject(typeof(T));
+        if (myObject == null) return default;
+
+        return myObject;
+    }
+
+    /// <summary>
+    ///     Converts this SolarSharp LuaValue to a CLR object, marked as dynamic
+    /// </summary>
+    public dynamic ToDynamic()
+    {
+        return ScriptToClrConversions.LuaValueToObject(this);
+    }
+
+    /// <summary>
+    ///     Checks the type of this value corresponds to the desired type. A propert ScriptRuntimeException is thrown
+    ///     if the value is not of the specified type or - considering the TypeValidationFlags - is not convertible
+    ///     to the specified type.
+    /// </summary>
+    /// <param name="funcName">Name of the function requesting the value, for error message purposes.</param>
+    /// <param name="desiredType">The desired data type.</param>
+    /// <param name="argNum">The argument number, for error message purposes.</param>
+    /// <param name="flags">The TypeValidationFlags.</param>
+    /// <returns></returns>
+    /// <exception cref="ScriptRuntimeException">
+    ///     Thrown
+    ///     if the value is not of the specified type or - considering the TypeValidationFlags - is not convertible
+    ///     to the specified type.
+    /// </exception>
+    public LuaValue CheckType(string funcName, DataType desiredType, int argNum = -1,
+        TypeValidationFlags flags = TypeValidationFlags.Default)
+    {
+        if (Type == desiredType)
+            return this;
+
+        var allowNil = (flags & TypeValidationFlags.AllowNil) != 0;
+
+        if (allowNil && IsNil())
+            return this;
+
+        var autoConvert = (flags & TypeValidationFlags.AutoConvert) != 0;
+
+        if (autoConvert)
+        {
+            if (desiredType == DataType.Boolean)
+                return NewBoolean(CastToBool());
+
+            if (desiredType == DataType.Number)
+            {
+                var v = CastToNumber();
+                if (v.HasValue)
+                    return NewNumber(v.Value);
+            }
+
+            if (desiredType == DataType.String)
+            {
+                var v = CastToString();
+                if (v != null)
+                    return NewString(v);
+            }
+        }
+
+        if (IsVoid())
+            throw ScriptRuntimeException.BadArgumentNoValue(argNum, funcName, desiredType);
+
+        throw ScriptRuntimeException.BadArgument(argNum, funcName, desiredType, Type, allowNil);
+    }
+
+    /// <summary>
+    ///     Checks if the type is a specific userdata type, and returns it or throws.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="funcName">Name of the function.</param>
+    /// <param name="argNum">The argument number.</param>
+    /// <param name="flags">The flags.</param>
+    /// <returns></returns>
+    public T CheckUserDataType<T>(string funcName, int argNum = -1,
+        TypeValidationFlags flags = TypeValidationFlags.Default)
+    {
+        var v = CheckType(funcName, DataType.UserData, argNum, flags);
+        var allowNil = (flags & TypeValidationFlags.AllowNil) != 0;
+
+        if (v.IsNil())
+            return default;
+
+        var o = v.UserData.Object;
+        if (o != null && o is T)
+            return (T)o;
+
+        throw ScriptRuntimeException.BadArgumentUserData(argNum, funcName, typeof(T), o, allowNil);
     }
 }

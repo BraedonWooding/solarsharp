@@ -2,102 +2,97 @@
 using System.Text;
 using SolarSharp.Interpreter.Diagnostics.PerformanceCounters;
 
-namespace SolarSharp.Interpreter.Diagnostics
+namespace SolarSharp.Interpreter.Diagnostics;
+
+/// <summary>
+///     A single object of this type exists for every script and gives access to performance statistics.
+/// </summary>
+public class PerformanceStatistics
 {
+    private static IPerformanceStopwatch[] m_GlobalStopwatches =
+        new IPerformanceStopwatch[(int)PerformanceCounter.LastValue];
+
+    private bool m_Enabled;
+    private IPerformanceStopwatch[] m_Stopwatches = new IPerformanceStopwatch[(int)PerformanceCounter.LastValue];
+
+
     /// <summary>
-    /// A single object of this type exists for every script and gives access to performance statistics.
+    ///     Gets or sets a value indicating whether this collection of performance stats is enabled.
     /// </summary>
-    public class PerformanceStatistics
+    /// <value>
+    ///     <c>true</c> if enabled; otherwise, <c>false</c>.
+    /// </value>
+    public bool Enabled
     {
-        private IPerformanceStopwatch[] m_Stopwatches = new IPerformanceStopwatch[
-            (int)PerformanceCounter.LastValue
-        ];
-        private static IPerformanceStopwatch[] m_GlobalStopwatches = new IPerformanceStopwatch[
-            (int)PerformanceCounter.LastValue
-        ];
-        private bool m_Enabled;
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this collection of performance stats is enabled.
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if enabled; otherwise, <c>false</c>.
-        /// </value>
-        public bool Enabled
+        get => m_Enabled;
+        set
         {
-            get { return m_Enabled; }
-            set
+            if (value && !m_Enabled)
             {
-                if (value && !m_Enabled)
-                {
-                    if (m_GlobalStopwatches[(int)PerformanceCounter.AdaptersCompilation] == null)
-                        m_GlobalStopwatches[(int)PerformanceCounter.AdaptersCompilation] =
-                            new GlobalPerformanceStopwatch(PerformanceCounter.AdaptersCompilation);
+                if (m_GlobalStopwatches[(int)PerformanceCounter.AdaptersCompilation] == null)
+                    m_GlobalStopwatches[(int)PerformanceCounter.AdaptersCompilation] =
+                        new GlobalPerformanceStopwatch(PerformanceCounter.AdaptersCompilation);
 
-                    for (var i = 0; i < (int)PerformanceCounter.LastValue; i++)
-                        m_Stopwatches[i] =
-                            m_GlobalStopwatches[i]
-                            ?? new PerformanceStopwatch((PerformanceCounter)i);
-                }
-                else if (!value && m_Enabled)
-                {
-                    m_Stopwatches = new IPerformanceStopwatch[(int)PerformanceCounter.LastValue];
-                    m_GlobalStopwatches = new IPerformanceStopwatch[
-                        (int)PerformanceCounter.LastValue
-                    ];
-                }
-
-                m_Enabled = value;
+                for (var i = 0; i < (int)PerformanceCounter.LastValue; i++)
+                    m_Stopwatches[i] = m_GlobalStopwatches[i] ?? new PerformanceStopwatch((PerformanceCounter)i);
             }
-        }
-
-        /// <summary>
-        /// Gets the result of the specified performance counter .
-        /// </summary>
-        /// <param name="pc">The PerformanceCounter.</param>
-        /// <returns></returns>
-        public PerformanceResult GetPerformanceCounterResult(PerformanceCounter pc)
-        {
-            var pco = m_Stopwatches[(int)pc];
-            return pco?.GetResult();
-        }
-
-        /// <summary>
-        /// Starts a stopwatch.
-        /// </summary>
-        /// <returns></returns>
-        internal IDisposable StartStopwatch(PerformanceCounter pc)
-        {
-            var pco = m_Stopwatches[(int)pc];
-            return pco?.Start();
-        }
-
-        /// <summary>
-        /// Starts a stopwatch.
-        /// </summary>
-        /// <returns></returns>
-        internal static IDisposable StartGlobalStopwatch(PerformanceCounter pc)
-        {
-            var pco = m_GlobalStopwatches[(int)pc];
-            return pco?.Start();
-        }
-
-        /// <summary>
-        /// Gets a string with a complete performance log.
-        /// </summary>
-        /// <returns></returns>
-        public string GetPerformanceLog()
-        {
-            var sb = new StringBuilder();
-
-            for (var i = 0; i < (int)PerformanceCounter.LastValue; i++)
+            else if (!value && m_Enabled)
             {
-                var res = GetPerformanceCounterResult((PerformanceCounter)i);
-                if (res != null)
-                    sb.AppendLine(res.ToString());
+                m_Stopwatches = new IPerformanceStopwatch[(int)PerformanceCounter.LastValue];
+                m_GlobalStopwatches = new IPerformanceStopwatch[(int)PerformanceCounter.LastValue];
             }
 
-            return sb.ToString();
+            m_Enabled = value;
         }
+    }
+
+
+    /// <summary>
+    ///     Gets the result of the specified performance counter .
+    /// </summary>
+    /// <param name="pc">The PerformanceCounter.</param>
+    /// <returns></returns>
+    public PerformanceResult GetPerformanceCounterResult(PerformanceCounter pc)
+    {
+        var pco = m_Stopwatches[(int)pc];
+        return pco?.GetResult();
+    }
+
+    /// <summary>
+    ///     Starts a stopwatch.
+    /// </summary>
+    /// <returns></returns>
+    internal IDisposable StartStopwatch(PerformanceCounter pc)
+    {
+        var pco = m_Stopwatches[(int)pc];
+        return pco?.Start();
+    }
+
+    /// <summary>
+    ///     Starts a stopwatch.
+    /// </summary>
+    /// <returns></returns>
+    internal static IDisposable StartGlobalStopwatch(PerformanceCounter pc)
+    {
+        var pco = m_GlobalStopwatches[(int)pc];
+        return pco?.Start();
+    }
+
+    /// <summary>
+    ///     Gets a string with a complete performance log.
+    /// </summary>
+    /// <returns></returns>
+    public string GetPerformanceLog()
+    {
+        StringBuilder sb = new();
+
+        for (var i = 0; i < (int)PerformanceCounter.LastValue; i++)
+        {
+            var res = GetPerformanceCounterResult((PerformanceCounter)i);
+            if (res != null)
+                sb.AppendLine(res.ToString());
+        }
+
+        return sb.ToString();
     }
 }

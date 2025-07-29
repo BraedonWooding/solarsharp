@@ -1,18 +1,17 @@
-﻿namespace SolarSharp.Interpreter.DataTypes
+﻿namespace SolarSharp.Interpreter.DataTypes;
+
+/// <summary>
+///     Constants of well known "symbols" in the SolarSharp grammar
+/// </summary>
+public static class WellKnownSymbols
 {
     /// <summary>
-    /// Constants of well known "symbols" in the MoonSharp grammar
+    ///     The variadic argument symbol ("...")
     /// </summary>
-    public static class WellKnownSymbols
-    {
-        /// <summary>
-        /// The variadic argument symbol ("...")
-        /// </summary>
-        public const string VARARGS = "...";
+    public const string VARARGS = "...";
 
-        /// <summary>
-        /// The environment symbol ("_ENV")
-        /// </summary>
-        public const string ENV = "_ENV";
-    }
+    /// <summary>
+    ///     The environment symbol ("_ENV")
+    /// </summary>
+    public const string ENV = "_ENV";
 }

@@ -4,56 +4,58 @@ using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace SolarSharp.Interpreter.Tree.Statements
-{
-    internal class ReturnStatement : Statement
-    {
-        private readonly Expression m_Expression;
-        private readonly SourceRef m_Ref;
+namespace SolarSharp.Interpreter.Tree.Statements;
 
-        public ReturnStatement(ScriptLoadingContext lcontext, Expression e, SourceRef sref)
-            : base(lcontext)
+internal class ReturnStatement : Statement
+{
+    private readonly Expression m_Expression;
+    private readonly SourceRef m_Ref;
+
+    public ReturnStatement(ScriptLoadingContext lcontext, Expression e, SourceRef sref)
+        : base(lcontext)
+    {
+        m_Expression = e;
+        m_Ref = sref;
+        lcontext.Source.Refs.Add(sref);
+    }
+
+
+    public ReturnStatement(ScriptLoadingContext lcontext)
+        : base(lcontext)
+    {
+        var ret = lcontext.Lexer.Current;
+
+        lcontext.Lexer.Next();
+
+        var cur = lcontext.Lexer.Current;
+
+        if (cur.IsEndOfBlock() || cur.Type == TokenType.SemiColon)
         {
-            m_Expression = e;
-            m_Ref = sref;
-            lcontext.Source.Refs.Add(sref);
+            m_Expression = null;
+            m_Ref = ret.GetSourceRef();
+        }
+        else
+        {
+            m_Expression = new ExprListExpression(Expression.ExprList(lcontext), lcontext);
+            m_Ref = ret.GetSourceRefUpTo(lcontext.Lexer.Current);
         }
 
-        public ReturnStatement(ScriptLoadingContext lcontext)
-            : base(lcontext)
+        lcontext.Source.Refs.Add(m_Ref);
+    }
+
+
+    public override void Compile(ByteCode bc)
+    {
+        using (bc.EnterSource(m_Ref))
         {
-            var ret = lcontext.Lexer.Current;
-
-            lcontext.Lexer.Next();
-
-            var cur = lcontext.Lexer.Current;
-
-            if (cur.IsEndOfBlock() || cur.Type == TokenType.SemiColon)
+            if (m_Expression != null)
             {
-                m_Expression = null;
-                m_Ref = ret.GetSourceRef();
+                m_Expression.Compile(bc);
+                bc.Emit_Ret(1);
             }
             else
             {
-                m_Expression = new ExprListExpression(Expression.ExprList(lcontext), lcontext);
-                m_Ref = ret.GetSourceRefUpTo(lcontext.Lexer.Current);
-            }
-            lcontext.Source.Refs.Add(m_Ref);
-        }
-
-        public override void Compile(ByteCode bc)
-        {
-            using (bc.EnterSource(m_Ref))
-            {
-                if (m_Expression != null)
-                {
-                    m_Expression.Compile(bc);
-                    bc.Emit_Ret(1);
-                }
-                else
-                {
-                    bc.Emit_Ret(0);
-                }
+                bc.Emit_Ret(0);
             }
         }
     }

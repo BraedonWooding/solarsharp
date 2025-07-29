@@ -8,127 +8,127 @@ using SolarSharp.Interpreter.Execution.VM;
 using SolarSharp.Interpreter.Tree.Expressions;
 using SolarSharp.Interpreter.Tree.Lexer;
 
-namespace SolarSharp.Interpreter.Tree.Statements
+namespace SolarSharp.Interpreter.Tree.Statements;
+
+internal class ForEachLoopStatement : Statement
 {
-    internal class ForEachLoopStatement : Statement
+    private readonly Statement m_Block;
+    private readonly IVariable[] m_NameExps;
+    private readonly SymbolRef[] m_Names;
+    private readonly SourceRef m_RefFor, m_RefEnd;
+    private readonly Expression m_RValues;
+    private readonly RuntimeScopeBlock m_StackFrame;
+
+    public ForEachLoopStatement(ScriptLoadingContext lcontext, Token firstNameToken, Token forToken)
+        : base(lcontext)
     {
-        private readonly RuntimeScopeBlock m_StackFrame;
-        private readonly SymbolRef[] m_Names;
-        private readonly IVariable[] m_NameExps;
-        private readonly Expression m_RValues;
-        private readonly Statement m_Block;
-        private readonly SourceRef m_RefFor,
-            m_RefEnd;
+        //	for namelist in explist do block end | 		
 
-        public ForEachLoopStatement(
-            ScriptLoadingContext lcontext,
-            Token firstNameToken,
-            Token forToken
-        )
-            : base(lcontext)
+        List<string> names = [firstNameToken.Text];
+
+        while (lcontext.Lexer.Current.Type == TokenType.Comma)
         {
-            //	for namelist in explist do block end |
-
-            var names = new List<string> { firstNameToken.Text };
-
-            while (lcontext.Lexer.Current.Type == TokenType.Comma)
-            {
-                lcontext.Lexer.Next();
-                var name = CheckTokenType(lcontext, TokenType.Name);
-                names.Add(name.Text);
-            }
-
-            CheckTokenType(lcontext, TokenType.In);
-
-            m_RValues = new ExprListExpression(Expression.ExprList(lcontext), lcontext);
-
-            lcontext.Scope.PushBlock();
-
-            m_Names = names.Select(n => lcontext.Scope.TryDefineLocal(n)).ToArray();
-
-            m_NameExps = m_Names
-                .Select(s => new SymbolRefExpression(lcontext, s))
-                .Cast<IVariable>()
-                .ToArray();
-
-            m_RefFor = forToken.GetSourceRef(CheckTokenType(lcontext, TokenType.Do));
-
-            m_Block = new CompositeStatement(lcontext);
-
-            m_RefEnd = CheckTokenType(lcontext, TokenType.End).GetSourceRef();
-
-            m_StackFrame = lcontext.Scope.PopBlock();
-
-            lcontext.Source.Refs.Add(m_RefFor);
-            lcontext.Source.Refs.Add(m_RefEnd);
+            lcontext.Lexer.Next();
+            var name = CheckTokenType(lcontext, TokenType.Name);
+            names.Add(name.Text);
         }
 
-        public override void Compile(ByteCode bc)
+        CheckTokenType(lcontext, TokenType.In);
+
+        m_RValues = new ExprListExpression(Expression.ExprList(lcontext), lcontext);
+
+        lcontext.Scope.PushBlock();
+
+        m_Names = names
+            .Select(n => lcontext.Scope.TryDefineLocal(n))
+            .ToArray();
+
+        m_NameExps = m_Names
+            .Select(s => new SymbolRefExpression(lcontext, s))
+            .Cast<IVariable>()
+            .ToArray();
+
+        m_RefFor = forToken.GetSourceRef(CheckTokenType(lcontext, TokenType.Do));
+
+        m_Block = new CompositeStatement(lcontext);
+
+        m_RefEnd = CheckTokenType(lcontext, TokenType.End).GetSourceRef();
+
+        m_StackFrame = lcontext.Scope.PopBlock();
+
+        lcontext.Source.Refs.Add(m_RefFor);
+        lcontext.Source.Refs.Add(m_RefEnd);
+    }
+
+
+    public override void Compile(ByteCode bc)
+    {
+        //for var_1, ···, var_n in explist do block end
+
+        bc.PushSourceRef(m_RefFor);
+
+        Loop L = new()
         {
-            //for var_1, ···, var_n in explist do block end
+            Scope = m_StackFrame
+        };
+        bc.LoopTracker.Loops.Push(L);
 
-            bc.PushSourceRef(m_RefFor);
+        // get iterator tuple
+        m_RValues.Compile(bc);
 
-            var L = new Loop { Scope = m_StackFrame };
-            bc.LoopTracker.Loops.Push(L);
+        // prepares iterator tuple - stack : iterator-tuple
+        bc.Emit_IterPrep();
 
-            // get iterator tuple
-            m_RValues.Compile(bc);
+        // loop start - stack : iterator-tuple
+        var start = bc.GetJumpPointForNextInstruction();
+        bc.Emit_Enter(m_StackFrame);
 
-            // prepares iterator tuple - stack : iterator-tuple
-            bc.Emit_IterPrep();
+        // expand the tuple - stack : iterator-tuple, f, var, s
+        bc.Emit_ExpTuple(0);
 
-            // loop start - stack : iterator-tuple
-            var start = bc.GetJumpPointForNextInstruction();
-            bc.Emit_Enter(m_StackFrame);
+        // calls f(s, var) - stack : iterator-tuple, iteration result
+        bc.Emit_Call(2, "for..in");
 
-            // expand the tuple - stack : iterator-tuple, f, var, s
-            bc.Emit_ExpTuple(0);
+        // perform assignment of iteration result- stack : iterator-tuple, iteration result
+        for (var i = 0; i < m_NameExps.Length; i++)
+            m_NameExps[i].CompileAssignment(bc, 0, i);
 
-            // calls f(s, var) - stack : iterator-tuple, iteration result
-            bc.Emit_Call(2, "for..in");
+        // pops  - stack : iterator-tuple
+        bc.Emit_Pop();
 
-            // perform assignment of iteration result- stack : iterator-tuple, iteration result
-            for (var i = 0; i < m_NameExps.Length; i++)
-                m_NameExps[i].CompileAssignment(bc, 0, i);
+        // repushes the main iterator var - stack : iterator-tuple, main-iterator-var
+        bc.Emit_Load(m_Names[0]);
 
-            // pops  - stack : iterator-tuple
-            bc.Emit_Pop();
+        // updates the iterator tuple - stack : iterator-tuple, main-iterator-var
+        bc.Emit_IterUpd();
 
-            // repushes the main iterator var - stack : iterator-tuple, main-iterator-var
-            bc.Emit_Load(m_Names[0]);
+        // checks head, jumps if nil - stack : iterator-tuple, main-iterator-var
+        var endjump = bc.Emit_Jump(OpCode.JNil, -1);
 
-            // updates the iterator tuple - stack : iterator-tuple, main-iterator-var
-            bc.Emit_IterUpd();
+        // executes the stuff - stack : iterator-tuple
+        m_Block.Compile(bc);
 
-            // checks head, jumps if nil - stack : iterator-tuple, main-iterator-var
-            var endjump = bc.Emit_Jump(OpCode.JNil, -1);
+        bc.PopSourceRef();
+        bc.PushSourceRef(m_RefEnd);
 
-            // executes the stuff - stack : iterator-tuple
-            m_Block.Compile(bc);
+        // loop back again - stack : iterator-tuple
+        bc.Emit_Leave(m_StackFrame);
+        bc.Emit_Jump(OpCode.Jump, start);
 
-            bc.PopSourceRef();
-            bc.PushSourceRef(m_RefEnd);
+        bc.LoopTracker.Loops.Pop();
 
-            // loop back again - stack : iterator-tuple
-            bc.Emit_Leave(m_StackFrame);
-            bc.Emit_Jump(OpCode.Jump, start);
+        var exitpointLoopExit = bc.GetJumpPointForNextInstruction();
+        bc.Emit_Leave(m_StackFrame);
 
-            bc.LoopTracker.Loops.Pop();
+        var exitpointBreaks = bc.GetJumpPointForNextInstruction();
 
-            var exitpointLoopExit = bc.GetJumpPointForNextInstruction();
-            bc.Emit_Leave(m_StackFrame);
+        bc.Emit_Pop();
 
-            var exitpointBreaks = bc.GetJumpPointForNextInstruction();
+        foreach (var i in L.BreakJumps)
+            i.NumVal = exitpointBreaks;
 
-            bc.Emit_Pop();
+        endjump.NumVal = exitpointLoopExit;
 
-            foreach (var i in L.BreakJumps)
-                i.NumVal = exitpointBreaks;
-
-            endjump.NumVal = exitpointLoopExit;
-
-            bc.PopSourceRef();
-        }
+        bc.PopSourceRef();
     }
 }

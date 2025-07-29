@@ -5,7 +5,6 @@ using SolarSharp.Interpreter.Serialization.Json;
 namespace SolarSharp.Interpreter.Tests.EndToEnd
 {
     [TestFixture]
-    [Category("VM.Integration")]
     public class JsonSerializationTests
     {
         private static void AssertTableValues(Table t)
@@ -56,15 +55,12 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
 
                 Assert.That(a.Get(3).Type, Is.EqualTo(DataType.Boolean));
             });
-            Assert.Multiple(() =>
-            {
-                Assert.That(a.Get(3).Boolean, Is.True);
+            Assert.That(a.Get(3).Boolean, Is.True);
 
-                Assert.That(a.Get(4).Type, Is.EqualTo(DataType.UserData));
-                Assert.That(JsonNull.IsJsonNull(a.Get(4)), Is.True);
+            Assert.That(a.Get(4).Type, Is.EqualTo(DataType.UserData));
+            Assert.That(JsonNull.IsJsonNull(a.Get(4)), Is.True);
 
-                Assert.That(a.Get(5).Type, Is.EqualTo(DataType.Table));
-            });
+            Assert.That(a.Get(5).Type, Is.EqualTo(DataType.Table));
             var s = a.Get(5).Table;
 
             Assert.Multiple(() =>
@@ -79,6 +75,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
                 Assert.That(t.Get("aNegativeNumber").Number, Is.EqualTo(-9));
             });
         }
+
 
         [Test]
         public void JsonDeserialization()
@@ -119,6 +116,7 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             AssertTableValues(t);
         }
 
+
         [Test]
         public void JsonObjectSerialization()
         {
@@ -126,11 +124,27 @@ namespace SolarSharp.Interpreter.Tests.EndToEnd
             {
                 aNumber = 1,
                 aString = "2",
-                anObject = new { aNumber = 3, aString = "4" },
-                anArray = new object[] { 5, "6", true, null, new { aNumber = 7, aString = "8" } },
+                anObject = new
+                {
+                    aNumber = 3,
+                    aString = "4"
+                },
+                anArray = new object[]
+                {
+                    5,
+                    "6",
+                    true,
+                    null,
+                    new
+                    {
+                        aNumber = 7,
+                        aString = "8"
+                    }
+                },
                 aNegativeNumber = -9,
-                slash = "a/b",
+                slash = "a/b"
             };
+
 
             var json = JsonTableConverter.ObjectToJson(o);
 

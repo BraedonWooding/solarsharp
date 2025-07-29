@@ -1,14 +1,18 @@
 ﻿using NLua;
 
-namespace Benchmark.Implementations
-{
-    public class NLuaImplementation : AImplementation
-    {
-        private readonly Lua state = new Lua();
+namespace Benchmark.Implementations;
 
-        public override object Run(string file)
-        {
-            return state.DoString(file);
-        }
+public class NLuaImplementation : AImplementation
+{
+    private readonly Lua state;
+
+    public NLuaImplementation()
+    {
+        state = new Lua();
+    }
+
+    public override object Run(string file)
+    {
+        return state.DoString(file);
     }
 }

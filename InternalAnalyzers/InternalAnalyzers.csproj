@@ -1,21 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-	<NoPackageAnalysis>true</NoPackageAnalysis>
-    <Version>1.2.0</Version>
-    <IsRoslynComponent>true</IsRoslynComponent>
-	<!-- Do not include the generator as a lib dependency -->
-	<IncludeBuildOutput>false</IncludeBuildOutput>
-    <BuildOutputTargetFolder>analyzers</BuildOutputTargetFolder>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <NoPackageAnalysis>true</NoPackageAnalysis>
+        <Version>1.2.0</Version>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <!-- Do not include the generator as a lib dependency -->
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <BuildOutputTargetFolder>analyzers</BuildOutputTargetFolder>
+    </PropertyGroup>
 
-  <ItemGroup>
-	  <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.2" PrivateAssets="all" />
-	  <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.10.0-3.final" PrivateAssets="all" />
-	  <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-	  <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
-  </ItemGroup>
-	
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.2" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.10.0-3.final" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.CSharp" Version="4.7.0"/>
+        <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4"/>
+    </ItemGroup>
+
 </Project>

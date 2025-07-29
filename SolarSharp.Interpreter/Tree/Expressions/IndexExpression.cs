@@ -3,83 +3,75 @@ using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Execution.VM;
 
-namespace SolarSharp.Interpreter.Tree.Expressions
+namespace SolarSharp.Interpreter.Tree.Expressions;
+
+internal class IndexExpression : Expression, IVariable
 {
-    internal class IndexExpression : Expression, IVariable
+    private readonly Expression m_BaseExp;
+    private readonly Expression m_IndexExp;
+    private readonly string m_Name;
+
+
+    public IndexExpression(Expression baseExp, Expression indexExp, ScriptLoadingContext lcontext)
+        : base(lcontext)
     {
-        private readonly Expression m_BaseExp;
-        private readonly Expression m_IndexExp;
-        private readonly string m_Name;
+        m_BaseExp = baseExp;
+        m_IndexExp = indexExp;
+    }
 
-        public IndexExpression(
-            Expression baseExp,
-            Expression indexExp,
-            ScriptLoadingContext lcontext
-        )
-            : base(lcontext)
+    public IndexExpression(Expression baseExp, string name, ScriptLoadingContext lcontext)
+        : base(lcontext)
+    {
+        m_BaseExp = baseExp;
+        m_Name = name;
+    }
+
+    public void CompileAssignment(ByteCode bc, int stackofs, int tupleidx)
+    {
+        m_BaseExp.Compile(bc);
+
+        if (m_Name != null)
         {
-            m_BaseExp = baseExp;
-            m_IndexExp = indexExp;
+            bc.Emit_IndexSet(stackofs, tupleidx, LuaValue.NewString(m_Name), true);
         }
-
-        public IndexExpression(Expression baseExp, string name, ScriptLoadingContext lcontext)
-            : base(lcontext)
+        else if (m_IndexExp is LiteralExpression lit)
         {
-            m_BaseExp = baseExp;
-            m_Name = name;
+            bc.Emit_IndexSet(stackofs, tupleidx, lit.Value);
         }
-
-        public override void Compile(ByteCode bc)
+        else
         {
-            m_BaseExp.Compile(bc);
-
-            if (m_Name != null)
-            {
-                bc.Emit_Index(DynValue.NewString(m_Name), true);
-            }
-            else if (m_IndexExp is LiteralExpression lit)
-            {
-                bc.Emit_Index(lit.Value);
-            }
-            else
-            {
-                m_IndexExp.Compile(bc);
-                bc.Emit_Index(isExpList: m_IndexExp is ExprListExpression);
-            }
+            m_IndexExp.Compile(bc);
+            bc.Emit_IndexSet(stackofs, tupleidx, isExpList: m_IndexExp is ExprListExpression);
         }
+    }
 
-        public void CompileAssignment(ByteCode bc, int stackofs, int tupleidx)
+
+    public override void Compile(ByteCode bc)
+    {
+        m_BaseExp.Compile(bc);
+
+        if (m_Name != null)
         {
-            m_BaseExp.Compile(bc);
-
-            if (m_Name != null)
-            {
-                bc.Emit_IndexSet(stackofs, tupleidx, DynValue.NewString(m_Name), isNameIndex: true);
-            }
-            else if (m_IndexExp is LiteralExpression lit)
-            {
-                bc.Emit_IndexSet(stackofs, tupleidx, lit.Value);
-            }
-            else
-            {
-                m_IndexExp.Compile(bc);
-                bc.Emit_IndexSet(stackofs, tupleidx, isExpList: m_IndexExp is ExprListExpression);
-            }
+            bc.Emit_Index(LuaValue.NewString(m_Name), true);
         }
-
-        public override DynValue Eval(ScriptExecutionContext context)
+        else if (m_IndexExp is LiteralExpression lit)
         {
-            var b = m_BaseExp.Eval(context).ToScalar();
-            var i =
-                m_IndexExp != null
-                    ? m_IndexExp.Eval(context).ToScalar()
-                    : DynValue.NewString(m_Name);
-
-            if (b.Type != DataType.Table)
-                throw new DynamicExpressionException("Attempt to index non-table.");
-            if (i.IsNilOrNan())
-                throw new DynamicExpressionException("Attempt to index with nil or nan key.");
-            return b.Table.Get(i) ?? DynValue.Nil;
+            bc.Emit_Index(lit.Value);
         }
+        else
+        {
+            m_IndexExp.Compile(bc);
+            bc.Emit_Index(isExpList: m_IndexExp is ExprListExpression);
+        }
+    }
+
+    public override LuaValue Eval(ScriptExecutionContext context)
+    {
+        var b = m_BaseExp.Eval(context).ToScalar();
+        var i = m_IndexExp != null ? m_IndexExp.Eval(context).ToScalar() : LuaValue.NewString(m_Name);
+
+        if (b.Type != DataType.Table) throw new DynamicExpressionException("Attempt to index non-table.");
+        if (i.IsNilOrNan()) throw new DynamicExpressionException("Attempt to index with nil or nan key.");
+        return b.Table.Get(i) ?? LuaValue.Nil;
     }
 }
