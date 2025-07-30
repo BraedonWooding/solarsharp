@@ -29,6 +29,13 @@ const GRID_CONFIG = {
   PADDING: "30px",
 };
 
+const DATE_FILTER_CONFIG = {
+  DEFAULT_RANGE_DAYS: 30, // Default to last 30 days
+  SCRUBBER_HEIGHT: 60, // Height of the scrubber in pixels
+  HANDLE_WIDTH: 24, // Width of the resize handles
+  MIN_SELECTION_WIDTH: 150, // Minimum width of selection in pixels
+};
+
 // =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================
@@ -106,6 +113,61 @@ function collectBenchesPerTestCase(entries) {
   return map;
 }
 
+/**
+ * Filters benchmark entries by date range
+ * @param {Array} entries - Array of benchmark entries
+ * @param {Date} startDate - Start date for filtering
+ * @param {Date} endDate - End date for filtering
+ * @returns {Array} Filtered entries within the date range
+ */
+function filterEntriesByDateRange(entries, startDate, endDate) {
+  if (!startDate && !endDate) {
+    return entries;
+  }
+
+  return entries.filter((entry) => {
+    const entryDate = new Date(entry.commit.timestamp || entry.date);
+
+    if (startDate && entryDate < startDate) {
+      return false;
+    }
+
+    if (endDate && entryDate > endDate) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+/**
+ * Gets the date range from all benchmark entries
+ * @param {Object} dataEntries - Data entries object
+ * @returns {Object} Object with minDate and maxDate
+ */
+function getDateRangeFromEntries(dataEntries) {
+  let minDate = null;
+  let maxDate = null;
+
+  Object.values(dataEntries).forEach((entries) => {
+    entries.forEach((entry) => {
+      const entryDate = new Date(entry.commit.timestamp || entry.date);
+
+      if (!minDate || entryDate < minDate) {
+        minDate = entryDate;
+      }
+
+      if (!maxDate || entryDate > maxDate) {
+        maxDate = entryDate;
+      }
+    });
+  });
+
+  console.log(minDate, maxDate);
+
+  return { minDate, maxDate };
+}
+
 // =============================================================================
 // INITIALIZATION
 // =============================================================================
@@ -121,15 +183,18 @@ function init() {
   initializeHeader(data);
   initializeFooter(data);
 
+  // Initialize date filter and get initial datasets
+  const { filteredData, dateRange } = initializeDateFilter(data);
+
   // Prepare data points for charts
-  return Object.keys(data.entries).map((name) => ({
+  return Object.keys(filteredData).map((name) => ({
     name,
-    dataSet: collectBenchesPerTestCase(data.entries[name]),
+    dataSet: collectBenchesPerTestCase(filteredData[name]),
   }));
 }
 
 /**
- * Initializes the header section with repository information
+ * Initializes the header section with repository information and machine info
  * @param {Object} data - Benchmark data object
  */
 function initializeHeader(data) {
@@ -140,6 +205,11 @@ function initializeHeader(data) {
   const repoLink = document.getElementById("repository-link");
   repoLink.href = data.repoUrl;
   repoLink.textContent = data.repoUrl;
+
+  // Initialize machine info section if available
+  if (data.machineInfo) {
+    initializeMachineInfo(data.machineInfo);
+  }
 }
 
 /**
@@ -154,6 +224,799 @@ function initializeFooter(data) {
     a.download = "benchmark_data.json";
     a.click();
   };
+}
+
+/**
+ * Initializes the machine info section
+ * @param {Object} machineInfo - Machine information object
+ */
+function initializeMachineInfo(machineInfo) {
+  // Find or create machine info container
+  let machineInfoContainer = document.getElementById("machine-info");
+
+  if (!machineInfoContainer) {
+    // Create machine info container if it doesn't exist
+    machineInfoContainer = document.createElement("div");
+    machineInfoContainer.id = "machine-info";
+    machineInfoContainer.className = "machine-info-section";
+
+    // Insert after header or at the beginning of main content
+    const main = document.getElementById("main");
+    const header =
+      document.querySelector("header") || document.querySelector(".header");
+
+    if (header && header.nextSibling) {
+      header.parentNode.insertBefore(machineInfoContainer, header.nextSibling);
+    } else if (main) {
+      main.parentNode.insertBefore(machineInfoContainer, main);
+    } else {
+      document.body.insertBefore(
+        machineInfoContainer,
+        document.body.firstChild
+      );
+    }
+  }
+
+  // Style the container
+  Object.assign(machineInfoContainer.style, {
+    backgroundColor: "#f8f9fa",
+    border: "1px solid #dee2e6",
+    borderRadius: "8px",
+    padding: "20px",
+    margin: "20px auto",
+    maxWidth: "1200px",
+    fontFamily: "Arial, sans-serif",
+  });
+
+  // Create title
+  const title = document.createElement("h2");
+  title.textContent = "Benchmark Environment";
+  Object.assign(title.style, {
+    margin: "0 0 15px 0",
+    fontSize: "1.4em",
+    color: "#333",
+    borderBottom: "2px solid #3572a5",
+    paddingBottom: "8px",
+  });
+  machineInfoContainer.appendChild(title);
+
+  // Create info grid
+  const infoGrid = document.createElement("div");
+  Object.assign(infoGrid.style, {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+    gap: "15px",
+    fontSize: "14px",
+  });
+
+  // Machine info items
+  const infoItems = [
+    { label: "Operating System", value: machineInfo.os },
+    { label: "Processor", value: machineInfo.processor },
+    { label: "Physical Cores", value: machineInfo.physicalCores },
+    { label: "Logical Cores", value: machineInfo.logicalCores },
+    { label: "Architecture", value: machineInfo.architecture },
+    { label: "Runtime Version", value: machineInfo.runtimeVersion },
+    {
+      label: "BenchmarkDotNet Version",
+      value: machineInfo.benchmarkDotnetVersion,
+    },
+  ];
+
+  infoItems.forEach((item) => {
+    if (item.value !== undefined && item.value !== null) {
+      const infoItem = createMachineInfoItem(item.label, item.value);
+      infoGrid.appendChild(infoItem);
+    }
+  });
+
+  machineInfoContainer.appendChild(infoGrid);
+}
+
+/**
+ * Creates a machine info item element
+ * @param {string} label - The label for the info item
+ * @param {string|number} value - The value for the info item
+ * @returns {HTMLElement} Info item element
+ */
+function createMachineInfoItem(label, value) {
+  const item = document.createElement("div");
+  Object.assign(item.style, {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "8px 12px",
+    backgroundColor: "white",
+    border: "1px solid #e0e0e0",
+    borderRadius: "4px",
+  });
+
+  const labelElement = document.createElement("span");
+  labelElement.textContent = label + ":";
+  Object.assign(labelElement.style, {
+    fontWeight: "bold",
+    color: "#555",
+  });
+
+  const valueElement = document.createElement("span");
+  valueElement.textContent = value;
+  Object.assign(valueElement.style, {
+    color: "#333",
+    textAlign: "right",
+    wordBreak: "break-word",
+  });
+
+  item.appendChild(labelElement);
+  item.appendChild(valueElement);
+
+  return item;
+}
+
+/**
+ * Initializes the date filter controls
+ * @param {Object} data - Benchmark data object
+ * @returns {Object} Object with filtered data and date range
+ */
+function initializeDateFilter(data) {
+  // Get date range from data
+  const { minDate, maxDate } = getDateRangeFromEntries(data.entries);
+
+  if (!minDate || !maxDate) {
+    return { filteredData: data, dateRange: { minDate, maxDate } };
+  }
+
+  // Create date filter container
+  const dateFilterContainer = createDateFilterContainer();
+
+  // Create the date scrubber
+  const scrubber = createDateScrubber(minDate, maxDate, minDate, maxDate);
+  dateFilterContainer.appendChild(scrubber.container);
+
+  // Create reset button
+  const resetButton = createResetButton();
+  dateFilterContainer.appendChild(resetButton);
+
+  // Store references for global access
+  window.dateFilterControls = {
+    scrubber,
+    minDate,
+    maxDate,
+    originalData: data,
+  };
+
+  // Set up automatic filtering when scrubber changes
+  scrubber.onDateChange(applyDateFilter);
+
+  // Set up event listeners
+  resetButton.addEventListener("click", resetDateFilter);
+
+  // Apply initial filter
+  const filteredData = getFilteredData(minDate, maxDate);
+
+  return { filteredData, dateRange: { minDate, maxDate } };
+}
+
+/**
+ * Creates the date filter container
+ * @returns {HTMLElement} Date filter container element
+ */
+function createDateFilterContainer() {
+  let container = document.getElementById("date-filter");
+
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "date-filter";
+    container.className = "date-filter-section";
+
+    // Insert after machine info or header
+    const machineInfo = document.getElementById("machine-info");
+    const main = document.getElementById("main");
+
+    if (machineInfo && machineInfo.nextSibling) {
+      machineInfo.parentNode.insertBefore(container, machineInfo.nextSibling);
+    } else if (main) {
+      main.parentNode.insertBefore(container, main);
+    } else {
+      document.body.insertBefore(container, document.body.firstChild);
+    }
+  }
+
+  // Style the container
+  Object.assign(container.style, {
+    backgroundColor: "#fff",
+    border: "1px solid #dee2e6",
+    borderRadius: "8px",
+    padding: "20px",
+    margin: "20px auto",
+    maxWidth: "1200px",
+    fontFamily: "Arial, sans-serif",
+  });
+
+  // Add title
+  const title = document.createElement("h3");
+  title.textContent = "Date Range Filter:";
+  Object.assign(title.style, {
+    margin: "0 0 15px 0",
+    fontSize: "1.1em",
+    color: "#333",
+  });
+  container.appendChild(title);
+
+  return container;
+}
+
+/**
+ * Creates an interactive date scrubber component
+ * @param {Date} minDate - Minimum date
+ * @param {Date} maxDate - Maximum date
+ * @param {Date} initialStart - Initial start date
+ * @param {Date} initialEnd - Initial end date
+ * @returns {Object} Scrubber object with container and methods
+ */
+function createDateScrubber(minDate, maxDate, initialStart, initialEnd) {
+  const container = document.createElement("div");
+  Object.assign(container.style, {
+    position: "relative",
+    width: "100%",
+    height: DATE_FILTER_CONFIG.SCRUBBER_HEIGHT + "px",
+    backgroundColor: "#f8f9fa",
+    border: "1px solid #dee2e6",
+    borderRadius: "4px",
+    cursor: "crosshair",
+    marginBottom: "15px",
+  });
+
+  // Create timeline background
+  const timeline = document.createElement("div");
+  Object.assign(timeline.style, {
+    position: "absolute",
+    top: "0",
+    left: "0",
+    right: "0",
+    bottom: "0",
+    background:
+      "linear-gradient(to right, #e9ecef 0%, #dee2e6 50%, #e9ecef 100%)",
+  });
+  container.appendChild(timeline);
+
+  // Create date labels
+  const dateLabels = createDateLabels(minDate, maxDate);
+  container.appendChild(dateLabels);
+
+  // Calculate initial selection position
+  const totalMs = maxDate.getTime() - minDate.getTime();
+  const startMs = initialStart.getTime() - minDate.getTime();
+  const endMs = initialEnd.getTime() - minDate.getTime();
+
+  const startPercent = (startMs / totalMs) * 100;
+  const endPercent = (endMs / totalMs) * 100;
+
+  // Create selection area
+  const selection = document.createElement("div");
+  Object.assign(selection.style, {
+    position: "absolute",
+    top: "0",
+    bottom: "0",
+    left: startPercent + "%",
+    width: endPercent - startPercent + "%",
+    backgroundColor: "rgba(53, 114, 165, 0.3)",
+    border: "2px solid #3572a5",
+    cursor: "move",
+    zIndex: "2",
+  });
+  container.appendChild(selection);
+
+  // Create resize handles
+  const leftHandle = createResizeHandle("left");
+  const rightHandle = createResizeHandle("right");
+  selection.appendChild(leftHandle);
+  selection.appendChild(rightHandle);
+
+  // Create date display
+  const dateDisplay = createDateDisplay(initialStart, initialEnd);
+  container.appendChild(dateDisplay);
+
+  // Set up interaction handlers
+  const scrubberState = {
+    isDragging: false,
+    isResizing: false,
+    resizeHandle: null,
+    startX: 0,
+    initialLeft: 0,
+    initialWidth: 0,
+    minDate,
+    maxDate,
+    onDateChange: null,
+  };
+
+  setupScrubberInteractions(
+    container,
+    selection,
+    leftHandle,
+    rightHandle,
+    dateDisplay,
+    scrubberState
+  );
+
+  return {
+    container,
+    getDateRange: () => getCurrentDateRange(selection, minDate, maxDate),
+    setDateRange: (start, end) =>
+      setDateRange(selection, start, end, minDate, maxDate, dateDisplay),
+    onDateChange: (callback) => {
+      scrubberState.onDateChange = callback;
+    },
+  };
+}
+
+/**
+ * Creates date labels for the timeline
+ * @param {Date} minDate - Minimum date
+ * @param {Date} maxDate - Maximum date
+ * @returns {HTMLElement} Date labels container
+ */
+function createDateLabels(minDate, maxDate) {
+  const labelsContainer = document.createElement("div");
+  Object.assign(labelsContainer.style, {
+    position: "absolute",
+    top: "5px",
+    left: "10px",
+    right: "10px",
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "11px",
+    color: "#6c757d",
+    pointerEvents: "none",
+    zIndex: "1",
+  });
+
+  const startLabel = document.createElement("span");
+  startLabel.textContent = formatDateShort(minDate);
+
+  const endLabel = document.createElement("span");
+  endLabel.textContent = formatDateShort(maxDate);
+
+  labelsContainer.appendChild(startLabel);
+  labelsContainer.appendChild(endLabel);
+
+  return labelsContainer;
+}
+
+/**
+ * Creates a resize handle
+ * @param {string} side - 'left' or 'right'
+ * @returns {HTMLElement} Handle element
+ */
+function createResizeHandle(side) {
+  const handle = document.createElement("div");
+  Object.assign(handle.style, {
+    position: "absolute",
+    top: "0",
+    bottom: "0",
+    width: DATE_FILTER_CONFIG.HANDLE_WIDTH + "px",
+    backgroundColor: "#3572a5",
+    cursor: side === "left" ? "w-resize" : "e-resize",
+    zIndex: "3",
+  });
+
+  if (side === "left") {
+    handle.style.left = -DATE_FILTER_CONFIG.HANDLE_WIDTH / 2 + "px";
+  } else {
+    handle.style.right = -DATE_FILTER_CONFIG.HANDLE_WIDTH / 2 + "px";
+  }
+
+  handle.dataset.side = side;
+  return handle;
+}
+
+/**
+ * Creates the date display element
+ * @param {Date} startDate - Start date
+ * @param {Date} endDate - End date
+ * @returns {HTMLElement} Date display element
+ */
+function createDateDisplay(startDate, endDate) {
+  const display = document.createElement("div");
+  Object.assign(display.style, {
+    position: "absolute",
+    bottom: "-25px",
+    left: "0",
+    right: "0",
+    textAlign: "center",
+    fontSize: "12px",
+    color: "#495057",
+    fontWeight: "bold",
+  });
+
+  updateDateDisplay(display, startDate, endDate);
+  return display;
+}
+
+/**
+ * Updates the date display text
+ * @param {HTMLElement} display - Display element
+ * @param {Date} startDate - Start date
+ * @param {Date} endDate - End date
+ */
+function updateDateDisplay(display, startDate, endDate) {
+  display.textContent = `${formatDateLong(startDate)} — ${formatDateLong(
+    endDate
+  )}`;
+}
+
+/**
+ * Sets up all scrubber interactions
+ * @param {HTMLElement} container - Container element
+ * @param {HTMLElement} selection - Selection element
+ * @param {HTMLElement} leftHandle - Left resize handle
+ * @param {HTMLElement} rightHandle - Right resize handle
+ * @param {HTMLElement} dateDisplay - Date display element
+ * @param {Object} state - Scrubber state object
+ */
+function setupScrubberInteractions(
+  container,
+  selection,
+  leftHandle,
+  rightHandle,
+  dateDisplay,
+  state
+) {
+  // Mouse down on handles
+  [leftHandle, rightHandle].forEach((handle) => {
+    handle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      state.isResizing = true;
+      state.resizeHandle = handle.dataset.side;
+      state.startX = e.clientX;
+      state.initialLeft = parseFloat(selection.style.left);
+      state.initialWidth = parseFloat(selection.style.width);
+    });
+  });
+
+  // Mouse down on selection (for dragging)
+  selection.addEventListener("mousedown", (e) => {
+    if (e.target === selection) {
+      e.preventDefault();
+      state.isDragging = true;
+      state.startX = e.clientX;
+      state.initialLeft = parseFloat(selection.style.left);
+    }
+  });
+
+  // Mouse down on container (for creating new selection)
+  container.addEventListener("mousedown", (e) => {
+    if (e.target === container || e.target.parentNode === container) {
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percent = (x / rect.width) * 100;
+
+      // Set new selection at click point with minimum width
+      const minWidthPercent =
+        (DATE_FILTER_CONFIG.MIN_SELECTION_WIDTH / rect.width) * 100;
+      selection.style.left = Math.max(0, percent - minWidthPercent / 2) + "%";
+      selection.style.width = minWidthPercent + "%";
+
+      updateDateDisplayFromSelection(
+        selection,
+        state.minDate,
+        state.maxDate,
+        dateDisplay
+      );
+      triggerDateChange(state);
+    }
+  });
+
+  // Mouse move
+  document.addEventListener("mousemove", (e) => {
+    if (state.isResizing) {
+      handleResize(e, container, selection, state, dateDisplay);
+    } else if (state.isDragging) {
+      handleDrag(e, container, selection, state, dateDisplay);
+    }
+  });
+
+  // Mouse up
+  document.addEventListener("mouseup", () => {
+    state.isDragging = false;
+    state.isResizing = false;
+    state.resizeHandle = null;
+  });
+}
+
+/**
+ * Handles resize interactions
+ * @param {MouseEvent} e - Mouse event
+ * @param {HTMLElement} container - Container element
+ * @param {HTMLElement} selection - Selection element
+ * @param {Object} state - Scrubber state
+ * @param {HTMLElement} dateDisplay - Date display element
+ */
+function handleResize(e, container, selection, state, dateDisplay) {
+  const rect = container.getBoundingClientRect();
+  const deltaX = e.clientX - state.startX;
+  const deltaPercent = (deltaX / rect.width) * 100;
+
+  if (state.resizeHandle === "left") {
+    const newLeft = Math.max(0, state.initialLeft + deltaPercent);
+    const newWidth = state.initialWidth - deltaPercent;
+    const minWidthPercent =
+      (DATE_FILTER_CONFIG.MIN_SELECTION_WIDTH / rect.width) * 100;
+
+    if (newWidth >= minWidthPercent) {
+      selection.style.left = newLeft + "%";
+      selection.style.width = newWidth + "%";
+    }
+  } else if (state.resizeHandle === "right") {
+    const newWidth = Math.max(
+      (DATE_FILTER_CONFIG.MIN_SELECTION_WIDTH / rect.width) * 100,
+      state.initialWidth + deltaPercent
+    );
+    const maxLeft = 100 - newWidth;
+
+    if (state.initialLeft <= maxLeft) {
+      selection.style.width = newWidth + "%";
+    }
+  }
+
+  updateDateDisplayFromSelection(
+    selection,
+    state.minDate,
+    state.maxDate,
+    dateDisplay
+  );
+  triggerDateChange(state);
+}
+
+/**
+ * Handles drag interactions
+ * @param {MouseEvent} e - Mouse event
+ * @param {HTMLElement} container - Container element
+ * @param {HTMLElement} selection - Selection element
+ * @param {Object} state - Scrubber state
+ * @param {HTMLElement} dateDisplay - Date display element
+ */
+function handleDrag(e, container, selection, state, dateDisplay) {
+  const rect = container.getBoundingClientRect();
+  const deltaX = e.clientX - state.startX;
+  const deltaPercent = (deltaX / rect.width) * 100;
+  const width = parseFloat(selection.style.width);
+
+  const newLeft = Math.max(
+    0,
+    Math.min(100 - width, state.initialLeft + deltaPercent)
+  );
+  selection.style.left = newLeft + "%";
+
+  updateDateDisplayFromSelection(
+    selection,
+    state.minDate,
+    state.maxDate,
+    dateDisplay
+  );
+  triggerDateChange(state);
+}
+
+/**
+ * Updates date display from current selection position
+ * @param {HTMLElement} selection - Selection element
+ * @param {Date} minDate - Minimum date
+ * @param {Date} maxDate - Maximum date
+ * @param {HTMLElement} dateDisplay - Date display element
+ */
+function updateDateDisplayFromSelection(
+  selection,
+  minDate,
+  maxDate,
+  dateDisplay
+) {
+  const { startDate, endDate } = getCurrentDateRange(
+    selection,
+    minDate,
+    maxDate
+  );
+  updateDateDisplay(dateDisplay, startDate, endDate);
+}
+
+/**
+ * Gets the current date range from selection position
+ * @param {HTMLElement} selection - Selection element
+ * @param {Date} minDate - Minimum date
+ * @param {Date} maxDate - Maximum date
+ * @returns {Object} Object with startDate and endDate
+ */
+function getCurrentDateRange(selection, minDate, maxDate) {
+  const left = parseFloat(selection.style.left);
+  const width = parseFloat(selection.style.width);
+
+  const totalMs = maxDate.getTime() - minDate.getTime();
+  const startMs = minDate.getTime() + (left / 100) * totalMs;
+  const endMs = minDate.getTime() + ((left + width) / 100) * totalMs;
+
+  var ret = {
+    startDate: new Date(startMs),
+    endDate: new Date(endMs),
+  };
+  console.log(startMs, endMs, ret);
+
+  return ret;
+}
+
+/**
+ * Sets the date range programmatically
+ * @param {HTMLElement} selection - Selection element
+ * @param {Date} startDate - Start date
+ * @param {Date} endDate - End date
+ * @param {Date} minDate - Minimum date
+ * @param {Date} maxDate - Maximum date
+ * @param {HTMLElement} dateDisplay - Date display element
+ */
+function setDateRange(
+  selection,
+  startDate,
+  endDate,
+  minDate,
+  maxDate,
+  dateDisplay
+) {
+  const totalMs = maxDate.getTime() - minDate.getTime();
+  const startMs = startDate.getTime() - minDate.getTime();
+  const endMs = endDate.getTime() - minDate.getTime();
+
+  const startPercent = (startMs / totalMs) * 100;
+  const endPercent = (endMs / totalMs) * 100;
+
+  selection.style.left = startPercent + "%";
+  selection.style.width = endPercent - startPercent + "%";
+
+  updateDateDisplay(dateDisplay, startDate, endDate);
+}
+
+/**
+ * Triggers the date change callback
+ * @param {Object} state - Scrubber state
+ */
+function triggerDateChange(state) {
+  if (state.onDateChange) {
+    // Debounce the callback to avoid too frequent updates
+    clearTimeout(state.changeTimeout);
+    state.changeTimeout = setTimeout(() => {
+      state.onDateChange();
+    }, 100);
+  }
+}
+
+/**
+ * Formats a date for short display
+ * @param {Date} date - Date to format
+ * @returns {string} Formatted date string
+ */
+function formatDateShort(date) {
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+/**
+ * Formats a date for long display
+ * @param {Date} date - Date to format
+ * @returns {string} Formatted date string
+ */
+function formatDateLong(date) {
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/**
+ * Creates the reset button
+ * @returns {HTMLElement} Reset button element
+ */
+function createResetButton() {
+  const button = document.createElement("button");
+  button.textContent = "Reset to Full Range";
+  button.id = "reset-date-filter";
+  Object.assign(button.style, {
+    padding: "8px 16px",
+    backgroundColor: "#6c757d",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "bold",
+    marginTop: "10px",
+  });
+
+  button.addEventListener("mouseenter", () => {
+    button.style.backgroundColor = "#5a6268";
+  });
+
+  button.addEventListener("mouseleave", () => {
+    button.style.backgroundColor = "#6c757d";
+  });
+
+  return button;
+}
+
+/**
+ * Gets filtered data based on date range
+ * @param {Date} startDate - Start date
+ * @param {Date} endDate - End date
+ * @returns {Object} Filtered data object
+ */
+function getFilteredData(startDate, endDate) {
+  const originalData = window.dateFilterControls.originalData;
+  const filteredEntries = {};
+
+  console.log(originalData);
+
+  Object.keys(originalData.entries).forEach((key) => {
+    filteredEntries[key] = filterEntriesByDateRange(
+      originalData.entries[key],
+      startDate,
+      endDate
+    );
+  });
+
+  console.log(filteredEntries);
+
+  return filteredEntries;
+}
+
+/**
+ * Applies the date filter and re-renders charts
+ */
+function applyDateFilter() {
+  const controls = window.dateFilterControls;
+  const { startDate, endDate } = controls.scrubber.getDateRange();
+
+  // Get filtered data
+  const filteredData = getFilteredData(startDate, endDate);
+
+  // Prepare new datasets
+  const newDataSets = Object.keys(filteredData).map((name) => ({
+    name,
+    dataSet: collectBenchesPerTestCase(filteredData[name]),
+  }));
+
+  // Clear existing charts
+  clearCharts();
+
+  // Re-render with filtered data
+  renderAllCharts(newDataSets);
+}
+
+/**
+ * Resets the date filter to show all data
+ */
+function resetDateFilter() {
+  const controls = window.dateFilterControls;
+
+  // Reset scrubber to full range
+  controls.scrubber.setDateRange(controls.minDate, controls.maxDate);
+
+  // Apply filter with full range
+  applyDateFilter();
+}
+
+/**
+ * Clears all existing charts
+ */
+function clearCharts() {
+  // Destroy existing Chart.js instances
+  if (window.globalCharts) {
+    window.globalCharts.forEach((chart) => {
+      chart.destroy();
+    });
+    window.globalCharts = [];
+  }
+
+  // Clear the main container content
+  const main = document.getElementById("main");
+  if (main) {
+    main.innerHTML = "";
+  }
 }
 
 // =============================================================================
@@ -377,13 +1240,13 @@ function renderGraph(parent, name, dataset) {
   const data = {
     labels: dataset[0].map((d) => d.commit.id.slice(0, 7)),
     datasets: dataset.map((d) => ({
-      label: d[0].bench.name,
+      label: d[0].bench.simplifiedName,
       data: d.map((d) => ({
         y: d.bench.value,
         x: d.commit.id.slice(0, 7),
       })),
-      borderColor: IMPLEMENTATION_COLORS[d[0].bench.name],
-      backgroundColor: IMPLEMENTATION_COLORS[d[0].bench.name] + "60", // Add alpha
+      borderColor: IMPLEMENTATION_COLORS[d[0].bench.simplifiedName],
+      backgroundColor: IMPLEMENTATION_COLORS[d[0].bench.simplifiedName] + "60", // Add alpha
     })),
   };
 
@@ -850,7 +1713,7 @@ function renderBenchmarkSet(name, benchSet, main) {
   for (const [benchName, benches] of groupBy(benchSet.entries(), function (k) {
     const match = k[0].match(benchmarkRegex);
     if (match) {
-      k[1][0].bench.name = match[1];
+      k[1][0].bench.simplifiedName = match[1];
       allImplementations.add(match[1]);
       return match[2];
     }
@@ -879,7 +1742,7 @@ function renderBenchmarkSet(name, benchSet, main) {
   for (const [benchName, benches] of groupBy(benchSet.entries(), function (k) {
     const match = k[0].match(benchmarkRegex);
     if (match) {
-      k[1][0].bench.name = match[1];
+      k[1][0].bench.simplifiedName = match[1];
       return match[2];
     }
     return k[0]; // fallback
