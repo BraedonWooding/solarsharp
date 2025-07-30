@@ -4,6 +4,7 @@ const implementationColors = {
   NLuaImplementation: "#000080",
   NeoImplementation: "#dea584",
   SolarSharpImplementation: "#3572a5",
+  LuaCSharpImplementation: "#b07219",
   _: "#333333",
 };
 
