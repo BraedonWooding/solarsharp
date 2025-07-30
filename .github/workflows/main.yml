@@ -5,7 +5,7 @@ name: Benchmark Charts
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: write
@@ -14,7 +14,7 @@ permissions:
 concurrency:
   group: concurrency_token_benchmark_charts
   cancel-in-progress: false
-  
+
 jobs:
   benchmark:
     name: Performance regression check
@@ -43,10 +43,10 @@ jobs:
           key: ${{ runner.os }}-benchmark
       # Run `github-action-benchmark` action
       - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@v1
+        uses: BraedonWooding/github-action-benchmark@master
         with:
           # What benchmark tool the output.txt came from
-          tool: 'benchmarkdotnet'
+          tool: "benchmarkdotnet"
           # Where the output from the benchmark tool is stored
           output-file-path: Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
           # Access token to deploy GitHub Pages branch
