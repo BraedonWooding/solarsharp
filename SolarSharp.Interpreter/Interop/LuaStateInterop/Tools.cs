@@ -57,7 +57,7 @@ using System.Text.RegularExpressions;
 
 namespace SolarSharp.Interpreter.Interop.LuaStateInterop;
 
-internal static class Tools
+public static partial class Tools
 {
     #region Public Methods
 
@@ -302,8 +302,7 @@ internal static class Tools
         Destination.Write(sprintf(Format, Parameters));
     }
 
-    internal static Regex r = new(@"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])",
-        RegexOptions.Compiled);
+    internal static Regex r = GetRegex();
 
     #endregion
 
@@ -807,6 +806,9 @@ internal static class Tools
 
         return w;
     }
+
+    [GeneratedRegex(@"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])", RegexOptions.Compiled)]
+    private static partial Regex GetRegex();
 
     #endregion
 
