@@ -55,11 +55,11 @@ function init() {
   // Initialize date filter and get initial datasets
   const { filteredData, dateRange } = initializeDateFilter(data);
 
-  // Create tabs for switching between Time and Allocations view
-  const tabsContainer = createMetricTabs(main);
-
   // Create shared legend container
   const legendContainer = createSharedLegend(main);
+
+  // Create tabs for switching between Time and Allocations view
+  const tabsContainer = createMetricTabs(main);
 
   // Add "Show Only SolarSharp" button
   const showOnlyButton = createSolarSharpToggleButton(legendContainer);
@@ -178,8 +178,10 @@ function initializeMachineInfo(machineInfo) {
   const infoItems = [
     { label: "Operating System", value: machineInfo.os },
     { label: "Processor", value: machineInfo.processor },
-    { label: "Physical Cores", value: machineInfo.physicalCores },
-    { label: "Logical Cores", value: machineInfo.logicalCores },
+    {
+      label: "Physical/Logical Cores",
+      value: machineInfo.physicalCores + " / " + machineInfo.logicalCores,
+    },
     { label: "Architecture", value: machineInfo.architecture },
     { label: "Runtime Version", value: machineInfo.runtimeVersion },
     {
@@ -402,16 +404,7 @@ function createMetricTabs(main) {
     switchMetric("allocations", allocationsTab, [timeTab])
   );
 
-  // Insert tabs before main content
-  const machineInfo = document.getElementById("machine-info");
-  const gridContainer = document.querySelector(".benchmark-grid");
-  if (machineInfo && machineInfo.nextSibling) {
-    machineInfo.parentNode.insertBefore(tabsContainer, machineInfo.nextSibling);
-  } else if (gridContainer) {
-    gridContainer.parentNode.insertBefore(tabsContainer, gridContainer);
-  } else {
-    main.parentNode.insertBefore(tabsContainer, main);
-  }
+  main.parentNode.insertBefore(tabsContainer, main);
 
   return tabsContainer;
 }

@@ -53,14 +53,14 @@ export function initializeDateFilter(data) {
     originalData: data,
   };
 
-  // Set up automatic filtering when scrubber changes
+  // Set up automatic filtering when timeline changes
   scrubber.onDateChange(applyDateFilter);
 
   // Set up event listeners
   resetButton.addEventListener("click", resetDateFilter);
 
   // Apply initial filter
-  const filteredData = getFilteredData(minDate, maxDate);
+  const filteredData = getFilteredData();
 
   return { filteredData, dateRange: { minDate, maxDate } };
 }
@@ -77,17 +77,8 @@ function createDateFilterContainer() {
     container.id = "date-filter";
     container.className = "date-filter-section";
 
-    // Insert after machine info or header
-    const machineInfo = document.getElementById("machine-info");
     const main = document.getElementById("main");
-
-    if (machineInfo && machineInfo.nextSibling) {
-      machineInfo.parentNode.insertBefore(container, machineInfo.nextSibling);
-    } else if (main) {
-      main.parentNode.insertBefore(container, main);
-    } else {
-      document.body.insertBefore(container, document.body.firstChild);
-    }
+    main.parentNode.insertBefore(container, main);
   }
 
   // Style the container
@@ -103,7 +94,7 @@ function createDateFilterContainer() {
 
   // Add title
   const title = document.createElement("h3");
-  title.textContent = "Date Range Filter:";
+  title.textContent = "Commit Range Filter:";
   Object.assign(title.style, {
     margin: "0 0 15px 0",
     fontSize: "1.1em",
@@ -115,13 +106,13 @@ function createDateFilterContainer() {
 }
 
 /**
- * Creates an interactive date scrubber component
+ * Creates an enhanced timeline with commit cards
  * @param {Date} minDate - Minimum date
  * @param {Date} maxDate - Maximum date
  * @param {Date} initialStart - Initial start date
  * @param {Date} initialEnd - Initial end date
  * @param {Array} commitPoints - Array of commit point objects
- * @returns {Object} Scrubber object with container and methods
+ * @returns {Object} Timeline object with container and methods
  */
 function createDateScrubber(
   minDate,
@@ -134,752 +125,346 @@ function createDateScrubber(
   Object.assign(container.style, {
     position: "relative",
     width: "100%",
-    height: DATE_FILTER_CONFIG.SCRUBBER_HEIGHT + "px",
-    backgroundColor: "#f8f9fa",
+    minHeight: "50px",
+    backgroundColor: "#fff",
     border: "1px solid #dee2e6",
-    borderRadius: "4px",
-    cursor: "crosshair",
+    borderRadius: "8px",
     marginBottom: "15px",
   });
 
-  // Create timeline background
-  const timeline = document.createElement("div");
-  Object.assign(timeline.style, {
-    position: "absolute",
-    top: "0",
-    left: "0",
-    right: "0",
-    bottom: "0",
-    background:
-      "linear-gradient(to right, #e9ecef 0%, #dee2e6 50%, #e9ecef 100%)",
+  // Create title
+  const title = document.createElement("div");
+  title.textContent = "Select Commit Range";
+  Object.assign(title.style, {
+    fontSize: "14px",
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: "15px",
+    textAlign: "center",
   });
-  container.appendChild(timeline);
+  container.appendChild(title);
 
-  // Create commit points
-  if (commitPoints.length > 0) {
-    const commitPointsContainer = createCommitPoints(
-      minDate,
-      maxDate,
-      commitPoints
-    );
-    container.appendChild(commitPointsContainer);
-  }
-
-  // Create date labels
-  const dateLabels = createDateLabels(minDate, maxDate);
-  container.appendChild(dateLabels);
-
-  // Find initial commit points for snapping
-  const initialStartCommit = findNearestCommitPoint(commitPoints, initialStart);
-  const initialEndCommit = findNearestCommitPoint(commitPoints, initialEnd);
-
-  // Use commit dates if available, otherwise use original dates
-  const startDate = initialStartCommit ? initialStartCommit.date : initialStart;
-  const endDate = initialEndCommit ? initialEndCommit.date : initialEnd;
-
-  // Calculate initial selection position using equally-spaced commits
-  let startPercent, endPercent;
-
-  if (commitPoints.length > 0 && initialStartCommit && initialEndCommit) {
-    // Use commit positions for equally-spaced layout
-    const startCommitIndex = findCommitIndex(commitPoints, initialStartCommit);
-    const endCommitIndex = findCommitIndex(commitPoints, initialEndCommit);
-
-    startPercent = getCommitPosition(startCommitIndex, commitPoints.length) - 5;
-    endPercent = getCommitPosition(endCommitIndex, commitPoints.length) + 5;
-
-    // Ensure proper order (start <= end)
-    if (startPercent > endPercent) {
-      [startPercent, endPercent] = [endPercent, startPercent];
-    }
-  } else {
-    // Fallback to time-based positioning if no commits
-    const totalMs = maxDate.getTime() - minDate.getTime();
-    const startMs = startDate.getTime() - minDate.getTime();
-    const endMs = endDate.getTime() - minDate.getTime();
-
-    startPercent = (startMs / totalMs) * 100;
-    endPercent = (endMs / totalMs) * 100;
-  }
-
-  // Create selection area
-  const selection = document.createElement("div");
-  Object.assign(selection.style, {
-    position: "absolute",
-    top: "0",
-    bottom: "0",
-    left: startPercent + "%",
-    width: Math.max(endPercent - startPercent, 10) + "%", // Minimum 10% width
-    backgroundColor: "rgba(53, 114, 165, 0.3)",
-    border: "2px solid #3572a5",
-    cursor: "move",
-    zIndex: "2",
+  // Create timeline line
+  const timelineLine = document.createElement("div");
+  Object.assign(timelineLine.style, {
+    position: "relative",
+    width: "100%",
+    height: "4px",
+    backgroundColor: "#dee2e6",
+    borderRadius: "2px",
+    margin: "20px 0",
   });
-  container.appendChild(selection);
+  container.appendChild(timelineLine);
 
-  // Create resize handles
-  const leftHandle = createResizeHandle("left");
-  const rightHandle = createResizeHandle("right");
-  selection.appendChild(leftHandle);
-  selection.appendChild(rightHandle);
-
-  // Create date display
-  const dateDisplay = createDateDisplay(startDate, endDate);
-  container.appendChild(dateDisplay);
-
-  // Set up interaction handlers
-  const scrubberState = {
-    isDragging: false,
-    isResizing: false,
-    resizeHandle: null,
-    startX: 0,
-    initialLeft: 0,
-    initialWidth: 0,
+  // State for tracking selected commits
+  const timelineState = {
+    selectedCommits: new Set(),
+    commitElements: new Map(),
     minDate,
     maxDate,
     commitPoints,
     onDateChange: null,
   };
 
-  setupScrubberInteractions(
-    container,
-    selection,
-    leftHandle,
-    rightHandle,
-    dateDisplay,
-    scrubberState
-  );
+  // Create commit points along the timeline
+  if (commitPoints.length > 0) {
+    createCommitCardsOnTimeline(timelineLine, commitPoints, timelineState);
+  }
+
+  // Create selection display
+  const selectionDisplay = document.createElement("div");
+  Object.assign(selectionDisplay.style, {
+    textAlign: "center",
+    fontSize: "12px",
+    color: "#495057",
+    fontWeight: "bold",
+    marginTop: "10px",
+  });
+  container.appendChild(selectionDisplay);
+
+  // Initialize with all commits selected
+  commitPoints.forEach((commit) => {
+    timelineState.selectedCommits.add(commit.id);
+    updateCommitPointStyle(timelineState.commitElements.get(commit.id), true);
+  });
+  updateSelectionDisplay(selectionDisplay, timelineState);
 
   return {
     container,
-    getDateRange: () => getCurrentDateRange(selection, minDate, maxDate),
+    getDateRange: () => getSelectedDateRange(timelineState),
     setDateRange: (start, end) =>
-      setDateRange(
-        selection,
-        start,
-        end,
-        minDate,
-        maxDate,
-        dateDisplay,
-        commitPoints
-      ),
+      setSelectedDateRange(start, end, timelineState, selectionDisplay),
     onDateChange: (callback) => {
-      scrubberState.onDateChange = callback;
+      timelineState.onDateChange = callback;
     },
   };
 }
 
 /**
- * Creates commit point indicators on the timeline with equal spacing
- * @param {Date} minDate - Minimum date
- * @param {Date} maxDate - Maximum date
+ * Creates commit cards along the timeline
+ * @param {HTMLElement} timelineLine - The timeline line element
  * @param {Array} commitPoints - Array of commit objects
- * @returns {HTMLElement} Commit points container
+ * @param {Object} timelineState - Timeline state object
  */
-function createCommitPoints(minDate, maxDate, commitPoints) {
-  const commitPointsContainer = document.createElement("div");
-  Object.assign(commitPointsContainer.style, {
-    position: "absolute",
-    top: "0",
-    left: "0",
-    right: "0",
-    bottom: "0",
-    pointerEvents: "none",
-    zIndex: "1",
-  });
+function createCommitCardsOnTimeline(
+  timelineLine,
+  commitPoints,
+  timelineState
+) {
+  if (commitPoints.length === 0) return;
 
-  if (commitPoints.length === 0) {
-    return commitPointsContainer;
-  }
-
-  // Calculate equal spacing for commits with padding on sides
-  const padding = DATE_FILTER_CONFIG.COMMIT_PADDING_PERCENT || 10;
-  const usableAreaStart = padding; // Padding from left
-  const usableAreaEnd = 100 - padding; // Padding from right
-  const usableWidth = usableAreaEnd - usableAreaStart; // Usable width
-
-  // Handle single commit case
+  // Calculate positions for commits along the timeline
+  const padding = 10; // 10% padding on each side
+  const usableWidth = 100 - padding * 2;
   const spacing =
     commitPoints.length === 1 ? 0 : usableWidth / (commitPoints.length - 1);
 
   commitPoints.forEach((commit, index) => {
     const positionPercent =
-      commitPoints.length === 1
-        ? 50 // Center single commit
-        : usableAreaStart + spacing * index; // Start from padding with spacing
+      commitPoints.length === 1 ? 50 : padding + spacing * index;
 
-    // Create commit point dot
+    // Create commit point
     const commitPoint = document.createElement("div");
     Object.assign(commitPoint.style, {
       position: "absolute",
-      left: positionPercent + "%",
-      top: "25%",
-      width: "12px",
-      height: "12px",
+      left: `${positionPercent}%`,
+      top: "-9px",
+      width: "16px",
+      height: "16px",
       backgroundColor: "#3572a5",
       borderRadius: "50%",
-      transform: "translate(-50%, -50%)",
-      border: "2px solid #fff",
-      boxShadow: "0 0 3px rgba(0,0,0,0.3)",
-      zIndex: "2",
-    });
-
-    // Add tooltip with commit info
-    commitPoint.title = `${commit.id.slice(0, 7)} - ${
-      commit.message.split("\n")[0]
-    }`;
-
-    // Create date label below the commit point
-    const dateLabel = document.createElement("div");
-    dateLabel.textContent = formatDateShort(commit.date);
-    Object.assign(dateLabel.style, {
-      position: "absolute",
-      left: positionPercent + "%",
-      top: "60%",
-      transform: "translate(-50%, 0)",
-      fontSize: "10px",
-      color: "#495057",
-      fontWeight: "bold",
-      textAlign: "center",
-      whiteSpace: "nowrap",
-      zIndex: "1",
-    });
-
-    // Create a vertical line connecting the dot to the label
-    const connectingLine = document.createElement("div");
-    Object.assign(connectingLine.style, {
-      position: "absolute",
-      left: positionPercent + "%",
-      top: "35%",
-      width: "1px",
-      height: "20%",
-      backgroundColor: "#6c757d",
       transform: "translateX(-50%)",
-      zIndex: "1",
+      cursor: "pointer",
+      border: "3px solid #fff",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+      transition: "all 0.2s ease",
+      zIndex: "3",
     });
 
-    commitPointsContainer.appendChild(commitPoint);
-    commitPointsContainer.appendChild(connectingLine);
-    commitPointsContainer.appendChild(dateLabel);
-  });
+    // Create commit card (initially hidden)
+    const commitCard = createCommitCard(commit);
+    Object.assign(commitCard.style, {
+      position: "absolute",
+      left: `${positionPercent}%`,
+      top: "30px",
+      transform: "translateX(-50%)",
+      display: "none",
+      zIndex: "10",
+    });
 
-  return commitPointsContainer;
-}
+    // Add hover effects
+    commitPoint.addEventListener("mouseenter", () => {
+      commitCard.style.display = "block";
+      commitPoint.style.backgroundColor = "#2c5aa0";
+      commitPoint.style.transform = "translateX(-50%) scale(1.2)";
+    });
 
-/**
- * Finds the nearest commit point to a given position percentage (for equally-spaced commits)
- * @param {Array} commitPoints - Array of commit objects
- * @param {number} positionPercent - Position percentage (0-100)
- * @returns {Object|null} Nearest commit object or null if no commits
- */
-function findNearestCommitByPosition(commitPoints, positionPercent) {
-  if (!commitPoints || commitPoints.length === 0) {
-    return null;
-  }
+    commitPoint.addEventListener("mouseleave", () => {
+      commitCard.style.display = "none";
+      updateCommitPointStyle(
+        commitPoint,
+        timelineState.selectedCommits.has(commit.id)
+      );
+    });
 
-  if (commitPoints.length === 1) {
-    return commitPoints[0];
-  }
-
-  const padding = DATE_FILTER_CONFIG.COMMIT_PADDING_PERCENT || 10;
-  const usableAreaStart = padding;
-  const usableAreaEnd = 100 - padding;
-  const usableWidth = usableAreaEnd - usableAreaStart;
-  const spacing = usableWidth / (commitPoints.length - 1);
-
-  let nearestIndex = 0;
-  let minDistance = Math.abs(positionPercent - usableAreaStart);
-
-  for (let i = 0; i < commitPoints.length; i++) {
-    const commitPosition = usableAreaStart + spacing * i;
-    const distance = Math.abs(positionPercent - commitPosition);
-    if (distance < minDistance) {
-      minDistance = distance;
-      nearestIndex = i;
-    }
-  }
-
-  return commitPoints[nearestIndex];
-}
-
-/**
- * Gets the position percentage for a commit index
- * @param {number} commitIndex - Index of the commit
- * @param {number} totalCommits - Total number of commits
- * @returns {number} Position percentage
- */
-function getCommitPosition(commitIndex, totalCommits) {
-  if (totalCommits === 1) {
-    return 50; // Center single commit
-  }
-
-  const padding = DATE_FILTER_CONFIG.COMMIT_PADDING_PERCENT || 10;
-  const usableAreaStart = padding;
-  const usableAreaEnd = 100 - padding;
-  const usableWidth = usableAreaEnd - usableAreaStart;
-  const spacing = usableWidth / (totalCommits - 1);
-  return usableAreaStart + spacing * commitIndex;
-}
-
-/**
- * Finds the commit index for a given commit
- * @param {Array} commitPoints - Array of commit objects
- * @param {Object} targetCommit - Target commit object
- * @returns {number} Index of the commit or -1 if not found
- */
-function findCommitIndex(commitPoints, targetCommit) {
-  return commitPoints.findIndex((commit) => commit.id === targetCommit.id);
-}
-
-/**
- * Snaps a position percentage to the nearest commit position
- * @param {Array} commitPoints - Array of commit objects
- * @param {number} positionPercent - Position percentage to snap
- * @returns {number} Snapped position percentage
- */
-function snapPositionToNearestCommit(commitPoints, positionPercent) {
-  if (!commitPoints || commitPoints.length === 0) {
-    return positionPercent;
-  }
-
-  const nearestCommit = findNearestCommitByPosition(
-    commitPoints,
-    positionPercent
-  );
-  if (!nearestCommit) {
-    return positionPercent;
-  }
-
-  const commitIndex = findCommitIndex(commitPoints, nearestCommit);
-  return getCommitPosition(commitIndex, commitPoints.length);
-}
-
-/**
- * Finds the nearest commit point to a given date
- * @param {Array} commitPoints - Array of commit objects
- * @param {Date} targetDate - Target date to find nearest commit for
- * @returns {Object|null} Nearest commit object or null if no commits
- */
-function findNearestCommitPoint(commitPoints, targetDate) {
-  if (!commitPoints || commitPoints.length === 0) {
-    return null;
-  }
-
-  let nearest = commitPoints[0];
-  let minDifference = Math.abs(targetDate.getTime() - nearest.date.getTime());
-
-  for (const commit of commitPoints) {
-    const difference = Math.abs(targetDate.getTime() - commit.date.getTime());
-    if (difference < minDifference) {
-      minDifference = difference;
-      nearest = commit;
-    }
-  }
-
-  return nearest;
-}
-
-/**
- * Snaps a date to the nearest commit point
- * @param {Array} commitPoints - Array of commit objects
- * @param {Date} date - Date to snap
- * @returns {Date} Snapped date
- */
-function snapToNearestCommit(commitPoints, date) {
-  if (!commitPoints || commitPoints.length === 0) {
-    return date;
-  }
-  const nearestCommit = findNearestCommitPoint(commitPoints, date);
-  return nearestCommit ? nearestCommit.date : date;
-}
-
-/**
- * Creates date labels for the timeline (simplified since we show dates under commits)
- * @param {Date} minDate - Minimum date
- * @param {Date} maxDate - Maximum date
- * @returns {HTMLElement} Date labels container
- */
-function createDateLabels(minDate, maxDate) {
-  const labelsContainer = document.createElement("div");
-  Object.assign(labelsContainer.style, {
-    position: "absolute",
-    top: "8px",
-    left: "15px",
-    right: "15px",
-    display: "flex",
-    justifyContent: "center",
-    fontSize: "14px",
-    color: "#6c757d",
-    pointerEvents: "none",
-    zIndex: "1",
-    fontWeight: "bold",
-  });
-
-  const rangeLabel = document.createElement("span");
-  rangeLabel.textContent = "Select commit range by clicking and dragging";
-  labelsContainer.appendChild(rangeLabel);
-
-  return labelsContainer;
-}
-
-/**
- * Creates a resize handle
- * @param {string} side - 'left' or 'right'
- * @returns {HTMLElement} Handle element
- */
-function createResizeHandle(side) {
-  const handle = document.createElement("div");
-  Object.assign(handle.style, {
-    position: "absolute",
-    top: "0",
-    bottom: "0",
-    width: DATE_FILTER_CONFIG.HANDLE_WIDTH + "px",
-    backgroundColor: "#3572a5",
-    cursor: side === "left" ? "w-resize" : "e-resize",
-    zIndex: "3",
-  });
-
-  if (side === "left") {
-    handle.style.left = -DATE_FILTER_CONFIG.HANDLE_WIDTH / 2 + "px";
-  } else {
-    handle.style.right = -DATE_FILTER_CONFIG.HANDLE_WIDTH / 2 + "px";
-  }
-
-  handle.dataset.side = side;
-  return handle;
-}
-
-/**
- * Creates the date display element
- * @param {Date} startDate - Start date
- * @param {Date} endDate - End date
- * @returns {HTMLElement} Date display element
- */
-function createDateDisplay(startDate, endDate) {
-  const display = document.createElement("div");
-  Object.assign(display.style, {
-    position: "absolute",
-    bottom: "-25px",
-    left: "0",
-    right: "0",
-    textAlign: "center",
-    fontSize: "12px",
-    color: "#495057",
-    fontWeight: "bold",
-  });
-
-  updateDateDisplay(display, startDate, endDate);
-  return display;
-}
-
-/**
- * Updates the date display text
- * @param {HTMLElement} display - Display element
- * @param {Date} startDate - Start date
- * @param {Date} endDate - End date
- */
-function updateDateDisplay(display, startDate, endDate) {
-  display.textContent = `${formatDateLong(startDate)} — ${formatDateLong(
-    endDate
-  )}`;
-}
-
-/**
- * Sets up all scrubber interactions
- * @param {HTMLElement} container - Container element
- * @param {HTMLElement} selection - Selection element
- * @param {HTMLElement} leftHandle - Left resize handle
- * @param {HTMLElement} rightHandle - Right resize handle
- * @param {HTMLElement} dateDisplay - Date display element
- * @param {Object} state - Scrubber state object
- */
-function setupScrubberInteractions(
-  container,
-  selection,
-  leftHandle,
-  rightHandle,
-  dateDisplay,
-  state
-) {
-  // Mouse down on handles
-  [leftHandle, rightHandle].forEach((handle) => {
-    handle.addEventListener("mousedown", (e) => {
-      e.preventDefault();
+    // Add click handler for selection
+    commitPoint.addEventListener("click", (e) => {
       e.stopPropagation();
-      state.isResizing = true;
-      state.resizeHandle = handle.dataset.side;
-      state.startX = e.clientX;
-      state.initialLeft = parseFloat(selection.style.left);
-      state.initialWidth = parseFloat(selection.style.width);
+      toggleCommitSelection(commit, timelineState);
+      updateCommitPointStyle(
+        commitPoint,
+        timelineState.selectedCommits.has(commit.id)
+      );
+      updateSelectionDisplay(timelineState.selectionDisplay, timelineState);
+      triggerTimelineChange(timelineState);
     });
-  });
 
-  // Mouse down on selection (for dragging)
-  selection.addEventListener("mousedown", (e) => {
-    if (e.target === selection) {
-      e.preventDefault();
-      state.isDragging = true;
-      state.startX = e.clientX;
-      state.initialLeft = parseFloat(selection.style.left);
-    }
-  });
+    // Store reference to commit element
+    timelineState.commitElements.set(commit.id, commitPoint);
 
-  // Mouse down on container (for creating new selection)
-  container.addEventListener("mousedown", (e) => {
-    if (e.target === container || e.target.parentNode === container) {
-      const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const percent = (x / rect.width) * 100;
+    // Add to timeline
+    timelineLine.appendChild(commitPoint);
+    timelineLine.appendChild(commitCard);
 
-      // Snap to nearest commit position instead of date
-      const snappedPercent = snapPositionToNearestCommit(
-        state.commitPoints,
-        percent
-      );
-
-      // Set new selection at snapped point with minimum width
-      const minWidthPercent = Math.max(
-        (DATE_FILTER_CONFIG.MIN_SELECTION_WIDTH / rect.width) * 100,
-        10 // Minimum 10% width
-      );
-
-      selection.style.left =
-        Math.max(0, snappedPercent - minWidthPercent / 2) + "%";
-      selection.style.width = minWidthPercent + "%";
-
-      updateDateDisplayFromSelection(
-        selection,
-        state.minDate,
-        state.maxDate,
-        dateDisplay
-      );
-      triggerDateChange(state);
-    }
-  });
-
-  // Mouse move
-  document.addEventListener("mousemove", (e) => {
-    if (state.isResizing) {
-      handleResize(e, container, selection, state, dateDisplay);
-    }
-  });
-
-  // Mouse up
-  document.addEventListener("mouseup", () => {
-    state.isDragging = false;
-    state.isResizing = false;
-    state.resizeHandle = null;
+    // Set initial style
+    updateCommitPointStyle(
+      commitPoint,
+      timelineState.selectedCommits.has(commit.id)
+    );
   });
 }
 
 /**
- * Handles resize interactions
- * @param {MouseEvent} e - Mouse event
- * @param {HTMLElement} container - Container element
- * @param {HTMLElement} selection - Selection element
- * @param {Object} state - Scrubber state
- * @param {HTMLElement} dateDisplay - Date display element
+ * Creates a commit card with commit information
+ * @param {Object} commit - Commit object
+ * @returns {HTMLElement} Commit card element
  */
-function handleResize(e, container, selection, state, dateDisplay) {
-  const rect = container.getBoundingClientRect();
-  const deltaX = e.clientX - state.startX;
-  const deltaPercent = (deltaX / rect.width) * 100;
-  const minWidthPercent = Math.max(
-    (DATE_FILTER_CONFIG.MIN_SELECTION_WIDTH / rect.width) * 100,
-    10 // Minimum 10% width
-  );
+function createCommitCard(commit) {
+  const card = document.createElement("div");
+  Object.assign(card.style, {
+    backgroundColor: "#fff",
+    border: "1px solid #dee2e6",
+    borderRadius: "8px",
+    padding: "12px",
+    minWidth: "200px",
+    maxWidth: "300px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+    fontSize: "12px",
+    lineHeight: "1.4",
+  });
 
-  if (state.resizeHandle === "left") {
-    const newLeft = Math.max(0, state.initialLeft + deltaPercent);
-    const newWidth = state.initialWidth - deltaPercent;
+  // Commit ID and short message
+  const header = document.createElement("div");
+  Object.assign(header.style, {
+    fontWeight: "bold",
+    color: "#3572a5",
+    marginBottom: "6px",
+  });
+  header.textContent = `${commit.id.slice(0, 7)} - ${commit.message
+    .split("\n")[0]
+    .slice(0, 50)}${commit.message.split("\n")[0].length > 50 ? "..." : ""}`;
 
-    if (newWidth >= minWidthPercent) {
-      // Snap to nearest commit position
-      const snappedLeft = snapPositionToNearestCommit(
-        state.commitPoints,
-        newLeft
-      );
-      const maxLeft = Math.max(
-        0,
-        parseFloat(selection.style.left) +
-          parseFloat(selection.style.width) -
-          minWidthPercent
-      );
+  // Date
+  const date = document.createElement("div");
+  Object.assign(date.style, {
+    color: "#6c757d",
+    fontSize: "11px",
+    marginBottom: "6px",
+  });
+  date.textContent = formatDateLong(commit.date);
 
-      const finalLeft = Math.min(snappedLeft - 5, maxLeft);
+  // Author
+  const author = document.createElement("div");
+  Object.assign(author.style, {
+    color: "#495057",
+    fontSize: "11px",
+  });
+  author.textContent = `By ${commit.author.name}`;
 
-      const finalWidth =
-        parseFloat(selection.style.left) +
-        parseFloat(selection.style.width) -
-        finalLeft;
+  card.appendChild(header);
+  card.appendChild(date);
+  card.appendChild(author);
 
-      selection.style.left = finalLeft + "%";
-      selection.style.width = finalWidth + "%";
-    }
-  } else if (state.resizeHandle === "right") {
-    const newWidth = Math.max(
-      minWidthPercent,
-      state.initialWidth + deltaPercent
-    );
-    const rightEdgePercent = state.initialLeft + newWidth;
+  return card;
+}
 
-    // Snap the right edge to nearest commit
-    const snappedRightPercent = snapPositionToNearestCommit(
-      state.commitPoints,
-      rightEdgePercent
-    );
-    const finalWidth = Math.max(
-      minWidthPercent,
-      snappedRightPercent - state.initialLeft + 5
-    );
-
-    if (state.initialLeft + finalWidth <= 100) {
-      selection.style.width = finalWidth + "%";
-    }
+/**
+ * Updates the visual style of a commit point based on selection state
+ * @param {HTMLElement} commitPoint - The commit point element
+ * @param {boolean} isSelected - Whether the commit is selected
+ */
+function updateCommitPointStyle(commitPoint, isSelected) {
+  if (isSelected) {
+    commitPoint.style.backgroundColor = "#3572a5";
+    commitPoint.style.borderColor = "#fff";
+    commitPoint.style.transform = "translateX(-50%) scale(1)";
+  } else {
+    commitPoint.style.backgroundColor = "#dee2e6";
+    commitPoint.style.borderColor = "#fff";
+    commitPoint.style.transform = "translateX(-50%) scale(0.8)";
   }
-
-  updateDateDisplayFromSelection(
-    selection,
-    state.minDate,
-    state.maxDate,
-    dateDisplay
-  );
-  triggerDateChange(state);
 }
 
 /**
- * Updates date display from current selection position
- * @param {HTMLElement} selection - Selection element
- * @param {Date} minDate - Minimum date
- * @param {Date} maxDate - Maximum date
- * @param {HTMLElement} dateDisplay - Date display element
+ * Toggles the selection state of a commit
+ * @param {Object} commit - Commit object
+ * @param {Object} timelineState - Timeline state object
  */
-function updateDateDisplayFromSelection(
-  selection,
-  minDate,
-  maxDate,
-  dateDisplay
-) {
-  const { startDate, endDate } = getCurrentDateRange(
-    selection,
-    minDate,
-    maxDate
-  );
-  updateDateDisplay(dateDisplay, startDate, endDate);
+function toggleCommitSelection(commit, timelineState) {
+  if (timelineState.selectedCommits.has(commit.id)) {
+    timelineState.selectedCommits.delete(commit.id);
+  } else {
+    timelineState.selectedCommits.add(commit.id);
+  }
 }
 
 /**
- * Gets the current date range from selection position
- * @param {HTMLElement} selection - Selection element
- * @param {Date} minDate - Minimum date
- * @param {Date} maxDate - Maximum date
+ * Updates the selection display text
+ * @param {HTMLElement} display - Display element
+ * @param {Object} timelineState - Timeline state object
+ */
+function updateSelectionDisplay(display, timelineState) {
+  // Store reference to display element
+  timelineState.selectionDisplay = display;
+
+  const selectedCount = timelineState.selectedCommits.size;
+  const totalCount = timelineState.commitPoints.length;
+
+  if (selectedCount === 0) {
+    display.textContent = "No commits selected";
+  } else if (selectedCount === totalCount) {
+    display.textContent = `All ${totalCount} commits selected`;
+  } else {
+    display.textContent = `${selectedCount} of ${totalCount} commits selected`;
+  }
+}
+
+/**
+ * Gets the date range from selected commits
+ * @param {Object} timelineState - Timeline state object
  * @returns {Object} Object with startDate and endDate
  */
-function getCurrentDateRange(selection, minDate, maxDate) {
-  const left = parseFloat(selection.style.left);
-  const width = parseFloat(selection.style.width);
-  const right = left + width;
-
-  // Get commit points from global state
-  const commitPoints = window.dateFilterControls?.commitPoints || [];
-
-  if (commitPoints.length === 0) {
-    // Fallback to time-based calculation if no commits
-    const totalMs = maxDate.getTime() - minDate.getTime();
-    const startMs = minDate.getTime() + (left / 100) * totalMs;
-    const endMs = minDate.getTime() + (right / 100) * totalMs;
-
+function getSelectedDateRange(timelineState) {
+  if (timelineState.selectedCommits.size === 0) {
     return {
-      startDate: new Date(startMs),
-      endDate: new Date(endMs),
+      startDate: timelineState.minDate,
+      endDate: timelineState.maxDate,
     };
   }
 
-  // Find commits at the left and right edges of selection
-  const startCommit = findNearestCommitByPosition(commitPoints, left);
-  const endCommit = findNearestCommitByPosition(commitPoints, right);
+  const selectedCommitObjects = timelineState.commitPoints.filter((commit) =>
+    timelineState.selectedCommits.has(commit.id)
+  );
 
-  const startDate = startCommit ? startCommit.date : minDate;
-  const endDate = endCommit ? endCommit.date : maxDate;
+  const dates = selectedCommitObjects.map((commit) => commit.date);
+  const minDate = new Date(Math.min(...dates));
+  const maxDate = new Date(Math.max(...dates));
 
   return {
-    startDate: startDate,
-    endDate: endDate,
+    startDate: minDate,
+    endDate: maxDate,
   };
 }
 
 /**
- * Sets the date range programmatically
- * @param {HTMLElement} selection - Selection element
+ * Sets the selected date range by selecting commits within the range
  * @param {Date} startDate - Start date
  * @param {Date} endDate - End date
- * @param {Date} minDate - Minimum date
- * @param {Date} maxDate - Maximum date
- * @param {HTMLElement} dateDisplay - Date display element
- * @param {Array} commitPoints - Array of commit points (optional)
+ * @param {Object} timelineState - Timeline state object
+ * @param {HTMLElement} display - Selection display element
  */
-function setDateRange(
-  selection,
-  startDate,
-  endDate,
-  minDate,
-  maxDate,
-  dateDisplay,
-  commitPoints = []
-) {
-  if (commitPoints.length > 0) {
-    // Find nearest commits for the dates
-    const startCommit = findNearestCommitPoint(commitPoints, startDate);
-    const endCommit = findNearestCommitPoint(commitPoints, endDate);
+function setSelectedDateRange(startDate, endDate, timelineState, display) {
+  // Clear current selection
+  timelineState.selectedCommits.clear();
 
-    if (startCommit && endCommit) {
-      // Use commit positions for equally-spaced layout
-      const startCommitIndex = findCommitIndex(commitPoints, startCommit);
-      const endCommitIndex = findCommitIndex(commitPoints, endCommit);
-
-      const startPercent = getCommitPosition(
-        startCommitIndex,
-        commitPoints.length
-      );
-      const endPercent = getCommitPosition(endCommitIndex, commitPoints.length);
-
-      // Ensure proper order (start <= end)
-      const finalStartPercent = Math.min(startPercent - 5, endPercent);
-      const finalEndPercent = Math.max(startPercent, endPercent + 5);
-
-      selection.style.left = finalStartPercent + "%";
-      selection.style.width =
-        Math.max(finalEndPercent - finalStartPercent, 10) + "%";
-
-      updateDateDisplay(dateDisplay, startCommit.date, endCommit.date);
-      return;
+  // Select commits within the date range
+  timelineState.commitPoints.forEach((commit) => {
+    if (commit.date >= startDate && commit.date <= endDate) {
+      timelineState.selectedCommits.add(commit.id);
     }
-  }
+  });
 
-  // Fallback to time-based positioning if no commits
-  const totalMs = maxDate.getTime() - minDate.getTime();
-  const startMs = startDate.getTime() - minDate.getTime();
-  const endMs = endDate.getTime() - minDate.getTime();
+  // Update visual states
+  timelineState.commitElements.forEach((element, commitId) => {
+    updateCommitPointStyle(
+      element,
+      timelineState.selectedCommits.has(commitId)
+    );
+  });
 
-  const startPercent = (startMs / totalMs) * 100;
-  const endPercent = (endMs / totalMs) * 100;
-
-  selection.style.left = startPercent + "%";
-  selection.style.width = endPercent - startPercent + "%";
-
-  updateDateDisplay(dateDisplay, startDate, endDate);
+  updateSelectionDisplay(display, timelineState);
 }
 
 /**
- * Triggers the date change callback
- * @param {Object} state - Scrubber state
+ * Triggers the timeline change callback
+ * @param {Object} timelineState - Timeline state object
  */
-function triggerDateChange(state) {
-  if (state.onDateChange) {
+function triggerTimelineChange(timelineState) {
+  if (timelineState.onDateChange) {
     // Debounce the callback to avoid too frequent updates
-    clearTimeout(state.changeTimeout);
-    state.changeTimeout = setTimeout(() => {
-      state.onDateChange();
+    clearTimeout(timelineState.changeTimeout);
+    timelineState.changeTimeout = setTimeout(() => {
+      timelineState.onDateChange();
     }, 100);
   }
 }
@@ -890,7 +475,7 @@ function triggerDateChange(state) {
  */
 function createResetButton() {
   const button = document.createElement("button");
-  button.textContent = "Reset to Full Range";
+  button.textContent = "Select All Commits";
   button.id = "reset-date-filter";
   Object.assign(button.style, {
     padding: "8px 16px",
@@ -916,22 +501,29 @@ function createResetButton() {
 }
 
 /**
- * Gets filtered data based on date range
- * @param {Date} startDate - Start date
- * @param {Date} endDate - End date
+ * Gets filtered data based on selected commits
  * @returns {Object} Filtered data object
  */
-function getFilteredData(startDate, endDate) {
-  const originalData = window.dateFilterControls.originalData;
+function getFilteredData() {
+  const controls = window.dateFilterControls;
+  const originalData = controls.originalData;
   const filteredEntries = {};
 
-  Object.keys(originalData.entries).forEach((key) => {
-    filteredEntries[key] = filterEntriesByDateRange(
-      originalData.entries[key],
-      startDate,
-      endDate
-    );
-  });
+  // If no commits are selected, return empty data
+  if (controls.scrubber && controls.scrubber.getDateRange) {
+    const { startDate, endDate } = controls.scrubber.getDateRange();
+
+    Object.keys(originalData.entries).forEach((key) => {
+      filteredEntries[key] = filterEntriesByDateRange(
+        originalData.entries[key],
+        startDate,
+        endDate
+      );
+    });
+  } else {
+    // Fallback to original data if scrubber is not available
+    return originalData.entries;
+  }
 
   return filteredEntries;
 }
@@ -941,10 +533,9 @@ function getFilteredData(startDate, endDate) {
  */
 export function applyDateFilter() {
   const controls = window.dateFilterControls;
-  const { startDate, endDate } = controls.scrubber.getDateRange();
 
   // Get filtered data
-  const filteredData = getFilteredData(startDate, endDate);
+  const filteredData = getFilteredData();
 
   // Prepare new datasets
   const newDataSets = Object.keys(filteredData).map((name) => ({
