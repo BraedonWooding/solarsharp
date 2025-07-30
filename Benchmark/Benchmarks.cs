@@ -9,6 +9,7 @@ namespace Benchmark;
 
 [MaxIterationCount(30)]
 [JsonExporterAttribute.FullCompressed]
+[MemoryDiagnoser]
 public class Benchmarks
 {
     [ParamsSource(nameof(Impls))] public AImplementation Implementation { get; set; }
