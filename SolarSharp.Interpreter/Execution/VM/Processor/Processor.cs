@@ -10,7 +10,7 @@ namespace SolarSharp.Interpreter.Execution.VM;
 
 internal sealed partial class Processor
 {
-    private const int STACK_SIZE = 256;
+    private const int STACK_SIZE = 131072;
     private readonly List<Processor> m_CoroutinesStack;
     private readonly FastStack<CallStackItem> m_ExecutionStack;
     private readonly Table m_GlobalTable;
