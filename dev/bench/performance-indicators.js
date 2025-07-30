@@ -2,8 +2,12 @@
  * Performance change indicators
  */
 
-import { IMPLEMENTATION_COLORS, STATISTICAL_SIGNIFICANCE_CONFIG } from './config.js';
-import { convertToMilliseconds, getCleanImplementationName } from './utils.js';
+import { normalizeBenchmarkUnits } from "./chart-rendering.js";
+import {
+  IMPLEMENTATION_COLORS,
+  STATISTICAL_SIGNIFICANCE_CONFIG,
+} from "./config.js";
+import { convertToMilliseconds, getCleanImplementationName } from "./utils.js";
 
 /**
  * Determines if a performance change is statistically significant
@@ -156,44 +160,42 @@ export function createPerformanceChangeIndicators(benches) {
     marginBottom: "15px",
   });
 
-  benches
-    .map((b) => b[1])
-    .forEach((implementationData) => {
-      if (implementationData.length >= 2) {
-        const latest = implementationData[implementationData.length - 1];
-        const previous = implementationData[implementationData.length - 2];
+  normalizeBenchmarkUnits(benches, window.currentMetric);
+  benches.forEach((implementationData) => {
+    if (implementationData.length >= 2) {
+      const latest = implementationData[implementationData.length - 1];
+      const previous = implementationData[implementationData.length - 2];
 
-        const latestValueMs = convertToMilliseconds(
-          latest.bench.value,
-          latest.bench.unit
-        );
-        const previousValueMs = convertToMilliseconds(
-          previous.bench.value,
-          previous.bench.unit
-        );
-        const change =
-          ((latestValueMs - previousValueMs) / previousValueMs) * 100;
+      const latestValue =
+        window.currentMetric == "time"
+          ? latest.bench.value
+          : latest.bench.allocations;
+      const previousValue =
+        window.currentMetric == "time"
+          ? previous.bench.value
+          : previous.bench.allocations;
+      const change = ((latestValue - previousValue) / previousValue) * 100;
 
-        if (
-          isStatisticallySignificant(
-            latest,
-            previous,
-            change,
-            latestValueMs,
-            previousValueMs
-          )
-        ) {
-          const changeIndicator = createChangeIndicator(
-            latest,
-            previous,
-            change,
-            latestValueMs,
-            previousValueMs
-          );
-          changesContainer.appendChild(changeIndicator);
-        }
+      if (
+        isStatisticallySignificant(
+          latest,
+          previous,
+          change,
+          latestValue,
+          previousValue
+        )
+      ) {
+        const changeIndicator = createChangeIndicator(
+          latest,
+          previous,
+          change,
+          latestValue,
+          previousValue
+        );
+        changesContainer.appendChild(changeIndicator);
       }
-    });
+    }
+  });
 
   return changesContainer;
 }

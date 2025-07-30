@@ -3,15 +3,40 @@
  * Displays performance benchmark data with interactive charts and change indicators
  */
 
-import { GRID_CONFIG } from './config.js';
-import { groupBy } from './utils.js';
-import { collectBenchesPerTestCase } from './data-processing.js';
-import { initializeDateFilter } from './date-filter.js';
-import { registerChartPlugins } from './chart-plugins.js';
-import { renderAllCharts } from './chart-rendering.js';
-import { renderGraph } from './chart-rendering.js';
-import { createSharedLegend, createSolarSharpToggleButton, createLegendItem } from './legend-controls.js';
-import { createPerformanceChangeIndicators, updateChangeIndicatorsVisibility } from './performance-indicators.js';
+import { GRID_CONFIG, IMPLEMENTATION_COLORS } from "./config.js";
+import { groupBy } from "./utils.js";
+import {
+  collectBenchesPerTestCase,
+  filterEntriesByDateRange,
+} from "./data-processing.js";
+import { applyDateFilter, initializeDateFilter } from "./date-filter.js";
+import { registerChartPlugins } from "./chart-plugins.js";
+import { renderAllCharts } from "./chart-rendering.js";
+import { renderGraph } from "./chart-rendering.js";
+import {
+  createSharedLegend,
+  createSolarSharpToggleButton,
+  createLegendItem,
+} from "./legend-controls.js";
+import {
+  createPerformanceChangeIndicators,
+  updateChangeIndicatorsVisibility,
+} from "./performance-indicators.js";
+
+/**
+ * List of benchmark tests to filter out from the visualization
+ * These tests will be excluded from the charts and legend
+ */
+const FILTERED_OUT_BENCHMARKS = ["startup.lua", "regexredux.lua-2.lua"];
+
+/**
+ * Checks if a benchmark should be filtered out based on its test name
+ * @param {string} benchmarkName - The full benchmark name to check
+ * @returns {boolean} True if the benchmark should be filtered out
+ */
+function shouldFilterOutBenchmark(testName) {
+  return testName && FILTERED_OUT_BENCHMARKS.includes(testName);
+}
 
 /**
  * Initializes the benchmark visualization application
@@ -29,6 +54,22 @@ function init() {
 
   // Initialize date filter and get initial datasets
   const { filteredData, dateRange } = initializeDateFilter(data);
+
+  // Create tabs for switching between Time and Allocations view
+  const tabsContainer = createMetricTabs(main);
+
+  // Create shared legend container
+  const legendContainer = createSharedLegend(main);
+
+  // Add "Show Only SolarSharp" button
+  const showOnlyButton = createSolarSharpToggleButton(legendContainer);
+  legendContainer.appendChild(showOnlyButton);
+
+  // Create legend items for each implementation
+  Object.keys(IMPLEMENTATION_COLORS).forEach((implementation) => {
+    const legendItem = createLegendItem(implementation);
+    legendContainer.appendChild(legendItem);
+  });
 
   // Prepare data points for charts
   return Object.keys(filteredData).map((name) => ({
@@ -201,58 +242,66 @@ function createMachineInfoItem(label, value) {
  * @param {string} name - Name of the benchmark set
  * @param {Map} benchSet - Map of benchmark data
  * @param {HTMLElement} main - Main container element
+ * @param {string} metric - Current metric ("time" or "allocations")
  */
 function renderBenchmarkSet(name, benchSet, main) {
-  // Create shared legend container
-  const legendContainer = createSharedLegend(main);
+  const metric = window.currentMetric || "time";
 
-  // Collect all unique implementations across all benchmark sets
-  const allImplementations = new Set();
   const benchmarkRegex =
     /Benchmark\.Benchmarks\.Benchmark\(Implementation: (.*?), Test: (.*?)\)/;
+  const alternateRegex =
+    /Benchmark\.Benchmarks\.Benchmark\(test: (.*?), Implementation: (.*?)\)/;
+  const otherRegex = /Benchmark\.Benchmarks\.(.*?)\(Implementation: (.*?)\)/;
 
-  for (const [benchName, benches] of groupBy(benchSet.entries(), function (k) {
-    const match = k[0].match(benchmarkRegex);
+  // Filter out benchmarks based on the filtered list
+  const filteredBenchSet = groupBy(benchSet.entries(), function (kvp) {
+    const benchName = kvp[0];
+    const benches = kvp[1];
+    const match = benchName.match(benchmarkRegex);
+    const altMatch = benchName.match(alternateRegex);
+    const otherMatch = benchName.match(otherRegex);
+    let test = benchName;
+
     if (match) {
-      k[1][0].bench.simplifiedName = match[1];
-      allImplementations.add(match[1]);
-      return match[2];
+      benches[0].bench.simplifiedName = match[1];
+      test = match[2];
+    } else if (altMatch) {
+      benches[0].bench.simplifiedName = altMatch[2];
+      test = altMatch[1];
+    } else if (otherMatch) {
+      benches[0].bench.simplifiedName = otherMatch[2];
+      test = otherMatch[1];
     }
-    return k[0]; // fallback
-  }).entries()) {
-    // Implementation collection happens in this loop
-  }
+
+    if (shouldFilterOutBenchmark(test)) {
+      return null; // Skip this benchmark
+    } else {
+      return test;
+    }
+  });
 
   // Store chart references for legend control
   const charts = [];
-
-  // Add "Show Only SolarSharp" button
-  const showOnlyButton = createSolarSharpToggleButton(charts, legendContainer);
-  legendContainer.appendChild(showOnlyButton);
-
-  // Create legend items for each implementation
-  allImplementations.forEach((implementation) => {
-    const legendItem = createLegendItem(implementation, charts);
-    legendContainer.appendChild(legendItem);
-  });
 
   // Create grid container for benchmark charts
   const gridContainer = createBenchmarkGrid(main);
 
   // Render individual benchmark charts
-  for (const [benchName, benches] of groupBy(benchSet.entries(), function (k) {
-    const match = k[0].match(benchmarkRegex);
-    if (match) {
-      k[1][0].bench.simplifiedName = match[1];
-      return match[2];
-    }
-    return k[0]; // fallback
-  }).entries()) {
+  for (const [benchName, benches] of filteredBenchSet.entries()) {
     const benchmarkContainer = createBenchmarkContainer(
       gridContainer,
       benchName
     );
-    const changesContainer = createPerformanceChangeIndicators(benches);
+    let grouped_benches = groupBy(benches, (b) => {
+      return b[1][0].bench.simplifiedName;
+    });
+    let flattened = [
+      ...grouped_benches.values().map((b) => {
+        return b.map((x) => x[1]).flat();
+      }),
+    ];
+
+    const changesContainer = createPerformanceChangeIndicators(flattened);
     benchmarkContainer.appendChild(changesContainer);
 
     // Create graphs container and render chart
@@ -260,11 +309,7 @@ function renderBenchmarkSet(name, benchSet, main) {
     graphsElement.className = "benchmark-graphs";
     benchmarkContainer.appendChild(graphsElement);
 
-    const chart = renderGraph(
-      graphsElement,
-      benchName,
-      benches.map((b) => b[1])
-    );
+    const chart = renderGraph(graphsElement, benchName, flattened, metric);
     charts.push(chart);
   }
 
@@ -320,13 +365,139 @@ function createBenchmarkContainer(gridContainer, benchName) {
   return setElement;
 }
 
+/**
+ * Creates tabs for switching between Time and Allocations metrics
+ * @param {HTMLElement} main - Main container element
+ * @returns {HTMLElement} Tabs container element
+ */
+function createMetricTabs(main) {
+  const tabsContainer = document.createElement("div");
+  tabsContainer.className = "metric-tabs";
+  Object.assign(tabsContainer.style, {
+    backgroundColor: "#fff",
+    border: "1px solid #dee2e6",
+    borderRadius: "8px 8px 0 0",
+    margin: "20px auto 0 auto",
+    maxWidth: "1200px",
+    display: "flex",
+    fontFamily: "Arial, sans-serif",
+  });
+
+  // Create Time tab
+  const timeTab = createTab("Time", true);
+  tabsContainer.appendChild(timeTab);
+
+  // Create Allocations tab
+  const allocationsTab = createTab("Allocations", false);
+  tabsContainer.appendChild(allocationsTab);
+
+  // Store current metric globally
+  window.currentMetric = "time";
+
+  // Add event listeners
+  timeTab.addEventListener("click", () =>
+    switchMetric("time", timeTab, [allocationsTab])
+  );
+  allocationsTab.addEventListener("click", () =>
+    switchMetric("allocations", allocationsTab, [timeTab])
+  );
+
+  // Insert tabs before main content
+  const machineInfo = document.getElementById("machine-info");
+  const gridContainer = document.querySelector(".benchmark-grid");
+  if (machineInfo && machineInfo.nextSibling) {
+    machineInfo.parentNode.insertBefore(tabsContainer, machineInfo.nextSibling);
+  } else if (gridContainer) {
+    gridContainer.parentNode.insertBefore(tabsContainer, gridContainer);
+  } else {
+    main.parentNode.insertBefore(tabsContainer, main);
+  }
+
+  return tabsContainer;
+}
+
+/**
+ * Creates a single tab element
+ * @param {string} text - Tab text
+ * @param {boolean} active - Whether the tab is active
+ * @returns {HTMLElement} Tab element
+ */
+function createTab(text, active) {
+  const tab = document.createElement("button");
+  tab.textContent = text;
+  tab.className = "metric-tab";
+  Object.assign(tab.style, {
+    padding: "12px 24px",
+    border: "none",
+    backgroundColor: active ? "#3572a5" : "#f8f9fa",
+    color: active ? "white" : "#495057",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "bold",
+    borderRadius: active ? "8px 8px 0 0" : "0",
+    borderBottom: active ? "3px solid #3572a5" : "3px solid transparent",
+    transition: "all 0.2s ease",
+  });
+
+  // Add hover effects
+  tab.addEventListener("mouseenter", () => {
+    if (!tab.classList.contains("active")) {
+      tab.style.backgroundColor = "#e9ecef";
+    }
+  });
+
+  tab.addEventListener("mouseleave", () => {
+    if (!tab.classList.contains("active")) {
+      tab.style.backgroundColor = "#f8f9fa";
+    }
+  });
+
+  if (active) {
+    tab.classList.add("active");
+  }
+
+  return tab;
+}
+
+/**
+ * Switches between Time and Allocations metrics
+ * @param {string} metric - "time" or "allocations"
+ * @param {HTMLElement} activeTab - The tab being activated
+ * @param {HTMLElement} inactiveTab - The tab being deactivated
+ */
+function switchMetric(metric, activeTab, inactiveTabs) {
+  // Update global metric
+  window.currentMetric = metric;
+
+  // Update tab styles
+  activeTab.classList.add("active");
+
+  Object.assign(activeTab.style, {
+    backgroundColor: "#3572a5",
+    color: "white",
+    borderBottom: "3px solid #3572a5",
+  });
+
+  inactiveTabs.forEach((inactiveTab) => {
+    inactiveTab.classList.remove("active");
+    Object.assign(inactiveTab.style, {
+      backgroundColor: "#f8f9fa",
+      color: "#495057",
+      borderBottom: "3px solid transparent",
+    });
+  });
+
+  applyDateFilter();
+}
+
 // Make functions available globally for cross-module communication
 window.renderAllCharts = renderAllCharts;
 window.renderBenchmarkSet = renderBenchmarkSet;
+window.filterEntriesByDateRange = filterEntriesByDateRange;
 
 // Initialize and start the application when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
     renderAllCharts(init());
   });
 } else {

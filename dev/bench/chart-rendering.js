@@ -2,12 +2,13 @@
  * Chart rendering functions
  */
 
-import { IMPLEMENTATION_COLORS } from './config.js';
-import { convertToMilliseconds } from './utils.js';
+import { IMPLEMENTATION_COLORS } from "./config.js";
+import { convertToMilliseconds } from "./utils.js";
 
 /**
  * Renders all benchmark charts
  * @param {Array} dataSets - Array of datasets to render
+ * @param {string} metric - Metric to display ("time" or "allocations")
  */
 export function renderAllCharts(dataSets) {
   const main = document.getElementById("main");
@@ -17,21 +18,33 @@ export function renderAllCharts(dataSets) {
 }
 
 /**
- * Normalizes benchmark data units to milliseconds
+ * Normalizes benchmark data units to milliseconds or KB based on metric
  * @param {Array} dataset - Array of benchmark data
+ * @param {string} metric - Current metric ("time" or "allocations")
  */
-function normalizeBenchmarkUnits(dataset) {
+export function normalizeBenchmarkUnits(dataset, metric = "time") {
   for (const set of dataset) {
     for (const subset of set) {
       const currentUnit = subset.bench.unit;
 
-      // Store original unit before conversion
-      subset.bench.originalUnit = currentUnit;
-      subset.bench.value = convertToMilliseconds(
-        subset.bench.value,
-        currentUnit
-      );
-      subset.bench.unit = "ms";
+      if (metric === "time") {
+        // Store original unit before conversion
+        subset.bench.originalUnit = currentUnit;
+        subset.bench.value = convertToMilliseconds(
+          subset.bench.value,
+          currentUnit
+        );
+        subset.bench.unit = "ms";
+      } else if (metric === "allocations") {
+        // Handle allocations metric
+        const allocValue = subset.bench.allocations;
+        if (allocValue !== undefined) {
+          subset.bench.originalUnit = "B"; // Assume bytes
+          // Convert bytes to KB
+          subset.bench.memValue = allocValue / 1024;
+          subset.bench.memUnit = "KB";
+        }
+      }
     }
   }
 }
@@ -39,16 +52,19 @@ function normalizeBenchmarkUnits(dataset) {
 /**
  * Creates chart configuration options
  * @param {Array} dataset - Benchmark dataset
+ * @param {string} metric - Current metric ("time" or "allocations")
  * @returns {Object} Chart.js options object
  */
-function createChartOptions(dataset) {
+function createChartOptions(dataset, metric = "time") {
+  const yAxisTitle = metric === "time" ? "Time (ms)" : "Memory (KB)";
+
   return {
     responsive: true,
     plugins: {
       legend: {
-        display: false, // Disable individual chart legends
+        display: true, // Disable individual chart legends
       },
-      tooltip: createTooltipConfig(dataset),
+      tooltip: createTooltipConfig(dataset, metric),
     },
     scales: {
       x: {
@@ -62,7 +78,7 @@ function createChartOptions(dataset) {
         display: true,
         title: {
           display: true,
-          text: "Time (ms)",
+          text: yAxisTitle,
         },
         ticks: {
           beginAtZero: true,
@@ -83,9 +99,10 @@ function createChartOptions(dataset) {
 /**
  * Creates tooltip configuration for charts
  * @param {Array} dataset - Benchmark dataset
+ * @param {string} metric - Current metric ("time" or "allocations")
  * @returns {Object} Tooltip configuration object
  */
-function createTooltipConfig(dataset) {
+function createTooltipConfig(dataset, metric = "time") {
   return {
     callbacks: {
       afterTitle: (items) => {
@@ -107,7 +124,7 @@ function createTooltipConfig(dataset) {
           dataset[item.datasetIndex][item.dataIndex].bench;
         label += " " + unit;
 
-        if (range) {
+        if (range && metric === "time") {
           const rangeValue = Number(range.replace("±", ""));
           const originalUnit =
             dataset[item.datasetIndex][item.dataIndex].bench.originalUnit ||
@@ -122,8 +139,8 @@ function createTooltipConfig(dataset) {
         return label;
       },
       afterLabel: (item) => {
-        const { name } = dataset[item.datasetIndex][item.dataIndex].bench;
-        return name ? "\n" + name : "";
+        const bench = dataset[item.datasetIndex][item.dataIndex].bench;
+        return bench.name ? "\n" + bench.name : "";
       },
     },
   };
@@ -134,32 +151,34 @@ function createTooltipConfig(dataset) {
  * @param {HTMLElement} parent - Parent element to append the chart to
  * @param {string} name - Name of the benchmark
  * @param {Array} dataset - Benchmark dataset
+ * @param {string} metric - Current metric ("time" or "allocations")
  * @returns {Chart} Chart.js chart instance
  */
-export function renderGraph(parent, name, dataset) {
+export function renderGraph(parent, name, dataset, metric = "time") {
   const canvas = document.createElement("canvas");
   canvas.className = "benchmark-chart";
   parent.appendChild(canvas);
 
-  normalizeBenchmarkUnits(dataset);
-
   const data = {
     labels: dataset[0].map((d) => d.commit.id.slice(0, 7)),
-    datasets: dataset.map((d) => ({
-      label: d[0].bench.simplifiedName,
-      data: d.map((d) => ({
-        y: d.bench.value,
-        x: d.commit.id.slice(0, 7),
-      })),
-      borderColor: IMPLEMENTATION_COLORS[d[0].bench.simplifiedName],
-      backgroundColor: IMPLEMENTATION_COLORS[d[0].bench.simplifiedName] + "60", // Add alpha
-    })),
+    datasets: dataset.map((d) => {
+      return {
+        label: d[0].bench.simplifiedName,
+        data: d.map((d) => ({
+          y: metric == "time" ? d.bench.value : d.bench.allocations,
+          x: d.commit.id.slice(0, 7),
+        })),
+        borderColor: IMPLEMENTATION_COLORS[d[0].bench.simplifiedName],
+        backgroundColor:
+          IMPLEMENTATION_COLORS[d[0].bench.simplifiedName] + "60", // Add alpha
+      };
+    }),
   };
 
   const chart = new Chart(canvas, {
     type: "line",
     data,
-    options: createChartOptions(dataset),
+    options: createChartOptions(dataset, metric),
   });
 
   // Store chart reference for legend control

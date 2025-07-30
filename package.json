@@ -1,0 +1,8 @@
+{
+    "dependencies": {
+        "local-web-server": "^5.4.0"
+    },
+    "scripts": {
+        "start": "ws --port 8080 --spa"
+    }
+}

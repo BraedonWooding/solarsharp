@@ -9,7 +9,6 @@ export const IMPLEMENTATION_COLORS = {
   NeoImplementation: "#dea584",
   SolarSharpImplementation: "#3572a5",
   LuaCSharpImplementation: "#b07219",
-  _: "#333333",
 };
 
 export const STATISTICAL_SIGNIFICANCE_CONFIG = {
@@ -25,8 +24,8 @@ export const GRID_CONFIG = {
 };
 
 export const DATE_FILTER_CONFIG = {
-  DEFAULT_RANGE_DAYS: 30, // Default to last 30 days
-  SCRUBBER_HEIGHT: 60, // Height of the scrubber in pixels
+  SCRUBBER_HEIGHT: 100, // Height of the scrubber in pixels (increased for date labels)
   HANDLE_WIDTH: 24, // Width of the resize handles
-  MIN_SELECTION_WIDTH: 150, // Minimum width of selection in pixels
+  MIN_SELECTION_WIDTH: 5, // Minimum width of selection in pixels
+  COMMIT_PADDING_PERCENT: 10, // Padding on each side to ensure commit IDs are visible (10% = 20% total padding)
 };

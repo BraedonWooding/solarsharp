@@ -12,6 +12,10 @@ export function groupBy(list, keyGetter) {
   const map = new Map();
   for (const item of list) {
     const key = keyGetter(item);
+    if (!key) {
+      continue; // Skip items without a key
+    }
+
     const collection = map.get(key);
     if (!collection) {
       map.set(key, [item]);

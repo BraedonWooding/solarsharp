@@ -2,7 +2,7 @@
  * Legend and control components
  */
 
-import { IMPLEMENTATION_COLORS } from './config.js';
+import { IMPLEMENTATION_COLORS } from "./config.js";
 
 /**
  * Creates and configures the shared legend container
@@ -23,7 +23,7 @@ export function createSharedLegend(main) {
     borderRadius: "8px",
     marginBottom: "20px",
   });
-  main.appendChild(legendContainer);
+  main.parentNode.insertBefore(legendContainer, main);
   return legendContainer;
 }
 
@@ -33,7 +33,7 @@ export function createSharedLegend(main) {
  * @param {HTMLElement} legendContainer - Legend container element
  * @returns {HTMLElement} Button element
  */
-export function createSolarSharpToggleButton(charts, legendContainer) {
+export function createSolarSharpToggleButton(legendContainer) {
   const showOnlyButton = document.createElement("button");
   showOnlyButton.textContent = "Show Only SolarSharp";
   Object.assign(showOnlyButton.style, {
@@ -50,10 +50,10 @@ export function createSolarSharpToggleButton(charts, legendContainer) {
 
   showOnlyButton.addEventListener("click", () => {
     const { onlySolarSharpVisible, hasSolarSharp } =
-      checkSolarSharpVisibility(charts);
+      checkSolarSharpVisibility();
     const showAll = onlySolarSharpVisible && hasSolarSharp;
 
-    toggleChartVisibility(charts, showAll);
+    toggleChartVisibility(showAll);
     updateLegendAppearance(legendContainer, showAll);
     updateButtonText(showOnlyButton, showAll);
     if (window.updateChangeIndicatorsVisibility) {
@@ -69,9 +69,10 @@ export function createSolarSharpToggleButton(charts, legendContainer) {
  * @param {Array} charts - Array of chart instances
  * @returns {Object} Object with visibility status
  */
-function checkSolarSharpVisibility(charts) {
+function checkSolarSharpVisibility() {
   let onlySolarSharpVisible = true;
   let hasSolarSharp = false;
+  let charts = window.globalCharts || [];
 
   if (charts.length > 0) {
     charts[0].data.datasets.forEach((dataset, index) => {
@@ -95,8 +96,8 @@ function checkSolarSharpVisibility(charts) {
  * @param {Array} charts - Array of chart instances
  * @param {boolean} showAll - Whether to show all or only SolarSharp
  */
-function toggleChartVisibility(charts, showAll) {
-  charts.forEach((chart) => {
+function toggleChartVisibility(showAll) {
+  window.globalCharts.forEach((chart) => {
     chart.data.datasets.forEach((dataset, index) => {
       if (showAll) {
         chart.setDatasetVisibility(index, true);
@@ -138,7 +139,7 @@ function updateButtonText(button, showAll) {
  * @param {Array} charts - Array of chart instances
  * @returns {HTMLElement} Legend item element
  */
-export function createLegendItem(implementation, charts) {
+export function createLegendItem(implementation) {
   const legendItem = document.createElement("div");
   Object.assign(legendItem.style, {
     display: "flex",
@@ -165,8 +166,8 @@ export function createLegendItem(implementation, charts) {
 
   // Add click handler for show/hide functionality
   legendItem.addEventListener("click", () => {
-    toggleImplementationVisibility(charts, implementation);
-    updateLegendItemAppearance(legendItem, charts, implementation);
+    toggleImplementationVisibility(implementation);
+    updateLegendItemAppearance(legendItem, implementation);
     if (window.updateChangeIndicatorsVisibility) {
       window.updateChangeIndicatorsVisibility();
     }
@@ -180,8 +181,8 @@ export function createLegendItem(implementation, charts) {
  * @param {Array} charts - Array of chart instances
  * @param {string} implementation - Implementation name to toggle
  */
-function toggleImplementationVisibility(charts, implementation) {
-  charts.forEach((chart) => {
+function toggleImplementationVisibility(implementation) {
+  window.globalCharts.forEach((chart) => {
     const datasetIndex = chart.data.datasets.findIndex(
       (dataset) => dataset.label === implementation
     );
@@ -199,14 +200,15 @@ function toggleImplementationVisibility(charts, implementation) {
  * @param {Array} charts - Array of chart instances
  * @param {string} implementation - Implementation name
  */
-function updateLegendItemAppearance(legendItem, charts, implementation) {
+function updateLegendItemAppearance(legendItem, implementation) {
   const isHidden =
-    charts.length > 0 &&
-    charts[0].data.datasets.some(
+    window.globalCharts.length > 0 &&
+    window.globalCharts[0].data.datasets.some(
       (dataset) =>
         dataset.label === implementation &&
-        charts[0].isDatasetVisible(charts[0].data.datasets.indexOf(dataset)) ===
-          false
+        window.globalCharts[0].isDatasetVisible(
+          window.globalCharts[0].data.datasets.indexOf(dataset)
+        ) === false
     );
   legendItem.style.opacity = isHidden ? "0.5" : "1";
 }

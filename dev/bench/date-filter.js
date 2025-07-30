@@ -177,13 +177,30 @@ function createDateScrubber(
   const startDate = initialStartCommit ? initialStartCommit.date : initialStart;
   const endDate = initialEndCommit ? initialEndCommit.date : initialEnd;
 
-  // Calculate initial selection position
-  const totalMs = maxDate.getTime() - minDate.getTime();
-  const startMs = startDate.getTime() - minDate.getTime();
-  const endMs = endDate.getTime() - minDate.getTime();
+  // Calculate initial selection position using equally-spaced commits
+  let startPercent, endPercent;
 
-  const startPercent = (startMs / totalMs) * 100;
-  const endPercent = (endMs / totalMs) * 100;
+  if (commitPoints.length > 0 && initialStartCommit && initialEndCommit) {
+    // Use commit positions for equally-spaced layout
+    const startCommitIndex = findCommitIndex(commitPoints, initialStartCommit);
+    const endCommitIndex = findCommitIndex(commitPoints, initialEndCommit);
+
+    startPercent = getCommitPosition(startCommitIndex, commitPoints.length) - 5;
+    endPercent = getCommitPosition(endCommitIndex, commitPoints.length) + 5;
+
+    // Ensure proper order (start <= end)
+    if (startPercent > endPercent) {
+      [startPercent, endPercent] = [endPercent, startPercent];
+    }
+  } else {
+    // Fallback to time-based positioning if no commits
+    const totalMs = maxDate.getTime() - minDate.getTime();
+    const startMs = startDate.getTime() - minDate.getTime();
+    const endMs = endDate.getTime() - minDate.getTime();
+
+    startPercent = (startMs / totalMs) * 100;
+    endPercent = (endMs / totalMs) * 100;
+  }
 
   // Create selection area
   const selection = document.createElement("div");
@@ -192,7 +209,7 @@ function createDateScrubber(
     top: "0",
     bottom: "0",
     left: startPercent + "%",
-    width: endPercent - startPercent + "%",
+    width: Math.max(endPercent - startPercent, 10) + "%", // Minimum 10% width
     backgroundColor: "rgba(53, 114, 165, 0.3)",
     border: "2px solid #3572a5",
     cursor: "move",
@@ -253,7 +270,7 @@ function createDateScrubber(
 }
 
 /**
- * Creates commit point indicators on the timeline
+ * Creates commit point indicators on the timeline with equal spacing
  * @param {Date} minDate - Minimum date
  * @param {Date} maxDate - Maximum date
  * @param {Array} commitPoints - Array of commit objects
@@ -271,25 +288,40 @@ function createCommitPoints(minDate, maxDate, commitPoints) {
     zIndex: "1",
   });
 
-  const totalMs = maxDate.getTime() - minDate.getTime();
+  if (commitPoints.length === 0) {
+    return commitPointsContainer;
+  }
+
+  // Calculate equal spacing for commits with padding on sides
+  const padding = DATE_FILTER_CONFIG.COMMIT_PADDING_PERCENT || 10;
+  const usableAreaStart = padding; // Padding from left
+  const usableAreaEnd = 100 - padding; // Padding from right
+  const usableWidth = usableAreaEnd - usableAreaStart; // Usable width
+
+  // Handle single commit case
+  const spacing =
+    commitPoints.length === 1 ? 0 : usableWidth / (commitPoints.length - 1);
 
   commitPoints.forEach((commit, index) => {
-    const commitMs = commit.date.getTime() - minDate.getTime();
-    const positionPercent = (commitMs / totalMs) * 100;
+    const positionPercent =
+      commitPoints.length === 1
+        ? 50 // Center single commit
+        : usableAreaStart + spacing * index; // Start from padding with spacing
 
+    // Create commit point dot
     const commitPoint = document.createElement("div");
     Object.assign(commitPoint.style, {
       position: "absolute",
       left: positionPercent + "%",
-      top: "50%",
-      width: "8px",
-      height: "8px",
+      top: "25%",
+      width: "12px",
+      height: "12px",
       backgroundColor: "#3572a5",
       borderRadius: "50%",
       transform: "translate(-50%, -50%)",
       border: "2px solid #fff",
       boxShadow: "0 0 3px rgba(0,0,0,0.3)",
-      zIndex: "1",
+      zIndex: "2",
     });
 
     // Add tooltip with commit info
@@ -297,10 +329,129 @@ function createCommitPoints(minDate, maxDate, commitPoints) {
       commit.message.split("\n")[0]
     }`;
 
+    // Create date label below the commit point
+    const dateLabel = document.createElement("div");
+    dateLabel.textContent = formatDateShort(commit.date);
+    Object.assign(dateLabel.style, {
+      position: "absolute",
+      left: positionPercent + "%",
+      top: "60%",
+      transform: "translate(-50%, 0)",
+      fontSize: "10px",
+      color: "#495057",
+      fontWeight: "bold",
+      textAlign: "center",
+      whiteSpace: "nowrap",
+      zIndex: "1",
+    });
+
+    // Create a vertical line connecting the dot to the label
+    const connectingLine = document.createElement("div");
+    Object.assign(connectingLine.style, {
+      position: "absolute",
+      left: positionPercent + "%",
+      top: "35%",
+      width: "1px",
+      height: "20%",
+      backgroundColor: "#6c757d",
+      transform: "translateX(-50%)",
+      zIndex: "1",
+    });
+
     commitPointsContainer.appendChild(commitPoint);
+    commitPointsContainer.appendChild(connectingLine);
+    commitPointsContainer.appendChild(dateLabel);
   });
 
   return commitPointsContainer;
+}
+
+/**
+ * Finds the nearest commit point to a given position percentage (for equally-spaced commits)
+ * @param {Array} commitPoints - Array of commit objects
+ * @param {number} positionPercent - Position percentage (0-100)
+ * @returns {Object|null} Nearest commit object or null if no commits
+ */
+function findNearestCommitByPosition(commitPoints, positionPercent) {
+  if (!commitPoints || commitPoints.length === 0) {
+    return null;
+  }
+
+  if (commitPoints.length === 1) {
+    return commitPoints[0];
+  }
+
+  const padding = DATE_FILTER_CONFIG.COMMIT_PADDING_PERCENT || 10;
+  const usableAreaStart = padding;
+  const usableAreaEnd = 100 - padding;
+  const usableWidth = usableAreaEnd - usableAreaStart;
+  const spacing = usableWidth / (commitPoints.length - 1);
+
+  let nearestIndex = 0;
+  let minDistance = Math.abs(positionPercent - usableAreaStart);
+
+  for (let i = 0; i < commitPoints.length; i++) {
+    const commitPosition = usableAreaStart + spacing * i;
+    const distance = Math.abs(positionPercent - commitPosition);
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestIndex = i;
+    }
+  }
+
+  return commitPoints[nearestIndex];
+}
+
+/**
+ * Gets the position percentage for a commit index
+ * @param {number} commitIndex - Index of the commit
+ * @param {number} totalCommits - Total number of commits
+ * @returns {number} Position percentage
+ */
+function getCommitPosition(commitIndex, totalCommits) {
+  if (totalCommits === 1) {
+    return 50; // Center single commit
+  }
+
+  const padding = DATE_FILTER_CONFIG.COMMIT_PADDING_PERCENT || 10;
+  const usableAreaStart = padding;
+  const usableAreaEnd = 100 - padding;
+  const usableWidth = usableAreaEnd - usableAreaStart;
+  const spacing = usableWidth / (totalCommits - 1);
+  return usableAreaStart + spacing * commitIndex;
+}
+
+/**
+ * Finds the commit index for a given commit
+ * @param {Array} commitPoints - Array of commit objects
+ * @param {Object} targetCommit - Target commit object
+ * @returns {number} Index of the commit or -1 if not found
+ */
+function findCommitIndex(commitPoints, targetCommit) {
+  return commitPoints.findIndex((commit) => commit.id === targetCommit.id);
+}
+
+/**
+ * Snaps a position percentage to the nearest commit position
+ * @param {Array} commitPoints - Array of commit objects
+ * @param {number} positionPercent - Position percentage to snap
+ * @returns {number} Snapped position percentage
+ */
+function snapPositionToNearestCommit(commitPoints, positionPercent) {
+  if (!commitPoints || commitPoints.length === 0) {
+    return positionPercent;
+  }
+
+  const nearestCommit = findNearestCommitByPosition(
+    commitPoints,
+    positionPercent
+  );
+  if (!nearestCommit) {
+    return positionPercent;
+  }
+
+  const commitIndex = findCommitIndex(commitPoints, nearestCommit);
+  return getCommitPosition(commitIndex, commitPoints.length);
 }
 
 /**
@@ -343,7 +494,7 @@ function snapToNearestCommit(commitPoints, date) {
 }
 
 /**
- * Creates date labels for the timeline
+ * Creates date labels for the timeline (simplified since we show dates under commits)
  * @param {Date} minDate - Minimum date
  * @param {Date} maxDate - Maximum date
  * @returns {HTMLElement} Date labels container
@@ -356,21 +507,17 @@ function createDateLabels(minDate, maxDate) {
     left: "15px",
     right: "15px",
     display: "flex",
-    justifyContent: "space-between",
-    fontSize: "20px",
+    justifyContent: "center",
+    fontSize: "14px",
     color: "#6c757d",
     pointerEvents: "none",
     zIndex: "1",
+    fontWeight: "bold",
   });
 
-  const startLabel = document.createElement("span");
-  startLabel.textContent = formatDateShort(minDate);
-
-  const endLabel = document.createElement("span");
-  endLabel.textContent = formatDateShort(maxDate);
-
-  labelsContainer.appendChild(startLabel);
-  labelsContainer.appendChild(endLabel);
+  const rangeLabel = document.createElement("span");
+  rangeLabel.textContent = "Select commit range by clicking and dragging";
+  labelsContainer.appendChild(rangeLabel);
 
   return labelsContainer;
 }
@@ -484,22 +631,18 @@ function setupScrubberInteractions(
       const x = e.clientX - rect.left;
       const percent = (x / rect.width) * 100;
 
-      // Convert click position to date
-      const totalMs = state.maxDate.getTime() - state.minDate.getTime();
-      const clickMs = state.minDate.getTime() + (percent / 100) * totalMs;
-      const clickDate = new Date(clickMs);
-
-      // Snap to nearest commit point
-      const snappedDate = snapToNearestCommit(state.commitPoints, clickDate);
-      const snappedPercent = getPercentFromDate(
-        snappedDate,
-        state.minDate,
-        state.maxDate
+      // Snap to nearest commit position instead of date
+      const snappedPercent = snapPositionToNearestCommit(
+        state.commitPoints,
+        percent
       );
 
       // Set new selection at snapped point with minimum width
-      const minWidthPercent =
-        (DATE_FILTER_CONFIG.MIN_SELECTION_WIDTH / rect.width) * 100;
+      const minWidthPercent = Math.max(
+        (DATE_FILTER_CONFIG.MIN_SELECTION_WIDTH / rect.width) * 100,
+        10 // Minimum 10% width
+      );
+
       selection.style.left =
         Math.max(0, snappedPercent - minWidthPercent / 2) + "%";
       selection.style.width = minWidthPercent + "%";
@@ -518,8 +661,6 @@ function setupScrubberInteractions(
   document.addEventListener("mousemove", (e) => {
     if (state.isResizing) {
       handleResize(e, container, selection, state, dateDisplay);
-    } else if (state.isDragging) {
-      handleDrag(e, container, selection, state, dateDisplay);
     }
   });
 
@@ -543,58 +684,57 @@ function handleResize(e, container, selection, state, dateDisplay) {
   const rect = container.getBoundingClientRect();
   const deltaX = e.clientX - state.startX;
   const deltaPercent = (deltaX / rect.width) * 100;
+  const minWidthPercent = Math.max(
+    (DATE_FILTER_CONFIG.MIN_SELECTION_WIDTH / rect.width) * 100,
+    10 // Minimum 10% width
+  );
 
   if (state.resizeHandle === "left") {
     const newLeft = Math.max(0, state.initialLeft + deltaPercent);
     const newWidth = state.initialWidth - deltaPercent;
-    const minWidthPercent =
-      (DATE_FILTER_CONFIG.MIN_SELECTION_WIDTH / rect.width) * 100;
 
     if (newWidth >= minWidthPercent) {
-      // Snap to nearest commit point
-      const { startDate } = getCurrentDateRangeFromPercent(
-        newLeft,
-        newWidth,
-        state.minDate,
-        state.maxDate
-      );
-      const snappedStartDate = snapToNearestCommit(
+      // Snap to nearest commit position
+      const snappedLeft = snapPositionToNearestCommit(
         state.commitPoints,
-        startDate
+        newLeft
       );
-      const snappedLeft = getPercentFromDate(
-        snappedStartDate,
-        state.minDate,
-        state.maxDate
+      const maxLeft = Math.max(
+        0,
+        parseFloat(selection.style.left) +
+          parseFloat(selection.style.width) -
+          minWidthPercent
       );
 
-      selection.style.left = snappedLeft + "%";
-      selection.style.width =
-        state.initialLeft + state.initialWidth - snappedLeft + "%";
+      const finalLeft = Math.min(snappedLeft - 5, maxLeft);
+
+      const finalWidth =
+        parseFloat(selection.style.left) +
+        parseFloat(selection.style.width) -
+        finalLeft;
+
+      selection.style.left = finalLeft + "%";
+      selection.style.width = finalWidth + "%";
     }
   } else if (state.resizeHandle === "right") {
     const newWidth = Math.max(
-      (DATE_FILTER_CONFIG.MIN_SELECTION_WIDTH / rect.width) * 100,
+      minWidthPercent,
       state.initialWidth + deltaPercent
     );
-    const maxLeft = 100 - newWidth;
+    const rightEdgePercent = state.initialLeft + newWidth;
 
-    if (state.initialLeft <= maxLeft) {
-      // Snap to nearest commit point
-      const { endDate } = getCurrentDateRangeFromPercent(
-        state.initialLeft,
-        newWidth,
-        state.minDate,
-        state.maxDate
-      );
-      const snappedEndDate = snapToNearestCommit(state.commitPoints, endDate);
-      const snappedRight = getPercentFromDate(
-        snappedEndDate,
-        state.minDate,
-        state.maxDate
-      );
+    // Snap the right edge to nearest commit
+    const snappedRightPercent = snapPositionToNearestCommit(
+      state.commitPoints,
+      rightEdgePercent
+    );
+    const finalWidth = Math.max(
+      minWidthPercent,
+      snappedRightPercent - state.initialLeft + 5
+    );
 
-      selection.style.width = snappedRight - state.initialLeft + "%";
+    if (state.initialLeft + finalWidth <= 100) {
+      selection.style.width = finalWidth + "%";
     }
   }
 
@@ -605,90 +745,6 @@ function handleResize(e, container, selection, state, dateDisplay) {
     dateDisplay
   );
   triggerDateChange(state);
-}
-
-/**
- * Handles drag interactions
- * @param {MouseEvent} e - Mouse event
- * @param {HTMLElement} container - Container element
- * @param {HTMLElement} selection - Selection element
- * @param {Object} state - Scrubber state
- * @param {HTMLElement} dateDisplay - Date display element
- */
-function handleDrag(e, container, selection, state, dateDisplay) {
-  const rect = container.getBoundingClientRect();
-  const deltaX = e.clientX - state.startX;
-  const deltaPercent = (deltaX / rect.width) * 100;
-  const width = parseFloat(selection.style.width);
-
-  const newLeft = Math.max(
-    0,
-    Math.min(100 - width, state.initialLeft + deltaPercent)
-  );
-
-  // Snap to nearest commit point
-  const { startDate } = getCurrentDateRangeFromPercent(
-    newLeft,
-    width,
-    state.minDate,
-    state.maxDate
-  );
-  const snappedStartDate = snapToNearestCommit(state.commitPoints, startDate);
-  const snappedLeft = getPercentFromDate(
-    snappedStartDate,
-    state.minDate,
-    state.maxDate
-  );
-
-  // Ensure we don't go out of bounds
-  const finalLeft = Math.max(0, Math.min(100 - width, snappedLeft));
-  selection.style.left = finalLeft + "%";
-
-  updateDateDisplayFromSelection(
-    selection,
-    state.minDate,
-    state.maxDate,
-    dateDisplay
-  );
-  triggerDateChange(state);
-}
-
-/**
- * Gets date range from position percentages
- * @param {number} leftPercent - Left position percentage
- * @param {number} widthPercent - Width percentage
- * @param {Date} minDate - Minimum date
- * @param {Date} maxDate - Maximum date
- * @returns {Object} Object with startDate and endDate
- */
-function getCurrentDateRangeFromPercent(
-  leftPercent,
-  widthPercent,
-  minDate,
-  maxDate
-) {
-  const totalMs = maxDate.getTime() - minDate.getTime();
-  const startMs = minDate.getTime() + (leftPercent / 100) * totalMs;
-  const endMs =
-    minDate.getTime() + ((leftPercent + widthPercent) / 100) * totalMs;
-
-  return {
-    startDate: new Date(startMs),
-    endDate: new Date(endMs),
-  };
-}
-
-/**
- * Gets percentage position from a date
- * @param {Date} date - Date to convert
- * @param {Date} minDate - Minimum date
- * @param {Date} maxDate - Maximum date
- * @returns {number} Percentage position
- */
-function getPercentFromDate(date, minDate, maxDate) {
-  const totalMs = maxDate.getTime() - minDate.getTime();
-  const dateMs = date.getTime() - minDate.getTime();
-  return (dateMs / totalMs) * 100;
 }
 
 /**
@@ -722,17 +778,34 @@ function updateDateDisplayFromSelection(
 function getCurrentDateRange(selection, minDate, maxDate) {
   const left = parseFloat(selection.style.left);
   const width = parseFloat(selection.style.width);
+  const right = left + width;
 
-  const totalMs = maxDate.getTime() - minDate.getTime();
-  const startMs = minDate.getTime() + (left / 100) * totalMs;
-  const endMs = minDate.getTime() + ((left + width) / 100) * totalMs;
+  // Get commit points from global state
+  const commitPoints = window.dateFilterControls?.commitPoints || [];
 
-  var ret = {
-    startDate: new Date(startMs),
-    endDate: new Date(endMs),
+  if (commitPoints.length === 0) {
+    // Fallback to time-based calculation if no commits
+    const totalMs = maxDate.getTime() - minDate.getTime();
+    const startMs = minDate.getTime() + (left / 100) * totalMs;
+    const endMs = minDate.getTime() + (right / 100) * totalMs;
+
+    return {
+      startDate: new Date(startMs),
+      endDate: new Date(endMs),
+    };
+  }
+
+  // Find commits at the left and right edges of selection
+  const startCommit = findNearestCommitByPosition(commitPoints, left);
+  const endCommit = findNearestCommitByPosition(commitPoints, right);
+
+  const startDate = startCommit ? startCommit.date : minDate;
+  const endDate = endCommit ? endCommit.date : maxDate;
+
+  return {
+    startDate: startDate,
+    endDate: endDate,
   };
-
-  return ret;
 }
 
 /**
@@ -754,19 +827,39 @@ function setDateRange(
   dateDisplay,
   commitPoints = []
 ) {
-  // Snap dates to nearest commits if commit points are available
-  const snappedStartDate =
-    commitPoints.length > 0
-      ? snapToNearestCommit(commitPoints, startDate)
-      : startDate;
-  const snappedEndDate =
-    commitPoints.length > 0
-      ? snapToNearestCommit(commitPoints, endDate)
-      : endDate;
+  if (commitPoints.length > 0) {
+    // Find nearest commits for the dates
+    const startCommit = findNearestCommitPoint(commitPoints, startDate);
+    const endCommit = findNearestCommitPoint(commitPoints, endDate);
 
+    if (startCommit && endCommit) {
+      // Use commit positions for equally-spaced layout
+      const startCommitIndex = findCommitIndex(commitPoints, startCommit);
+      const endCommitIndex = findCommitIndex(commitPoints, endCommit);
+
+      const startPercent = getCommitPosition(
+        startCommitIndex,
+        commitPoints.length
+      );
+      const endPercent = getCommitPosition(endCommitIndex, commitPoints.length);
+
+      // Ensure proper order (start <= end)
+      const finalStartPercent = Math.min(startPercent - 5, endPercent);
+      const finalEndPercent = Math.max(startPercent, endPercent + 5);
+
+      selection.style.left = finalStartPercent + "%";
+      selection.style.width =
+        Math.max(finalEndPercent - finalStartPercent, 10) + "%";
+
+      updateDateDisplay(dateDisplay, startCommit.date, endCommit.date);
+      return;
+    }
+  }
+
+  // Fallback to time-based positioning if no commits
   const totalMs = maxDate.getTime() - minDate.getTime();
-  const startMs = snappedStartDate.getTime() - minDate.getTime();
-  const endMs = snappedEndDate.getTime() - minDate.getTime();
+  const startMs = startDate.getTime() - minDate.getTime();
+  const endMs = endDate.getTime() - minDate.getTime();
 
   const startPercent = (startMs / totalMs) * 100;
   const endPercent = (endMs / totalMs) * 100;
@@ -774,7 +867,7 @@ function setDateRange(
   selection.style.left = startPercent + "%";
   selection.style.width = endPercent - startPercent + "%";
 
-  updateDateDisplay(dateDisplay, snappedStartDate, snappedEndDate);
+  updateDateDisplay(dateDisplay, startDate, endDate);
 }
 
 /**
@@ -880,6 +973,8 @@ export function resetDateFilter() {
   // Apply filter with full range
   applyDateFilter();
 }
+
+window.clearCharts = clearCharts;
 
 /**
  * Clears all existing charts
