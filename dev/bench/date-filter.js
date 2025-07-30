@@ -44,6 +44,10 @@ export function initializeDateFilter(data) {
   const resetButton = createResetButton();
   dateFilterContainer.appendChild(resetButton);
 
+  // Create latest commit button
+  const latestButton = createLatestCommitButton();
+  dateFilterContainer.appendChild(latestButton);
+
   // Store references for global access
   window.dateFilterControls = {
     scrubber,
@@ -58,6 +62,7 @@ export function initializeDateFilter(data) {
 
   // Set up event listeners
   resetButton.addEventListener("click", resetDateFilter);
+  latestButton.addEventListener("click", selectLatestCommit);
 
   // Apply initial filter
   const filteredData = getFilteredData();
@@ -153,6 +158,7 @@ function createDateScrubber(
     backgroundColor: "#dee2e6",
     borderRadius: "2px",
     margin: "20px 0",
+    userSelect: "none", // Prevent text selection during drag
   });
   container.appendChild(timelineLine);
 
@@ -164,6 +170,9 @@ function createDateScrubber(
     maxDate,
     commitPoints,
     onDateChange: null,
+    isDragging: false,
+    dragStartIndex: -1,
+    dragEndIndex: -1,
   };
 
   // Create commit points along the timeline
@@ -185,12 +194,26 @@ function createDateScrubber(
   // Initialize with all commits selected
   commitPoints.forEach((commit) => {
     timelineState.selectedCommits.add(commit.id);
-    updateCommitPointStyle(timelineState.commitElements.get(commit.id), true);
   });
+
+  // Update all commit point styles after elements are created
+  setTimeout(() => {
+    timelineState.commitElements.forEach((element, commitId) => {
+      updateCommitPointStyle(
+        element,
+        timelineState.selectedCommits.has(commitId)
+      );
+    });
+  }, 0);
+
   updateSelectionDisplay(selectionDisplay, timelineState);
+
+  // Add global mouse event listeners for drag functionality
+  setupGlobalDragListeners(timelineState);
 
   return {
     container,
+    timelineState, // Expose timeline state for external access
     getDateRange: () => getSelectedDateRange(timelineState),
     setDateRange: (start, end) =>
       setSelectedDateRange(start, end, timelineState, selectionDisplay),
@@ -257,6 +280,12 @@ function createCommitCardsOnTimeline(
       commitCard.style.display = "block";
       commitPoint.style.backgroundColor = "#2c5aa0";
       commitPoint.style.transform = "translateX(-50%) scale(1.2)";
+
+      // Handle drag selection
+      if (timelineState.isDragging) {
+        timelineState.dragEndIndex = index;
+        updateDragSelection(timelineState);
+      }
     });
 
     commitPoint.addEventListener("mouseleave", () => {
@@ -267,14 +296,28 @@ function createCommitCardsOnTimeline(
       );
     });
 
-    // Add click handler for selection
-    commitPoint.addEventListener("click", (e) => {
+    // Add mouse down handler for selection and drag start
+    commitPoint.addEventListener("mousedown", (e) => {
+      e.preventDefault();
       e.stopPropagation();
-      toggleCommitSelection(commit, timelineState);
-      updateCommitPointStyle(
-        commitPoint,
-        timelineState.selectedCommits.has(commit.id)
-      );
+
+      // Clear all selections and select only this commit
+      timelineState.selectedCommits.clear();
+      timelineState.selectedCommits.add(commit.id);
+
+      // Update all commit point styles
+      timelineState.commitElements.forEach((element, commitId) => {
+        updateCommitPointStyle(
+          element,
+          timelineState.selectedCommits.has(commitId)
+        );
+      });
+
+      // Start drag from this commit
+      timelineState.isDragging = true;
+      timelineState.dragStartIndex = index;
+      timelineState.dragEndIndex = index;
+
       updateSelectionDisplay(timelineState.selectionDisplay, timelineState);
       triggerTimelineChange(timelineState);
     });
@@ -292,6 +335,55 @@ function createCommitCardsOnTimeline(
       timelineState.selectedCommits.has(commit.id)
     );
   });
+}
+
+/**
+ * Sets up global mouse event listeners for drag functionality
+ * @param {Object} timelineState - Timeline state object
+ */
+function setupGlobalDragListeners(timelineState) {
+  document.addEventListener("mouseup", () => {
+    timelineState.isDragging = false;
+    timelineState.dragStartIndex = -1;
+    timelineState.dragEndIndex = -1;
+  });
+}
+
+/**
+ * Updates selection during drag operation
+ * @param {Object} timelineState - Timeline state object
+ */
+function updateDragSelection(timelineState) {
+  if (!timelineState.isDragging) return;
+
+  const startIndex = Math.min(
+    timelineState.dragStartIndex,
+    timelineState.dragEndIndex
+  );
+  const endIndex = Math.max(
+    timelineState.dragStartIndex,
+    timelineState.dragEndIndex
+  );
+
+  // Clear current selection
+  timelineState.selectedCommits.clear();
+
+  // Select commits in the drag range
+  for (let i = startIndex; i <= endIndex; i++) {
+    const commit = timelineState.commitPoints[i];
+    timelineState.selectedCommits.add(commit.id);
+  }
+
+  // Update all commit point styles
+  timelineState.commitElements.forEach((element, commitId) => {
+    updateCommitPointStyle(
+      element,
+      timelineState.selectedCommits.has(commitId)
+    );
+  });
+
+  updateSelectionDisplay(timelineState.selectionDisplay, timelineState);
+  triggerTimelineChange(timelineState);
 }
 
 /**
@@ -362,19 +454,6 @@ function updateCommitPointStyle(commitPoint, isSelected) {
     commitPoint.style.backgroundColor = "#dee2e6";
     commitPoint.style.borderColor = "#fff";
     commitPoint.style.transform = "translateX(-50%) scale(0.8)";
-  }
-}
-
-/**
- * Toggles the selection state of a commit
- * @param {Object} commit - Commit object
- * @param {Object} timelineState - Timeline state object
- */
-function toggleCommitSelection(commit, timelineState) {
-  if (timelineState.selectedCommits.has(commit.id)) {
-    timelineState.selectedCommits.delete(commit.id);
-  } else {
-    timelineState.selectedCommits.add(commit.id);
   }
 }
 
@@ -487,6 +566,7 @@ function createResetButton() {
     fontSize: "14px",
     fontWeight: "bold",
     marginTop: "10px",
+    marginRight: "10px",
   });
 
   button.addEventListener("mouseenter", () => {
@@ -495,6 +575,37 @@ function createResetButton() {
 
   button.addEventListener("mouseleave", () => {
     button.style.backgroundColor = "#6c757d";
+  });
+
+  return button;
+}
+
+/**
+ * Creates the latest commit button
+ * @returns {HTMLElement} Latest commit button element
+ */
+function createLatestCommitButton() {
+  const button = document.createElement("button");
+  button.textContent = "Select Latest Commit";
+  button.id = "latest-commit-filter";
+  Object.assign(button.style, {
+    padding: "8px 16px",
+    backgroundColor: "#28a745",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "bold",
+    marginTop: "10px",
+  });
+
+  button.addEventListener("mouseenter", () => {
+    button.style.backgroundColor = "#218838";
+  });
+
+  button.addEventListener("mouseleave", () => {
+    button.style.backgroundColor = "#28a745";
   });
 
   return button;
@@ -553,16 +664,51 @@ export function applyDateFilter() {
 }
 
 /**
- * Resets the date filter to show all data
+ * Resets the date filter to show all commits
  */
 export function resetDateFilter() {
   const controls = window.dateFilterControls;
 
-  // Reset scrubber to full range
+  // Reset timeline to select all commits
   controls.scrubber.setDateRange(controls.minDate, controls.maxDate);
 
   // Apply filter with full range
   applyDateFilter();
+}
+
+/**
+ * Selects only the latest commit
+ */
+export function selectLatestCommit() {
+  const controls = window.dateFilterControls;
+  const commitPoints = controls.commitPoints;
+
+  if (commitPoints.length === 0) return;
+
+  // Find the latest commit (commits are sorted by date)
+  const latestCommit = commitPoints[commitPoints.length - 1];
+
+  // Get the timeline state from the scrubber
+  const timelineState = controls.scrubber.timelineState;
+  if (!timelineState) return;
+
+  // Clear all selections and select only the latest commit
+  timelineState.selectedCommits.clear();
+  timelineState.selectedCommits.add(latestCommit.id);
+
+  // Update all commit point styles
+  timelineState.commitElements.forEach((element, commitId) => {
+    updateCommitPointStyle(
+      element,
+      timelineState.selectedCommits.has(commitId)
+    );
+  });
+
+  // Update the selection display
+  updateSelectionDisplay(timelineState.selectionDisplay, timelineState);
+
+  // Trigger the change callback to update charts
+  triggerTimelineChange(timelineState);
 }
 
 window.clearCharts = clearCharts;
