@@ -45,7 +45,7 @@ public class Benchmarks
         yield return new LuaFile("./Tests/ack.lua");
         yield return new LuaFile("./Tests/sieve.lua");
         yield return new LuaFile("./Tests/heapsort.lua");
-        yield return new LuaFile("./Tests/regexredux.lua-2.lua");
+        yield return new LuaFile("./Tests/interop_25k_calls.lua");
 
         foreach (var file in Directory.GetFiles("./Tests/specific_features", "*.lua", SearchOption.AllDirectories))
             yield return new LuaFile(file);
