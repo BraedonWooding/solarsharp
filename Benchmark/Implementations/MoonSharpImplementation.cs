@@ -12,8 +12,18 @@ public class MoonSharpImplementation : AImplementation
         script = new Script();
     }
 
-    public override object Run(string file)
+    public override AImplementation CreateFresh()
     {
-        return script.DoString(file);
+        return new MoonSharpImplementation();
+    }
+
+    public override void RegisterFunction(string v, Func<double, double, double> add)
+    {
+        script.Globals["add"] = add;
+    }
+
+    public override Task<object> Run(string file)
+    {
+        return Task.FromResult((object)script.DoString(file));
     }
 }
