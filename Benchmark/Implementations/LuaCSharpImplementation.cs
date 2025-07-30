@@ -3,11 +3,11 @@ using Lua.Standard;
 
 namespace Benchmark.Implementations
 {
-    public class LuaCSharp : AImplementation
+    public class LuaCSharpImplementation : AImplementation
     {
         private readonly LuaState state;
 
-        public LuaCSharp()
+        public LuaCSharpImplementation()
         {
             state = LuaState.Create();
             state.OpenStandardLibraries();
@@ -15,7 +15,7 @@ namespace Benchmark.Implementations
 
         public override AImplementation CreateFresh()
         {
-            return new LuaCSharp();
+            return new LuaCSharpImplementation();
         }
 
         public override void RegisterFunction(string v, Func<double, double, double> add)

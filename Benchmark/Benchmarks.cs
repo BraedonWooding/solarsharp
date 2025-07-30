@@ -24,6 +24,7 @@ public class Benchmarks
         yield return new KeraImplementation();
         yield return new MoonSharpImplementation();
         yield return new NLuaImplementation();
+        yield return new LuaCSharpImplementation();
         yield return new SolarSharpImplementation();
     }
 
