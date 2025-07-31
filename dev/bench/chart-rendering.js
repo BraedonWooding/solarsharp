@@ -5,6 +5,8 @@
 import { IMPLEMENTATION_COLORS } from "./config.js";
 import { convertToMilliseconds } from "./utils.js";
 
+Chart.register(ChartDataLabels);
+
 /**
  * Renders all benchmark charts
  * @param {Array} dataSets - Array of datasets to render
@@ -56,14 +58,18 @@ export function normalizeBenchmarkUnits(dataset, metric = "time") {
  * @param {boolean} isOneCommitSelected - Whether only one commit is selected
  * @returns {Object} Chart.js options object
  */
-function createChartOptions(dataset, metric = "time", isOneCommitSelected = false) {
+function createChartOptions(
+  dataset,
+  metric = "time",
+  isOneCommitSelected = false
+) {
   const yAxisTitle = metric === "time" ? "Time (ms)" : "Memory (KB)";
 
   const baseOptions = {
     responsive: true,
     plugins: {
       legend: {
-        display: true, // Disable individual chart legends
+        display: !isOneCommitSelected,
       },
       tooltip: createTooltipConfig(dataset, metric, isOneCommitSelected),
     },
@@ -77,9 +83,22 @@ function createChartOptions(dataset, metric = "time", isOneCommitSelected = fals
     },
   };
 
+  baseOptions.plugins.datalabels = {
+    display: isOneCommitSelected,
+    align: "right",
+    anchor: "end",
+    formatter: (value, context) => {
+      // Round value to nearest 2 dp
+      const roundedValue = Math.round(value * 100) / 100;
+      // then add unit
+      const unit = metric === "time" ? "ms" : "KB";
+      return `${roundedValue} ${unit}`;
+    },
+  };
+
   if (isOneCommitSelected) {
     // Configure for horizontal bar chart
-    baseOptions.indexAxis = 'y';
+    baseOptions.indexAxis = "y";
     baseOptions.scales = {
       x: {
         display: true,
@@ -97,6 +116,11 @@ function createChartOptions(dataset, metric = "time", isOneCommitSelected = fals
           display: true,
           text: "Implementation",
         },
+      },
+    };
+    baseOptions.layout = {
+      padding: {
+        right: 80,
       },
     };
   } else {
@@ -132,7 +156,11 @@ function createChartOptions(dataset, metric = "time", isOneCommitSelected = fals
  * @param {boolean} isOneCommitSelected - Whether only one commit is selected
  * @returns {Object} Tooltip configuration object
  */
-function createTooltipConfig(dataset, metric = "time", isOneCommitSelected = false) {
+function createTooltipConfig(
+  dataset,
+  metric = "time",
+  isOneCommitSelected = false
+) {
   if (isOneCommitSelected) {
     // Simplified tooltip for single commit horizontal bar chart
     return {
@@ -151,8 +179,10 @@ function createTooltipConfig(dataset, metric = "time", isOneCommitSelected = fal
         },
         label: (item) => {
           let label = item.formattedValue;
-          const benchData = dataset.find(d => d[0].bench.simplifiedName === item.label);
-          
+          const benchData = dataset.find(
+            (d) => d[0].bench.simplifiedName === item.label
+          );
+
           if (benchData) {
             const { range, unit } = benchData[0].bench;
             label += " " + unit;
@@ -160,7 +190,10 @@ function createTooltipConfig(dataset, metric = "time", isOneCommitSelected = fal
             if (range && metric === "time") {
               const rangeValue = Number(range.replace("±", ""));
               const originalUnit = benchData[0].bench.originalUnit || unit;
-              const convertedRange = convertToMilliseconds(rangeValue, originalUnit);
+              const convertedRange = convertToMilliseconds(
+                rangeValue,
+                originalUnit
+              );
               label += " (± " + convertedRange.toFixed(2) + ")";
             }
           }
@@ -168,7 +201,9 @@ function createTooltipConfig(dataset, metric = "time", isOneCommitSelected = fal
           return label;
         },
         afterLabel: (item) => {
-          const benchData = dataset.find(d => d[0].bench.simplifiedName === item.label);
+          const benchData = dataset.find(
+            (d) => d[0].bench.simplifiedName === item.label
+          );
           if (benchData) {
             const bench = benchData[0].bench;
             return bench.name ? "\n" + bench.name : "";
@@ -237,32 +272,43 @@ export function renderGraph(parent, name, dataset, metric = "time") {
   parent.appendChild(canvas);
 
   // Check if only one commit is selected
-  const isOneCommitSelected = window.dateFilterControls && 
-    window.dateFilterControls.scrubber && 
+  const isOneCommitSelected =
+    window.dateFilterControls &&
+    window.dateFilterControls.scrubber &&
     window.dateFilterControls.scrubber.timelineState &&
     window.dateFilterControls.scrubber.timelineState.selectedCommits.size === 1;
 
   const chartType = isOneCommitSelected ? "bar" : "line";
-  
+
   let data;
-  
+
   if (isOneCommitSelected) {
     // For single commit, create horizontal bar chart data
     // Each implementation becomes a bar
-    const implementations = dataset.map(d => d[0].bench.simplifiedName);
-    const values = dataset.map(d => metric === "time" ? d[0].bench.value : d[0].bench.allocations);
-    const colors = implementations.map(impl => IMPLEMENTATION_COLORS[impl] + "60");
-    const borderColors = implementations.map(impl => IMPLEMENTATION_COLORS[impl]);
-    
+    const implementations = dataset.map((d) => d[0].bench.simplifiedName);
+    const values = dataset.map((d) =>
+      metric === "time" ? d[0].bench.value : d[0].bench.allocations
+    );
+    const colors = implementations.map(
+      (impl) => IMPLEMENTATION_COLORS[impl] + "60"
+    );
+    const borderColors = implementations.map(
+      (impl) => IMPLEMENTATION_COLORS[impl]
+    );
+
     data = {
       labels: implementations,
-      datasets: [{
-        label: `${metric === "time" ? "Time (ms)" : "Memory (KB)"} - ${dataset[0][0].commit.id.slice(0, 7)}`,
-        data: values,
-        backgroundColor: colors,
-        borderColor: borderColors,
-        borderWidth: 2,
-      }],
+      datasets: [
+        {
+          label: `${
+            metric === "time" ? "Time (ms)" : "Memory (KB)"
+          } - ${dataset[0][0].commit.id.slice(0, 7)}`,
+          data: values,
+          backgroundColor: colors,
+          borderColor: borderColors,
+          borderWidth: 2,
+        },
+      ],
     };
   } else {
     // For multiple commits, use line chart data

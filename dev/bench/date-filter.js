@@ -64,6 +64,8 @@ export function initializeDateFilter(data) {
   resetButton.addEventListener("click", resetDateFilter);
   latestButton.addEventListener("click", selectLatestCommit);
 
+  selectLatestCommit();
+
   // Apply initial filter
   const filteredData = getFilteredData();
 
