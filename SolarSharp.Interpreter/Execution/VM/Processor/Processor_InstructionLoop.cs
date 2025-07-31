@@ -132,7 +132,7 @@ internal sealed partial class Processor
                         ExecBeginFn(i);
                         break;
                     case OpCode.ToBool:
-                        m_ValueStack.Push(LuaValue.NewBoolean(m_ValueStack.Pop().ToScalar().CastToBool()));
+                        m_ValueStack.Push(LuaValue.ReadonlyBool(m_ValueStack.Pop().ToScalar().CastToBool()));
                         break;
                     case OpCode.Args:
                         ExecArgs(i);
@@ -318,9 +318,9 @@ internal sealed partial class Processor
 
         var v = stackframe.LocalScope[symref.i_Index];
         if (v == null)
-            stackframe.LocalScope[symref.i_Index] = v = LuaValue.NewNil();
-
-        v.Assign(value);
+            stackframe.LocalScope[symref.i_Index] = value.CloneAsWritable();
+        else
+            v.Assign(value);
     }
 
     private void ExecStoreLcl(Instruction i)
@@ -385,11 +385,11 @@ internal sealed partial class Processor
 
     private void ExecMkTuple(Instruction i)
     {
-        Slice<LuaValue> slice = new(m_ValueStack.Storage, m_ValueStack.Count - i.NumVal, i.NumVal, false);
-
-        var v = Internal_AdjustTuple(slice);
+        var slice = new FastSlice<LuaValue, LuaValue[]>(m_ValueStack.Storage, m_ValueStack.Count - i.NumVal, i.NumVal);
+        var v = ExpandTuple(slice);
+        var full_values = v.ToArray();
         m_ValueStack.RemoveLast(i.NumVal);
-        m_ValueStack.Push(LuaValue.NewTuple(v));
+        m_ValueStack.Push(LuaValue.NewTuple(full_values));
     }
 
     private void ExecToNum(Instruction i)
@@ -499,15 +499,15 @@ internal sealed partial class Processor
             throw new InternalErrorException("CNOT had non-bool arg");
 
         if (not.CastToBool())
-            m_ValueStack.Push(LuaValue.NewBoolean(!v.CastToBool()));
+            m_ValueStack.Push(LuaValue.ReadonlyBool(!v.CastToBool()));
         else
-            m_ValueStack.Push(LuaValue.NewBoolean(v.CastToBool()));
+            m_ValueStack.Push(LuaValue.ReadonlyBool(v.CastToBool()));
     }
 
     private void ExecNot()
     {
         var v = m_ValueStack.Pop().ToScalar();
-        m_ValueStack.Push(LuaValue.NewBoolean(!v.CastToBool()));
+        m_ValueStack.Push(LuaValue.ReadonlyBool(!v.CastToBool()));
     }
 
     private void ExecBeginFn(Instruction i)
@@ -528,52 +528,38 @@ internal sealed partial class Processor
         return csi;
     }
 
-    private IList<LuaValue> CreateArgsListForFunctionCall(int numargs, int offsFromTop)
-    {
-        if (numargs == 0) return [];
-
-        var lastParam = m_ValueStack.Peek(offsFromTop);
-
-        if (lastParam.Type == DataType.Tuple && lastParam.Tuple.Length > 1)
-        {
-            List<LuaValue> values = [];
-
-            for (var idx = 0; idx < numargs - 1; idx++)
-                values.Add(m_ValueStack.Peek(numargs - idx - 1 + offsFromTop));
-
-            foreach (var t in lastParam.Tuple)
-                values.Add(t);
-
-            return values;
-        }
-
-        return new Slice<LuaValue>(m_ValueStack.Storage, m_ValueStack.Count - numargs - offsFromTop, numargs, false);
-    }
-
     private void ExecArgs(Instruction I)
     {
         var numargs = (int)m_ValueStack.Peek().Number;
 
         // unpacks last tuple arguments to simplify a lot of code down under
-        var argsList = CreateArgsListForFunctionCall(numargs, 1);
+        var argsStack = new FastSlice<LuaValue, LuaValue[]>(m_ValueStack.Storage,
+            m_ValueStack.Count - numargs - 1, numargs);
+        var argsList = ExpandTuple(argsStack);
+        using var it = argsList.GetEnumerator();
+        var finished = false;
 
         for (var i = 0; i < I.SymbolList.Length; i++)
-            if (i >= argsList.Count)
+            if (finished || !it.MoveNext())
             {
+                finished = true;
                 AssignLocal(I.SymbolList[i], LuaValue.NewNil());
             }
             else if (i == I.SymbolList.Length - 1 && I.SymbolList[i].i_Name == WellKnownSymbols.VARARGS)
             {
-                var len = argsList.Count - i;
+                // Copy the rest of the args into a tuple
+                var len = GetLengthOfPossibleTuples(argsStack) - i;
                 var varargs = new LuaValue[len];
-
-                for (var ii = 0; ii < len; ii++, i++) varargs[ii] = argsList[i].ToScalar().CloneAsWritable();
-
-                AssignLocal(I.SymbolList[^1], LuaValue.NewTuple(Internal_AdjustTuple(varargs)));
+                var idx = 0;
+                do
+                {
+                    varargs[idx++] = it.Current!.CloneAsWritable();
+                } while (it.MoveNext());
+                AssignLocal(I.SymbolList[^1], LuaValue.NewTuple(varargs));
             }
             else
             {
-                AssignLocal(I.SymbolList[i], argsList[i].ToScalar().CloneAsWritable());
+                AssignLocal(I.SymbolList[i], it.Current!.ToScalar().CloneAsWritable());
             }
     }
 
@@ -612,7 +598,9 @@ internal sealed partial class Processor
         if (fn.Type == DataType.ClrFunction)
         {
             //IList<LuaValue> args = new Slice<LuaValue>(m_ValueStack, m_ValueStack.Count - argsCount, argsCount, false);
-            var args = CreateArgsListForFunctionCall(argsCount, 0);
+
+            var args = ExpandTuple(new FastSlice<LuaValue, LuaValue[]>(m_ValueStack.Storage,
+                m_ValueStack.Count - argsCount, argsCount)).ToArray();
             // we expand tuples before callbacks
             // args = LuaValue.ExpandArgumentsToList(args);
 
@@ -958,7 +946,7 @@ internal sealed partial class Processor
         }
 
         // else perform standard comparison
-        m_ValueStack.Push(LuaValue.NewBoolean(r.Equals(l)));
+        m_ValueStack.Push(r.Equals(l) ? LuaValue.True : LuaValue.False);
         return instructionPtr;
     }
 
@@ -969,11 +957,11 @@ internal sealed partial class Processor
 
         if (l.Type == DataType.Number && r.Type == DataType.Number)
         {
-            m_ValueStack.Push(LuaValue.NewBoolean(l.Number < r.Number));
+            m_ValueStack.Push(LuaValue.ReadonlyBool(l.Number < r.Number));
         }
         else if (l.Type == DataType.String && r.Type == DataType.String)
         {
-            m_ValueStack.Push(LuaValue.NewBoolean(l.String.CompareTo(r.String) < 0));
+            m_ValueStack.Push(LuaValue.ReadonlyBool(l.String.CompareTo(r.String) < 0));
         }
         else
         {
@@ -994,12 +982,12 @@ internal sealed partial class Processor
         if (l.Type == DataType.Number && r.Type == DataType.Number)
         {
             m_ValueStack.Push(LuaValue.False);
-            m_ValueStack.Push(LuaValue.NewBoolean(l.Number <= r.Number));
+            m_ValueStack.Push(LuaValue.ReadonlyBool(l.Number <= r.Number));
         }
         else if (l.Type == DataType.String && r.Type == DataType.String)
         {
             m_ValueStack.Push(LuaValue.False);
-            m_ValueStack.Push(LuaValue.NewBoolean(l.String.CompareTo(r.String) <= 0));
+            m_ValueStack.Push(LuaValue.ReadonlyBool(l.String.CompareTo(r.String) <= 0));
         }
         else
         {

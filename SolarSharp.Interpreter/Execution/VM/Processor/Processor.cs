@@ -104,12 +104,14 @@ internal sealed partial class Processor
         else
             m_ValueStack.Push(function); // func val
 
-        args = Internal_AdjustTuple(args);
-
-        foreach (var t in args)
+        var len = 0;
+        foreach (var t in ExpandTuple(args))
+        {
             m_ValueStack.Push(t);
+            len++;
+        }
 
-        m_ValueStack.Push(LuaValue.NewNumber(args.Length)); // func args count
+        m_ValueStack.Push(LuaValue.NewNumber(len)); // func args count
 
         m_ExecutionStack.Push(new CallStackItem
         {

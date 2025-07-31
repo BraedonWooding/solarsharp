@@ -8,37 +8,41 @@ namespace SolarSharp.Interpreter.DataStructs;
 ///     Provides facility to create a "sliced" view over an existing IList<typeparamref name="T" />
 /// </summary>
 /// <typeparam name="T">The type of the items contained in the collection</typeparam>
-internal class Slice<T> : IList<T>
+public readonly struct FastSlice<T, K> : IList<T> 
+    where K: IList<T>
 {
-    private readonly IList<T> m_SourceList;
+    private readonly K m_SourceList;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="Slice{T}" /> class.
+    ///     Initializes a new instance of the <see cref="FastSlice{T}" /> class.
     /// </summary>
     /// <param name="list">The list to apply the Slice view on</param>
     /// <param name="from">From which index</param>
     /// <param name="length">The length of the slice</param>
-    /// <param name="reversed">if set to <c>true</c> the view is in reversed order.</param>
-    public Slice(IList<T> list, int from, int length, bool reversed)
+    public FastSlice(K list, int from, int length)
     {
         m_SourceList = list;
         From = from;
-        Count = length;
-        Reversed = reversed;
+        Length = length;
+    }
+    
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="FastSlice{T}" /> class.
+    /// </summary>
+    /// <param name="slice">The slice to apply the Slice view on</param>
+    /// <param name="from">From which index</param>
+    /// <param name="length">The length of the slice</param>
+    public FastSlice(FastSlice<T, K> slice, int from, int length)
+    {
+        m_SourceList = slice.m_SourceList;
+        From = slice.From + from;
+        Length = length;
     }
 
     /// <summary>
     ///     Gets the index from which the slice starts
     /// </summary>
-    public int From { get; }
-
-    /// <summary>
-    ///     Gets a value indicating whether this <see cref="Slice{T}" /> operates in a reversed direction.
-    /// </summary>
-    /// <value>
-    ///     <c>true</c> if this <see cref="Slice{T}" /> operates in a reversed direction; otherwise, <c>false</c>.
-    /// </value>
-    public bool Reversed { get; }
+    public readonly int From { get; }
 
     /// <summary>
     ///     Returns an enumerator that iterates through the collection.
@@ -48,8 +52,8 @@ internal class Slice<T> : IList<T>
     /// </returns>
     public IEnumerator<T> GetEnumerator()
     {
-        for (var i = 0; i < Count; i++)
-            yield return m_SourceList[CalcRealIndex(i)];
+        for (var i = 0; i < Length; i++)
+            yield return m_SourceList[From + i];
     }
 
     /// <summary>
@@ -60,8 +64,8 @@ internal class Slice<T> : IList<T>
     /// </returns>
     IEnumerator IEnumerable.GetEnumerator()
     {
-        for (var i = 0; i < Count; i++)
-            yield return m_SourceList[CalcRealIndex(i)];
+        for (var i = 0; i < Length; i++)
+            yield return m_SourceList[From + i];
     }
 
     /// <summary>
@@ -71,16 +75,15 @@ internal class Slice<T> : IList<T>
     /// <returns></returns>
     public T this[int index]
     {
-        get => m_SourceList[CalcRealIndex(index)];
-        set => m_SourceList[CalcRealIndex(index)] = value;
+        get => m_SourceList[From + index];
+        set => m_SourceList[From + index] = value;
     }
 
     /// <summary>
     ///     Gets the number of elements contained in the <see cref="T:System.Collections.Generic.ICollection`1" />.
     /// </summary>
     /// <returns>The number of elements contained in the <see cref="T:System.Collections.Generic.ICollection`1" />.</returns>
-    public int Count { get; }
-
+    public int Length { get; }
 
     /// <summary>
     ///     Determines the index of a specific item in the <see cref="T:System.Collections.Generic.IList`1" />.
@@ -91,7 +94,7 @@ internal class Slice<T> : IList<T>
     /// </returns>
     public int IndexOf(T item)
     {
-        for (var i = 0; i < Count; i++)
+        for (var i = 0; i < Length; i++)
             if (this[i].Equals(item))
                 return i;
         return -1;
@@ -157,7 +160,7 @@ internal class Slice<T> : IList<T>
     /// <param name="arrayIndex">Index of the array.</param>
     public void CopyTo(T[] array, int arrayIndex)
     {
-        for (var i = 0; i < Count; i++)
+        for (var i = 0; i < Length; i++)
             array[i + arrayIndex] = this[i];
     }
 
@@ -183,28 +186,17 @@ internal class Slice<T> : IList<T>
         throw new InvalidOperationException("Slices are readonly");
     }
 
-    /// <summary>
-    ///     Calculates the real index in the underlying collection
-    /// </summary>
-    private int CalcRealIndex(int index)
-    {
-        if (index < 0 || index >= Count)
-            throw new ArgumentOutOfRangeException(nameof(index));
-
-        if (Reversed) return From + Count - index - 1;
-
-        return From + index;
-    }
+    public int Count => Length;
 
     /// <summary>
     ///     Converts to an array.
     /// </summary>
     public T[] ToArray()
     {
-        var array = new T[Count];
+        var array = new T[Length];
 
-        for (var i = 0; i < Count; i++)
-            array[i] = m_SourceList[CalcRealIndex(i)];
+        for (var i = 0; i < Length; i++)
+            array[i] = m_SourceList[From + i];
 
         return array;
     }
@@ -214,10 +206,10 @@ internal class Slice<T> : IList<T>
     /// </summary>
     public List<T> ToList()
     {
-        List<T> list = new(Count);
+        List<T> list = new(Length);
 
-        for (var i = 0; i < Count; i++)
-            list.Add(m_SourceList[CalcRealIndex(i)]);
+        for (var i = 0; i < Length; i++)
+            list.Add(m_SourceList[From + i]);
 
         return list;
     }

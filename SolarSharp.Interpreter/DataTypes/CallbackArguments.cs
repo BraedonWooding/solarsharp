@@ -25,7 +25,7 @@ public class CallbackArguments
 
         if (m_Args.Count > 0)
         {
-            var last = m_Args[m_Args.Count - 1];
+            var last = m_Args[^1];
 
             if (last.Type == DataType.Tuple)
             {
@@ -201,7 +201,7 @@ public class CallbackArguments
     {
         if (IsMethodCall)
         {
-            Slice<LuaValue> slice = new(m_Args, 1, m_Args.Count - 1, false);
+            var slice = new FastSlice<LuaValue, IList<LuaValue>>(m_Args, 1, m_Args.Count - 1);
             return new CallbackArguments(slice, false);
         }
 

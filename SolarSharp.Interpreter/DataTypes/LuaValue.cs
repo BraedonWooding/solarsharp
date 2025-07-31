@@ -22,8 +22,16 @@ public sealed class LuaValue
     {
         Nil = new LuaValue { Type = DataType.Nil }.AsReadOnly();
         Void = new LuaValue { Type = DataType.Void }.AsReadOnly();
-        True = NewBoolean(true).AsReadOnly();
-        False = NewBoolean(false).AsReadOnly();
+        True = new LuaValue
+        {
+            Number = 1,
+            Type = DataType.Boolean
+        };
+        False = new LuaValue
+        {
+            Number = 0,
+            Type = DataType.Boolean
+        };
     }
 
     /// <summary>
@@ -114,6 +122,11 @@ public sealed class LuaValue
     public static LuaValue NewNil()
     {
         return new LuaValue();
+    }
+
+    public static LuaValue ReadonlyBool(bool v)
+    {
+        return v ? True : False;
     }
 
     /// <summary>

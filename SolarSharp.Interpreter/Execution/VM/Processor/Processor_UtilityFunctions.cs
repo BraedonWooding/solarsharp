@@ -1,37 +1,65 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.DataTypes;
 
 namespace SolarSharp.Interpreter.Execution.VM;
 
 internal sealed partial class Processor
 {
-    private LuaValue[] Internal_AdjustTuple(IList<LuaValue> values)
+    private int GetLengthOfPossibleTuples<T>(T values) where T : IList<LuaValue>
     {
         if (values == null || values.Count == 0)
-            return [];
-
-        if (values[values.Count - 1].Type == DataType.Tuple)
         {
-            var baseLen = values.Count - 1 + values[values.Count - 1].Tuple.Length;
-            var result = new LuaValue[baseLen];
-
-            for (var i = 0; i < values.Count - 1; i++) result[i] = values[i].ToScalar();
-
-            for (var i = 0; i < values[values.Count - 1].Tuple.Length; i++)
-                result[values.Count + i - 1] = values[values.Count - 1].Tuple[i];
-
-            if (result[^1].Type == DataType.Tuple)
-                return Internal_AdjustTuple(result);
-            return result;
+            return 0;
         }
-        else
+
+        var len = values.Count - 1;
+        var last = values[^1];
+        while (last.Type == DataType.Tuple)
         {
-            var result = new LuaValue[values.Count];
-
-            for (var i = 0; i < values.Count; i++) result[i] = values[i].ToScalar();
-
-            return result;
+            var tupleLen = last.Tuple.Length;
+            if (tupleLen > 1)
+            {
+                last = last.Tuple[^1];
+                len += tupleLen - 1;
+            }
+            else
+            {
+                break;
+            }
         }
+
+        // Count the final one.
+        len++;
+        return len;
+    } 
+    
+    private IEnumerable<LuaValue> ExpandTuple<T>(T values) where T : IList<LuaValue>
+    {
+        if (values == null || values.Count == 0)
+        {
+            yield break;
+        }
+
+        for (var i = 0; i < values.Count - 1; i++)
+        {
+            yield return values[i].ToScalar();
+        }
+
+        var last = values[^1];
+        // Unlikely, but we can tail call this at-least for performance.
+        while (last.Type == DataType.Tuple && last.Tuple.Length > 1)
+        {
+            var tuple = last.Tuple;
+            last = tuple[^1];
+            for (var i = 0; i < tuple.Length - 1; i++)
+            {
+                yield return tuple[i].ToScalar();
+            }
+        }
+
+        yield return last.ToScalar();
     }
 
     private int Internal_InvokeUnaryMetaMethod(LuaValue op1, string eventName, int instructionPtr)
