@@ -175,11 +175,15 @@ function createDateScrubber(
     isDragging: false,
     dragStartIndex: -1,
     dragEndIndex: -1,
+    startSliderIndex: 0,
+    endSliderIndex: commitPoints.length - 1,
+    sliderElements: {},
+    selectionBar: null,
   };
 
-  // Create commit points along the timeline
+  // Create commit points and slider along the timeline
   if (commitPoints.length > 0) {
-    createCommitCardsOnTimeline(timelineLine, commitPoints, timelineState);
+    createCommitSliderOnTimeline(timelineLine, commitPoints, timelineState);
   }
 
   // Create selection display
@@ -226,12 +230,12 @@ function createDateScrubber(
 }
 
 /**
- * Creates commit cards along the timeline
+ * Creates commit slider along the timeline with two-headed range selection
  * @param {HTMLElement} timelineLine - The timeline line element
  * @param {Array} commitPoints - Array of commit objects
  * @param {Object} timelineState - Timeline state object
  */
-function createCommitCardsOnTimeline(
+function createCommitSliderOnTimeline(
   timelineLine,
   commitPoints,
   timelineState
@@ -244,26 +248,39 @@ function createCommitCardsOnTimeline(
   const spacing =
     commitPoints.length === 1 ? 0 : usableWidth / (commitPoints.length - 1);
 
+  // Create selection bar that shows the selected range
+  const selectionBar = document.createElement("div");
+  Object.assign(selectionBar.style, {
+    position: "absolute",
+    height: "4px",
+    backgroundColor: "#3572a5",
+    borderRadius: "2px",
+    top: "0",
+    zIndex: "1",
+    transition: "all 0.2s ease",
+  });
+  timelineLine.appendChild(selectionBar);
+  timelineState.selectionBar = selectionBar;
+
+  // Create commit points as markers
   commitPoints.forEach((commit, index) => {
     const positionPercent =
       commitPoints.length === 1 ? 50 : padding + spacing * index;
 
-    // Create commit point
+    // Create commit point marker
     const commitPoint = document.createElement("div");
     Object.assign(commitPoint.style, {
       position: "absolute",
       left: `${positionPercent}%`,
-      top: "-9px",
-      width: "16px",
+      top: "-6px",
+      width: "6px",
       height: "16px",
-      backgroundColor: "#3572a5",
-      borderRadius: "50%",
+      backgroundColor: "#6c757d",
+      borderRadius: "1px",
       transform: "translateX(-50%)",
       cursor: "pointer",
-      border: "3px solid #fff",
-      boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+      zIndex: "2",
       transition: "all 0.2s ease",
-      zIndex: "3",
     });
 
     // Create commit card (initially hidden)
@@ -277,49 +294,27 @@ function createCommitCardsOnTimeline(
       zIndex: "10",
     });
 
-    // Add hover effects
+    // Add hover effects for commit info
     commitPoint.addEventListener("mouseenter", () => {
       commitCard.style.display = "block";
-      commitPoint.style.backgroundColor = "#2c5aa0";
-      commitPoint.style.transform = "translateX(-50%) scale(1.2)";
-
-      // Handle drag selection
-      if (timelineState.isDragging) {
-        timelineState.dragEndIndex = index;
-        updateDragSelection(timelineState);
-      }
+      commitPoint.style.backgroundColor = "#495057";
     });
 
     commitPoint.addEventListener("mouseleave", () => {
       commitCard.style.display = "none";
-      updateCommitPointStyle(
-        commitPoint,
-        timelineState.selectedCommits.has(commit.id)
-      );
+      commitPoint.style.backgroundColor = "#6c757d";
     });
 
-    // Add mouse down handler for selection and drag start
-    commitPoint.addEventListener("mousedown", (e) => {
+    // Click handler for single commit selection
+    commitPoint.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
 
-      // Clear all selections and select only this commit
-      timelineState.selectedCommits.clear();
-      timelineState.selectedCommits.add(commit.id);
+      // Set both sliders to this commit (single selection)
+      timelineState.startSliderIndex = index;
+      timelineState.endSliderIndex = index;
 
-      // Update all commit point styles
-      timelineState.commitElements.forEach((element, commitId) => {
-        updateCommitPointStyle(
-          element,
-          timelineState.selectedCommits.has(commitId)
-        );
-      });
-
-      // Start drag from this commit
-      timelineState.isDragging = true;
-      timelineState.dragStartIndex = index;
-      timelineState.dragEndIndex = index;
-
+      updateSliderSelection(timelineState);
       updateSelectionDisplay(timelineState.selectionDisplay, timelineState);
       triggerTimelineChange(timelineState);
     });
@@ -330,13 +325,271 @@ function createCommitCardsOnTimeline(
     // Add to timeline
     timelineLine.appendChild(commitPoint);
     timelineLine.appendChild(commitCard);
-
-    // Set initial style
-    updateCommitPointStyle(
-      commitPoint,
-      timelineState.selectedCommits.has(commit.id)
-    );
   });
+
+  // Create start slider handle
+  const startSlider = createSliderHandle(
+    "start",
+    commitPoints,
+    timelineState,
+    padding,
+    spacing
+  );
+  timelineLine.appendChild(startSlider);
+  timelineState.sliderElements.start = startSlider;
+
+  // Create end slider handle
+  const endSlider = createSliderHandle(
+    "end",
+    commitPoints,
+    timelineState,
+    padding,
+    spacing
+  );
+  timelineLine.appendChild(endSlider);
+  timelineState.sliderElements.end = endSlider;
+
+  // Initialize slider positions and selection
+  updateSliderPositions(timelineState, padding, spacing);
+  updateSliderSelection(timelineState);
+}
+
+/**
+ * Creates a slider handle for range selection
+ * @param {string} type - "start" or "end"
+ * @param {Array} commitPoints - Array of commit objects
+ * @param {Object} timelineState - Timeline state object
+ * @param {number} padding - Padding percentage
+ * @param {number} spacing - Spacing between commits
+ * @returns {HTMLElement} Slider handle element
+ */
+function createSliderHandle(
+  type,
+  commitPoints,
+  timelineState,
+  padding,
+  spacing
+) {
+  const handle = document.createElement("div");
+  Object.assign(handle.style, {
+    position: "absolute",
+    top: "-14px",
+    width: "4px",
+    height: "24px",
+    backgroundColor: type === "start" ? "#28a745" : "#dc3545",
+    borderRadius: "2px",
+    transform: "translateX(-50%)",
+    cursor: "grab",
+    border: "2px solid #fff",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+    zIndex: "4",
+    transition: "all 0.2s ease",
+  });
+
+  // Add small grip lines for better visual indication
+  for (let i = 0; i < 3; i++) {
+    const gripLine = document.createElement("div");
+    Object.assign(gripLine.style, {
+      position: "absolute",
+      left: "50%",
+      top: `${30 + i * 25}%`,
+      width: "1px",
+      height: "3px",
+      backgroundColor: "#fff",
+      transform: "translateX(-50%)",
+      userSelect: "none",
+      pointerEvents: "none",
+    });
+    handle.appendChild(gripLine);
+  }
+
+  let isDragging = false;
+  let initialIndex = 0;
+
+  // Mouse down - start dragging
+  handle.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isDragging = true;
+    dragStartX = e.clientX;
+    initialIndex =
+      type === "start"
+        ? timelineState.startSliderIndex
+        : timelineState.endSliderIndex;
+    handle.style.cursor = "grabbing";
+
+    // Apply scale effect - add to existing transform or create new one
+    const currentTransform = handle.style.transform || "";
+    if (currentTransform.includes("translateX")) {
+      handle.style.transform = currentTransform + " scale(1.1)";
+    } else {
+      handle.style.transform = "translateX(-50%) scale(1.1)";
+    }
+
+    // Bring the dragged handle to front when both handles are on same commit
+    if (timelineState.startSliderIndex === timelineState.endSliderIndex) {
+      handle.style.zIndex = "5";
+      const otherHandle =
+        type === "start"
+          ? timelineState.sliderElements.end
+          : timelineState.sliderElements.start;
+      if (otherHandle) {
+        otherHandle.style.zIndex = "4";
+      }
+    }
+  });
+
+  // Global mouse move - handle dragging
+  document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+
+    const timelineRect = handle.parentElement.getBoundingClientRect();
+    const relativeX = e.clientX - timelineRect.left;
+    const percentX = (relativeX / timelineRect.width) * 100;
+
+    // Find the nearest commit index
+    let nearestIndex = 0;
+    let minDistance = Infinity;
+
+    commitPoints.forEach((_, index) => {
+      const commitPercent =
+        commitPoints.length === 1 ? 50 : padding + spacing * index;
+      const distance = Math.abs(percentX - commitPercent);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestIndex = index;
+      }
+    });
+
+    // Normal behavior when sliders are not on the same commit
+    if (type === "start") {
+      timelineState.startSliderIndex = Math.min(
+        nearestIndex,
+        timelineState.endSliderIndex
+      );
+    } else {
+      timelineState.endSliderIndex = Math.max(
+        nearestIndex,
+        timelineState.startSliderIndex
+      );
+    }
+
+    updateSliderPositions(timelineState, padding, spacing);
+    updateSliderSelection(timelineState);
+    updateSelectionDisplay(timelineState.selectionDisplay, timelineState);
+    triggerTimelineChange(timelineState);
+  });
+
+  // Global mouse up - stop dragging
+  document.addEventListener("mouseup", () => {
+    if (isDragging) {
+      isDragging = false;
+      handle.style.cursor = "grab";
+
+      // Reset scale and let updateSliderPositions handle the correct transform
+      // Don't try to preserve transforms here - let the positioning logic handle it
+      handle.style.transform = ""; // Clear any existing transform
+
+      // Force a position update to ensure proper spacing
+      updateSliderPositions(timelineState, padding, spacing);
+
+      // Reset z-index to default when dragging stops
+      handle.style.zIndex = "4";
+      const otherHandle =
+        type === "start"
+          ? timelineState.sliderElements.end
+          : timelineState.sliderElements.start;
+      if (otherHandle) {
+        otherHandle.style.zIndex = "4";
+      }
+    }
+  });
+
+  return handle;
+}
+
+/**
+ * Updates the positions of slider handles
+ * @param {Object} timelineState - Timeline state object
+ * @param {number} padding - Padding percentage
+ * @param {number} spacing - Spacing between commits
+ */
+function updateSliderPositions(timelineState, padding, spacing) {
+  const { commitPoints, sliderElements, startSliderIndex, endSliderIndex } =
+    timelineState;
+
+  if (commitPoints.length === 0) return;
+
+  const startPercent =
+    commitPoints.length === 1 ? 50 : padding + spacing * startSliderIndex;
+  const endPercent =
+    commitPoints.length === 1 ? 50 : padding + spacing * endSliderIndex;
+
+  if (sliderElements.start) {
+    sliderElements.start.style.left = `${startPercent}%`;
+  }
+
+  if (sliderElements.end) {
+    sliderElements.end.style.left = `${endPercent}%`;
+
+    // When both handles are on the same position, offset them and adjust spacing
+    if (startSliderIndex === endSliderIndex && sliderElements.start) {
+      // Position handles side by side horizontally
+      sliderElements.start.style.transform = "translateX(-150%)";
+      sliderElements.end.style.transform = "translateX(50%)";
+
+      // Make the handles narrower when overlapping
+      sliderElements.end.style.width = "4px";
+      sliderElements.start.style.width = "4px";
+
+      // Adjust positioning to account for narrower bars
+      sliderElements.start.style.top = "-14px";
+      sliderElements.end.style.top = "-14px";
+    } else {
+      // Reset transforms to normal position - this is crucial for preventing spacing issues
+      sliderElements.end.style.transform = "translateX(-50%)";
+      sliderElements.start.style.transform = "translateX(-50%)";
+
+      // Reset to normal size when not overlapping
+      sliderElements.end.style.width = "6px";
+      sliderElements.start.style.width = "6px";
+
+      // Reset positioning
+      sliderElements.start.style.top = "-14px";
+      sliderElements.end.style.top = "-14px";
+    }
+  }
+
+  // Update selection bar
+  if (timelineState.selectionBar) {
+    const leftPercent = Math.min(startPercent, endPercent);
+    const rightPercent = Math.max(startPercent, endPercent);
+    const width = Math.max(rightPercent - leftPercent, 0.5); // Minimum width for single commit
+
+    timelineState.selectionBar.style.left = `${leftPercent}%`;
+    timelineState.selectionBar.style.width = `${width}%`;
+  }
+}
+
+/**
+ * Updates the selected commits based on slider positions
+ * @param {Object} timelineState - Timeline state object
+ */
+function updateSliderSelection(timelineState) {
+  const { commitPoints, startSliderIndex, endSliderIndex } = timelineState;
+
+  // Clear current selection
+  timelineState.selectedCommits.clear();
+
+  // Select commits in the range
+  const minIndex = Math.min(startSliderIndex, endSliderIndex);
+  const maxIndex = Math.max(startSliderIndex, endSliderIndex);
+
+  for (let i = minIndex; i <= maxIndex; i++) {
+    if (commitPoints[i]) {
+      timelineState.selectedCommits.add(commitPoints[i].id);
+    }
+  }
 }
 
 /**
@@ -344,48 +597,8 @@ function createCommitCardsOnTimeline(
  * @param {Object} timelineState - Timeline state object
  */
 function setupGlobalDragListeners(timelineState) {
-  document.addEventListener("mouseup", () => {
-    timelineState.isDragging = false;
-    timelineState.dragStartIndex = -1;
-    timelineState.dragEndIndex = -1;
-  });
-}
-
-/**
- * Updates selection during drag operation
- * @param {Object} timelineState - Timeline state object
- */
-function updateDragSelection(timelineState) {
-  if (!timelineState.isDragging) return;
-
-  const startIndex = Math.min(
-    timelineState.dragStartIndex,
-    timelineState.dragEndIndex
-  );
-  const endIndex = Math.max(
-    timelineState.dragStartIndex,
-    timelineState.dragEndIndex
-  );
-
-  // Clear current selection
-  timelineState.selectedCommits.clear();
-
-  // Select commits in the drag range
-  for (let i = startIndex; i <= endIndex; i++) {
-    const commit = timelineState.commitPoints[i];
-    timelineState.selectedCommits.add(commit.id);
-  }
-
-  // Update all commit point styles
-  timelineState.commitElements.forEach((element, commitId) => {
-    updateCommitPointStyle(
-      element,
-      timelineState.selectedCommits.has(commitId)
-    );
-  });
-
-  updateSelectionDisplay(timelineState.selectionDisplay, timelineState);
-  triggerTimelineChange(timelineState);
+  // This function is now handled within the slider handle creation
+  // Keep for compatibility but functionality moved to createSliderHandle
 }
 
 /**
@@ -443,23 +656,6 @@ function createCommitCard(commit) {
 }
 
 /**
- * Updates the visual style of a commit point based on selection state
- * @param {HTMLElement} commitPoint - The commit point element
- * @param {boolean} isSelected - Whether the commit is selected
- */
-function updateCommitPointStyle(commitPoint, isSelected) {
-  if (isSelected) {
-    commitPoint.style.backgroundColor = "#3572a5";
-    commitPoint.style.borderColor = "#fff";
-    commitPoint.style.transform = "translateX(-50%) scale(1)";
-  } else {
-    commitPoint.style.backgroundColor = "#dee2e6";
-    commitPoint.style.borderColor = "#fff";
-    commitPoint.style.transform = "translateX(-50%) scale(0.8)";
-  }
-}
-
-/**
  * Updates the selection display text
  * @param {HTMLElement} display - Display element
  * @param {Object} timelineState - Timeline state object
@@ -470,13 +666,31 @@ function updateSelectionDisplay(display, timelineState) {
 
   const selectedCount = timelineState.selectedCommits.size;
   const totalCount = timelineState.commitPoints.length;
+  const { startSliderIndex, endSliderIndex, commitPoints } = timelineState;
 
   if (selectedCount === 0) {
     display.textContent = "No commits selected";
   } else if (selectedCount === totalCount) {
     display.textContent = `All ${totalCount} commits selected`;
+  } else if (startSliderIndex === endSliderIndex) {
+    // Single commit selected
+    const commit = commitPoints[startSliderIndex];
+    if (commit) {
+      display.textContent = `Single commit: ${commit.id.slice(
+        0,
+        7
+      )} (${formatDateShort(commit.date)})`;
+    }
   } else {
-    display.textContent = `${selectedCount} of ${totalCount} commits selected`;
+    // Range of commits selected
+    const startCommit = commitPoints[startSliderIndex];
+    const endCommit = commitPoints[endSliderIndex];
+    if (startCommit && endCommit) {
+      display.textContent = `Range: ${startCommit.id.slice(
+        0,
+        7
+      )} to ${endCommit.id.slice(0, 7)} (${selectedCount} commits)`;
+    }
   }
 }
 
@@ -515,24 +729,41 @@ function getSelectedDateRange(timelineState) {
  * @param {HTMLElement} display - Selection display element
  */
 function setSelectedDateRange(startDate, endDate, timelineState, display) {
-  // Clear current selection
-  timelineState.selectedCommits.clear();
+  // Find commit indices that fall within the date range
+  let startIndex = 0;
+  let endIndex = timelineState.commitPoints.length - 1;
 
-  // Select commits within the date range
-  timelineState.commitPoints.forEach((commit) => {
-    if (commit.date >= startDate && commit.date <= endDate) {
-      timelineState.selectedCommits.add(commit.id);
+  // Find the first commit >= startDate
+  for (let i = 0; i < timelineState.commitPoints.length; i++) {
+    if (timelineState.commitPoints[i].date >= startDate) {
+      startIndex = i;
+      break;
     }
-  });
+  }
 
-  // Update visual states
-  timelineState.commitElements.forEach((element, commitId) => {
-    updateCommitPointStyle(
-      element,
-      timelineState.selectedCommits.has(commitId)
-    );
-  });
+  // Find the last commit <= endDate
+  for (let i = timelineState.commitPoints.length - 1; i >= 0; i--) {
+    if (timelineState.commitPoints[i].date <= endDate) {
+      endIndex = i;
+      break;
+    }
+  }
 
+  // Update slider positions
+  timelineState.startSliderIndex = startIndex;
+  timelineState.endSliderIndex = endIndex;
+
+  // Calculate spacing for position updates
+  const padding = 10;
+  const usableWidth = 100 - padding * 2;
+  const spacing =
+    timelineState.commitPoints.length === 1
+      ? 0
+      : usableWidth / (timelineState.commitPoints.length - 1);
+
+  // Update visual elements
+  updateSliderPositions(timelineState, padding, spacing);
+  updateSliderSelection(timelineState);
   updateSelectionDisplay(display, timelineState);
 }
 
@@ -687,26 +918,24 @@ export function selectLatestCommit() {
 
   if (commitPoints.length === 0) return;
 
-  // Find the latest commit (commits are sorted by date)
-  const latestCommit = commitPoints[commitPoints.length - 1];
-
   // Get the timeline state from the scrubber
   const timelineState = controls.scrubber.timelineState;
   if (!timelineState) return;
 
-  // Clear all selections and select only the latest commit
-  timelineState.selectedCommits.clear();
-  timelineState.selectedCommits.add(latestCommit.id);
+  // Set both sliders to the latest commit (single selection)
+  const latestIndex = commitPoints.length - 1;
+  timelineState.startSliderIndex = latestIndex;
+  timelineState.endSliderIndex = latestIndex;
 
-  // Update all commit point styles
-  timelineState.commitElements.forEach((element, commitId) => {
-    updateCommitPointStyle(
-      element,
-      timelineState.selectedCommits.has(commitId)
-    );
-  });
+  // Calculate spacing for position updates
+  const padding = 10;
+  const usableWidth = 100 - padding * 2;
+  const spacing =
+    commitPoints.length === 1 ? 0 : usableWidth / (commitPoints.length - 1);
 
-  // Update the selection display
+  // Update visual elements
+  updateSliderPositions(timelineState, padding, spacing);
+  updateSliderSelection(timelineState);
   updateSelectionDisplay(timelineState.selectionDisplay, timelineState);
 
   // Trigger the change callback to update charts
