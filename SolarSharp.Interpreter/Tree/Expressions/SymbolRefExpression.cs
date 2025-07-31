@@ -22,14 +22,10 @@ internal class SymbolRefExpression : Expression, IVariable
 
             if (!lcontext.Scope.CurrentFunctionHasVarArgs())
                 throw new SyntaxErrorException(T, "cannot use '...' outside a vararg function");
-
-            if (lcontext.IsDynamicExpression)
-                throw new DynamicExpressionException("cannot use '...' in a dynamic expression.");
         }
         else
         {
-            if (!lcontext.IsDynamicExpression)
-                m_Ref = lcontext.Scope.Find(m_VarName);
+            m_Ref = lcontext.Scope.Find(m_VarName);
         }
 
         lcontext.Lexer.Next();
@@ -39,11 +35,7 @@ internal class SymbolRefExpression : Expression, IVariable
         : base(lcontext)
     {
         m_Ref = refr;
-
-        if (lcontext.IsDynamicExpression)
-            throw new DynamicExpressionException("Unsupported symbol reference expression detected.");
     }
-
 
     public void CompileAssignment(ByteCode bc, int stackofs, int tupleidx)
     {
@@ -53,15 +45,5 @@ internal class SymbolRefExpression : Expression, IVariable
     public override void Compile(ByteCode bc)
     {
         bc.Emit_Load(m_Ref);
-    }
-
-    public override LuaValue Eval(ScriptExecutionContext context)
-    {
-        return context.EvaluateSymbolByName(m_VarName);
-    }
-
-    public override SymbolRef FindDynamic(ScriptExecutionContext context)
-    {
-        return context.FindSymbolByName(m_VarName);
     }
 }

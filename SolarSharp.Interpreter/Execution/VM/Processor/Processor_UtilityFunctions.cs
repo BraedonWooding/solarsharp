@@ -8,7 +8,7 @@ namespace SolarSharp.Interpreter.Execution.VM;
 
 internal sealed partial class Processor
 {
-    private int GetLengthOfPossibleTuples<T>(T values) where T : IList<LuaValue>
+    private static int GetLengthOfPossibleTuples<T>(T values) where T : IList<LuaValue>
     {
         if (values == null || values.Count == 0)
         {
@@ -36,35 +36,31 @@ internal sealed partial class Processor
         return len;
     }
 
-    public struct TupleEnumerator<T>(T values) : IEnumerable<LuaValue> where T : IList<LuaValue>
+    public struct TupleEnumerator<T>(T values) where T : IList<LuaValue>
     {
         public Enumerator GetEnumerator()
         {
             return new Enumerator(values);
         }
 
-        IEnumerator<LuaValue> IEnumerable<LuaValue>.GetEnumerator()
+        public LuaValue[] ToArray()
         {
-            return GetEnumerator();
+            var array = new LuaValue[GetLengthOfPossibleTuples(values)];
+            var it = GetEnumerator();
+            var idx = 0;
+            while (it.MoveNext())
+            {
+                array[idx++] = it.Current;
+            }
+            return array;
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
-        public struct Enumerator(T values) : IEnumerator<LuaValue>
+        public struct Enumerator(T values)
         {
             private IList<LuaValue> CurrentValues = values;
             private int idx = -1;
 
             public LuaValue? Current { get; set; }
-
-            object IEnumerator.Current => Current;
-
-            public void Dispose()
-            {
-            }
 
             public bool MoveNext()
             {

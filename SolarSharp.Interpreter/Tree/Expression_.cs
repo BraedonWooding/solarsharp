@@ -19,13 +19,6 @@ internal abstract class Expression : NodeBase
         return null;
     }
 
-    public abstract LuaValue Eval(ScriptExecutionContext context);
-
-    public virtual SymbolRef FindDynamic(ScriptExecutionContext context)
-    {
-        return null;
-    }
-
     internal static List<Expression> ExprListAfterFirstExpr(ScriptLoadingContext lcontext, Expression expr1)
     {
         List<Expression> exps = [expr1];

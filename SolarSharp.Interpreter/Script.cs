@@ -628,30 +628,6 @@ public class Script : IScriptPrivateResource
     }
 
     /// <summary>
-    ///     Creates a new dynamic expression.
-    /// </summary>
-    /// <param name="code">The code of the expression.</param>
-    /// <returns></returns>
-    public DynamicExpression CreateDynamicExpression(string code)
-    {
-        var dee = Loader_Fast.LoadDynamicExpr(this, new SourceCode("__dynamic", code, -1, this));
-        return new DynamicExpression(this, code, dee);
-    }
-
-    /// <summary>
-    ///     Creates a new dynamic expression which is actually quite static, returning always the same constant value.
-    /// </summary>
-    /// <param name="code">The code of the not-so-dynamic expression.</param>
-    /// <param name="constant">The constant to return.</param>
-    /// <returns></returns>
-    public DynamicExpression CreateConstantDynamicExpression(string code, LuaValue constant)
-    {
-        this.CheckScriptOwnership(constant);
-
-        return new DynamicExpression(this, code, constant);
-    }
-
-    /// <summary>
     ///     Gets an execution context exposing only partial functionality, which should be used for
     ///     those cases where the execution engine is not really running - for example for dynamic expression
     ///     or calls from CLR to CLR callbacks

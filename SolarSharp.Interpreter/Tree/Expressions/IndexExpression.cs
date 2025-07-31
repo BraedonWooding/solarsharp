@@ -64,14 +64,4 @@ internal class IndexExpression : Expression, IVariable
             bc.Emit_Index(isExpList: m_IndexExp is ExprListExpression);
         }
     }
-
-    public override LuaValue Eval(ScriptExecutionContext context)
-    {
-        var b = m_BaseExp.Eval(context).ToScalar();
-        var i = m_IndexExp != null ? m_IndexExp.Eval(context).ToScalar() : LuaValue.NewString(m_Name);
-
-        if (b.Type != DataType.Table) throw new DynamicExpressionException("Attempt to index non-table.");
-        if (i.IsNilOrNan()) throw new DynamicExpressionException("Attempt to index with nil or nan key.");
-        return b.Table.Get(i) ?? LuaValue.Nil;
-    }
 }

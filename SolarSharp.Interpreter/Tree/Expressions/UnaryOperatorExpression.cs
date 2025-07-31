@@ -38,28 +38,4 @@ internal class UnaryOperatorExpression : Expression
                 throw new InternalErrorException("Unexpected unary operator '{0}'", m_OpText);
         }
     }
-
-    public override LuaValue Eval(ScriptExecutionContext context)
-    {
-        var v = m_Exp.Eval(context).ToScalar();
-
-        switch (m_OpText)
-        {
-            case "not":
-                return LuaValue.NewBoolean(!v.CastToBool());
-            case "#":
-                return v.GetLength();
-            case "-":
-            {
-                var d = v.CastToNumber();
-
-                if (d.HasValue)
-                    return LuaValue.NewNumber(-d.Value);
-
-                throw new DynamicExpressionException("Attempt to perform arithmetic on non-numbers.");
-            }
-            default:
-                throw new DynamicExpressionException("Unexpected unary operator '{0}'", m_OpText);
-        }
-    }
 }

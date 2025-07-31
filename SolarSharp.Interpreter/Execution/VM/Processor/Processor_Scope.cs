@@ -98,40 +98,4 @@ internal sealed partial class Processor
 
         return stackframe;
     }
-
-    public SymbolRef FindSymbolByName(string name)
-    {
-        if (m_ExecutionStack.Count > 0)
-        {
-            var stackframe = GetTopNonClrFunction();
-
-            if (stackframe != null)
-            {
-                if (stackframe.Debug_Symbols != null)
-                    for (var i = stackframe.Debug_Symbols.Length - 1; i >= 0; i--)
-                    {
-                        var l = stackframe.Debug_Symbols[i];
-
-                        if (l.i_Name == name && stackframe.LocalScope[i] != null)
-                            return l;
-                    }
-
-
-                var closure = stackframe.ClosureScope;
-
-                if (closure != null)
-                    for (var i = 0; i < closure.Symbols.Length; i++)
-                        if (closure.Symbols[i] == name)
-                            return SymbolRef.Upvalue(name, i);
-            }
-        }
-
-        if (name != WellKnownSymbols.ENV)
-        {
-            var env = FindSymbolByName(WellKnownSymbols.ENV);
-            return SymbolRef.Global(name, env);
-        }
-
-        return SymbolRef.DefaultEnv;
-    }
 }

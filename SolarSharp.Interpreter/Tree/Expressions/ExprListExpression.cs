@@ -29,12 +29,4 @@ internal class ExprListExpression : Expression
         if (expressions.Count > 1)
             bc.Emit_MkTuple(expressions.Count);
     }
-
-    public override LuaValue Eval(ScriptExecutionContext context)
-    {
-        if (expressions.Count >= 1)
-            return expressions[0].Eval(context);
-
-        return LuaValue.Void;
-    }
 }

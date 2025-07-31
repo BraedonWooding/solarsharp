@@ -11,31 +11,6 @@ namespace SolarSharp.Interpreter.Tree.Fast_Interface;
 
 internal static class Loader_Fast
 {
-    internal static DynamicExprExpression LoadDynamicExpr(Script script, SourceCode source)
-    {
-        var lcontext = CreateLoadingContext(script, source);
-
-        try
-        {
-            lcontext.IsDynamicExpression = true;
-            lcontext.Anonymous = true;
-
-            Expression exp;
-            using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
-            {
-                exp = Expression.Expr(lcontext);
-            }
-
-            return new DynamicExprExpression(exp, lcontext);
-        }
-        catch (SyntaxErrorException ex)
-        {
-            ex.DecorateMessage(script);
-            ex.Rethrow();
-            throw;
-        }
-    }
-
     private static ScriptLoadingContext CreateLoadingContext(Script script, SourceCode source)
     {
         return new ScriptLoadingContext(script)

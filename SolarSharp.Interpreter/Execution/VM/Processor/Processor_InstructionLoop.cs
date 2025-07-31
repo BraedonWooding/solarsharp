@@ -514,7 +514,6 @@ internal sealed partial class Processor
     {
         var cur = m_ExecutionStack.Peek();
 
-        cur.Debug_Symbols = i.SymbolList;
         cur.LocalScope = new LuaValue[i.NumVal];
 
         ClearBlockData(i);
@@ -536,7 +535,7 @@ internal sealed partial class Processor
         var argsStack = new FastSlice<LuaValue, LuaValue[]>(m_ValueStack.Storage,
             m_ValueStack.Count - numargs - 1, numargs);
         var argsList = ExpandTuple(argsStack);
-        using var it = argsList.GetEnumerator();
+        var it = argsList.GetEnumerator();
         var finished = false;
 
         for (var i = 0; i < I.SymbolList.Length; i++)

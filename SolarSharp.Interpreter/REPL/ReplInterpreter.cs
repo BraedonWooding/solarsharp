@@ -74,18 +74,8 @@ public class ReplInterpreter
 
             if (isFirstLine && HandleClassicExprsSyntax && m_CurrentCommand.StartsWith("="))
                 m_CurrentCommand = "return " + m_CurrentCommand[1..];
-
-            if (isFirstLine && HandleDynamicExprs && m_CurrentCommand.StartsWith("?"))
-            {
-                var code = m_CurrentCommand[1..];
-                var exp = m_Script.CreateDynamicExpression(code);
-                result = exp.Evaluate();
-            }
-            else
-            {
-                var v = m_Script.LoadString(m_CurrentCommand, null, "stdin");
-                result = m_Script.Call(v);
-            }
+            var v = m_Script.LoadString(m_CurrentCommand, null, "stdin");
+            result = m_Script.Call(v);
 
             m_CurrentCommand = "";
             return result;

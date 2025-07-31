@@ -90,15 +90,9 @@ public enum CoreModules
     Debug = 0x4000,
 
     /// <summary>
-    ///     The "dynamic" package (introduced by SolarSharp).
-    /// </summary>
-    Dynamic = 0x8000,
-
-    /// <summary>
     ///     The "json" package (introduced by SolarSharp).
     /// </summary>
     Json = 0x10000,
-
 
     /// <summary>
     ///     A sort of "hard" sandbox preset, including string, math, table, bit32 packages, constants and table iterators.
@@ -109,7 +103,7 @@ public enum CoreModules
     ///     A softer sandbox preset, adding metatables support, error handling, coroutine, time functions, json parsing and
     ///     dynamic evaluations.
     /// </summary>
-    Preset_SoftSandbox = Preset_HardSandbox | Metatables | ErrorHandling | Coroutine | OS_Time | Dynamic | Json,
+    Preset_SoftSandbox = Preset_HardSandbox | Metatables | ErrorHandling | Coroutine | OS_Time | Json,
 
     /// <summary>
     ///     The default preset. Includes everything except "debug" as now.

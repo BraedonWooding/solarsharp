@@ -40,9 +40,4 @@ internal class LiteralExpression : Expression
     {
         bc.Emit_Literal(Value);
     }
-
-    public override LuaValue Eval(ScriptExecutionContext context)
-    {
-        return Value;
-    }
 }

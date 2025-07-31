@@ -178,11 +178,6 @@ internal class FunctionDefinitionExpression : Expression, IClosureBuilder
         return ret;
     }
 
-    public override LuaValue Eval(ScriptExecutionContext context)
-    {
-        throw new DynamicExpressionException("Dynamic Expressions cannot define new functions.");
-    }
-
     public int CompileBody(ByteCode bc, string friendlyName)
     {
         var funcName = friendlyName ?? "<" + m_Begin.FormatLocation(bc.Script, true) + ">";

@@ -171,10 +171,9 @@ public class LoadModule
         }
     }
 
-
     private static Table GetSafeDefaultEnv(ScriptExecutionContext executionContext)
     {
-        var env = executionContext.CurrentGlobalEnv;
+        var env = executionContext.DefaultGlobalEnv;
 
         return env ?? throw new ScriptRuntimeException("current environment cannot be backtracked.");
     }

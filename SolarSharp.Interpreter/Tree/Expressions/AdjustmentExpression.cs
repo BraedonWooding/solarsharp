@@ -19,9 +19,4 @@ internal class AdjustmentExpression : Expression
         expression.Compile(bc);
         bc.Emit_Scalar();
     }
-
-    public override LuaValue Eval(ScriptExecutionContext context)
-    {
-        return expression.Eval(context).ToScalar();
-    }
 }

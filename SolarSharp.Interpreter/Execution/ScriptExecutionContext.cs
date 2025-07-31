@@ -167,29 +167,13 @@ public struct ScriptExecutionContext : IScriptPrivateResource
     }
 
     /// <summary>
-    ///     Tries to get the value of a symbol in the current execution state
-    /// </summary>
-    public LuaValue EvaluateSymbolByName(string symbol)
-    {
-        return EvaluateSymbol(FindSymbolByName(symbol));
-    }
-
-    /// <summary>
-    ///     Finds a symbol by name in the current execution state
-    /// </summary>
-    public SymbolRef FindSymbolByName(string symbol)
-    {
-        return m_Processor.FindSymbolByName(symbol);
-    }
-
-    /// <summary>
     ///     Gets the current global env, or null if not found.
     /// </summary>
-    public Table CurrentGlobalEnv
+    public Table DefaultGlobalEnv
     {
         get
         {
-            var env = EvaluateSymbolByName(WellKnownSymbols.ENV);
+            var env = EvaluateSymbol(SymbolRef.DefaultEnv);
 
             if (env is not { Type: DataType.Table })
                 return null;

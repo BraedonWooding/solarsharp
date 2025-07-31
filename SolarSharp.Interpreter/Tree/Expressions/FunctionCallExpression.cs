@@ -91,9 +91,4 @@ internal class FunctionCallExpression : Expression
         else
             bc.Emit_Call(argslen, m_DebugErr);
     }
-
-    public override LuaValue Eval(ScriptExecutionContext context)
-    {
-        throw new DynamicExpressionException("Dynamic Expressions cannot call functions.");
-    }
 }
