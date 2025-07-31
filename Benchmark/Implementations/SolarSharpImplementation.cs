@@ -8,7 +8,6 @@ public class SolarSharpImplementation : AImplementation
 
     public SolarSharpImplementation()
     {
-        Script.WarmUp();
         script = new Script();
     }
 

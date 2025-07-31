@@ -8,7 +8,6 @@ public class MoonSharpImplementation : AImplementation
 
     public MoonSharpImplementation()
     {
-        Script.WarmUp();
         script = new Script();
     }
 

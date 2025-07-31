@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using SolarSharp.Interpreter.CoreLib;
 using SolarSharp.Interpreter.DataTypes;
@@ -627,17 +626,6 @@ public class Script : IScriptPrivateResource
             ? metatable
             : throw new ArgumentException("Specified type not supported : " + type);
     }
-
-
-    /// <summary>
-    ///     Warms up the parser/lexer structures so that SolarSharp operations start faster.
-    /// </summary>
-    public static void WarmUp()
-    {
-        Script s = new(CoreModules.Basic);
-        s.LoadString("return 1;");
-    }
-
 
     /// <summary>
     ///     Creates a new dynamic expression.
