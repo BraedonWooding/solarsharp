@@ -14,8 +14,6 @@ namespace SolarSharp.Interpreter.DataTypes;
 /// </summary>
 public sealed class LuaValue
 {
-    private int m_HashCode = -1;
-
     private object m_Object;
 
     static LuaValue()
@@ -412,7 +410,6 @@ public sealed class LuaValue
         {
             m_Object = m_Object,
             Number = Number,
-            m_HashCode = m_HashCode,
             Type = Type
         };
         return v;
@@ -534,12 +531,9 @@ public sealed class LuaValue
     /// </returns>
     public override int GetHashCode()
     {
-        if (m_HashCode != -1)
-            return m_HashCode;
-
         var baseValue = (int)Type << 27;
 
-        m_HashCode = Type switch
+        return Type switch
         {
             DataType.Void or DataType.Nil => 0,
             DataType.Boolean => Boolean ? 1 : 2,
@@ -551,7 +545,6 @@ public sealed class LuaValue
             DataType.Tuple or DataType.TailCallRequest => baseValue ^ Tuple.GetHashCode(),
             _ => 999
         };
-        return m_HashCode;
     }
 
     /// <summary>
@@ -705,10 +698,6 @@ public sealed class LuaValue
         Number = value.Number;
         m_Object = value.m_Object;
         Type = value.Type;
-        // TODO: I'm not certain this is correct, this seems very odd
-        //       hashcodes should be preservable and we should be able to just
-        //       take the dyn value's hash code.
-        m_HashCode = -1;
     }
 
     /// <summary>
