@@ -212,3 +212,21 @@ function updateLegendItemAppearance(legendItem, implementation) {
     );
   legendItem.style.opacity = isHidden ? "0.5" : "1";
 }
+
+/**
+ * Updates the shared legend visibility based on the number of selected commits
+ */
+export function updateSharedLegendVisibility() {
+  const legendContainer = document.querySelector(".shared-legend");
+  if (!legendContainer) return;
+
+  // Check if only one commit is selected
+  const isOneCommitSelected =
+    window.dateFilterControls &&
+    window.dateFilterControls.scrubber &&
+    window.dateFilterControls.scrubber.timelineState &&
+    window.dateFilterControls.scrubber.timelineState.selectedCommits.size === 1;
+
+  // Hide the entire shared legend when only one commit is selected
+  legendContainer.style.display = isOneCommitSelected ? "none" : "flex";
+}

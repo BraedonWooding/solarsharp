@@ -17,6 +17,7 @@ import {
   createSharedLegend,
   createSolarSharpToggleButton,
   createLegendItem,
+  updateSharedLegendVisibility,
 } from "./legend-controls.js";
 import {
   createPerformanceChangeIndicators,
@@ -487,6 +488,7 @@ function switchMetric(metric, activeTab, inactiveTabs) {
 window.renderAllCharts = renderAllCharts;
 window.renderBenchmarkSet = renderBenchmarkSet;
 window.filterEntriesByDateRange = filterEntriesByDateRange;
+window.updateSharedLegendVisibility = updateSharedLegendVisibility;
 
 // Initialize and start the application when DOM is ready
 if (document.readyState === "loading") {

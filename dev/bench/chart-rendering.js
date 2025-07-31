@@ -17,6 +17,11 @@ export function renderAllCharts(dataSets) {
   for (const { name, dataSet } of dataSets) {
     window.renderBenchmarkSet(name, dataSet, main);
   }
+
+  // Update shared legend visibility based on commit selection
+  if (window.updateSharedLegendVisibility) {
+    window.updateSharedLegendVisibility();
+  }
 }
 
 /**
