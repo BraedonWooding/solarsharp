@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.DataTypes;
@@ -33,33 +34,83 @@ internal sealed partial class Processor
         // Count the final one.
         len++;
         return len;
-    } 
-    
-    private IEnumerable<LuaValue> ExpandTuple<T>(T values) where T : IList<LuaValue>
+    }
+
+    public struct TupleEnumerator<T>(T values) : IEnumerable<LuaValue> where T : IList<LuaValue>
     {
-        if (values == null || values.Count == 0)
+        public Enumerator GetEnumerator()
         {
-            yield break;
+            return new Enumerator(values);
         }
 
-        for (var i = 0; i < values.Count - 1; i++)
+        IEnumerator<LuaValue> IEnumerable<LuaValue>.GetEnumerator()
         {
-            yield return values[i].ToScalar();
+            return GetEnumerator();
         }
 
-        var last = values[^1];
-        // Unlikely, but we can tail call this at-least for performance.
-        while (last.Type == DataType.Tuple && last.Tuple.Length > 1)
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            var tuple = last.Tuple;
-            last = tuple[^1];
-            for (var i = 0; i < tuple.Length - 1; i++)
+            return GetEnumerator();
+        }
+
+        public struct Enumerator(T values) : IEnumerator<LuaValue>
+        {
+            private IList<LuaValue> CurrentValues = values;
+            private int idx = -1;
+
+            public LuaValue? Current { get; set; }
+
+            object IEnumerator.Current => Current;
+
+            public void Dispose()
             {
-                yield return tuple[i].ToScalar();
+            }
+
+            public bool MoveNext()
+            {
+                if (CurrentValues == null || CurrentValues.Count == 0)
+                {
+                    return false;
+                }
+
+                idx++;
+                if (idx >= CurrentValues.Count)
+                {
+                    return false;
+                }
+
+                if (idx == CurrentValues.Count - 1)
+                {
+                    var last = CurrentValues[idx];
+                    if (last.Type == DataType.Tuple && last.Tuple.Length > 1)
+                    {
+                        CurrentValues = last.Tuple;
+                        idx = -1;
+                        return MoveNext();
+                    }
+                    else
+                    {
+                        Current = last.ToScalar();
+                        return true;
+                    }
+                }
+                else
+                {
+                    Current = CurrentValues[idx].ToScalar();
+                    return true;
+                }
+            }
+
+            public void Reset()
+            {
+                throw new NotImplementedException();
             }
         }
+    }
 
-        yield return last.ToScalar();
+    private TupleEnumerator<T> ExpandTuple<T>(T values) where T : IList<LuaValue>
+    {
+        return new TupleEnumerator<T>(values);
     }
 
     private int Internal_InvokeUnaryMetaMethod(LuaValue op1, string eventName, int instructionPtr)
