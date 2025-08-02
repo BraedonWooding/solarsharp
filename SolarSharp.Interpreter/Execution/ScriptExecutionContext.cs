@@ -84,24 +84,6 @@ public struct ScriptExecutionContext
     }
 
     /// <summary>
-    ///     Calls a callback function implemented in "classic way".
-    ///     Useful to port C code from Lua, or C# code from UniLua and KopiLua.
-    ///     Lua : http://www.lua.org/
-    ///     UniLua : http://github.com/xebecnan/UniLua
-    ///     KopiLua : http://github.com/NLua/KopiLua
-    /// </summary>
-    /// <param name="args">The arguments.</param>
-    /// <param name="functionName">Name of the function - for error messages.</param>
-    /// <param name="callback">The callback.</param>
-    /// <returns></returns>
-    public LuaValue EmulateClassicCall(CallbackArguments args, string functionName, Func<LuaState, int> callback)
-    {
-        LuaState L = new(this, args, functionName);
-        var retvals = callback(L);
-        return L.GetReturnValue(retvals);
-    }
-
-    /// <summary>
     ///     Calls the specified function, supporting most cases. The called function must not yield.
     /// </summary>
     /// <param name="func">The function; it must be a Function or ClrFunction or have a call metamethod defined.</param>

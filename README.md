@@ -60,3 +60,7 @@ double Factorial()
 	return res.Number;
 }
 ```
+
+## Contributing to SolarSharp
+
+There is a [contribution guide](./Contributing.md) and you can look at issues to find any interesting ones.

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using SolarSharp.Interpreter.DataStructs;
 using SolarSharp.Interpreter.Errors;
@@ -124,6 +125,36 @@ public class CallbackArguments
                 : TypeValidationFlags.AutoConvert);
     }
 
+    public int AsInt(int argNum, string funcName)
+    {
+        var v = AsType(argNum, funcName, DataType.Number, allowNil: false);
+        ScriptRuntimeException.ThrowIfBadArgumentIntegerExpected(argNum, funcName, v.Number);
+        return (int)v.Number;
+    }
+
+    public int? AsOptInt(int argNum, string funcName)
+    {
+        var v = AsType(argNum, funcName, DataType.Number, allowNil: true);
+        if (v.IsNil())
+        {
+            return null;
+        }
+
+        ScriptRuntimeException.ThrowIfBadArgumentIntegerExpected(argNum, funcName, v.Number);
+        return (int)v.Number;
+    }
+
+    public bool? AsOptBoolean(int argNum, string func_name)
+    {
+        var v = AsType(argNum, func_name, DataType.Boolean, allowNil: true);
+        if (v.IsNil())
+        {
+            return null;
+        }
+
+        return v.Boolean;
+    }
+
     /// <summary>
     ///     Gets the specified argument as as an argument of the specified user data type. If not possible,
     ///     an exception is raised.
@@ -138,33 +169,6 @@ public class CallbackArguments
         return this[argNum].CheckUserDataType<T>(funcName, argNum,
             allowNil ? TypeValidationFlags.AllowNil : TypeValidationFlags.None);
     }
-
-    /// <summary>
-    ///     Gets the specified argument as an integer
-    /// </summary>
-    /// <param name="argNum">The argument number.</param>
-    /// <param name="funcName">Name of the function.</param>
-    /// <returns></returns>
-    public int AsInt(int argNum, string funcName)
-    {
-        var v = AsType(argNum, funcName, DataType.Number);
-        var d = v.Number;
-        return (int)d;
-    }
-
-    /// <summary>
-    ///     Gets the specified argument as a long integer
-    /// </summary>
-    /// <param name="argNum">The argument number.</param>
-    /// <param name="funcName">Name of the function.</param>
-    /// <returns></returns>
-    public long AsLong(int argNum, string funcName)
-    {
-        var v = AsType(argNum, funcName, DataType.Number);
-        var d = v.Number;
-        return (long)d;
-    }
-
 
     /// <summary>
     ///     Gets the specified argument as a string, calling the __tostring metamethod if needed, in a NON
@@ -190,7 +194,6 @@ public class CallbackArguments
 
         return this[argNum].ToPrintString();
     }
-
 
     /// <summary>
     ///     Returns a copy of CallbackArguments where the first ("self") argument is skipped if this was a method call,

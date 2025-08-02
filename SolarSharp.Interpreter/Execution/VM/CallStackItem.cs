@@ -4,7 +4,7 @@ using SolarSharp.Interpreter.Execution.Scopes;
 
 namespace SolarSharp.Interpreter.Execution.VM;
 
-internal record struct CallStackItem
+internal class CallStackItem
 {
     public int BasePointer;
     public int ReturnAddress;

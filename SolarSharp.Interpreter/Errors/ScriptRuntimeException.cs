@@ -1,7 +1,8 @@
-﻿using System;
-using SolarSharp.Interpreter.DataTypes;
+﻿using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Interop;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
+using System;
+using System.Runtime.CompilerServices;
 
 namespace SolarSharp.Interpreter.Errors;
 
@@ -412,6 +413,11 @@ public class ScriptRuntimeException : InterpreterException
             t.ToString().ToLowerInvariant(), clrType.FullName);
     }
 
+    public static ScriptRuntimeException MalformedPattern(string reason)
+    {
+        return new ScriptRuntimeException("malformed pattern ({0})", reason);
+    }
+
     /// <summary>
     ///     Creates a ScriptRuntimeException with a predefined error message specifying that
     ///     an attempt to index an invalid member of a userdata was done.
@@ -515,4 +521,36 @@ public class ScriptRuntimeException : InterpreterException
         if (Script.GlobalOptions.RethrowExceptionNested)
             throw new ScriptRuntimeException(this);
     }
+
+    public static void ThrowIfBadArgumentIntegerExpected(int argNum, string funcName, double value)
+    {
+        if (!IsInteger(value))
+        {
+            throw new ScriptRuntimeException("bad argument #{0} to '{1}' (number has no integer representation)",
+                argNum + 1, funcName);
+        }
+    }
+
+    private static bool IsInteger(double value)
+    {
+#if NET8_0_OR_GREATER
+        return double.IsInteger(value);
+#elif NETSTANDARD2_1_OR_GREATER
+        // The definition of above.
+        return double.IsFinite(value) && value == Math.Truncate(value);
+#else
+        const ulong PositiveInfinityBits = 0x7FF0_0000_0000_0000;
+
+        // Else for net472 we have to build both
+        return IsFinite(value) && value == Math.Truncate(value);
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool IsFinite(double d)
+        {
+            // Expanded version of double.IsFinite & bitconverter
+            ulong bits = Unsafe.ReadUnaligned<ulong>(ref Unsafe.As<double, byte>(ref d));
+            return (~bits & PositiveInfinityBits) != 0;
+        }
+#endif
+}
 }
