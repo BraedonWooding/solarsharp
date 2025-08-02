@@ -1,4 +1,5 @@
-﻿using Lua;
+﻿#if NET8_0_OR_GREATER
+using Lua;
 using Lua.Standard;
 
 namespace Benchmark.Implementations
@@ -33,3 +34,4 @@ namespace Benchmark.Implementations
         }
     }
 }
+#endif
