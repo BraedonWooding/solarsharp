@@ -3,7 +3,6 @@ using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -107,9 +106,9 @@ public class StringModule
         var init = args.AsOptInt(2, nameof(gmatch)) ?? 1;
 
         // Lua is 1-based, C# is 0-based.  Handle negative indexes as well.
-        if (init < 1)
+        if (init < 0)
         {
-            init = str.String.Length - init;
+            init = Math.Max(0, str.String.Length + init);
         }
         else if (init > 0)
         {
@@ -124,16 +123,20 @@ public class StringModule
         else
         {
             // If there are multiple groups caught then we return a tuple for them
-            var groups = matches.Groups;
-            if (groups.Count == 1)
+            var groups = matches.Captures;
+            if (groups.Count <= 1)
             {
                 // If there is only one group, we return the string
                 return LuaValue.NewString(matches.Value);
             }
+            else if (groups.Count == 2)
+            {
+                return LuaValue.NewString(matches.Captures[1].Value);
+            }
             else
             {
-                var result = new LuaValue[groups.Count];
-                for (int i = 0; i < groups.Count; i++)
+                var result = new LuaValue[groups.Count - 1];
+                for (int i = 0; i < groups.Count - 1; i++)
                 {
                     var group = groups[i + 1];
                     result[i] = LuaValue.NewString(group.Value);
@@ -153,9 +156,9 @@ public class StringModule
         var init = args.AsOptInt(2, nameof(gmatch)) ?? 1;
 
         // Lua is 1-based, C# is 0-based.  Handle negative indexes as well.
-        if (init < 1)
+        if (init < 0)
         {
-            init = str.String.Length - init;
+            init = Math.Max(0, str.String.Length + init);
         }
         else if (init > 0)
         {
@@ -173,8 +176,8 @@ public class StringModule
                 return LuaValue.Nil;
             }
             
-            var groups = it.Current.Groups;
-            if (groups.Count == 1)
+            var groups = it.Current.Captures;
+            if (groups.Count <= 1)
             {
                 // If there is only one group, we return the string
                 return LuaValue.NewString(it.Current.Value);
@@ -214,7 +217,7 @@ public class StringModule
         {
             return LuaValue.NewString(regex.Replace(str.String, match =>
             {
-                var groups = match.Groups;
+                var groups = match.Captures;
 
                 LuaValue result;
                 if (repl.Type == DataType.Table)
@@ -264,9 +267,9 @@ public class StringModule
         var init = args.AsOptInt(2, nameof(find)) ?? 1;
         var plain = args.AsOptBoolean(3, nameof(find)) ?? false;
         // Lua is 1-based, C# is 0-based.  Handle negative indexes as well.
-        if (init < 1)
+        if (init < 0)
         {
-            init = str.String.Length - init;
+            init = Math.Max(0, str.String.Length + init);
         }
         else if (init > 0)
         {
@@ -284,7 +287,7 @@ public class StringModule
             else
             {
                 // Return the start and end index of the match, noting lua indexing
-                return LuaValue.NewTuple(LuaValue.NewNumber(index + 1), LuaValue.NewNumber(index + 1 + pattern.String.Length));
+                return LuaValue.NewTuple(LuaValue.NewNumber(index + 1), LuaValue.NewNumber(index + pattern.String.Length));
             }
         }
 
@@ -298,10 +301,10 @@ public class StringModule
         }
         
         // Return the start and end index of the match + all captures
-        var result = new LuaValue[2 + match.Captures.Count];
+        var result = new LuaValue[2 + match.Captures.Count - 1];
         result[0] = LuaValue.NewNumber(match.Index + 1); // Start index (1-based)
-        result[1] = LuaValue.NewNumber(match.Index + 1 + match.Length); // End index (1-based)
-        for (int i = 0; i < match.Captures.Count; i++)
+        result[1] = LuaValue.NewNumber(match.Index + match.Length); // End index (1-based)
+        for (int i = 0; i < match.Captures.Count - 1; i++)
         {
             result[i + 2] = LuaValue.NewString(match.Captures[i + 1].Value);
         }
@@ -346,7 +349,7 @@ public class StringModule
     {
         var format = args.AsType(0, "format", DataType.String).String;
         var builder = new ValueStringBuilder(format.Length);
-        var currentArg = 0;
+        var currentArg = 1;
 
         for (int i = 0; i < format.Length; i++)
         {
@@ -380,7 +383,6 @@ public class StringModule
                     {
                         throw ScriptRuntimeException.MalformedPattern("ends with '%' (and flags) in format string");
                     }
-                    nextChar = format[i + 1];
 
                     switch (nextChar)
                     {
@@ -392,6 +394,7 @@ public class StringModule
 
                             leftJustify = true;
                             i++;
+                            nextChar = format[i];
                             continue;
                         case '+':
                             if (plusSign)
@@ -401,6 +404,7 @@ public class StringModule
 
                             plusSign = true;
                             i++;
+                            nextChar = format[i];
                             continue;
                         case '0':
                             if (zeroPad)
@@ -410,6 +414,7 @@ public class StringModule
 
                             zeroPad = true;
                             i++;
+                            nextChar = format[i];
                             continue;
                         case '#':
                             if (alternateForm)
@@ -419,6 +424,7 @@ public class StringModule
 
                             alternateForm = true;
                             i++;
+                            nextChar = format[i];
                             continue;
                         case ' ':
                             if (blank)
@@ -428,6 +434,7 @@ public class StringModule
 
                             blank = true;
                             i++;
+                            nextChar = format[i];
                             continue;
                         default:
                             goto END_FLAGS;
@@ -706,7 +713,10 @@ public class StringModule
             }
             else
             {
-                last_char = i;
+                if (last_char == -1)
+                {
+                    last_char = i;
+                }
                 i++;
             }
         }
@@ -723,6 +733,8 @@ public class StringModule
     {
         var string_builder = new ValueStringBuilder(regex_pattern.Length);
         var last_char = -1;
+        var is_empty_idx = 0;
+
         for (int i = 0; i < regex_pattern.Length; )
         {
             char c = regex_pattern[i];
@@ -894,6 +906,11 @@ public class StringModule
                 string_builder.Append("*?");
                 i++;
             }
+            else if (c == '(' && i < regex_pattern.Length - 1 && regex_pattern[i + 1] == ')')
+            {
+                // Empty capture group
+                string_builder.Append($"(?'$empty_{is_empty_idx}')");
+            }
             else if (c == '^' && !support_start_anchor)
             {
                 if (last_char != -1)
@@ -910,7 +927,10 @@ public class StringModule
             // TODO: () which will match the index.
             else
             {
-                last_char = i;
+                if (last_char == -1)
+                {
+                    last_char = i;
+                }
                 i++;
             }
         }
@@ -959,7 +979,7 @@ public class StringModule
         if (start < 0)
         {
             // Note: 1-based index, so we don't need to + 1.
-            start = Math.Min(str.Length - start, 0);
+            start = Math.Min(str.Length + start, 0);
         }
         else if (start > 0)
         {
@@ -968,11 +988,12 @@ public class StringModule
 
         if (end < 0)
         {
-            end = Math.Max(str.Length - end, str.Length - 1);
+            end = Math.Max(str.Length + end, str.Length - 1);
         }
         else
         {
             end -= 1;
+            end = Math.Min(end, str.Length - 1);
         }
 
         return start > end
