@@ -22,8 +22,8 @@ internal sealed partial class Processor
         {
             SymbolRefType.DefaultEnv => LuaValue.NewTable(GetScript().Globals),
             SymbolRefType.Global => GetGlobalSymbol(GetGenericSymbol(symref.i_Env), symref.i_Name),
-            SymbolRefType.Local => GetTopNonClrFunction().LocalScope[symref.i_Index],
-            SymbolRefType.Upvalue => GetTopNonClrFunction().ClosureScope[symref.i_Index],
+            SymbolRefType.Local => GetTopNonClrFunction().Value.LocalScope[symref.i_Index],
+            SymbolRefType.Upvalue => GetTopNonClrFunction().Value.ClosureScope[symref.i_Index],
             _ => throw new InternalErrorException("Unexpected {0} LRef at resolution: {1}", symref.i_Type,
                 symref.i_Name)
         };
@@ -56,9 +56,9 @@ internal sealed partial class Processor
             {
                 var stackframe = GetTopNonClrFunction();
 
-                var v = stackframe.LocalScope[symref.i_Index];
+                var v = stackframe.Value.LocalScope[symref.i_Index];
                 if (v == null)
-                    stackframe.LocalScope[symref.i_Index] = v = LuaValue.NewNil();
+                    stackframe.Value.LocalScope[symref.i_Index] = v = LuaValue.NewNil();
 
                 v.Assign(value);
             }
@@ -67,9 +67,9 @@ internal sealed partial class Processor
             {
                 var stackframe = GetTopNonClrFunction();
 
-                var v = stackframe.ClosureScope[symref.i_Index];
+                var v = stackframe.Value.ClosureScope[symref.i_Index];
                 if (v == null)
-                    stackframe.ClosureScope[symref.i_Index] = v = LuaValue.NewNil();
+                    stackframe.Value.ClosureScope[symref.i_Index] = v = LuaValue.NewNil();
 
                 v.Assign(value);
             }
