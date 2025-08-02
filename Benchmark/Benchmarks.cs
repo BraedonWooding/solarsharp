@@ -25,7 +25,10 @@ public class Benchmarks
         yield return new KeraImplementation();
         yield return new MoonSharpImplementation();
         yield return new NLuaImplementation();
+        // Doesn't support net472 at all.
+#if !NET472
         yield return new LuaCSharpImplementation();
+#endif
         yield return new SolarSharpImplementation();
     }
 

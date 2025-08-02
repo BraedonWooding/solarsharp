@@ -21,7 +21,7 @@ namespace SolarSharp.Interpreter;
 ///     cannot share
 ///     data among themselves unless some mechanism is put in place.
 /// </summary>
-public class Script : IScriptPrivateResource
+public class Script
 {
     /// <summary>
     ///     The version of the SolarSharp engine
@@ -125,8 +125,6 @@ public class Script : IScriptPrivateResource
     /// </summary>
     public Table Registry { get; private set; }
 
-    Script IScriptPrivateResource.OwnerScript => this;
-
     /// <summary>
     ///     Loads a string containing a Lua/SolarSharp function.
     /// </summary>
@@ -138,11 +136,9 @@ public class Script : IScriptPrivateResource
     /// </returns>
     public LuaValue LoadFunction(string code, Table globalTable = null, string funcFriendlyName = null)
     {
-        this.CheckScriptOwnership(globalTable);
-
         var chunkName = $"libfunc_{funcFriendlyName ?? m_Sources.Count.ToString()}";
 
-        SourceCode source = new(chunkName, code, m_Sources.Count, this);
+        SourceCode source = new(chunkName, code, m_Sources.Count);
 
         m_Sources.Add(source);
 
@@ -164,8 +160,6 @@ public class Script : IScriptPrivateResource
     /// </returns>
     public LuaValue LoadString(string code, Table globalTable = null, string codeFriendlyName = null)
     {
-        this.CheckScriptOwnership(globalTable);
-
         if (code.StartsWith(StringModule.BASE64_DUMP_HEADER))
         {
             code = code[StringModule.BASE64_DUMP_HEADER.Length..];
@@ -176,7 +170,7 @@ public class Script : IScriptPrivateResource
 
         var chunkName = $"{codeFriendlyName ?? "chunk_" + m_Sources.Count}";
 
-        SourceCode source = new(codeFriendlyName ?? chunkName, code, m_Sources.Count, this);
+        SourceCode source = new(codeFriendlyName ?? chunkName, code, m_Sources.Count);
 
         m_Sources.Add(source);
 
@@ -198,8 +192,6 @@ public class Script : IScriptPrivateResource
     /// </returns>
     public LuaValue LoadStream(Stream stream, Table globalTable = null, string codeFriendlyName = null)
     {
-        this.CheckScriptOwnership(globalTable);
-
         Stream codeStream = new UndisposableStream(stream);
 
         if (!Processor.IsDumpStream(codeStream))
@@ -213,7 +205,7 @@ public class Script : IScriptPrivateResource
 
         SourceCode source = new(codeFriendlyName ?? chunkName,
             $"-- This script was decoded from a binary dump - dump_{m_Sources.Count}",
-            m_Sources.Count, this);
+            m_Sources.Count);
 
         m_Sources.Add(source);
 
@@ -239,8 +231,6 @@ public class Script : IScriptPrivateResource
     /// </exception>
     public void Dump(LuaValue function, Stream stream)
     {
-        this.CheckScriptOwnership(function);
-
         if (function.Type != DataType.Function)
             throw new ArgumentException("function arg is not a function!");
 
@@ -269,8 +259,6 @@ public class Script : IScriptPrivateResource
     /// </returns>
     public LuaValue LoadFile(string filename, Table globalContext = null, string friendlyFilename = null)
     {
-        this.CheckScriptOwnership(globalContext);
-
 #pragma warning disable 618
         filename = Options.ScriptLoader.ResolveFileName(filename);
 #pragma warning restore 618
@@ -381,7 +369,6 @@ public class Script : IScriptPrivateResource
     /// <returns></returns>
     private LuaValue MakeClosure(int address, Table envTable = null)
     {
-        this.CheckScriptOwnership(envTable);
         Closure c;
 
         if (envTable == null)
@@ -437,9 +424,6 @@ public class Script : IScriptPrivateResource
     /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function</exception>
     public LuaValue Call(LuaValue function, params LuaValue[] args)
     {
-        this.CheckScriptOwnership(function);
-        this.CheckScriptOwnership(args);
-
         if (function.Type != DataType.Function && function.Type != DataType.ClrFunction)
         {
             var metafunction = m_MainProcessor.GetMetamethod(function, "__call");
@@ -519,8 +503,6 @@ public class Script : IScriptPrivateResource
     /// <exception cref="ArgumentException">Thrown if function is not of DataType.Function or DataType.ClrFunction</exception>
     public LuaValue CreateCoroutine(LuaValue function)
     {
-        this.CheckScriptOwnership(function);
-
         if (function.Type == DataType.Function)
             return m_MainProcessor.Coroutine_Create(function.Function);
         if (function.Type == DataType.ClrFunction)
@@ -541,9 +523,6 @@ public class Script : IScriptPrivateResource
     /// </returns>
     public LuaValue RecycleCoroutine(Coroutine coroutine, LuaValue function)
     {
-        this.CheckScriptOwnership(coroutine);
-        this.CheckScriptOwnership(function);
-
         if (coroutine is not { Type: Coroutine.CoroutineType.Coroutine })
             throw new InvalidOperationException("coroutine is not CoroutineType.Coroutine");
         if (function is not { Type: DataType.Function })
@@ -586,8 +565,6 @@ public class Script : IScriptPrivateResource
     /// <exception cref="ScriptRuntimeException">Raised if module is not found</exception>
     public LuaValue RequireModule(string modname, Table globalContext = null)
     {
-        this.CheckScriptOwnership(globalContext);
-
         var globals = globalContext ?? Globals;
         var filename = Options.ScriptLoader.ResolveModuleName(modname, globals) ??
                        throw new ScriptRuntimeException("module '{0}' not found", modname);
@@ -618,8 +595,6 @@ public class Script : IScriptPrivateResource
     /// <exception cref="ArgumentException">Specified type not supported :  + type.ToString()</exception>
     public void SetTypeMetatable(DataType type, Table metatable)
     {
-        this.CheckScriptOwnership(metatable);
-
         var t = (int)type;
 
         m_TypeMetatables[t] = t >= 0 && t < m_TypeMetatables.Length

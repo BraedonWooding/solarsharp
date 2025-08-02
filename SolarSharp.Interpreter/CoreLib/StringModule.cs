@@ -24,7 +24,6 @@ public class StringModule
         globalTable.OwnerScript.SetTypeMetatable(DataType.String, stringMetatable);
     }
 
-
     [SolarSharpModuleMethod]
     public static LuaValue dump(ScriptExecutionContext executionContext, CallbackArguments args)
     {
@@ -48,7 +47,6 @@ public class StringModule
             throw new ScriptRuntimeException(ex.Message);
         }
     }
-
 
     [SolarSharpModuleMethod]
     public static LuaValue @char(ScriptExecutionContext _, CallbackArguments args)
@@ -79,7 +77,6 @@ public class StringModule
 
         return LuaValue.NewString(sb.ToString());
     }
-
 
     [SolarSharpModuleMethod]
     public static LuaValue @byte(ScriptExecutionContext _, CallbackArguments args)

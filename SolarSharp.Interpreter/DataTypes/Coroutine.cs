@@ -12,7 +12,7 @@ namespace SolarSharp.Interpreter.DataTypes;
 /// <summary>
 ///     A class representing a script coroutine
 /// </summary>
-public class Coroutine : RefIdObject, IScriptPrivateResource
+public class Coroutine : RefIdObject
 {
     /// <summary>
     ///     Possible types of coroutine
@@ -187,8 +187,6 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
     /// </exception>
     public LuaValue Resume(params LuaValue[] args)
     {
-        this.CheckScriptOwnership(args);
-
         if (Type == CoroutineType.Coroutine)
             return m_Processor.Coroutine_Resume(args);
         throw new InvalidOperationException(
@@ -204,9 +202,6 @@ public class Coroutine : RefIdObject, IScriptPrivateResource
     /// <returns></returns>
     public LuaValue Resume(ScriptExecutionContext context, params LuaValue[] args)
     {
-        this.CheckScriptOwnership(context);
-        this.CheckScriptOwnership(args);
-
         if (Type == CoroutineType.Coroutine)
             return m_Processor.Coroutine_Resume(args);
         if (Type == CoroutineType.ClrCallback)

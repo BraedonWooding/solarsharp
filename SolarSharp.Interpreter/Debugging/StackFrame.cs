@@ -6,7 +6,7 @@ namespace SolarSharp.Interpreter.Debugging;
 ///     A watch item for the debugger to consume.
 ///     Most properties make or not sense depending on the WatchType.
 /// </summary>
-public class StackFrame
+public record struct StackFrame
 {
     /// <summary>
     ///     Gets or sets the address of the item
@@ -26,6 +26,11 @@ public class StackFrame
     public int RetAddress { get; set; }
 
     /// <summary>
+    ///     Gets or sets a value indicating whether this instance is generating an error.
+    /// </summary>
+    public bool IsError { get; set; }
+
+    /// <summary>
     ///     Gets or sets the name of the item
     /// </summary>
     public string Name { get; set; }
@@ -39,11 +44,6 @@ public class StackFrame
     ///     Gets or sets the symbol reference of the item
     /// </summary>
     public SymbolRef LValue { get; set; }
-
-    /// <summary>
-    ///     Gets or sets a value indicating whether this instance is generating an error.
-    /// </summary>
-    public bool IsError { get; set; }
 
     /// <summary>
     ///     Gets or sets the source location this item refers to.

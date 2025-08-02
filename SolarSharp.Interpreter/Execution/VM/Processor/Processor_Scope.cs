@@ -84,15 +84,15 @@ internal sealed partial class Processor
         }
     }
 
-    private CallStackItem GetTopNonClrFunction()
+    private CallStackItem? GetTopNonClrFunction()
     {
-        CallStackItem stackframe = null;
+        CallStackItem? stackframe = null;
 
         for (var i = 0; i < m_ExecutionStack.Count; i++)
         {
             stackframe = m_ExecutionStack.Peek(i);
 
-            if (stackframe.ClrFunction == null)
+            if (stackframe.Value.ClrFunction == null)
                 break;
         }
 

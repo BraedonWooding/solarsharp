@@ -8,9 +8,9 @@ namespace SolarSharp.Interpreter.Debugging;
 /// <summary>
 ///     Class representing the source code of a given script
 /// </summary>
-public class SourceCode : IScriptPrivateResource
+public class SourceCode
 {
-    internal SourceCode(string name, string code, int sourceID, Script ownerScript)
+    internal SourceCode(string name, string code, int sourceID)
     {
         Refs = new List<SourceRef>();
 
@@ -25,7 +25,6 @@ public class SourceCode : IScriptPrivateResource
 
         Lines = lines.ToArray();
 
-        OwnerScript = ownerScript;
         SourceID = sourceID;
     }
 
@@ -50,11 +49,6 @@ public class SourceCode : IScriptPrivateResource
     public int SourceID { get; private set; }
 
     internal List<SourceRef> Refs { get; private set; }
-
-    /// <summary>
-    ///     Gets the script owning this resource.
-    /// </summary>
-    public Script OwnerScript { get; }
 
     /// <summary>
     ///     Gets the code snippet represented by a source ref

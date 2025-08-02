@@ -6,7 +6,7 @@ namespace SolarSharp.Interpreter.DataTypes;
 /// <summary>
 ///     A class representing a script function
 /// </summary>
-public class Closure : RefIdObject, IScriptPrivateResource
+public class Closure : RefIdObject
 {
     /// <summary>
     ///     Type of closure based on upvalues
@@ -62,7 +62,6 @@ public class Closure : RefIdObject, IScriptPrivateResource
     ///     The current closure context
     /// </summary>
     internal ClosureContext ClosureContext { get; }
-
 
     /// <summary>
     ///     Gets the script owning this function

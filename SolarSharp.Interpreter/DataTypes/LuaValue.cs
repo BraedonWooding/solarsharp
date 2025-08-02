@@ -665,16 +665,6 @@ public sealed class LuaValue
     }
 
     /// <summary>
-    ///     Returns this LuaValue as an instance of <see cref="IScriptPrivateResource" />, if possible,
-    ///     null otherwise
-    /// </summary>
-    /// <returns>False if value is false or nil, true otherwise.</returns>
-    public IScriptPrivateResource GetAsPrivateResource()
-    {
-        return m_Object as IScriptPrivateResource;
-    }
-
-    /// <summary>
     ///     Converts a tuple to a scalar value. If it's already a scalar value, this function returns "this".
     /// </summary>
     public LuaValue ToScalar()

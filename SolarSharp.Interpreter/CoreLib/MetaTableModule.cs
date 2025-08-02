@@ -43,7 +43,6 @@ public class MetaTableModule
 
         if (obj.Type.CanHaveTypeMetatables()) meta = executionContext.GetScript().GetTypeMetatable(obj.Type);
 
-
         if (obj.Type == DataType.Table) meta = obj.Table.MetaTable;
 
         if (meta == null)

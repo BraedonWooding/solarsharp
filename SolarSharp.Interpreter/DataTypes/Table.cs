@@ -11,7 +11,7 @@ namespace SolarSharp.Interpreter.DataTypes;
 /// <summary>
 ///     A class representing a Lua table.
 /// </summary>
-public class Table : RefIdObject, IScriptPrivateResource, IEnumerable<KeyValuePair<LuaValue, LuaValue>>
+public class Table : RefIdObject, IEnumerable<KeyValuePair<LuaValue, LuaValue>>
 {
     private const int MAX_INT_KEY_ARRAY = 16_000_000;
 

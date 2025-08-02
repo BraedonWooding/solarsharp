@@ -1,4 +1,4 @@
-﻿#if NET8_0_OR_GREATER
+﻿#if !NET472
 using Lua;
 using Lua.Standard;
 

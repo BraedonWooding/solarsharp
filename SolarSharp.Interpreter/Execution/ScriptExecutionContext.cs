@@ -12,7 +12,7 @@ namespace SolarSharp.Interpreter.Execution;
 ///     TODO: We can probably remove this class since we only need it for calling location right now...
 ///     but I think in the majority of cases we can probably handle calling location in processor...
 /// </summary>
-public struct ScriptExecutionContext : IScriptPrivateResource
+public struct ScriptExecutionContext
 {
     private readonly Processor m_Processor;
 
@@ -193,12 +193,4 @@ public struct ScriptExecutionContext : IScriptPrivateResource
             ? m_Processor.PerformMessageDecorationBeforeUnwind(messageHandler, exception.Message, CallingLocation)
             : exception.Message;
     }
-
-    /// <summary>
-    ///     Gets the script owning this resource.
-    /// </summary>
-    /// <value>
-    ///     The script owning this resource.
-    /// </value>
-    public Script OwnerScript => GetScript();
 }
