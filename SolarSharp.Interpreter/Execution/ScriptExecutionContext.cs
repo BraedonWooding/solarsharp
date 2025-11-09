@@ -3,7 +3,6 @@ using SolarSharp.Interpreter.DataTypes;
 using SolarSharp.Interpreter.Debugging;
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution.VM;
-using SolarSharp.Interpreter.Interop.LuaStateInterop;
 
 namespace SolarSharp.Interpreter.Execution;
 

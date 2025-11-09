@@ -1,8 +1,11 @@
 Copyright (c) 2024-2025, Braedon Wooding
 All rights reserved
 
-Parts of the string library are based on the KopiLua project (https://github.com/NLua/KopiLua)
-Copyright (c) 2012 LoDC
+Major portions of the regex part of the string library were ported to C# from LuaJIT.
+Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
+
+Major portions of the regex part of the string library were taken verbatim or adapted from the Lua interpreter.
+Copyright (C) 1994-2008 Lua.org, PUC-Rio. See Copyright Notice in lua.h
 
 Parts of the SolarSharp.Cli, and SolarSharp.Interpreter/SolarSharp.Interpreter.Tests were forked from the MoonSharp project
 so the following license is reproduced as is

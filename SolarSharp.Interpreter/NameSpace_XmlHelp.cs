@@ -43,16 +43,6 @@ namespace SolarSharp.Interpreter.Interop
     internal static class NamespaceDoc;
 }
 
-namespace SolarSharp.Interpreter.Interop.LuaStateInterop
-{
-    /// <summary>
-    ///     Namespace containing classes used to provide a minimal support for porting code based on the classic
-    ///     "LuaState" model (e.g. code based on KopiLua, UniLua or Lua itself).
-    /// </summary>
-    internal static class NamespaceDoc;
-}
-
-
 namespace SolarSharp.Interpreter.Loaders
 {
     /// <summary>
