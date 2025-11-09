@@ -2,12 +2,13 @@
 using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 using SolarSharp.Interpreter.Modules;
+using SolarSharp.Interpreter.Regex;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.RegularExpressions;
 
 // Inspired by KuaLua's string module and Lua-CSharp's string module.
 
@@ -100,216 +101,48 @@ public class StringModule
     [SolarSharpModuleMethod]
     public static LuaValue match(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        var str = args.AsType(0, nameof(gmatch), DataType.String);
-        var pattern = args.AsType(1, nameof(gmatch), DataType.String);
-        var regex = ConvertLuaRegexToCSharp(pattern.String, support_start_anchor: true);
-        var init = args.AsOptInt(2, nameof(gmatch)) ?? 1;
-
-        // Lua is 1-based, C# is 0-based.  Handle negative indexes as well.
-        if (init < 0)
-        {
-            init = Math.Max(0, str.String.Length + init);
-        }
-        else if (init > 0)
-        {
-            init -= 1;
-        }
-
-        var matches = regex.Match(str.String, init);
-        if (!matches.Success)
-        {
-            return LuaValue.Nil;
-        }
-        else
-        {
-            // If there are multiple groups caught then we return a tuple for them
-            var groups = matches.Captures;
-            if (groups.Count <= 1)
-            {
-                // If there is only one group, we return the string
-                return LuaValue.NewString(matches.Value);
-            }
-            else if (groups.Count == 2)
-            {
-                return LuaValue.NewString(matches.Captures[1].Value);
-            }
-            else
-            {
-                var result = new LuaValue[groups.Count - 1];
-                for (int i = 0; i < groups.Count - 1; i++)
-                {
-                    var group = groups[i + 1];
-                    result[i] = LuaValue.NewString(group.Value);
-                }
-                return LuaValue.NewTuple(result);
-            }
-        }
+        var str = args.AsType(0, nameof(match), DataType.String).String;
+        var pattern = args.AsType(1, nameof(match), DataType.String).String;
+        var init = args.AsOptInt(2, nameof(match)) ?? 1;
+        return LuaRegex.FindMatch(str, pattern, init, false);
     }
-    
+
     [SolarSharpModuleMethod]
     public static LuaValue gmatch(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        var str = args.AsType(0, nameof(gmatch), DataType.String);
-        var pattern = args.AsType(1, nameof(gmatch), DataType.String);
-        // gmatch doesn't support ^
-        var regex = ConvertLuaRegexToCSharp(pattern.String, support_start_anchor: false);
+        var str = args.AsType(0, nameof(gmatch), DataType.String).String;
+        var pattern = args.AsType(1, nameof(gmatch), DataType.String).String;
         var init = args.AsOptInt(2, nameof(gmatch)) ?? 1;
-
-        // Lua is 1-based, C# is 0-based.  Handle negative indexes as well.
-        if (init < 0)
-        {
-            init = Math.Max(0, str.String.Length + init);
-        }
-        else if (init > 0)
-        {
-            init -= 1;
-        }
-
-        var matches = regex.Matches(str.String, init);
-        var it = ((IEnumerable<Match>)matches).GetEnumerator();
-
-        return LuaValue.NewCallback((_ctx, _args) =>
-        {
-            // If there are multiple groups caught then we return a tuple for them
-            if (!it.MoveNext())
-            {
-                return LuaValue.Nil;
-            }
-            
-            var groups = it.Current.Captures;
-            if (groups.Count <= 1)
-            {
-                // If there is only one group, we return the string
-                return LuaValue.NewString(it.Current.Value);
-            }
-            else
-            {
-                var result = new LuaValue[groups.Count];
-                for (int i = 0; i < groups.Count; i++)
-                {
-                    var group = groups[i + 1];
-                    result[i] = LuaValue.NewString(group.Value);
-                }
-                return LuaValue.NewTuple(result);
-            }
-        });
+        return LuaRegex.MatchIteratorCallback(str, pattern, init);
     }
 
     [SolarSharpModuleMethod]
     public static LuaValue gsub(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        var str = args.AsType(0, nameof(gmatch), DataType.String);
-        var pattern = args.AsType(1, nameof(gmatch), DataType.String);
-        var n = args.AsOptInt(3, nameof(gmatch)) ?? -1;
-
-        // gsub doesn't support ^
-        var regex = ConvertLuaRegexToCSharp(pattern.String, support_start_anchor: false);
-
+        var str = args.AsType(0, nameof(gmatch), DataType.String).String;
+        var pattern = args.AsType(1, nameof(gmatch), DataType.String).String;
         var repl = args[2];
-        // We have a few cases;
-        // 1. repl is a string, then it's a simple replacement but we use % instead of $ for the groups.
-        if (repl.Type == DataType.String)
-        {
-            var replString = ConvertLuaSubstitutionRegexToCSharp(repl.String);
-            return LuaValue.NewString(regex.Replace(str.String, replString, n));
-        }
-        else if (repl.Type == DataType.Function || repl.Type == DataType.ClrFunction || repl.Type == DataType.Table)
-        {
-            return LuaValue.NewString(regex.Replace(str.String, match =>
-            {
-                var groups = match.Captures;
-
-                LuaValue result;
-                if (repl.Type == DataType.Table)
-                {
-                    result = repl.Table.Get(groups.Count >= 1 ? groups[1].Value : match.Value);
-                }
-                else
-                {
-                    var argsForFunc = new LuaValue[groups.Count];
-                    for (int i = 0; i < groups.Count; i++)
-                    {
-                        argsForFunc[i] = LuaValue.NewString(groups[i].Value);
-                    }
-                    result = executionContext.Call(repl, argsForFunc);
-                }
-                
-                if (result.Type == DataType.String)
-                {
-                    return result.String;
-                }
-                else if (result.Type == DataType.Number)
-                {
-                    // If the function returns a number, we convert it to a string
-                    return result.Number.ToString();
-                }
-                else if (result.Type == DataType.Nil || (result.Type == DataType.Boolean && result.Boolean == false))
-                {
-                    return match.Value; // No replacement, keep original
-                }
-                else
-                {
-                    throw new ScriptRuntimeException($"invalid replacement value (a {result.Type})");
-                }
-            }, n));
-        }
-        else
-        {
-            throw ScriptRuntimeException.BadArgument(3, nameof(gsub), $"(string/function/table) expected, got {repl.Type})");
-        }
+        var n = args.AsOptInt(3, nameof(gmatch)) ?? -1;
+        
+        return LuaRegex.Substitute(str, pattern, repl, n, executionContext);
     }
 
     [SolarSharpModuleMethod]
     public static LuaValue find(ScriptExecutionContext executionContext, CallbackArguments args)
     {
-        var str = args.AsType(0, nameof(find), DataType.String);
-        var pattern = args.AsType(1, nameof(find), DataType.String);
+        var str = args.AsType(0, nameof(find), DataType.String).String;
+        var pattern = args.AsType(1, nameof(find), DataType.String).String;
         var init = args.AsOptInt(2, nameof(find)) ?? 1;
         var plain = args.AsOptBoolean(3, nameof(find)) ?? false;
-        // Lua is 1-based, C# is 0-based.  Handle negative indexes as well.
-        if (init < 0)
-        {
-            init = Math.Max(0, str.String.Length + init);
-        }
-        else if (init > 0)
-        {
-            init -= 1;
-        }
-
-        if (plain)
-        {
-            // If plain is true, we just do a simple indexOf
-            var index = str.String.IndexOf(pattern.String, init);
-            if (index < 0)
-            {
-                return LuaValue.Nil;
-            }
-            else
-            {
-                // Return the start and end index of the match, noting lua indexing
-                return LuaValue.NewTuple(LuaValue.NewNumber(index + 1), LuaValue.NewNumber(index + pattern.String.Length));
-            }
-        }
-
-        // Otherwise we use regex
-        var regex = ConvertLuaRegexToCSharp(pattern.String, support_start_anchor: true);
-
-        var match = regex.Match(str.String, init);
-        if (!match.Success)
-        {
-            return LuaValue.Nil;
-        }
         
-        // Return the start and end index of the match + all captures
-        var result = new LuaValue[2 + match.Captures.Count - 1];
-        result[0] = LuaValue.NewNumber(match.Index + 1); // Start index (1-based)
-        result[1] = LuaValue.NewNumber(match.Index + match.Length); // End index (1-based)
-        for (int i = 0; i < match.Captures.Count - 1; i++)
+        if (plain || LuaRegex.StringHasPattern(str))
         {
-            result[i + 2] = LuaValue.NewString(match.Captures[i + 1].Value);
+            return LuaRegex.FindPlainMatch(str, pattern, init);
         }
-    
-        return LuaValue.NewTuple(result);
+        else
+        {
+            return LuaRegex.FindMatch(str, pattern, init, true);
+        }
     }
 
     [SolarSharpModuleMethod]
@@ -441,7 +274,7 @@ public class StringModule
                     }
                 }
 
-            END_FLAGS:
+                END_FLAGS:
 
                 // Precision + width
                 if (char.IsDigit(nextChar))
@@ -671,304 +504,6 @@ public class StringModule
         }
 
         return int.Parse(format[start..i]);
-    }
-
-    private static string ConvertLuaSubstitutionRegexToCSharp(string regex_pattern)
-    {
-        var string_builder = new ValueStringBuilder(regex_pattern.Length);
-        var last_char = -1;
-        for (int i = 0; i < regex_pattern.Length;)
-        {
-            char c = regex_pattern[i];
-            if (c == '%')
-            {
-                if (i >= regex_pattern.Length - 1)
-                {
-                    throw ScriptRuntimeException.MalformedPattern("ends with '%'");
-                }
-
-                if (last_char != -1)
-                {
-                    string_builder.Append(regex_pattern.AsSpan(last_char, i - last_char));
-                    last_char = -1;
-                }
-
-                c = regex_pattern[i + 1];
-                if (c == '%')
-                {
-                    string_builder.Append('%');
-                }
-                else if (c < '0' || c > '9')
-                {
-                    // Parse out a number after the %
-                    // only supports 1-9
-                    throw new ScriptRuntimeException($"invalid use of '%' in replacement string");
-                }
-                else
-                {
-                    string_builder.Append('$');
-                    string_builder.Append(c);
-                }
-                i += 2;
-            }
-            else
-            {
-                if (last_char == -1)
-                {
-                    last_char = i;
-                }
-                i++;
-            }
-        }
-
-        if (last_char != -1)
-        {
-            string_builder.Append(regex_pattern.AsSpan(last_char));
-        }
-
-        return string_builder.ToString();
-    }
-
-    private static Regex ConvertLuaRegexToCSharp(string regex_pattern, bool support_start_anchor)
-    {
-        var string_builder = new ValueStringBuilder(regex_pattern.Length);
-        var last_char = -1;
-        var is_empty_idx = 0;
-
-        for (int i = 0; i < regex_pattern.Length; )
-        {
-            char c = regex_pattern[i];
-            if (c == '%')
-            {
-                if (i >= regex_pattern.Length - 1)
-                {
-                    throw ScriptRuntimeException.MalformedPattern("ends with '%'");
-                }
-
-                if (last_char != -1)
-                {
-                    string_builder.Append(regex_pattern.AsSpan(last_char, i - last_char));
-                    last_char = -1;
-                }
-
-                // Lua's % is similar to C#'s \ in that it's our escape character.
-                c = regex_pattern[i + 1];
-                switch (c)
-                {
-                    case 'a':
-                        // all letters
-                        string_builder.Append(@"\p{L}");
-                        break;
-                    case 'A':
-                        // all non letterse
-                        string_builder.Append(@"\P{L}");
-                        break;
-                    case 's':
-                        // all spaces
-                        string_builder.Append(@"\s");
-                        break;
-                    case 'S':
-                        // all non spaces
-                        string_builder.Append(@"\S");
-                        break;
-                    case 'd':
-                        // all digits
-                        string_builder.Append(@"\d");
-                        break;
-                    case 'D':
-                        // all non digits
-                        string_builder.Append(@"\D");
-                        break;
-                    case 'w':
-                        // all alphanumeric characters
-                        string_builder.Append(@"\w");
-                        break;
-                    case 'W':
-                        // all non alphanumeric characters
-                        string_builder.Append(@"\W");
-                        break;
-                    case 'c':
-                        // all control characters
-                        string_builder.Append(@"\p{C}");
-                        break;
-                    case 'C':
-                        // all non control characters
-                        string_builder.Append(@"\P{C}");
-                        break;
-                    case 'g':
-                        // all printable characters (except space)
-                        string_builder.Append(@"[^\p{C}\s]");
-                        break;
-                    case 'G':
-                        // all non printable characters (including space)
-                        string_builder.Append(@"[\p{C}\s]");
-                        break;
-                    case 'p':
-                        // all punctuation characters
-                        string_builder.Append(@"\p{P}");
-                        break;
-                    case 'P':
-                        // all non punctuation characters
-                        string_builder.Append(@"\P{P}");
-                        break;
-                    case 'l':
-                        // all lowercase letters
-                        string_builder.Append(@"\p{Ll}");
-                        break;
-                    case 'L':
-                        // all non lowercase letters
-                        string_builder.Append(@"\P{Ll}");
-                        break;
-                    case 'u':
-                        // all uppercase letters
-                        string_builder.Append(@"\p{Lu}");
-                        break;
-                    case 'U':
-                        // all non uppercase letters
-                        string_builder.Append(@"\P{Lu}");
-                        break;
-                    case 'x':
-                        // all hexadecimal digits
-                        string_builder.Append(@"[\dA-Fa-f]");
-                        break;
-                    case 'X':
-                        // all non hexadecimal digits
-                        string_builder.Append(@"[^\dA-Fa-f]");
-                        break;
-                    case 'b':
-                        // balanced patterns
-                        if (i < regex_pattern.Length - 2)
-                        {
-                            var c1 = regex_pattern[i + 1];
-                            var c2 = regex_pattern[i + 2];
-
-                            var c1Escaped = Regex.Escape(c1.ToString());
-                            var c2Escaped = Regex.Escape(c2.ToString());
-
-                            // https://learn.microsoft.com/en-us/dotnet/standard/base-types/grouping-constructs-in-regular-expressions?redirectedfrom=MSDN#balancing_group_definition
-
-                            // Open pattern
-                            string_builder.Append(@"(((?'Open'");
-                            string_builder.Append(c1Escaped);
-                            // This matches all the ones between the opening and closing characters
-                            string_builder.Append(@")[^");
-                            string_builder.Append(c1Escaped);
-                            string_builder.Append(c2Escaped);
-                            
-                            // Then we have our closed pattern
-                            string_builder.Append(@"]*)((?'Close-Open'");
-                            string_builder.Append(c2Escaped);
-
-                            // Matching all the characters between the next one
-                            string_builder.Append(@")[^");
-                            string_builder.Append(c1Escaped);
-                            string_builder.Append(c2Escaped);
-
-                            // Our core "loop"
-                            string_builder.Append(@"*))*");
-
-                            // Validate no opened patterns remain at the end.
-                            string_builder.Append(@"(?(Open)(?!))");
-
-                            i += 2;
-                        }
-                        else
-                        {
-                            throw ScriptRuntimeException.MalformedPattern("missing arguments to '%b'");
-                        }
-                        break;
-                    default:
-                        string_builder.Append(RegexEscape(c));
-                        break;
-                }
-
-                i += 2;
-            }
-            else if (c == '\\')
-            {
-                if (last_char != -1)
-                {
-                    string_builder.Append(regex_pattern.AsSpan(last_char, i - last_char));
-                    last_char = -1;
-                }
-
-                string_builder.Append(@"\\");
-                i++;
-            }
-            else if (c == '-')
-            {
-                if (last_char != -1)
-                {
-                    string_builder.Append(regex_pattern.AsSpan(last_char, i - last_char));
-                    last_char = -1;
-                }
-
-                string_builder.Append("*?");
-                i++;
-            }
-            else if (c == '(' && i < regex_pattern.Length - 1 && regex_pattern[i + 1] == ')')
-            {
-                // Empty capture group
-                string_builder.Append($"(?'$empty_{is_empty_idx}')");
-            }
-            else if (c == '^' && !support_start_anchor)
-            {
-                if (last_char != -1)
-                {
-                    string_builder.Append(regex_pattern.AsSpan(last_char, i - last_char));
-                    last_char = -1;
-                }
-
-                // Note: For this function [gmatch], a caret '^' at the start of a pattern does not work as an anchor, as this would prevent the iteration.
-                string_builder.Append(@"\^");
-                i++;
-            }
-            // TODO: %f
-            // TODO: () which will match the index.
-            else
-            {
-                if (last_char == -1)
-                {
-                    last_char = i;
-                }
-                i++;
-            }
-        }
-
-        if (last_char != -1)
-        {
-            string_builder.Append(regex_pattern.AsSpan(last_char));
-        }
-
-        return new Regex(string_builder.ToString());
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static string RegexEscape(char ch)
-    {
-        return ch switch
-        {
-            '\t' => @"\t",
-            '\n' => @"\n",
-            '\f' => @"\f",
-            '\r' => @"\r",
-            '\0' => @"\0",
-            ' ' => @"\ ",
-            '#' => @"\#",
-            '$' => @"\$",
-            '(' => @"\(",
-            ')' => @"\)",
-            '*' => @"\*",
-            '+' => @"\+",
-            '.' => @"\.",
-            '?' => @"\?",
-            '[' => @"\[",
-            '\\' => @"\",
-            '^' => @"\^",
-            '{' => @"\{",
-            '|' => @"\|",
-            _ => ch.ToString()
-        };
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
