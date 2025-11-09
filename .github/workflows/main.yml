@@ -30,7 +30,7 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
       - name: Run benchmark
-        run: cd Benchmark && dotnet run --configuration Release
+        run: cd Benchmark && dotnet run --configuration Release --framework net9.0
       - name: Filter out bad benchmarks
         run: cat Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json | jq ".Benchmarks[] |= select( .Statistics != null )" > INPUT.tmp && mv INPUT.tmp Benchmark/BenchmarkDotNet.Artifacts/results/Benchmark.Benchmarks-report-full-compressed.json
       - name: Output Benchmark

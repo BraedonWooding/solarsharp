@@ -101,7 +101,6 @@ public class TableModule
     {
         var vlist = args.AsType(0, "table.remove", DataType.Table);
         var vpos = args.AsType(1, "table.remove", DataType.Number, true);
-        var ret = LuaValue.Nil;
 
         if (args.Count > 2)
             throw new ScriptRuntimeException("wrong number of arguments to 'remove'");
@@ -114,15 +113,7 @@ public class TableModule
         if (pos >= len + 1 || (pos < 1 && len > 0))
             throw new ScriptRuntimeException("bad argument #1 to 'remove' (position out of bounds)");
 
-        for (var i = pos; i <= len; i++)
-        {
-            if (i == pos)
-                ret = list.Get(i);
-
-            list.Set(i, list.Get(i + 1));
-        }
-
-        return ret;
+        return list.ArrayRemoveAt(pos);
     }
 
     //table.concat (list [, sep [, i [, j]]])
@@ -167,11 +158,11 @@ public class TableModule
 
     private static int GetTableLength(ScriptExecutionContext executionContext, LuaValue vlist)
     {
-        var __len = executionContext.GetMetamethod(vlist, "__len");
+        var lenMethod = executionContext.GetMetamethod(vlist, "__len");
 
-        if (__len != null)
+        if (lenMethod != null)
         {
-            var lenv = executionContext.GetScript().Call(__len, vlist);
+            var lenv = executionContext.GetScript().Call(lenMethod, vlist);
             var len = lenv.CastToNumber();
             return len == null ? throw new ScriptRuntimeException("object length is not a number") : (int)len;
         }

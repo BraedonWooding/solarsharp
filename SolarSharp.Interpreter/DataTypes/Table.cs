@@ -25,7 +25,7 @@ public class Table : RefIdObject, IEnumerable<KeyValuePair<LuaValue, LuaValue>>
     ///     with the first slot always being empty (similar to LuaJIT)
     ///     This does mean that doing table[0] = X will write to the 0 slot.
     /// </summary>
-    private LuaValue[] ArraySegment;
+    private LuaValue?[] ArraySegment;
 
     private int m_CachedLength = -1;
 
@@ -41,6 +41,7 @@ public class Table : RefIdObject, IEnumerable<KeyValuePair<LuaValue, LuaValue>>
         ArraySegment = new LuaValue[arraySizeHint + 1];
         // we don't have a string map here too because strings are pretty efficiently handled by LuaValues.
         ValueMap = new LuaDictionary<LuaValue, LuaValue>(associativeSizeHint);
+        m_CachedLength = 0;
     }
 
     /// <summary>
@@ -52,6 +53,7 @@ public class Table : RefIdObject, IEnumerable<KeyValuePair<LuaValue, LuaValue>>
         : this(owner)
     {
         for (var i = 0; i < arrayValues.Length; i++) Set(i + 1, arrayValues[i]);
+        m_CachedLength = arrayValues.Length;
     }
 
     /// <summary>
@@ -150,7 +152,14 @@ public class Table : RefIdObject, IEnumerable<KeyValuePair<LuaValue, LuaValue>>
     /// </summary>
     private int GetIntegralKey(double d)
     {
+        if (double.IsNaN(d))
+        {
+            throw ScriptRuntimeException.TableIndexIsNaN();
+        }
+        
         var v = (int)d;
+        // ReSharper disable once CompareOfFloatsByEqualityOperator
+        // TODO: there might be a smarter way of doing this?
         if (d >= 0.0 && d == v)
             return v;
 
@@ -377,6 +386,10 @@ public class Table : RefIdObject, IEnumerable<KeyValuePair<LuaValue, LuaValue>>
     /// <returns></returns>
     private bool RawArraySet(int index, LuaValue value, bool setIfAbsent)
     {
+        // TODO: This does a crazy amount of work.  We mainly do all the prev optimizations for 2 purposes;
+        // 1. SetIfAbsent (we can just split this into 2 functions)
+        // 2. Cached length updates (only matters if we are adding at the end so we can likely optimize this a lot more)
+        
         if (index >= ArraySegment.Length) Array.Resize(ref ArraySegment, NextPowOfTwo(index + 1));
 
         var prev = ArraySegment[index];
@@ -396,7 +409,7 @@ public class Table : RefIdObject, IEnumerable<KeyValuePair<LuaValue, LuaValue>>
             ArraySegment[index] = value;
             if (prev == null)
             {
-                // then we can increment it if we are adding to end
+                // then we can increase it if we are adding to end
                 if (m_CachedLength == index - 1 &&
                     (m_CachedLength >= ArraySegment.Length || ArraySegment[m_CachedLength] == null))
                     m_CachedLength = index;
@@ -406,6 +419,27 @@ public class Table : RefIdObject, IEnumerable<KeyValuePair<LuaValue, LuaValue>>
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Will only operate on arrays, and is built to be extremely performant at removing items from them.
+    /// </summary>
+    internal LuaValue ArrayRemoveAt(int index)
+    {
+        // Note: we support the '0'th element being set
+        if (index < 0 || index > Length) throw new ArgumentOutOfRangeException(nameof(index));
+        
+        // We need to first fetch the item though.
+        var item = ArraySegment[index];
+
+        if (item == null || item.IsNil()) return item ?? LuaValue.Nil;
+        
+        var length = Length;
+        Array.Copy(ArraySegment, index + 1, ArraySegment, index, length - index);
+        // safe because we force calculate it above.
+        m_CachedLength--;
+
+        return item;
     }
 
     private LuaValue ArraySet(int index, LuaValue value, bool invokeMetaMethods)
@@ -437,11 +471,9 @@ public class Table : RefIdObject, IEnumerable<KeyValuePair<LuaValue, LuaValue>>
     /// <returns>Returns the previous value in the table</returns>
     public LuaValue Set(LuaValue key, LuaValue value, bool invokeMetaMethods)
     {
-        if (key.IsNilOrNan())
+        if (key.IsNil())
         {
-            if (key.IsNil())
-                throw ScriptRuntimeException.TableIndexIsNil();
-            throw ScriptRuntimeException.TableIndexIsNaN();
+            throw ScriptRuntimeException.TableIndexIsNil();
         }
 
         if (key.Type == DataType.Number)
