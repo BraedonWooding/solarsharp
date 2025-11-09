@@ -3,6 +3,7 @@ using SolarSharp.Interpreter.Interop;
 using SolarSharp.Interpreter.Interop.BasicDescriptors;
 using System;
 using System.Runtime.CompilerServices;
+using SolarSharp.Interpreter.Regex;
 
 namespace SolarSharp.Interpreter.Errors;
 
@@ -188,6 +189,12 @@ public class ScriptRuntimeException : InterpreterException
     {
         return new ScriptRuntimeException("bad argument #{0} to '{1}' ({2}{3} expected, got {4})",
             argNum + 1, funcName, allowNil ? "nil or " : "", expected, got);
+    }
+
+    public static ScriptRuntimeException ExpectedStringFunctionTableNumber()
+    {
+        // TODO: Strict, the standard doesn't have number here
+        throw new ScriptRuntimeException("string/function/table/number expected");
     }
 
     /// <summary>
@@ -432,6 +439,11 @@ public class ScriptRuntimeException : InterpreterException
         return new ScriptRuntimeException("cannot access field {0} of userdata<{1}>", fieldname, typename);
     }
 
+    public static ScriptRuntimeException MissingEndClassInPattern()
+    {
+        return new ScriptRuntimeException("missing '[' after '%f' in pattern");
+    }
+
     /// <summary>
     ///     Creates a ScriptRuntimeException with a predefined error message specifying that
     ///     an attempt resume a coroutine in an invalid state was done.
@@ -553,4 +565,47 @@ public class ScriptRuntimeException : InterpreterException
         }
 #endif
 }
+    
+    public static Exception PatternTooComplex()
+    {
+        // TODO: This isn't strict, I'm doing a nicer message
+        // the strict is "pattern too complex"
+        return new ScriptRuntimeException($"pattern too complex, max depth is {LuaRegex.MaxDepth}");
+    }
+
+    public static Exception TooManyCaptures()
+    {
+        // TODO: This isn't strict, I'm doing a nicer message
+        // the strict is "too many captures"
+        return new ScriptRuntimeException($"too many captures, max captures is {LuaRegex.MaxCaptures}");
+    }
+
+    public static Exception InvalidCaptureIndex(int index, int length)
+    {
+        // TODO: This isn't strict, I'm doing a nicer message
+        // the strict is "invalid capture index"
+        return new ScriptRuntimeException($"invalid capture index '{index}', number of captures is '{length}'");
+    }
+
+    public static Exception UnbalancedPattern()
+    {
+        return new ScriptRuntimeException("unbalanced pattern");
+    }
+
+    public static Exception UnfinishedCapture(int startingAt)
+    {
+        // TODO: This isn't strict, I'm doing a nicer message
+        // the strict is "unfinished capture"
+        return new ScriptRuntimeException($"unfinished capture starting at position {startingAt}");
+    }
+
+    public static Exception InvalidPatternCapture()
+    {
+        return new ScriptRuntimeException("invalid pattern capture");
+    }
+
+    public static Exception InvalidReplacementValue(string type)
+    {
+        return new ScriptRuntimeException($"invalid replacement value (a {type})");
+    }
 }

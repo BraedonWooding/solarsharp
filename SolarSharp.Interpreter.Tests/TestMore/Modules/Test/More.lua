@@ -15,7 +15,6 @@ local _G = _G
 
 local tb = require 'Test.Builder'.new()
 
-_ENV = nil
 local m = {}
 
 function m.plan (arg)
@@ -44,50 +43,50 @@ end
 
 function m.is (got, expected, name)
     local pass = got == expected
-    tb:ok(pass, name)
     if not pass then
         tb:diag("         got: " .. tostring(got)
            .. "\n    expected: " .. tostring(expected))
     end
+    tb:ok(pass, name)
 end
 
 function m.isnt (got, expected, name)
     local pass = got ~= expected
-    tb:ok(pass, name)
     if not pass then
         tb:diag("         got: " .. tostring(got)
            .. "\n    expected: anything else")
     end
+    tb:ok(pass, name)
 end
 
 function m.like (got, pattern, name)
     if type(pattern) ~= 'string' then
-        tb:ok(false, name)
         tb:diag("pattern isn't a string : " .. tostring(pattern))
+        tb:ok(false, name)
         return
     end
     got = tostring(got)
     local pass = match(got, pattern)
-    tb:ok(pass, name)
     if not pass then
         tb:diag("                  '" .. got .. "'"
            .. "\n    doesn't match '" .. pattern .. "'")
     end
+    tb:ok(pass, name)
 end
 
 function m.unlike (got, pattern, name)
     if type(pattern) ~= 'string' then
-        tb:ok(false, name)
         tb:diag("pattern isn't a string : " .. tostring(pattern))
+        tb:ok(false, name)
         return
     end
     got = tostring(got)
     local pass = not match(got, pattern)
-    tb:ok(pass, name)
     if not pass then
         tb:diag("                  '" .. got .. "'"
            .. "\n          matches '" .. pattern .. "'")
     end
+    tb:ok(pass, name)
 end
 
 local cmp = {
@@ -102,30 +101,30 @@ local cmp = {
 function m.cmp_ok (this, op, that, name)
     local f = cmp[op]
     if not f then
-        tb:ok(false, name)
         tb:diag("unknown operator : " .. tostring(op))
+        tb:ok(false, name)
         return
     end
     local pass = f(this, that)
-    tb:ok(pass, name)
     if not pass then
         tb:diag("    " .. tostring(this)
            .. "\n        " .. op
            .. "\n    " .. tostring(that))
     end
+    tb:ok(pass, name)
 end
 
 function m.type_ok (val, t, name)
     if type(t) ~= 'string' then
-        tb:ok(false, name)
         tb:diag("type isn't a string : " .. tostring(t))
+        tb:ok(false, name)
         return
     end
     if type(val) == t then
         tb:ok(true, name)
     else
-        tb:ok(false, name)
         tb:diag("    " .. tostring(val) .. " isn't a '" .. t .."' it's a '" .. type(val) .. "'")
+        tb:ok(false, name)
     end
 end
 
@@ -143,38 +142,38 @@ end
 
 function m.require_ok (mod)
     local r, msg = pcall(require, mod)
-    tb:ok(r, "require '" .. tostring(mod) .. "'")
     if not r then
         tb:diag("    " .. msg)
     end
+    tb:ok(r, "require '" .. tostring(mod) .. "'")
     return r
 end
 
 function m.eq_array (got, expected, name)
     if type(got) ~= 'table' then
-        tb:ok(false, name)
         tb:diag("got value isn't a table : " .. tostring(got))
+        tb:ok(false, name)
         return
     elseif type(expected) ~= 'table' then
-        tb:ok(false, name)
         tb:diag("expected value isn't a table : " .. tostring(expected))
+        tb:ok(false, name)
         return
     end
     for i = 1, #expected do
         local v = expected[i]
         local val = got[i]
         if val ~= v then
-            tb:ok(false, name)
             tb:diag("    at index: " .. tostring(i)
                .. "\n         got: " .. tostring(val)
                .. "\n    expected: " .. tostring(v))
+            tb:ok(false, name)
             return
         end
     end
     local extra = #got - #expected
     if extra ~= 0 then
-        tb:ok(false, name)
         tb:diag("    " .. tostring(extra) .. " unexpected item(s)")
+        tb:ok(false, name)
     else
         tb:ok(true, name)
     end
@@ -182,12 +181,12 @@ end
 
 function m.is_deeply (got, expected, name)
     if type(got) ~= 'table' then
-        tb:ok(false, name)
         tb:diag("got value isn't a table : " .. tostring(got))
+        tb:ok(false, name)
         return
     elseif type(expected) ~= 'table' then
-        tb:ok(false, name)
         tb:diag("expected value isn't a table : " .. tostring(expected))
+        tb:ok(false, name)
         return
     end
     local msg1
@@ -228,12 +227,12 @@ function m.is_deeply (got, expected, name)
     end -- deep_eq
 
     local pass = deep_eq(got, expected, '')
-    tb:ok(pass, name)
     if not pass then
         tb:diag("    Tables begin differing at:")
         tb:diag("    " .. msg1)
         tb:diag("    " .. msg2)
     end
+    tb:ok(pass, name)
 end
 
 function m.error_is (code, arg2, arg3, arg4)
@@ -251,24 +250,24 @@ function m.error_is (code, arg2, arg3, arg4)
         local msg
         code, msg = loadstring(code)
         if not code then
-            tb:ok(false, name)
             tb:diag("    can't compile code :"
                .. "\n    " .. msg)
+            tb:ok(false, name)
             return
         end
     end
     local r, msg = pcall(code, unpack(params))
     if r then
-        tb:ok(false, name)
         tb:diag("    unexpected success"
            .. "\n    expected: " .. tostring(expected))
+        tb:ok(false, name)
     else
         local pass = msg == expected
-        tb:ok(pass, name)
         if not pass then
             tb:diag("         got: " .. msg
                .. "\n    expected: " .. tostring(expected))
         end
+        tb:ok(pass, name)
     end
 end
 
@@ -287,29 +286,29 @@ function m.error_like (code, arg2, arg3, arg4)
         local msg
         code, msg = loadstring(code)
         if not code then
-            tb:ok(false, name)
             tb:diag("    can't compile code :"
                .. "\n    " .. msg)
+            tb:ok(false, name)
             return
         end
     end
     local r, msg = pcall(code, unpack(params))
     if r then
-        tb:ok(false, name)
         tb:diag("    unexpected success"
            .. "\n    expected: " .. tostring(pattern))
+        tb:ok(false, name)
     else
         if type(pattern) ~= 'string' then
-            tb:ok(false, name)
             tb:diag("pattern isn't a string : " .. tostring(pattern))
+            tb:ok(false, name)
             return
         end
         local pass = match(msg, pattern)
-        tb:ok(pass, name)
         if not pass then
             tb:diag("                  '" .. msg .. "'"
                .. "\n    doesn't match '" .. pattern .. "'")
         end
+        tb:ok(pass, name)
     end
 end
 

@@ -1205,7 +1205,10 @@ internal sealed partial class Processor
             else
             {
                 indexMethod = GetMetamethodRaw(obj, "__index");
-                if (indexMethod == null || indexMethod.IsNil()) throw ScriptRuntimeException.IndexType(obj);
+                if (indexMethod == null || indexMethod.IsNil())
+                {
+                    throw ScriptRuntimeException.IndexType(obj);
+                }
             }
 
             if (indexMethod.Type == DataType.Function || indexMethod.Type == DataType.ClrFunction)

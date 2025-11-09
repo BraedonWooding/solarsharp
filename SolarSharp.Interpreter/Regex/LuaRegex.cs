@@ -12,7 +12,7 @@
 using SolarSharp.Interpreter.DataTypes;
 using System;
 using System.Text;
-using System.Threading;
+using SolarSharp.Interpreter.Errors;
 using SolarSharp.Interpreter.Execution;
 
 // Lua has a very custom regex implementation, which is not compatible with standard regex libraries.
@@ -60,7 +60,7 @@ namespace SolarSharp.Interpreter.Regex
             return LuaValue.NewTuple(LuaValue.NewNumber(index + 1), LuaValue.NewNumber(index + pattern.Length));
         }
 
-        private const int MaxDepth = 200;
+        public const int MaxDepth = 200;
         public const int MaxCaptures = 32;
         
         // Special values for captures
@@ -72,11 +72,11 @@ namespace SolarSharp.Interpreter.Regex
             state.Depth++;
             if (state.Depth > MaxDepth)
             {
-                // Error: too many nested patterns
+                throw ScriptRuntimeException.PatternTooComplex();
             }
             
             init:
-            if (index >= str.Length)
+            if (patternIndex >= pattern.Length)
             {
                 // End of string
                 state.Depth--;
@@ -104,7 +104,7 @@ namespace SolarSharp.Interpreter.Regex
                     if (patternIndex + 1 >= pattern.Length)
                     {
                         // https://github.com/LuaJIT/LuaJIT/blob/68354f444728ef99bb51bb4d86e8f1b40853a898/src/lib_string.c#L194
-                        // Error STRPATE ending
+                        throw ScriptRuntimeException.MalformedPattern("ends with '%'");
                     }
                     
                     switch (pattern[patternIndex + 1])
@@ -114,43 +114,45 @@ namespace SolarSharp.Interpreter.Regex
                             if (MatchBalance(str, pattern, index, patternIndex + 2) is var res and >= 0)
                             {
                                 index = res;
-                                break;
+                                patternIndex += 4;
+                                goto init;
                             }
 
-                            patternIndex += 4;
-                            goto init;
+                            index = -1;
+                            break;
                         }
                         case 'f': /* frontier */
                             patternIndex += 2;
                             if (patternIndex >= pattern.Length || pattern[patternIndex] != '[')
                             {
-                                // Error LJ_ERR_STRPATB
+                                throw ScriptRuntimeException.MissingEndClassInPattern();
                             }
                             
                             var endIndex = FindClassEnd(pattern, patternIndex);
                             var previous = index == 0 ? '\0' : str[index - 1];
                             if (MatchBracketedClass(previous, pattern, patternIndex, endIndex - 1)
-                                || !MatchBracketedClass(str[index], pattern, patternIndex, endIndex - 1))
+                                || !MatchBracketedClass(index < str.Length ? str[index] : '\0', pattern, patternIndex, endIndex - 1))
                             {
                                 index = -1;
                                 break;
                             }
 
-                            index = endIndex;
-                            break;
+                            patternIndex = endIndex;
+                            goto init;
                         default: /* capture results? */
                         {
-                            if (pattern[patternIndex] >= '1' && pattern[patternIndex] <= '9')
+                            if (pattern[patternIndex + 1] >= '1' && pattern[patternIndex + 1] <= '9')
                             {
-                                if (MatchCapture(str, index, pattern[patternIndex] - '1',
+                                if (MatchCapture(str, index, pattern[patternIndex + 1] - '1',
                                         state) is var res and >= 0)
                                 {
                                     index = res;
-                                    break;
+                                    patternIndex += 2;
+                                    goto init;
                                 }
                                 
-                                patternIndex += 2;
-                                goto init;
+                                index = -1;
+                                break;
                             }
 
                             goto dflt;
@@ -175,7 +177,7 @@ namespace SolarSharp.Interpreter.Regex
                 {
                     int endIndex = FindClassEnd(pattern, patternIndex);
                     bool isMatch = index < str.Length && SingleMatch(pattern, patternIndex, endIndex, str[index]);
-                    switch (pattern[endIndex])
+                    switch (endIndex >= pattern.Length ? '\0' : pattern[endIndex])
                     {
                         case '?': /* optional */
                             if (isMatch
@@ -219,7 +221,7 @@ namespace SolarSharp.Interpreter.Regex
         {
             if (state.Level >= MaxCaptures)
             {
-                // Error LJ_ERR_STRCAP
+                throw ScriptRuntimeException.TooManyCaptures();
             }
             
             state.Captures[state.Level].StartIndex = index;
@@ -256,9 +258,8 @@ namespace SolarSharp.Interpreter.Regex
                     return -1;
                 }
             }
-            
-            // lj_err_caller(ms->L, LJ_ERR_STRPATC);
-            return 0; // unreachable. TODO:
+
+            throw ScriptRuntimeException.InvalidPatternCapture();
         }
 
         private static int MatchCapture(string str, int index, int captureIndex, MatchState state)
@@ -266,8 +267,7 @@ namespace SolarSharp.Interpreter.Regex
             if (captureIndex >= state.Captures.Length || captureIndex < 0 || captureIndex >= state.Level ||
                 state.Captures[captureIndex] is { Length: CaptureUnfinished })
             {
-                // Error LJ_ERR_STRCAPI
-                return -1;
+                throw ScriptRuntimeException.InvalidCaptureIndex(captureIndex, state.Level);
             }
             
             var capture = state.Captures[captureIndex];
@@ -286,12 +286,12 @@ namespace SolarSharp.Interpreter.Regex
         
         private static int MatchBalance(string str, string pattern, int index, int patternIndex)
         {
-            if (index >= patternIndex - 1)
+            if (patternIndex + 1 >= pattern.Length)
             {
-                // Error STRPATU
+                throw ScriptRuntimeException.UnbalancedPattern();
             }
             
-            if (str[index] != pattern[patternIndex])
+            if (index >= str.Length || str[index] != pattern[patternIndex])
             {
                 return -1;
             }
@@ -325,7 +325,7 @@ namespace SolarSharp.Interpreter.Regex
 
             while (i >= 0)
             {
-                if (Match(str, pattern, index, endIndex + 1, state) is var res and >= 0)
+                if (Match(str, pattern, index + i, endIndex + 1, state) is var res and >= 0)
                 {
                     return res;
                 }
@@ -363,12 +363,12 @@ namespace SolarSharp.Interpreter.Regex
         private static bool MatchBracketedClass(char c, string pattern, int patternIndex, int endClass)
         {
             var sign = pattern[patternIndex + 1] != '^';
-            if (sign)
+            if (!sign)
             {
                 patternIndex++;
             }
 
-            while (++patternIndex <= endClass)
+            while (++patternIndex <= endClass && patternIndex < pattern.Length)
             {
                 if (pattern[patternIndex] == '%')
                 {
@@ -378,7 +378,7 @@ namespace SolarSharp.Interpreter.Regex
                         return sign;
                     }
                 }
-                else if (pattern[patternIndex + 1] == '-' && patternIndex + 2 < endClass)
+                else if (patternIndex + 2 < endClass && pattern[patternIndex + 1] == '-')
                 {
                     // Range
                     if (c >= pattern[patternIndex] && c <= pattern[patternIndex + 2])
@@ -410,11 +410,13 @@ namespace SolarSharp.Interpreter.Regex
                 'a' => c is >= 'a' and <= 'z' or >= 'A' and <= 'Z',
                 'c' => char.IsControl(c),
                 'd' => c is >= '0' and <= '9',
+                'g' => !char.IsControl(c) && !char.IsWhiteSpace(c),
                 'l' => c is >= 'a' and <= 'z',
                 'p' => char.IsPunctuation(c),
                 's' => char.IsWhiteSpace(c),
                 'u' => c is >= 'A' and <= 'Z',
                 'w' => char.IsLetterOrDigit(c),
+                'x' => c is >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F',
                 'z' => c == '\0',
                 _ => c == patternChar,
             } ^ inverted;
@@ -427,15 +429,14 @@ namespace SolarSharp.Interpreter.Regex
                 case '%':
                     if (patternIndex >= pattern.Length)
                     {
-                        // Error! LJ_ERR_STRPATE
+                        throw ScriptRuntimeException.MalformedPattern("ends with '%'");
                     }
 
                     return patternIndex + 1;
                 case '[':
                     if (patternIndex >= pattern.Length)
                     {
-                        // Error?
-                        // LJ_ERR_STRPATM
+                        throw ScriptRuntimeException.MalformedPattern("missing ']'");
                     }
                     
                     // Inverted class
@@ -447,7 +448,7 @@ namespace SolarSharp.Interpreter.Regex
                     // Looks for the closing ']'
                     while (patternIndex < pattern.Length && pattern[patternIndex] != ']')
                     {
-                        if (pattern[patternIndex] == '%')
+                        if (pattern[patternIndex++] == '%')
                         {
                             // Skip escapes
                             patternIndex++;
@@ -456,8 +457,7 @@ namespace SolarSharp.Interpreter.Regex
 
                     if (patternIndex >= pattern.Length)
                     {
-                        // Error?
-                        // LJ_ERR_STRPATM
+                        throw ScriptRuntimeException.MalformedPattern("missing ']'");
                     }
                     
                     return patternIndex + 1;
@@ -468,13 +468,19 @@ namespace SolarSharp.Interpreter.Regex
 
         public static LuaValue Substitute(string str, string pattern, LuaValue repl, int maxMatches, ScriptExecutionContext context)
         {
-            var anchor = pattern.Length > 0 && pattern[0] == '^' ? true : false;
+            var anchor = pattern.Length > 0 && pattern[0] == '^';
+            var patternIdx = 0;
+            if (anchor)
+            {
+                patternIdx++;
+            }
+            
             var n = 0;
-            // Note: numbers aren't supported by lua (it's a luajit like extension), we'll do the same
+            // Note: numbers aren't supported by lua (it's a luajit like extension), we'll do the same,
             // but maybe we want strict mode?
             if (repl.Type != DataType.String && repl.Type != DataType.Number && repl.Type != DataType.Function && repl.Type != DataType.ClrFunction && repl.Type != DataType.Table)
             {
-                // ERROR NOSFT
+                throw ScriptRuntimeException.ExpectedStringFunctionTableNumber();
             }
 
             StringBuilder sb = new();
@@ -483,7 +489,7 @@ namespace SolarSharp.Interpreter.Regex
             while (n < maxMatches)
             {
                 match.Level = match.Depth = 0;
-                var index = Match(str, pattern, currentIndex, 0, match);
+                var index = Match(str, pattern, currentIndex, patternIdx, match);
                 if (index >= 0)
                 {
                     n++;
@@ -508,8 +514,17 @@ namespace SolarSharp.Interpreter.Regex
                             PushCaptures(str, match, values, 0);
                         }
 
-                        var result = context.Call(repl, values);
-                        sb.Append(result);
+                        var result = context.Call(repl, values).ToScalar();
+                        if (!result.CastToBool())
+                        {
+                            result = LuaValue.NewString(str[currentIndex..index]);
+                        }
+                        // TODO: Expand to all types? being somewhat lazy here
+                        if (result.Type == DataType.Boolean)
+                        {
+                            throw ScriptRuntimeException.InvalidReplacementValue("boolean");
+                        }
+                        sb.Append(result.ToStringIncludingMetatable(context));
                     }
                     else if (repl.Type == DataType.Table)
                     {
@@ -517,7 +532,19 @@ namespace SolarSharp.Interpreter.Regex
                         var capture = match.Level == 0
                             ? LuaValue.NewString(str[currentIndex..index])
                             : GetCapture(str, match, 0);
-                        sb.Append(tbl.Get(capture));
+                        var value = tbl.Get(capture).ToScalar();
+                        if (!value.CastToBool())
+                        {
+                            value = LuaValue.NewString(str[currentIndex..index]);
+                        }
+
+                        // TODO: Expand to all types? being somewhat lazy here
+                        if (value.Type == DataType.Boolean)
+                        {
+                            throw ScriptRuntimeException.InvalidReplacementValue("boolean");
+                        }
+                        
+                        sb.Append(value.ToStringIncludingMetatable(context));
                     }
                 }
 
@@ -545,7 +572,7 @@ namespace SolarSharp.Interpreter.Regex
                 sb.Append(str, currentIndex, str.Length - currentIndex);
             }
             
-            return LuaValue.NewString(sb.ToString());
+            return LuaValue.NewTuple(LuaValue.NewString(sb.ToString()), LuaValue.NewNumber(n));
         }
 
         private static void GetStringReplacement(string str, string repl, StringBuilder sb, int currentIndex, int index,
@@ -563,7 +590,7 @@ namespace SolarSharp.Interpreter.Regex
                     sb.Append(repl, 0, matchIndex);
                 }
 
-                for (var i = matchIndex + 1; i < matchIndex; i++)
+                for (var i = matchIndex + 1; i < repl.Length; i++)
                 {
                     var c = repl[i];
                     if (c == '0')
@@ -575,7 +602,7 @@ namespace SolarSharp.Interpreter.Regex
                     {
                         // Capture group
                         var capIndex = c - '1';
-                        sb.Append(GetCapture(str, match, capIndex));
+                        sb.Append(GetCapture(str, match, capIndex).ToPrintString());
                     }
                     else
                     {
@@ -667,13 +694,13 @@ namespace SolarSharp.Interpreter.Regex
                 init--;
             }
 
-
-            bool anchored = false;
-            int currentIdx = init;
-            if (str[currentIdx] == '^')
+            var patternIdx = 0;
+            var anchored = false;
+            var currentIdx = init;
+            if (pattern[0] == '^')
             {
                 anchored = true;
-                currentIdx++;
+                patternIdx++;
             }
 
             var match = new MatchState
@@ -686,7 +713,7 @@ namespace SolarSharp.Interpreter.Regex
             {
                 // Try to find match
                 match.Level = match.Depth = 0;
-                var index = Match(str, pattern, currentIdx, 0, match);
+                var index = Match(str, pattern, currentIdx, patternIdx, match);
                 if (index < 0) continue;
                 
                 if (findMatch)
@@ -694,7 +721,7 @@ namespace SolarSharp.Interpreter.Regex
                     var results = new LuaValue[match.Level + 2];
                     // match found, return the start + end index, noting to re-adjust to 1-based indexing
                     results[0] = LuaValue.NewNumber(currentIdx + 1);
-                    results[1] = LuaValue.NewNumber(index + 1);
+                    results[1] = LuaValue.NewNumber(index);
                     PushCaptures(str, match, results, 2);
                     return LuaValue.NewTuple(results);
                 }
@@ -725,11 +752,15 @@ namespace SolarSharp.Interpreter.Regex
 
         private static LuaValue GetCapture(string str, MatchState match, int level)
         {
+            if (level >= match.Level)
+            {
+                throw ScriptRuntimeException.InvalidCaptureIndex(level, match.Level);
+            }
+            
             var capture = match.Captures[level];
             if (capture.Length == CaptureUnfinished)
             {
-                // ERROR STRCAPU
-                throw new Exception();
+                throw ScriptRuntimeException.UnfinishedCapture(capture.StartIndex);
             }
             else if (capture.Length == CapturePosition)
             {

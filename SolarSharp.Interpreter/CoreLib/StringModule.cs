@@ -122,7 +122,7 @@ public class StringModule
         var str = args.AsType(0, nameof(gmatch), DataType.String).String;
         var pattern = args.AsType(1, nameof(gmatch), DataType.String).String;
         var repl = args[2];
-        var n = args.AsOptInt(3, nameof(gmatch)) ?? -1;
+        var n = args.AsOptInt(3, nameof(gmatch)) ?? str.Length + 1;
         
         return LuaRegex.Substitute(str, pattern, repl, n, executionContext);
     }
@@ -212,17 +212,16 @@ public class StringModule
                 // Process flags
                 while (true)
                 {
-                    if (i + 1 >= format.Length)
-                    {
-                        throw ScriptRuntimeException.MalformedPattern("ends with '%' (and flags) in format string");
-                    }
-
                     switch (nextChar)
                     {
                         case '-':
                             if (leftJustify)
                             {
                                 throw new ScriptRuntimeException("invalid format (repeated flags)");
+                            }
+                            if (i + 1 >= format.Length)
+                            {
+                                throw ScriptRuntimeException.MalformedPattern("ends with '%' (and flags) in format string");
                             }
 
                             leftJustify = true;
@@ -234,6 +233,10 @@ public class StringModule
                             {
                                 throw new ScriptRuntimeException("invalid format (repeated flags)");
                             }
+                            if (i + 1 >= format.Length)
+                            {
+                                throw ScriptRuntimeException.MalformedPattern("ends with '%' (and flags) in format string");
+                            }
 
                             plusSign = true;
                             i++;
@@ -243,6 +246,10 @@ public class StringModule
                             if (zeroPad)
                             {
                                 throw new ScriptRuntimeException("invalid format (repeated flags)");
+                            }
+                            if (i + 1 >= format.Length)
+                            {
+                                throw ScriptRuntimeException.MalformedPattern("ends with '%' (and flags) in format string");
                             }
 
                             zeroPad = true;
@@ -254,6 +261,10 @@ public class StringModule
                             {
                                 throw new ScriptRuntimeException("invalid format (repeated flags)");
                             }
+                            if (i + 1 >= format.Length)
+                            {
+                                throw ScriptRuntimeException.MalformedPattern("ends with '%' (and flags) in format string");
+                            }
 
                             alternateForm = true;
                             i++;
@@ -263,6 +274,10 @@ public class StringModule
                             if (blank)
                             {
                                 throw new ScriptRuntimeException("invalid format (repeated flags)");
+                            }
+                            if (i + 1 >= format.Length)
+                            {
+                                throw ScriptRuntimeException.MalformedPattern("ends with '%' (and flags) in format string");
                             }
 
                             blank = true;
@@ -291,22 +306,28 @@ public class StringModule
                 // We must have an argument
                 if (currentArg >= args.Count)
                 {
-                    throw ScriptRuntimeException.BadArgument(currentArg + 1, "format", "not enough arguments for format string");
+                    throw ScriptRuntimeException.BadArgument(currentArg, "format", "no value");
                 }
 
                 double intNum = -1;
-                string formatted_value;
+                string formattedValue;
                 switch (nextChar)
                 {
                     case 'q':
-                        // TODO: numbers should be hex but otherwise matches below.
+                        var formatted = args[currentArg++].ToLuaString();
+                        if (precision > 0 && precision <= formatted.Length)
+                        {
+                            formatted = formatted[..precision];
+                        }
+                        formattedValue = formatted;
+                        break;
                     case 's':
                         var str = args[currentArg++].ToPrintString();
                         if (precision > 0 && precision <= str.Length)
                         {
                             str = str[..precision];
                         }
-                        formatted_value = str;
+                        formattedValue = str;
                         break;
                     case 'i':
                     case 'd':
@@ -316,35 +337,35 @@ public class StringModule
                     case 'X':
                         intNum = args.AsType(currentArg++, "format", DataType.Number).Number;
                         ScriptRuntimeException.ThrowIfBadArgumentIntegerExpected(currentArg - 1, nameof(format), intNum);
-                        formatted_value = "";
+                        formattedValue = "";
                         if (plusSign && intNum >= 0)
                         {
-                            formatted_value += '+';
+                            formattedValue += '+';
                         }
 
                         switch (nextChar)
                         {
                             case 'i':
                             case 'd':
-                                formatted_value += ((long)intNum).ToString($"D{(precision >= 0 ? precision.ToString() : "")}");
+                                formattedValue += ((long)intNum).ToString($"D{(precision >= 0 ? precision.ToString() : "")}");
                                 break;
                             case 'u':
-                                formatted_value += ((ulong)intNum).ToString($"D{(precision >= 0 ? precision.ToString() : "")}");
+                                formattedValue += ((ulong)intNum).ToString($"D{(precision >= 0 ? precision.ToString() : "")}");
                                 break;
                             case 'c':
-                                formatted_value += (char)intNum;
+                                formattedValue += (char)intNum;
                                 break;
                             case 'x':
                             case 'X':
                                 if (alternateForm)
                                 {
-                                    formatted_value += "0";
-                                    formatted_value += nextChar;
+                                    formattedValue += "0";
+                                    formattedValue += nextChar;
                                 }
-                                formatted_value += ((ulong)intNum).ToString(nextChar.ToString());
+                                formattedValue += ((ulong)intNum).ToString(nextChar.ToString());
                                 break;
                             case 'o':
-                                formatted_value += Convert.ToString((long)intNum, 8);
+                                formattedValue += Convert.ToString((long)intNum, 8);
                                 break;
                         }
 
@@ -354,30 +375,30 @@ public class StringModule
                     case 'g':
                     case 'G':
                         intNum = args.AsType(currentArg++, "format", DataType.Number).Number;
-                        formatted_value = "";
+                        formattedValue = "";
                         if (plusSign && intNum >= 0)
                         {
-                            formatted_value += '+';
+                            formattedValue += '+';
                         }
 
                         switch (nextChar)
                         {
                             case 'f':
-                                formatted_value += intNum.ToString("F" + (precision >= 0 ? precision.ToString() : ""), System.Globalization.CultureInfo.InvariantCulture);
+                                formattedValue += intNum.ToString("F" + (precision >= 0 ? precision.ToString() : ""), System.Globalization.CultureInfo.InvariantCulture);
                                 break;
                             case 'e':
-                                formatted_value += intNum.ToString("E" + (precision >= 0 ? precision.ToString() : ""), System.Globalization.CultureInfo.InvariantCulture);
+                                formattedValue += intNum.ToString("E" + (precision >= 0 ? precision.ToString() : ""), System.Globalization.CultureInfo.InvariantCulture);
                                 break;
                             case 'g':
-                                formatted_value += intNum.ToString("G" + (precision >= 0 ? precision.ToString() : ""), System.Globalization.CultureInfo.InvariantCulture);
+                                formattedValue += intNum.ToString("G" + (precision >= 0 ? precision.ToString() : ""), System.Globalization.CultureInfo.InvariantCulture);
                                 break;
                             case 'G':
-                                formatted_value += intNum.ToString("G" + (precision >= 0 ? precision.ToString() : ""), System.Globalization.CultureInfo.InvariantCulture).ToUpperInvariant();
+                                formattedValue += intNum.ToString("G" + (precision >= 0 ? precision.ToString() : ""), System.Globalization.CultureInfo.InvariantCulture).ToUpperInvariant();
                                 break;
                         }
                         break;
                     default:
-                        throw new ScriptRuntimeException($"invalid format (unknown format specifier '{nextChar}')");
+                        throw new ScriptRuntimeException($"invalid option '%{nextChar}' to 'format')");
                 }
 
                 if (blank && !leftJustify && !zeroPad && intNum >= 0)
@@ -385,22 +406,22 @@ public class StringModule
                     builder.Append(' ');
                 }
 
-                if (width > formatted_value.Length)
+                if (width > formattedValue.Length)
                 {
                     if (leftJustify)
                     {
-                        builder.Append(formatted_value);
-                        builder.Append(' ', width - formatted_value.Length);
+                        builder.Append(formattedValue);
+                        builder.Append(' ', width - formattedValue.Length);
                     }
                     else
                     {
-                        builder.Append(zeroPad ? '0' : ' ', width - formatted_value.Length);
-                        builder.Append(formatted_value);
+                        builder.Append(zeroPad ? '0' : ' ', width - formattedValue.Length);
+                        builder.Append(formattedValue);
                     }
                 }
                 else
                 {
-                    builder.Append(formatted_value);
+                    builder.Append(formattedValue);
                 }
             }
             else
@@ -509,12 +530,11 @@ public class StringModule
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ReadOnlySpan<char> SliceString(string str, int start, int end)
     {
-        // Lua's indexes are 1-based, we we need to adjust them
+        // Lua's indexes are 1-based, we need to adjust them
 
         if (start < 0)
         {
-            // Note: 1-based index, so we don't need to + 1.
-            start = Math.Min(str.Length + start, 0);
+            start = Math.Max(str.Length + start, 0);
         }
         else if (start > 0)
         {
@@ -523,7 +543,7 @@ public class StringModule
 
         if (end < 0)
         {
-            end = Math.Max(str.Length + end, str.Length - 1);
+            end = Math.Min(str.Length + end, str.Length - 1);
         }
         else
         {

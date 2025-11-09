@@ -424,6 +424,46 @@ public sealed class LuaValue
         return Clone();
     }
 
+    // EW combine with the one in CallbackArguments, and make this faster.
+    public string ToStringIncludingMetatable(ScriptExecutionContext executionContext)
+    {
+        if (Type == DataType.Table && Table is var tbl && tbl.MetaTable != null && tbl.MetaTable.Get("__tostring")
+                is var method && method.IsNotNil())
+        {
+            var v = executionContext.GetScript().Call(method, this);
+
+            if (v.Type != DataType.String)
+                throw new ScriptRuntimeException("'tostring' must return a string");
+
+            return v.ToPrintString();
+        }
+        
+        return ToPrintString();
+    }
+
+    private static string ToLiteral(string valueTextForCompiler)
+    {
+        return Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(valueTextForCompiler, true);
+    }
+    
+    /// <summary>
+    /// As if it was a lua literal
+    /// </summary>
+    public string ToLuaString()
+    {
+        return Type switch
+        {
+            DataType.Boolean or DataType.Nil or DataType.Void => ToString(),
+            DataType.Number =>
+                // TODO: Correctness, for now we just return numbers without hex
+                Number.ToString(CultureInfo.InvariantCulture),
+            DataType.String =>
+                // Quote the string
+                ToLiteral(String),
+            _ => throw new ScriptRuntimeException("value has no literal form")
+        };
+    }
+
     /// <summary>
     ///     Returns a string which is what it's expected to be output by the print function applied to this value.
     /// </summary>

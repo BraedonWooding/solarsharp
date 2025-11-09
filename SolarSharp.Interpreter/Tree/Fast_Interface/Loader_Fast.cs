@@ -46,6 +46,8 @@ internal static class Loader_Fast
                 bytecode.Emit_Nop($"End chunk {source.Name}");
             }
 
+            bytecode.Dump("D:/test.dmp");
+            
             //Debug_DumpByteCode(bytecode, source.SourceID);
 
             return beginIp;

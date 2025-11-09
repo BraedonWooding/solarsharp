@@ -35,7 +35,7 @@ local function _print_to_fh (self, f, ...)
    --     gsub(msg, "\n", "\n" .. self.indent)
    --     m.puts(f, self.indent .. msg .. "\n")
    -- else
-        print(self.indent, ...)
+    print(self.indent, ...)
    -- end
 end
 
@@ -52,7 +52,7 @@ local function print_comment (self, f, ...)
     msg = gsub(msg, "\n", "\n# ")
     msg = gsub(msg, "\n# \n", "\n#\n")
     msg = gsub(msg, "\n# $", '')
-    _print_to_fh(self, f, "# ", msg)
+    _print(self, "# ", msg)
 end
 
 function m.create ()
@@ -354,7 +354,7 @@ local function diag_file (self)
 end
 
 function m:diag (...)
-    print_comment(self, diag_file(self), ...)
+    _print(self, ...)
 end
 
 function m:note (...)
