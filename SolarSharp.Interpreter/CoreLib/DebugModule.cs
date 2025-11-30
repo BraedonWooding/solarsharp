@@ -24,7 +24,6 @@ public class DebugModule
 
         ReplInterpreter interpreter = new(script)
         {
-            HandleDynamicExprs = false,
             HandleClassicExprsSyntax = true
         };
 

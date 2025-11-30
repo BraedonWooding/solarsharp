@@ -33,10 +33,8 @@ internal class Program
 
         ReplInterpreter interpreter = new(script)
         {
-            HandleDynamicExprs = true,
             HandleClassicExprsSyntax = true
         };
-
 
         while (true) InterpreterLoop(interpreter, new ShellContext(script));
     }

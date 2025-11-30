@@ -22,12 +22,6 @@ public class ReplInterpreter
     }
 
     /// <summary>
-    ///     Gets or sets a value indicating whether this instances handle inputs starting with a "?" as a
-    ///     dynamic expression to evaluate instead of script code (likely invalid)
-    /// </summary>
-    public bool HandleDynamicExprs { get; set; }
-
-    /// <summary>
     ///     Gets or sets a value indicating whether this instances handle inputs starting with a "=" as a
     ///     non-dynamic expression to evaluate (just like the Lua interpreter does by default).
     /// </summary>

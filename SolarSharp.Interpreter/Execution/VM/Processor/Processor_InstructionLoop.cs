@@ -1105,7 +1105,7 @@ internal sealed partial class Processor
                 if (newIndexMethod == null || newIndexMethod.IsNil()) throw ScriptRuntimeException.IndexType(obj);
             }
 
-            if (newIndexMethod.Type == DataType.Function || newIndexMethod.Type == DataType.ClrFunction)
+            if (newIndexMethod.Type is DataType.Function or DataType.ClrFunction)
             {
                 // wtf is this, TODO: Probably remove??
                 m_ValueStack.Pop(); // burn extra value ?
